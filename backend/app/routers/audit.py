@@ -1,7 +1,6 @@
 """Audit & Evidence Agent – ensures every execution produces auditable artifacts."""
 
 from datetime import datetime, timezone
-from decimal import Decimal
 from hashlib import sha256
 from typing import Any, Optional
 from uuid import uuid4

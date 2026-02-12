@@ -5,13 +5,12 @@ import io
 import json
 import logging
 from datetime import datetime, timezone
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Any
+from decimal import Decimal
 from uuid import uuid4
 
 from app.celery_app import celery
 from app.tools.postgres_tool import insert_audit_log
-from app.tools.s3_tool import put_object, get_object_url
+from app.tools.s3_tool import put_object
 
 logger = logging.getLogger(__name__)
 

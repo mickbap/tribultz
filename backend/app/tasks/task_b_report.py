@@ -1,10 +1,8 @@
 """Task B – Generate compliance report (Markdown) and save to MinIO."""
 
-import json
 import logging
 from datetime import date, datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Optional
 
 from app.celery_app import celery
 from app.tools.postgres_tool import get_tax_rules, insert_audit_log, persist_artifact_metadata
@@ -43,21 +41,21 @@ def task_b_compliance_report(
 
     # ── Build report ──────────────────────────────────────────
     lines: list[str] = []
-    lines.append(f"# Relatório de Conformidade Tributária")
-    lines.append(f"")
+    lines.append("# Relatório de Conformidade Tributária")
+    lines.append("")
     lines.append(f"**Empresa:** {company_name}  ")
     lines.append(f"**CNPJ:** {cnpj}  ")
     lines.append(f"**Período:** {reference_period}  ")
     lines.append(f"**Gerado em:** {now_str}  ")
     lines.append(f"**Alíquota CBS:** {cbs_rate}  ")
     lines.append(f"**Alíquota IBS:** {ibs_rate}  ")
-    lines.append(f"")
-    lines.append(f"---")
-    lines.append(f"")
-    lines.append(f"## Resumo por Nota Fiscal")
-    lines.append(f"")
-    lines.append(f"| NF | Base Total | CBS Esperado | IBS Esperado | Status |")
-    lines.append(f"|---|---|---|---|---|")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("## Resumo por Nota Fiscal")
+    lines.append("")
+    lines.append("| NF | Base Total | CBS Esperado | IBS Esperado | Status |")
+    lines.append("|---|---|---|---|---|")
 
     total_base = Decimal("0")
     total_cbs = Decimal("0")
@@ -102,14 +100,14 @@ def task_b_compliance_report(
             "status": "PASS" if (cbs_ok and ibs_ok) else "FAIL",
         })
 
-    lines.append(f"")
-    lines.append(f"## Totais")
-    lines.append(f"")
+    lines.append("")
+    lines.append("## Totais")
+    lines.append("")
     lines.append(f"- **Base total:** R$ {total_base}")
     lines.append(f"- **CBS total:** R$ {total_cbs}")
     lines.append(f"- **IBS total:** R$ {total_ibs}")
     lines.append(f"- **Resultado geral:** {'✅ CONFORME' if all_pass else '❌ NÃO CONFORME'}")
-    lines.append(f"")
+    lines.append("")
 
     report_md = "\n".join(lines)
     report_bytes = report_md.encode("utf-8")

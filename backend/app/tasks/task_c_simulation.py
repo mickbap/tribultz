@@ -2,9 +2,8 @@
 
 import json
 import logging
-from datetime import date, datetime, timezone
+from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Any
 
 from app.celery_app import celery
 from app.tools.postgres_tool import get_tax_rules, insert_audit_log

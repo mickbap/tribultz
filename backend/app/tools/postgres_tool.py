@@ -1,8 +1,7 @@
 """PostgresTool – reusable DB operations for agents and tasks."""
 
 import json
-from datetime import date, datetime, timezone
-from decimal import Decimal
+from datetime import date
 from typing import Any, Optional
 from uuid import uuid4
 

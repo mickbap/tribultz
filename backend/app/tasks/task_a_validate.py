@@ -1,10 +1,8 @@
 """Task A – Validate CBS/IBS for a batch of items and write audit_log."""
 
-import json
 import logging
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Any, Optional
 
 from app.celery_app import celery
 from app.tools.postgres_tool import get_tax_rules, insert_audit_log

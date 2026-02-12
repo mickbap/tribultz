@@ -2,8 +2,7 @@
 
 import logging
 from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Any, Optional
+from decimal import Decimal
 
 from app.celery_app import celery
 from app.config import settings

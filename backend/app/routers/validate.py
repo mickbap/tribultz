@@ -2,7 +2,6 @@
 
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field

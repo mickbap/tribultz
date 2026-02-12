@@ -1,6 +1,5 @@
 """HubSpotTool – CRM integration (MVP). All calls gated by HUBSPOT_ENABLED."""
 
-import json
 import logging
 from typing import Any, Optional
 
