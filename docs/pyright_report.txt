@@ -1,11 +1,1 @@
-﻿c:\Tribultz\backend\app\tools\erp_connector_tool.py
-  c:\Tribultz\backend\app\tools\erp_connector_tool.py:77:28 - error: Cannot assign to attribute "total_amount" for class "ImportedInvoice"
-  ┬á┬áType "Decimal | Literal[0]" is not assignable to type "Decimal"
-  ┬á┬á┬á┬á"Literal[0]" is not assignable to "Decimal" (reportAttributeAccessIssue)
-c:\Tribultz\backend\app\tools\validation_tool.py
-  c:\Tribultz\backend\app\tools\validation_tool.py:104:36 - error: Type "dict[tuple[Unknown, Unknown], Decimal]" is not assignable to declared type "dict[str, Decimal]" (reportAssignmentType)
-  c:\Tribultz\backend\app\tools\validation_tool.py:117:33 - error: Argument of type "tuple[Unknown, Literal['CBS']]" cannot be assigned to parameter "key" of type "str" in function "get"
-  ┬á┬á"tuple[Unknown, Literal['CBS']]" is not assignable to "str" (reportArgumentType)
-  c:\Tribultz\backend\app\tools\validation_tool.py:118:33 - error: Argument of type "tuple[Unknown, Literal['IBS']]" cannot be assigned to parameter "key" of type "str" in function "get"
-  ┬á┬á"tuple[Unknown, Literal['IBS']]" is not assignable to "str" (reportArgumentType)
-4 errors, 0 warnings, 0 informations
+﻿0 errors, 0 warnings, 0 informations

@@ -101,8 +101,8 @@ def validate_invoice_items(
         all_codes.add(it.get("ibs_rule_code", "STD_IBS"))
 
     rules = get_tax_rules(tenant_id, list(all_codes), ref)
-    rate_map: dict[str, Decimal] = {
-        (r["rule_code"], r["tax_type"]): Decimal(str(r["rate"]))
+    rate_map: dict[tuple[str, str], Decimal] = {
+        (str(r["rule_code"]), str(r["tax_type"])): Decimal(str(r["rate"]))
         for r in rules
     }
 
@@ -114,8 +114,8 @@ def validate_invoice_items(
         cbs_code = it.get("cbs_rule_code", "STD_CBS")
         ibs_code = it.get("ibs_rule_code", "STD_IBS")
 
-        cbs_rate = rate_map.get((cbs_code, "CBS"))
-        ibs_rate = rate_map.get((ibs_code, "IBS"))
+        cbs_rate = rate_map.get((str(cbs_code), "CBS"))
+        ibs_rate = rate_map.get((str(ibs_code), "IBS"))
 
         item_result: dict[str, Any] = {"index": idx, "sku": it.get("sku", "")}
 

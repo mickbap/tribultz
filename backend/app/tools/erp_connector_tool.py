@@ -74,7 +74,7 @@ def import_csv_invoices(csv_bytes: bytes, encoding: str = "utf-8") -> list[dict]
 
     # Sum totals
     for inv in invoices.values():
-        inv.total_amount = sum(it.total_price for it in inv.items)
+        inv.total_amount = sum((it.total_price for it in inv.items), Decimal("0"))
 
     result = [inv.model_dump(mode="json") for inv in invoices.values()]
     logger.info("import_csv_invoices: parsed %d invoices", len(result))
