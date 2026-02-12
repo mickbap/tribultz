@@ -1,0 +1,128 @@
+﻿c:\Tribultz\backend\app\routers\tasks.py
+  c:\Tribultz\backend\app\routers\tasks.py:69:38 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "tenant_id" of type "str" in function "task_a_validate_cbs_ibs"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:69:38 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "tenant_slug" of type "str" in function "task_a_validate_cbs_ibs"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:69:38 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "invoice_number" of type "str" in function "task_a_validate_cbs_ibs"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:69:38 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "issue_date" of type "str" in function "task_a_validate_cbs_ibs"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:69:38 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "declared_cbs" of type "str" in function "task_a_validate_cbs_ibs"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:69:38 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "declared_ibs" of type "str" in function "task_a_validate_cbs_ibs"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:69:38 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "items" of type "list[dict[Unknown, Unknown]]" in function "task_a_validate_cbs_ibs"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "list[dict[Unknown, Unknown]]"
+  ┬á┬á┬á┬á"str" is not assignable to "list[dict[Unknown, Unknown]]" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:109:39 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "tenant_id" of type "str" in function "task_b_compliance_report"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:109:39 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "tenant_slug" of type "str" in function "task_b_compliance_report"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:109:39 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "company_name" of type "str" in function "task_b_compliance_report"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:109:39 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "cnpj" of type "str" in function "task_b_compliance_report"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:109:39 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "reference_period" of type "str" in function "task_b_compliance_report"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:109:39 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "invoices" of type "list[dict[Unknown, Unknown]]" in function "task_b_compliance_report"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "list[dict[Unknown, Unknown]]"
+  ┬á┬á┬á┬á"str" is not assignable to "list[dict[Unknown, Unknown]]" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:144:39 - error: Argument of type "str | list[dict[str, Any]] | None" cannot be assigned to parameter "tenant_id" of type "str" in function "task_c_whatif_simulation"
+  ┬á┬áType "str | list[dict[str, Any]] | None" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:144:39 - error: Argument of type "str | list[dict[str, Any]] | None" cannot be assigned to parameter "tenant_slug" of type "str" in function "task_c_whatif_simulation"
+  ┬á┬áType "str | list[dict[str, Any]] | None" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:144:39 - error: Argument of type "str | list[dict[str, Any]] | None" cannot be assigned to parameter "simulation_name" of type "str" in function "task_c_whatif_simulation"
+  ┬á┬áType "str | list[dict[str, Any]] | None" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:144:39 - error: Argument of type "str | list[dict[str, Any]] | None" cannot be assigned to parameter "base_amount" of type "str" in function "task_c_whatif_simulation"
+  ┬á┬áType "str | list[dict[str, Any]] | None" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:144:39 - error: Argument of type "str | list[dict[str, Any]] | None" cannot be assigned to parameter "scenarios" of type "list[dict[Unknown, Unknown]]" in function "task_c_whatif_simulation"
+  ┬á┬áType "str | list[dict[str, Any]] | None" is not assignable to type "list[dict[Unknown, Unknown]]"
+  ┬á┬á┬á┬á"str" is not assignable to "list[dict[Unknown, Unknown]]" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:144:39 - error: Argument of type "str | list[dict[str, Any]] | None" cannot be assigned to parameter "ref_date" of type "str | None" in function "task_c_whatif_simulation"
+  ┬á┬áType "str | list[dict[str, Any]] | None" is not assignable to type "str | None"
+  ┬á┬á┬á┬áType "list[dict[str, Any]]" is not assignable to type "str | None"
+  ┬á┬á┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str"
+  ┬á┬á┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "None" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:176:36 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "tenant_id" of type "str" in function "task_d_reconciliation"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:176:36 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "tenant_slug" of type "str" in function "task_d_reconciliation"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:176:36 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "csv_receivables_b64" of type "str" in function "task_d_reconciliation"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:176:36 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "invoices" of type "list[dict[Unknown, Unknown]]" in function "task_d_reconciliation"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "list[dict[Unknown, Unknown]]"
+  ┬á┬á┬á┬á"str" is not assignable to "list[dict[Unknown, Unknown]]" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:176:36 - error: Argument of type "str | list[dict[str, Any]]" cannot be assigned to parameter "tolerance" of type "str" in function "task_d_reconciliation"
+  ┬á┬áType "str | list[dict[str, Any]]" is not assignable to type "str"
+  ┬á┬á┬á┬á"list[dict[str, Any]]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:209:34 - error: Argument of type "str | int | None" cannot be assigned to parameter "tenant_id" of type "str" in function "task_e_hubspot_sync"
+  ┬á┬áType "str | int | None" is not assignable to type "str"
+  ┬á┬á┬á┬á"int" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:209:34 - error: Argument of type "str | int | None" cannot be assigned to parameter "tenant_slug" of type "str" in function "task_e_hubspot_sync"
+  ┬á┬áType "str | int | None" is not assignable to type "str"
+  ┬á┬á┬á┬á"int" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:209:34 - error: Argument of type "str | int | None" cannot be assigned to parameter "company_name" of type "str" in function "task_e_hubspot_sync"
+  ┬á┬áType "str | int | None" is not assignable to type "str"
+  ┬á┬á┬á┬á"int" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:209:34 - error: Argument of type "str | int | None" cannot be assigned to parameter "cnpj" of type "str" in function "task_e_hubspot_sync"
+  ┬á┬áType "str | int | None" is not assignable to type "str"
+  ┬á┬á┬á┬á"int" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:209:34 - error: Argument of type "str | int | None" cannot be assigned to parameter "domain" of type "str | None" in function "task_e_hubspot_sync"
+  ┬á┬áType "str | int | None" is not assignable to type "str | None"
+  ┬á┬á┬á┬áType "int" is not assignable to type "str | None"
+  ┬á┬á┬á┬á┬á┬á"int" is not assignable to "str"
+  ┬á┬á┬á┬á┬á┬á"int" is not assignable to "None" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:209:34 - error: Argument of type "str | int | None" cannot be assigned to parameter "invoices_validated" of type "int" in function "task_e_hubspot_sync"
+  ┬á┬áType "str | int | None" is not assignable to type "int"
+  ┬á┬á┬á┬á"str" is not assignable to "int" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:209:34 - error: Argument of type "str | int | None" cannot be assigned to parameter "exceptions_count" of type "int" in function "task_e_hubspot_sync"
+  ┬á┬áType "str | int | None" is not assignable to type "int"
+  ┬á┬á┬á┬á"str" is not assignable to "int" (reportArgumentType)
+  c:\Tribultz\backend\app\routers\tasks.py:209:34 - error: Argument of type "str | int | None" cannot be assigned to parameter "deal_value" of type "str | None" in function "task_e_hubspot_sync"
+  ┬á┬áType "str | int | None" is not assignable to type "str | None"
+  ┬á┬á┬á┬áType "int" is not assignable to type "str | None"
+  ┬á┬á┬á┬á┬á┬á"int" is not assignable to "str"
+  ┬á┬á┬á┬á┬á┬á"int" is not assignable to "None" (reportArgumentType)
+c:\Tribultz\backend\app\tools\erp_connector_tool.py
+  c:\Tribultz\backend\app\tools\erp_connector_tool.py:77:28 - error: Cannot assign to attribute "total_amount" for class "ImportedInvoice"
+  ┬á┬áType "Decimal | Literal[0]" is not assignable to type "Decimal"
+  ┬á┬á┬á┬á"Literal[0]" is not assignable to "Decimal" (reportAttributeAccessIssue)
+c:\Tribultz\backend\app\tools\validation_tool.py
+  c:\Tribultz\backend\app\tools\validation_tool.py:104:36 - error: Type "dict[tuple[Unknown, Unknown], Decimal]" is not assignable to declared type "dict[str, Decimal]" (reportAssignmentType)
+  c:\Tribultz\backend\app\tools\validation_tool.py:117:33 - error: Argument of type "tuple[Unknown, Literal['CBS']]" cannot be assigned to parameter "key" of type "str" in function "get"
+  ┬á┬á"tuple[Unknown, Literal['CBS']]" is not assignable to "str" (reportArgumentType)
+  c:\Tribultz\backend\app\tools\validation_tool.py:118:33 - error: Argument of type "tuple[Unknown, Literal['IBS']]" cannot be assigned to parameter "key" of type "str" in function "get"
+  ┬á┬á"tuple[Unknown, Literal['IBS']]" is not assignable to "str" (reportArgumentType)
+36 errors, 0 warnings, 0 informations
+node.exe : npm notice
+No C:\Program Files\nodejs\npx.ps1:29 caractere:3
++   & $NODE_EXE $NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm no 
+   tice:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm notice New major version of npm available! 
+10.9.2 -> 11.10.0
+npm notice Changelog: 
+https://github.com/npm/cli/releases/tag/v11.10.0
+npm notice To update run: npm install -g npm@11.10.0
+npm notice
