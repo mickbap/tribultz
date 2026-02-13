@@ -1,0 +1,9 @@
+system_verification_task:
+  description: >
+    Verify the current state of the system using non-destructive checks.
+    1. Check git status to ensure the repository is clean.
+    2. Verify that critical docker containers (e.g., 'infra-db-1') are running.
+    3. Return a concise summary of the system health.
+  expected_output: >
+    A concise report on the git repository status and docker container health.
+  agent: senior_devops_engineer
