@@ -1,7 +1,8 @@
 """Tasks API router – HTTP triggers for all Celery tasks."""
 
-from typing import Optional
+from typing import Optional, cast
 
+from celery import Task
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -53,7 +54,7 @@ def trigger_task_a(req: TaskARequest, db: Session = Depends(get_db)):
     tid = _tenant_id(db, req.tenant_slug)
     items: list[dict[str, object]] = [it.model_dump() for it in req.items]
     if req.async_mode:
-        r = task_a_validate_cbs_ibs.delay(
+        r = cast(Task, task_a_validate_cbs_ibs).delay(
             tenant_id=tid,
             tenant_slug=req.tenant_slug,
             invoice_number=req.invoice_number,
@@ -102,7 +103,7 @@ def trigger_task_b(req: TaskBRequest, db: Session = Depends(get_db)):
     tid = _tenant_id(db, req.tenant_slug)
     invoices: list[dict[str, object]] = [inv.model_dump() for inv in req.invoices]
     if req.async_mode:
-        r = task_b_compliance_report.delay(
+        r = cast(Task, task_b_compliance_report).delay(
             tenant_id=tid,
             tenant_slug=req.tenant_slug,
             company_name=req.company_name,
@@ -144,7 +145,7 @@ def trigger_task_c(req: TaskCRequest, db: Session = Depends(get_db)):
     tid = _tenant_id(db, req.tenant_slug)
     scenarios: list[dict[str, object]] = [sc.model_dump() for sc in req.scenarios]
     if req.async_mode:
-        r = task_c_whatif_simulation.delay(
+        r = cast(Task, task_c_whatif_simulation).delay(
             tenant_id=tid,
             tenant_slug=req.tenant_slug,
             simulation_name=req.simulation_name,
@@ -184,7 +185,7 @@ def trigger_task_d(req: TaskDRequest, db: Session = Depends(get_db)):
     tid = _tenant_id(db, req.tenant_slug)
     invoices: list[dict[str, object]] = [inv.model_dump() for inv in req.invoices]
     if req.async_mode:
-        r = task_d_reconciliation.delay(
+        r = cast(Task, task_d_reconciliation).delay(
             tenant_id=tid,
             tenant_slug=req.tenant_slug,
             csv_receivables_b64=req.csv_receivables_b64,
@@ -219,7 +220,7 @@ class TaskERequest(BaseModel):
 def trigger_task_e(req: TaskERequest, db: Session = Depends(get_db)):
     tid = _tenant_id(db, req.tenant_slug)
     if req.async_mode:
-        r = task_e_hubspot_sync.delay(
+        r = cast(Task, task_e_hubspot_sync).delay(
             tenant_id=tid,
             tenant_slug=req.tenant_slug,
             company_name=req.company_name,

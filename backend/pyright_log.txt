@@ -1,0 +1,5 @@
+ * Install prebuilt node (25.6.1) ../usr/local/lib/python3.12/site-packages/nodeenv.py:639: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+  archive.extractall(src_dir, extract_list)
+... done.
+{'x86': False, 'risc': False, 'lts': False}
+0 errors, 0 warnings, 0 informations
