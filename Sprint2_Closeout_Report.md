@@ -24,7 +24,8 @@
 ### A) Repo/Branch/Commits
 ```text
 wip/antigravity-fixes
-4a29e29 (HEAD -> wip/antigravity-fixes, origin/wip/antigravity-fixes) docs: Sprint 2 closeout report (status, gaps, evidence)
+71d81f8 (HEAD -> wip/antigravity-fixes, origin/wip/antigravity-fixes) docs: correct Sprint 2 closeout status and evidence
+4a29e29 docs: Sprint 2 closeout report (status, gaps, evidence)
 5f46171 feat(console): login + route guard + chat stub; fix(api): tenant-scoped jobs
 c45b3bb (origin/main, origin/HEAD, main) Initial commit
 ## wip/antigravity-fixes...origin/wip/antigravity-fixes
