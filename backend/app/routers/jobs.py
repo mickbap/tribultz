@@ -10,6 +10,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.api.deps import get_current_user
+from app.models.auth import User
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
 
@@ -189,14 +191,14 @@ def update_job(job_id: str, req: JobUpdateRequest, db: Session = Depends(get_db)
 
 @router.get("", response_model=list[JobResponse])
 def list_jobs(
-    tenant_slug: str = "default",
     status: Optional[JobStatus] = None,
     limit: int = 50,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """List jobs for a tenant, optionally filtered by status."""
+    """List jobs for the authenticated user's tenant, optionally filtered by status."""
     _ensure_table(db)
-    tenant_id = _get_tenant_id(db, tenant_slug)
+    tenant_id = str(current_user.tenant_id)
 
     filters = ["j.tenant_id = :tid"]
     params: dict[str, Any] = {"tid": tenant_id, "limit": limit}
