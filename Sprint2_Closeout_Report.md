@@ -1,37 +1,33 @@
 # Sprint 2 Closeout Report
 
 ## Current Status
-**DONE** (Commit `5f46171`):
+**Sprint 2 DoD: NOT MET**
+
+**DELIVERED** (Commits `5f46171`, `4a29e29`):
 - **Frontend Auth**: Login page, Auth Guard, Token Injection (`src/auth/`, `api.ts`)
 - **Chat Stub**: Feature-flagged (`NEXT_PUBLIC_CHAT_ENABLED`), redirect logic, conditional nav link
-- **Backend Tenant Scoping**: `list_jobs` uses `current_user.tenant_id` exclusively
+- **Backend Tenant Scoping (Partial)**: `list_jobs` uses `current_user.tenant_id` exclusively
 - **CI/CD Gates**: All backend tests pass, frontend builds successfully
 
 ## Remaining Work to Meet Sprint 2 DoD
-1. **[P1] Tenant Scoping on Remaining Routes**: `jobs.py` (create/update/get) and `audit.py` still use `tenant_slug` or unsanitized inputs.
-   - *Fix*: Apply `get_current_user` pattern to all endpoints.
-2. **[P2] Cookies vs sessionStorage**: Current token storage (sessionStorage) has XSS risk.
-   - *Fix*: Configure HttpOnly cookies for token storage.
-3. **[P2] Error Handling**: Login error messages are generic; needs better UX.
+1. **[P0] Task Trigger via UI**: REQUIRED by DoD, current status **NOT DONE**.
+   - *Plan*: Implement `POST /jobs` integration in frontend.
+2. **[P1] Alembic Config**: REQUIRED by DoD, current status **NOT DONE**.
+   - *Plan*: Initialize alembic and create first migration for `tenants`/`users`/`jobs`.
+3. **[P1] Tenant Scoping on Remaining Routes**: `jobs.py` (create/update/get) and `audit.py` still use `tenant_slug` or unsanitized inputs.
+   - *Status*: **PARTIAL** (only `list_jobs` is scoped).
+   - *Plan*: Apply `get_current_user` pattern to all endpoints.
+4. **[P2] Cookies vs sessionStorage**: Current token storage (sessionStorage) has XSS risk.
 
 ## Technical Evidence
 
 ### A) Repo/Branch/Commits
 ```text
 wip/antigravity-fixes
-5f46171 (HEAD -> wip/antigravity-fixes, origin/wip/antigravity-fixes) feat(console): login + route guard + chat stub; fix(api): tenant-scoped jobs
+4a29e29 (HEAD -> wip/antigravity-fixes, origin/wip/antigravity-fixes) docs: Sprint 2 closeout report (status, gaps, evidence)
+5f46171 feat(console): login + route guard + chat stub; fix(api): tenant-scoped jobs
 c45b3bb (origin/main, origin/HEAD, main) Initial commit
 ## wip/antigravity-fixes...origin/wip/antigravity-fixes
-M  backend/app/routers/jobs.py
-M  frontend/src/app/audit/page.tsx
-M  frontend/src/app/jobs/[id]/page.tsx
-M  frontend/src/app/jobs/page.tsx
-M  frontend/src/app/layout.tsx
-A  frontend/src/app/login/page.tsx
-A  frontend/src/app/NavBar.tsx
-A  frontend/src/app/chat/
-A  frontend/src/auth/
-M  frontend/src/services/api.ts
 ```
 
 ### B) Backend Quality Gates
@@ -76,16 +72,12 @@ Route (app)                              Size     First Load JS
 ƒ  (Dynamic)  server-rendered on demand
 ```
 
-### D) Endpoint Protection Spot-Checks
-- `JOBS_NO_TOKEN_HTTP`: **NOT RUN** (Server not active in CI env; tested via `pytest`)
-- `AUDIT_NO_TOKEN_HTTP`: **NOT RUN** (Server not active in CI env)
-
 ## SPRINT 2 DoD CHECKLIST
 | Item | Status | Notes |
 |------|--------|-------|
 | CI green (backend + frontend) | **PASS** | Evidence section B & C |
 | Auth works end-to-end | **PASS** | Login, Guard, Token Injection implemented |
-| Tenant scoping server-side | **PASS** | Implemented on `list_jobs` |
+| Tenant scoping server-side | **PARTIAL** | Only `list_jobs` scoped; others pending |
 | Console uses authenticated API | **PASS** | `api.ts` injects token |
 | Task triggerable via UI | **NOT DONE** | Deferred to Sprint 3 |
 | Alembic initial configured | **NOT DONE** | Using raw SQL/bootstrap for now |
