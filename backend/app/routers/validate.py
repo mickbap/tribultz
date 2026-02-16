@@ -9,6 +9,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.api.deps import get_current_user
+from app.models.auth import User
 
 router = APIRouter(tags=["validate"])
 
@@ -31,7 +33,6 @@ class ValidateRequest(BaseModel):
     declared_cbs: Decimal
     declared_ibs: Decimal
     items: list[InvoiceItem]
-    tenant_slug: str = "default"
 
 
 class ItemResult(BaseModel):
@@ -61,7 +62,7 @@ class ValidateResponse(BaseModel):
 # ── Tax engine helper ─────────────────────────────────────────
 def _lookup_rate(
     db: Session,
-    tenant_slug: str,
+    tenant_id: str,
     rule_code: str,
     tax_type: str,
     ref_date: date,
@@ -71,8 +72,7 @@ def _lookup_rate(
         text("""
             SELECT tr.rate
             FROM tax_rules tr
-            JOIN tenants  t ON t.id = tr.tenant_id
-            WHERE t.slug        = :slug
+            WHERE tr.tenant_id = CAST(:tenant_id AS uuid)
               AND tr.rule_code  = :rule_code
               AND tr.tax_type   = :tax_type
               AND tr.valid_from <= :ref_date
@@ -81,7 +81,7 @@ def _lookup_rate(
             LIMIT 1
         """),
         {
-            "slug": tenant_slug,
+            "tenant_id": tenant_id,
             "rule_code": rule_code,
             "tax_type": tax_type,
             "ref_date": ref_date,
@@ -92,14 +92,18 @@ def _lookup_rate(
         raise HTTPException(
             status_code=404,
             detail=f"Rule '{rule_code}' ({tax_type}) not found for tenant "
-                   f"'{tenant_slug}' on {ref_date}",
+                   f"'{tenant_id}' on {ref_date}",
         )
     return Decimal(str(row.rate))
 
 
 # ── Endpoint ──────────────────────────────────────────────────
 @router.post("/validate/cbs-ibs", response_model=ValidateResponse)
-def validate_cbs_ibs(req: ValidateRequest, db: Session = Depends(get_db)):
+def validate_cbs_ibs(
+    req: ValidateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """
     Validate an invoice's declared CBS & IBS against the TaxEngine rules
     stored in Postgres.  Returns PASS when both match, FAIL otherwise.
@@ -108,12 +112,14 @@ def validate_cbs_ibs(req: ValidateRequest, db: Session = Depends(get_db)):
     total_ibs = Decimal("0")
     item_results: list[ItemResult] = []
 
+    tenant_id = str(current_user.tenant_id)
+
     for item in req.items:
         cbs_rate = _lookup_rate(
-            db, req.tenant_slug, item.cbs_rule_code, "CBS", req.issue_date,
+            db, tenant_id, item.cbs_rule_code, "CBS", req.issue_date,
         )
         ibs_rate = _lookup_rate(
-            db, req.tenant_slug, item.ibs_rule_code, "IBS", req.issue_date,
+            db, tenant_id, item.ibs_rule_code, "IBS", req.issue_date,
         )
 
         cbs_amount = (item.base_amount * cbs_rate).quantize(TWO_PLACES, ROUND_HALF_UP)

@@ -1,5 +1,3 @@
-"""Validation router – tax-calculation & rule-validation endpoints."""
-
 from datetime import date
 from decimal import Decimal
 from enum import Enum
@@ -11,6 +9,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.api.deps import get_current_user
+from app.models.auth import User
 
 router = APIRouter(prefix="/api/v1/validation", tags=["validation"])
 
@@ -24,7 +24,8 @@ class TaxType(str, Enum):
 
 # ── Request / Response schemas ────────────────────────────────
 class TaxCalculationRequest(BaseModel):
-    tenant_slug: str = Field(..., min_length=1, max_length=100)
+    # tenant_slug: str = Field(..., min_length=1, max_length=100) -- REMOVED
+
     ncm_code: Optional[str] = Field(None, max_length=10)
     tax_type: TaxType
     base_amount: Decimal = Field(..., gt=0, decimal_places=2)
@@ -95,14 +96,19 @@ def _format_cnpj(digits: str) -> str:
 
 # ── Endpoints ─────────────────────────────────────────────────
 @router.post("/calculate-tax", response_model=TaxCalculationResponse)
-def calculate_tax(req: TaxCalculationRequest, db: Session = Depends(get_db)):
+def calculate_tax(
+    req: TaxCalculationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """Look up the applicable tax rule and compute the tax amount."""
+    tenant_id = str(current_user.tenant_id)
+
     row = db.execute(
         text("""
             SELECT tr.rule_code, tr.rate
             FROM tax_rules tr
-            JOIN tenants t ON t.id = tr.tenant_id
-            WHERE t.slug = :slug
+            WHERE tr.tenant_id = CAST(:tenant_id AS uuid)
               AND tr.tax_type = :tax_type
               AND tr.valid_from <= :ref_date
               AND (tr.valid_to IS NULL OR tr.valid_to >= :ref_date)
@@ -110,7 +116,7 @@ def calculate_tax(req: TaxCalculationRequest, db: Session = Depends(get_db)):
             LIMIT 1
         """),
         {
-            "slug": req.tenant_slug,
+            "tenant_id": tenant_id,
             "tax_type": req.tax_type.value,
             "ref_date": req.reference_date,
         },
@@ -119,7 +125,7 @@ def calculate_tax(req: TaxCalculationRequest, db: Session = Depends(get_db)):
     if not row:
         raise HTTPException(
             status_code=404,
-            detail=f"No {req.tax_type.value} rule found for tenant '{req.tenant_slug}' "
+            detail=f"No {req.tax_type.value} rule found for tenant '{tenant_id}' "
                    f"on {req.reference_date}",
         )
 
@@ -148,16 +154,17 @@ def validate_cnpj(req: ValidateCNPJRequest):
     )
 
 
-@router.get("/rules/{tenant_slug}", response_model=list[RuleLookupResponse])
+@router.get("/rules", response_model=list[RuleLookupResponse])
 def list_rules(
-    tenant_slug: str,
     tax_type: Optional[TaxType] = None,
     ref_date: Optional[date] = None,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Return all active tax rules for a tenant, optionally filtered."""
     ref = ref_date or date.today()
-    params: dict = {"slug": tenant_slug, "ref_date": ref}
+    tenant_id = str(current_user.tenant_id)
+    params: dict = {"tenant_id": tenant_id, "ref_date": ref}
 
     type_filter = ""
     if tax_type:
@@ -169,8 +176,7 @@ def list_rules(
             SELECT tr.rule_code, tr.description, tr.tax_type,
                    tr.rate, tr.valid_from, tr.valid_to
             FROM tax_rules tr
-            JOIN tenants t ON t.id = tr.tenant_id
-            WHERE t.slug = :slug
+            WHERE tr.tenant_id = CAST(:tenant_id AS uuid)
               AND tr.valid_from <= :ref_date
               AND (tr.valid_to IS NULL OR tr.valid_to >= :ref_date)
               {type_filter}

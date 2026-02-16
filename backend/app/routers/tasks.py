@@ -9,6 +9,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.api.deps import get_current_user
+from app.models.auth import User
 from app.tasks.task_a_validate import task_a_validate_cbs_ibs
 from app.tasks.task_b_report import task_b_compliance_report
 from app.tasks.task_c_simulation import task_c_whatif_simulation
@@ -19,13 +21,14 @@ router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])
 
 
 # ── Helpers ───────────────────────────────────────────────────
-def _tenant_id(db: Session, slug: str) -> str:
+def _get_tenant_slug(db: Session, tenant_id: str) -> str:
     row = db.execute(
-        text("SELECT id FROM tenants WHERE slug = :slug"), {"slug": slug}
+        text("SELECT slug FROM tenants WHERE id = CAST(:id AS uuid)"),
+        {"id": tenant_id}
     ).fetchone()
     if not row:
-        raise HTTPException(404, f"Tenant '{slug}' not found")
-    return str(row.id)
+        raise HTTPException(404, f"Tenant {tenant_id} not found")
+    return str(row.slug)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -40,7 +43,6 @@ class TaskAItem(BaseModel):
 
 
 class TaskARequest(BaseModel):
-    tenant_slug: str = "default"
     invoice_number: str
     issue_date: str
     declared_cbs: str
@@ -50,13 +52,19 @@ class TaskARequest(BaseModel):
 
 
 @router.post("/validate")
-def trigger_task_a(req: TaskARequest, db: Session = Depends(get_db)):
-    tid = _tenant_id(db, req.tenant_slug)
+def trigger_task_a(
+    req: TaskARequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
+    tenant_slug = _get_tenant_slug(db, tenant_id)
+
     items: list[dict[str, object]] = [it.model_dump() for it in req.items]
     if req.async_mode:
         r = cast(Task, task_a_validate_cbs_ibs).delay(
-            tenant_id=tid,
-            tenant_slug=req.tenant_slug,
+            tenant_id=tenant_id,
+            tenant_slug=tenant_slug,
             invoice_number=req.invoice_number,
             issue_date=req.issue_date,
             declared_cbs=req.declared_cbs,
@@ -65,8 +73,8 @@ def trigger_task_a(req: TaskARequest, db: Session = Depends(get_db)):
         )
         return {"task_id": r.id, "status": "QUEUED"}
     return task_a_validate_cbs_ibs(  # type: ignore[reportCallIssue]  # Celery bind=True injects self
-        tenant_id=tid,
-        tenant_slug=req.tenant_slug,
+        tenant_id=tenant_id,
+        tenant_slug=tenant_slug,
         invoice_number=req.invoice_number,
         issue_date=req.issue_date,
         declared_cbs=req.declared_cbs,
@@ -90,7 +98,6 @@ class TaskBInvoice(BaseModel):
 
 
 class TaskBRequest(BaseModel):
-    tenant_slug: str = "default"
     company_name: str
     cnpj: str
     reference_period: str                  # YYYY-MM
@@ -99,13 +106,19 @@ class TaskBRequest(BaseModel):
 
 
 @router.post("/report")
-def trigger_task_b(req: TaskBRequest, db: Session = Depends(get_db)):
-    tid = _tenant_id(db, req.tenant_slug)
+def trigger_task_b(
+    req: TaskBRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
+    tenant_slug = _get_tenant_slug(db, tenant_id)
+
     invoices: list[dict[str, object]] = [inv.model_dump() for inv in req.invoices]
     if req.async_mode:
         r = cast(Task, task_b_compliance_report).delay(
-            tenant_id=tid,
-            tenant_slug=req.tenant_slug,
+            tenant_id=tenant_id,
+            tenant_slug=tenant_slug,
             company_name=req.company_name,
             cnpj=req.cnpj,
             reference_period=req.reference_period,
@@ -113,8 +126,8 @@ def trigger_task_b(req: TaskBRequest, db: Session = Depends(get_db)):
         )
         return {"task_id": r.id, "status": "QUEUED"}
     return task_b_compliance_report(  # type: ignore[reportCallIssue]  # Celery bind=True injects self
-        tenant_id=tid,
-        tenant_slug=req.tenant_slug,
+        tenant_id=tenant_id,
+        tenant_slug=tenant_slug,
         company_name=req.company_name,
         cnpj=req.cnpj,
         reference_period=req.reference_period,
@@ -132,7 +145,6 @@ class TaskCScenario(BaseModel):
 
 
 class TaskCRequest(BaseModel):
-    tenant_slug: str = "default"
     simulation_name: str
     base_amount: str
     scenarios: list[TaskCScenario]
@@ -141,13 +153,19 @@ class TaskCRequest(BaseModel):
 
 
 @router.post("/simulate")
-def trigger_task_c(req: TaskCRequest, db: Session = Depends(get_db)):
-    tid = _tenant_id(db, req.tenant_slug)
+def trigger_task_c(
+    req: TaskCRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
+    tenant_slug = _get_tenant_slug(db, tenant_id)
+
     scenarios: list[dict[str, object]] = [sc.model_dump() for sc in req.scenarios]
     if req.async_mode:
         r = cast(Task, task_c_whatif_simulation).delay(
-            tenant_id=tid,
-            tenant_slug=req.tenant_slug,
+            tenant_id=tenant_id,
+            tenant_slug=tenant_slug,
             simulation_name=req.simulation_name,
             base_amount=req.base_amount,
             scenarios=scenarios,
@@ -155,8 +173,8 @@ def trigger_task_c(req: TaskCRequest, db: Session = Depends(get_db)):
         )
         return {"task_id": r.id, "status": "QUEUED"}
     return task_c_whatif_simulation(  # type: ignore[reportCallIssue]  # Celery bind=True injects self
-        tenant_id=tid,
-        tenant_slug=req.tenant_slug,
+        tenant_id=tenant_id,
+        tenant_slug=tenant_slug,
         simulation_name=req.simulation_name,
         base_amount=req.base_amount,
         scenarios=scenarios,
@@ -173,7 +191,6 @@ class TaskDInvoice(BaseModel):
 
 
 class TaskDRequest(BaseModel):
-    tenant_slug: str = "default"
     csv_receivables_b64: str               # base64-encoded CSV
     invoices: list[TaskDInvoice]
     tolerance: str = "0.01"
@@ -181,21 +198,27 @@ class TaskDRequest(BaseModel):
 
 
 @router.post("/reconcile")
-def trigger_task_d(req: TaskDRequest, db: Session = Depends(get_db)):
-    tid = _tenant_id(db, req.tenant_slug)
+def trigger_task_d(
+    req: TaskDRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
+    tenant_slug = _get_tenant_slug(db, tenant_id)
+
     invoices: list[dict[str, object]] = [inv.model_dump() for inv in req.invoices]
     if req.async_mode:
         r = cast(Task, task_d_reconciliation).delay(
-            tenant_id=tid,
-            tenant_slug=req.tenant_slug,
+            tenant_id=tenant_id,
+            tenant_slug=tenant_slug,
             csv_receivables_b64=req.csv_receivables_b64,
             invoices=invoices,
             tolerance=req.tolerance,
         )
         return {"task_id": r.id, "status": "QUEUED"}
     return task_d_reconciliation(  # type: ignore[reportCallIssue]  # Celery bind=True injects self
-        tenant_id=tid,
-        tenant_slug=req.tenant_slug,
+        tenant_id=tenant_id,
+        tenant_slug=tenant_slug,
         csv_receivables_b64=req.csv_receivables_b64,
         invoices=invoices,
         tolerance=req.tolerance,
@@ -206,7 +229,6 @@ def trigger_task_d(req: TaskDRequest, db: Session = Depends(get_db)):
 # Task E – HubSpot Sync
 # ══════════════════════════════════════════════════════════════
 class TaskERequest(BaseModel):
-    tenant_slug: str = "default"
     company_name: str
     cnpj: str
     domain: Optional[str] = None
@@ -217,12 +239,18 @@ class TaskERequest(BaseModel):
 
 
 @router.post("/hubspot-sync")
-def trigger_task_e(req: TaskERequest, db: Session = Depends(get_db)):
-    tid = _tenant_id(db, req.tenant_slug)
+def trigger_task_e(
+    req: TaskERequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
+    tenant_slug = _get_tenant_slug(db, tenant_id)
+
     if req.async_mode:
         r = cast(Task, task_e_hubspot_sync).delay(
-            tenant_id=tid,
-            tenant_slug=req.tenant_slug,
+            tenant_id=tenant_id,
+            tenant_slug=tenant_slug,
             company_name=req.company_name,
             cnpj=req.cnpj,
             domain=req.domain,
@@ -232,8 +260,8 @@ def trigger_task_e(req: TaskERequest, db: Session = Depends(get_db)):
         )
         return {"task_id": r.id, "status": "QUEUED"}
     return task_e_hubspot_sync(  # type: ignore[reportCallIssue]  # Celery bind=True injects self
-        tenant_id=tid,
-        tenant_slug=req.tenant_slug,
+        tenant_id=tenant_id,
+        tenant_slug=tenant_slug,
         company_name=req.company_name,
         cnpj=req.cnpj,
         domain=req.domain,

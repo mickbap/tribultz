@@ -26,7 +26,7 @@ class JobStatus(str, Enum):
 
 
 class JobCreateRequest(BaseModel):
-    tenant_slug: str = "default"
+    # tenant_slug removed - derived from auth
     job_type: str                           # e.g. "validate_batch", "import_nfe"
     payload: dict[str, Any] = Field(default_factory=dict)
     idempotency_key: Optional[str] = None   # for safe retries
@@ -76,15 +76,6 @@ def _ensure_table(db: Session):
     db.commit()
 
 
-def _get_tenant_id(db: Session, slug: str) -> str:
-    row = db.execute(
-        text("SELECT id FROM tenants WHERE slug = :slug"), {"slug": slug}
-    ).fetchone()
-    if not row:
-        raise HTTPException(404, f"Tenant '{slug}' not found")
-    return str(row.id)
-
-
 def _row_to_response(r) -> JobResponse:
     return JobResponse(
         id=str(r.id),
@@ -102,13 +93,17 @@ def _row_to_response(r) -> JobResponse:
 
 # ── Endpoints ─────────────────────────────────────────────────
 @router.post("", response_model=JobResponse, status_code=201)
-def create_job(req: JobCreateRequest, db: Session = Depends(get_db)):
+def create_job(
+    req: JobCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """
     Enqueue a new job.  If an idempotency_key is provided and already
     exists for this tenant, the existing job is returned (safe retry).
     """
     _ensure_table(db)
-    tenant_id = _get_tenant_id(db, req.tenant_slug)
+    tenant_id = str(current_user.tenant_id)
 
     # Idempotent check
     if req.idempotency_key:

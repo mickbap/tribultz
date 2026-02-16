@@ -1,25 +1,83 @@
-import os
 import sys
+import os
+from crewai import Agent, Task, Crew, Process
+import yaml
 
-# Ensure the project root is in sys.path to allow imports from 'crews.tribultz_devops'
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+def load_config(file_path):
+    with open(file_path, 'r') as f:
+        return yaml.safe_load(f)
 
-def run():
-    try:
-        from crews.tribultz_devops.crew import TribultzDevOpsCrew
-    except ImportError as e:
-        print("Error: CrewAI is not installed. Please install 'crewai' and 'crewai-tools' to run this scaffold.")
-        print(f"Details: {e}")
-        sys.exit(1)
+def main():
+    # Load configurations
+    agents_config = load_config('config/agents.yaml')
+    tasks_config = load_config('config/tasks.yaml')
 
-    # enforce dry run default
-    if os.environ.get("DRY_RUN") is None:
-        os.environ["DRY_RUN"] = "1"
+    # Create Agents
+    security_engineer = Agent(
+        role=agents_config['security_engineer']['role'],
+        goal=agents_config['security_engineer']['goal'],
+        backstory=agents_config['security_engineer']['backstory'],
+        verbose=True
+    )
 
-    if os.environ.get("DRY_RUN") == "1":
-        print("DRY RUN MODE ENABLED. No destructive changes will be applied.")
-    
-    TribultzDevOpsCrew().crew().kickoff()
+    qa_engineer = Agent(
+        role=agents_config['qa_engineer']['role'],
+        goal=agents_config['qa_engineer']['goal'],
+        backstory=agents_config['qa_engineer']['backstory'],
+        verbose=True
+    )
+
+    devops_engineer = Agent(
+        role=agents_config['devops_engineer']['role'],
+        goal=agents_config['devops_engineer']['goal'],
+        backstory=agents_config['devops_engineer']['backstory'],
+        verbose=True
+    )
+
+    # Create Tasks
+    task_scoping = Task(
+        description=tasks_config['enforce_tenant_scoping_all_routes']['description'],
+        expected_output=tasks_config['enforce_tenant_scoping_all_routes']['expected_output'],
+        agent=security_engineer
+    )
+
+    task_isolation = Task(
+        description=tasks_config['add_tenant_isolation_tests']['description'],
+        expected_output=tasks_config['add_tenant_isolation_tests']['expected_output'],
+        agent=qa_engineer
+    )
+
+    task_migration = Task(
+        description=tasks_config['alembic_baseline_migration']['description'],
+        expected_output=tasks_config['alembic_baseline_migration']['expected_output'],
+        agent=devops_engineer
+    )
+
+    task_smoke = Task(
+        description=tasks_config['console_validate_report_smoke']['description'],
+        expected_output=tasks_config['console_validate_report_smoke']['expected_output'],
+        agent=qa_engineer
+    )
+
+    # Instantiate Crew
+    tribultz_crew = Crew(
+        agents=[security_engineer, qa_engineer, devops_engineer],
+        tasks=[task_scoping, task_isolation, task_migration, task_smoke],
+        verbose=True,
+        process=Process.sequential
+    )
+
+    # Dry run check
+    if '--dry-run' in sys.argv:
+        print("Dry run mode: Crew configuration loaded successfully.")
+        print("Agents:", [agent.role for agent in tribultz_crew.agents])
+        print("Tasks:", [task.description[:50] + "..." for task in tribultz_crew.tasks])
+        return
+
+    # Execute
+    result = tribultz_crew.kickoff()
+    print("Crew Execution Completed")
+    print(result)
 
 if __name__ == "__main__":
-    run()
+    main()

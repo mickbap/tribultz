@@ -1,5 +1,3 @@
-"""Audit & Evidence Agent – ensures every execution produces auditable artifacts."""
-
 from datetime import datetime, timezone
 from hashlib import sha256
 from typing import Any, Optional
@@ -11,6 +9,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.api.deps import get_current_user
+from app.models.auth import User
 
 router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
 
@@ -21,8 +21,8 @@ class AuditEntry(BaseModel):
     entity_type: str
     entity_id: Optional[str] = None
     payload: dict[str, Any] = Field(default_factory=dict)
-    tenant_slug: str = "default"
-    user_id: Optional[str] = None
+    # tenant_slug: str = "default"  <-- REMOVED
+    # user_id: Optional[str] = None <-- REMOVED (will be current_user.id)
 
 
 class AuditRecord(BaseModel):
@@ -36,7 +36,7 @@ class AuditRecord(BaseModel):
 
 
 class AuditSearchParams(BaseModel):
-    tenant_slug: str = "default"
+    # tenant_slug: str = "default" <-- REMOVED
     entity_type: Optional[str] = None
     entity_id: Optional[str] = None
     limit: int = Field(default=50, le=200)
@@ -51,7 +51,11 @@ def _compute_checksum(payload: dict) -> str:
 
 # ── Endpoints ─────────────────────────────────────────────────
 @router.post("/log", response_model=AuditRecord)
-def create_audit_log(entry: AuditEntry, db: Session = Depends(get_db)):
+def create_audit_log(
+    entry: AuditEntry,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """
     Record an auditable event.
     Generates a checksum from the payload so that downstream
@@ -59,17 +63,7 @@ def create_audit_log(entry: AuditEntry, db: Session = Depends(get_db)):
     """
     checksum = _compute_checksum(entry.payload)
     audit_id = str(uuid4())
-
-    tenant_row = db.execute(
-        text("SELECT id FROM tenants WHERE slug = :slug"),
-        {"slug": entry.tenant_slug},
-    ).fetchone()
-
-    if not tenant_row:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail=f"Tenant '{entry.tenant_slug}' not found")
-
-    tenant_id = str(tenant_row.id)
+    tenant_id = str(current_user.tenant_id)
 
     db.execute(
         text("""
@@ -81,7 +75,7 @@ def create_audit_log(entry: AuditEntry, db: Session = Depends(get_db)):
         {
             "id": audit_id,
             "tenant_id": tenant_id,
-            "user_id": entry.user_id,
+            "user_id": str(current_user.id),
             "action": entry.action,
             "entity_type": entry.entity_type,
             "entity_id": entry.entity_id,
@@ -102,10 +96,16 @@ def create_audit_log(entry: AuditEntry, db: Session = Depends(get_db)):
 
 
 @router.post("/search", response_model=list[AuditRecord])
-def search_audit_log(params: AuditSearchParams, db: Session = Depends(get_db)):
+def search_audit_log(
+    params: AuditSearchParams,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """Search audit log entries with optional filters."""
-    filters = ["t.slug = :slug"]
-    bind: dict[str, Any] = {"slug": params.tenant_slug, "limit": params.limit}
+    tenant_id = str(current_user.tenant_id)
+
+    filters = ["al.tenant_id = CAST(:tid AS uuid)"]
+    bind: dict[str, Any] = {"tid": tenant_id, "limit": params.limit}
 
     if params.entity_type:
         filters.append("al.entity_type = :entity_type")
@@ -120,7 +120,6 @@ def search_audit_log(params: AuditSearchParams, db: Session = Depends(get_db)):
             SELECT al.id, al.tenant_id, al.action, al.entity_type,
                    al.entity_id, al.payload, al.created_at
             FROM audit_log al
-            JOIN tenants t ON t.id = al.tenant_id
             WHERE {where}
             ORDER BY al.created_at DESC
             LIMIT :limit
@@ -141,3 +140,4 @@ def search_audit_log(params: AuditSearchParams, db: Session = Depends(get_db)):
             created_at=r.created_at.isoformat() if r.created_at else "",
         ))
     return results
+

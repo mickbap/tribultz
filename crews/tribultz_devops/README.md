@@ -1,34 +1,26 @@
-# Tribultz DevOps Crew
+# Tribultz DevOps & Engineering Crew
 
-This crew automates DevOps tasks for the Tribultz platform using CrewAI.
+This crew automates critical DevOps and Engineering tasks to ensure the stability, security, and scalability of the Tribultz backend.
 
-## Setup
+## Agents
+- **Senior Security Engineer**: Enforces tenant isolation and API security.
+- **QA Automation Engineer**: Verification and testing.
+- **DevOps Engineer**: Infrastructure and migrations.
 
-This crew requires `crewai` and `crewai-tools` to be installed. These are **development dependencies** and are NOT included in the production `backend/requirements.txt`.
+## Tasks
+1.  **Enforce Tenant Scoping**: Scans code to ensure no `tenant_slug` usage in authenticated routes.
+2.  **Tenant Isolation Tests**: Runs integration tests to verify data isolation.
+3.  **Alembic Baseline**: Ensures database schema migrations are up to date.
+4.  **Console Smoke Test**: Verifies frontend build and API integration.
 
-### Integration Tests (Recommended)
-Run in a virtual environment:
+## Usage
 
+Run the crew:
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-pip install crewai crewai-tools
-```
-
-## Running
-
-### Dry Run (Default)
-By default, the crew runs in **DRY RUN** mode. It will print the actions it *would* take but will NOT execute any destructive commands (like shell commands or docker operations that modify state).
-
-```bash
-# Run in dry-run mode (default)
 python main.py
 ```
 
-### Execution Mode
-To actually execute the commands, set `DRY_RUN=0` (or `false`):
-
+Safe Dry Run (simulated):
 ```bash
-# Run with execution enabled
-DRY_RUN=0 python main.py
+python main.py --dry-run
 ```
