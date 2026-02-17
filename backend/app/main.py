@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, audit, health, jobs, tasks, validate, validation
+from app.routers import auth, audit, chat, health, jobs, tasks, validate, validation
 
 app = FastAPI(
     title="Tribultz API",
@@ -28,6 +28,7 @@ app.include_router(validation.router)
 app.include_router(audit.router)
 app.include_router(jobs.router)
 app.include_router(tasks.router)
+app.include_router(chat.router)
 
 
 @app.get("/", tags=["root"])
