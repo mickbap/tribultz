@@ -1,0 +1,25 @@
+classify_intent:
+  description: >
+    Classify the user message into one of: validate, unknown.
+    Use only keywords/regex rules. Do not invent.
+    Message: {message}
+  expected_output: >
+    A single word: validate OR unknown.
+
+trigger_validate_task_a:
+  description: >
+    If intent is validate, trigger Task A for tenant {tenant_id}.
+    Use TriggerTaskATool. Return the job id.
+  expected_output: >
+    JSON with: {"job_id": "<uuid>"}.
+
+compose_response:
+  description: >
+    Write response_markdown and evidence[].
+    evidence must be typed:
+      - type="job"
+      - job_id UUID
+      - href "/jobs/<id>"
+      - label "Validation job"
+  expected_output: >
+    JSON with: {"response_markdown": "...", "evidence": [{...}]}.

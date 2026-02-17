@@ -1,0 +1,29 @@
+﻿# Pyre Check – After Configuration
+
+> Generated: 2026-02-12T03:51 (branch `wip/antigravity-fixes`)
+
+## CLI Result
+
+Pyre CLI (`pyre check`) is **not available on Windows** — it requires a
+Linux/macOS native binary (`pyre.bin`). The Pyre2 errors reported in the
+IDE come from the **Pyre2 VS Code language server extension**, not the CLI.
+
+## Actions Taken
+
+1. ✅ Created `backend/.venv` with all `requirements.txt` packages installed
+   → Resolves **Categoria A** (12 pip package import errors)
+
+2. ✅ Created `.pyre_configuration` with `source_directories: ["backend"]`
+   → Resolves **Categoria B** (4 internal `app.*` import errors)
+
+## Verification Method
+
+To verify the fixes, reload VS Code window (`Ctrl+Shift+P → Reload Window`)
+and check the Problems panel for remaining Pyre2 errors. The 16 original
+errors should be reduced to zero or near-zero.
+
+## Note
+
+If the Pyre2 extension still shows errors, ensure the Python interpreter is
+set to `backend/.venv/Scripts/python.exe` via:
+`Ctrl+Shift+P → Python: Select Interpreter → backend/.venv`

@@ -1,0 +1,37 @@
+enforce_tenant_scoping_all_routes:
+  description: >
+    Scan all authenticated backend routes (in `backend/app/routers`) to ensure that `tenant_slug` is NOT used as a parameter or variable.
+    Instead, verify that `current_user.tenant_id` is used for tenant scoping.
+    Fail the task if any usage of `tenant_slug` is found in active logic (excluding comments).
+  expected_output: >
+    A report listing any violations found, or a success message if all routes are properly scoped.
+  agent: security_engineer
+
+add_tenant_isolation_tests:
+  description: >
+    Create integration tests in `backend/tests/integration/test_isolation.py` to verify tenant isolation.
+    1. Test that a user from Tenant A cannot access/trigger jobs for Tenant B.
+    2. Test that a user from Tenant A cannot view audit logs of Tenant B.
+    Use `pytest` to run these tests and confirm they pass.
+  expected_output: >
+    The content of `test_isolation.py` and the result of the `pytest` run.
+  agent: qa_engineer
+
+alembic_baseline_migration:
+  description: >
+    Verify that the current database schema matches the `2026_02_16_0001_baseline.py` migration.
+    Run `alembic upgrade head` to ensure the database is up to date.
+    Update `backend/README.md` to document the migration process.
+  expected_output: >
+    Confirmation that migrations are applied and documentation is updated.
+  agent: devops_engineer
+
+console_validate_report_smoke:
+  description: >
+    Perform a smoke test of the frontend console.
+    1. Run `npm run build` in `frontend/`.
+    2. Simulate a user logging in and accessing the `/validate` and `/report` pages.
+    3. Verify that the API endpoints `/api/v1/tasks/validate` and `/api/v1/tasks/report` are called correctly with the Authorization header.
+  expected_output: >
+    A report of the build status and smoke test results.
+  agent: qa_engineer
