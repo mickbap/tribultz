@@ -1,4 +1,4 @@
-"""Orchestration / Job Control Agent – manages async job lifecycle."""
+﻿"""Orchestration / Job Control Agent â€“ manages async job lifecycle."""
 
 from enum import Enum
 from typing import Any, Optional
@@ -16,7 +16,7 @@ from app.models.auth import User
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
 
 
-# ── Enums & Schemas ──────────────────────────────────────────
+# â”€â”€ Enums & Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class JobStatus(str, Enum):
     QUEUED = "QUEUED"
     RUNNING = "RUNNING"
@@ -51,7 +51,7 @@ class JobResponse(BaseModel):
     updated_at: str
 
 
-# ── Bootstrap (ensure jobs table exists) ─────────────────────
+# â”€â”€ Bootstrap (ensure jobs table exists) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 _JOBS_DDL = """
 CREATE TABLE IF NOT EXISTS jobs (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -91,7 +91,7 @@ def _row_to_response(r) -> JobResponse:
     )
 
 
-# ── Endpoints ─────────────────────────────────────────────────
+# â”€â”€ Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @router.post("", response_model=JobResponse, status_code=201)
 def create_job(
     req: JobCreateRequest,
@@ -136,7 +136,7 @@ def create_job(
     db.commit()
 
     row = db.execute(
-        text("SELECT * FROM jobs WHERE id = :id"), {"id": job_id}
+        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"), { "id": job_id, "tid": str(current_user.tenant_id) }
     ).fetchone()
     return _row_to_response(row)
 
@@ -146,7 +146,7 @@ def get_job(job_id: str, db: Session = Depends(get_db)):
     """Get job status by ID."""
     _ensure_table(db)
     row = db.execute(
-        text("SELECT * FROM jobs WHERE id = :id"), {"id": job_id}
+        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"), { "id": job_id, "tid": str(current_user.tenant_id) }
     ).fetchone()
     if not row:
         raise HTTPException(404, "Job not found")
@@ -173,11 +173,11 @@ def update_job(job_id: str, req: JobUpdateRequest, db: Session = Depends(get_db)
         params["err"] = req.error_message
 
     set_clause = ", ".join(updates)
-    db.execute(text(f"UPDATE jobs SET {set_clause} WHERE id = :id"), params)
+    db.execute(text(f"UPDATE jobs SET {set_clause} WHERE id = :id AND tenant_id = :tid"), params)
     db.commit()
 
     row = db.execute(
-        text("SELECT * FROM jobs WHERE id = :id"), {"id": job_id}
+        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"), { "id": job_id, "tid": str(current_user.tenant_id) }
     ).fetchone()
     if not row:
         raise HTTPException(404, "Job not found")
@@ -223,7 +223,7 @@ def reprocess_job(job_id: str, db: Session = Depends(get_db)):
     """
     _ensure_table(db)
     row = db.execute(
-        text("SELECT * FROM jobs WHERE id = :id"), {"id": job_id}
+        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"), { "id": job_id, "tid": str(current_user.tenant_id) }
     ).fetchone()
     if not row:
         raise HTTPException(404, "Job not found")
@@ -233,12 +233,13 @@ def reprocess_job(job_id: str, db: Session = Depends(get_db)):
         )
 
     db.execute(
-        text("UPDATE jobs SET status = 'QUEUED', error_message = NULL, updated_at = now() WHERE id = :id"),
-        {"id": job_id},
+        text("UPDATE jobs SET status = 'QUEUED', error_message = NULL, updated_at = now() WHERE id = :id AND tenant_id = :tid"),
+        { "id": job_id, "tid": str(current_user.tenant_id) },
     )
     db.commit()
 
     row = db.execute(
-        text("SELECT * FROM jobs WHERE id = :id"), {"id": job_id}
+        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"), { "id": job_id, "tid": str(current_user.tenant_id) }
     ).fetchone()
     return _row_to_response(row)
+
