@@ -1,0 +1,57 @@
+﻿# CI - Snapshot de Workflows (GitHub Actions)
+Objetivo: registrar configuracao atual para corrigir reprovacoes de CI.
+
+## ci.yml
+~~~yml
+name: ci
+
+on:
+  push:
+    branches: ["wip/antigravity-fixes"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend deps
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff pytest
+
+      - name: Ruff (lint)
+        working-directory: backend
+        run: ruff check .
+
+      - name: Pyright (typing)
+        run: npx --yes pyright@latest
+
+      - name: Pytest
+        working-directory: backend
+        run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install and build frontend
+        working-directory: frontend
+        run: |
+          npm ci || npm install
+          npm run build
+
+~~~
