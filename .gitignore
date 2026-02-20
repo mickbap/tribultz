@@ -214,3 +214,5 @@ backend/pyright_output.txt
 
 reports/
 .tmp_*.ps1
+!frontend/src/lib/
+!frontend/src/lib/api.ts
