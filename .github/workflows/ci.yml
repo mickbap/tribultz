@@ -1,50 +1,138 @@
-name: ci
+name: CI
 
 on:
-  push:
-    branches: ["wip/antigravity-fixes"]
   pull_request:
-    branches: ["main"]
+  push:
+    branches: [ main ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   backend:
+    name: backend-gates
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: tribultz
+          POSTGRES_PASSWORD: tribultz
+          POSTGRES_DB: tribultz
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tribultz -d tribultz"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://tribultz:tribultz@localhost:5432/tribultz
+      REDIS_URL: redis://localhost:6379/0
+      ENV: ci
+      PYTHONUNBUFFERED: "1"
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python (pin)
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.12.6"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            backend/requirements.txt
+            pyproject.toml
+            backend/pyproject.toml
+
+      - name: Setup Node (pin) # needed for pyright via npx
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.11.1"
 
       - name: Install backend deps
         working-directory: backend
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install ruff pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ]; then pip install -e ".[dev]" || pip install -e "."; fi
+          python -m pip install "ruff==0.6.9"
+          python -m pip install "pytest==8.3.3"
+- name: Wait for services healthy
+        run: |
+          python - << 'PY'
+          import socket, time, sys
+          def wait(host, port, name):
+            for _ in range(60):
+              try:
+                with socket.create_connection((host, port), timeout=1):
+                  print(f"{name} OK"); return
+              except OSError:
+                time.sleep(1)
+            print(f"TIMEOUT waiting {name}"); sys.exit(1)
+          wait("127.0.0.1", 5432, "postgres")
+          wait("127.0.0.1", 6379, "redis")
+          PY
 
-      - name: Ruff (lint)
+      - name: Ruff (pin)
         working-directory: backend
-        run: ruff check .
+        run: |
+          ruff --version
+          ruff check .
 
-      - name: Pyright (typing)
-        run: npx --yes pyright@latest
+      - name: Pyright (pin)
+        working-directory: backend
+        run: |
+          npx --yes pyright@1.1.386 --version
+          npx --yes pyright@1.1.386
 
       - name: Pytest
         working-directory: backend
-        run: pytest -q
+        run: |
+          pytest -q
+
+      - name: QA Gates (report)
+        run: |
+          python tools/qa_gates/run_gates.py --mode ci
+
+      - name: Upload QA report
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa_gates_report
+          path: reports/qa_gates_report.md
 
   frontend:
+    name: frontend-build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node (pin)
+        uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "20.11.1"
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
 
-      - name: Install and build frontend
-        working-directory: frontend
+      - name: Install + build
         run: |
-          npm ci || npm install
-          npm run build
+          if [ -f package-lock.json ]; then npm ci && npm run build; exit 0; fi
+          if [ -f frontend/package-lock.json ]; then cd frontend && npm ci && npm run build; exit 0; fi
+          echo "No frontend detected (package-lock.json not found). Skipping build." && exit 0

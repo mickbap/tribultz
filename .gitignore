@@ -211,3 +211,6 @@ __marimo__/
 
 backend/pyright_output.txt
 
+
+reports/
+.tmp_*.ps1

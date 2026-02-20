@@ -23,3 +23,27 @@ compose_response:
       - label "Validation job"
   expected_output: >
     JSON with: {"response_markdown": "...", "evidence": [{...}]}.
+
+qa_validate_gates:
+  description: >
+    Execute os gates finais do Tribultz e produza um relatório anexável em PR.
+
+    Gates obrigatórios (mínimo):
+    1) Auth: /api/v1/chat/message retorna 401 sem token
+    2) Anti-IDOR (Jobs): tenant B não acessa job do tenant A (404/403)
+    3) Contrato /chat/message:
+       - conversation_id (uuid)
+       - response_markdown (string)
+       - evidence[] tipada: {type:"job", job_id, href, label}
+    4) Valida 422 quando message > 4000 chars
+    5) Valida 429 rate limit (login e/ou chat) sem flakiness
+    6) ruff / pyright / pytest (pass)
+    7) build do frontend (pass)
+
+    Seu relatório final DEVE:
+    - ter uma seção por gate (✅/❌)
+    - para cada ❌ incluir causa provável, evidência (log/stack/endpoint) e ação recomendada
+    - concluir com risco e recomendação GO/NO-GO
+  expected_output: >
+    Um arquivo Markdown em reports/qa_gates_report.md com gates ✅/❌, falhas acionáveis e recomendação final.
+  agent: qa_specialist
