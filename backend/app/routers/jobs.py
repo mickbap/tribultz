@@ -136,17 +136,24 @@ def create_job(
     db.commit()
 
     row = db.execute(
-        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"), { "id": job_id, "tid": str(current_user.tenant_id) }
+        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"),
+        {"id": job_id, "tid": tenant_id},
     ).fetchone()
     return _row_to_response(row)
 
 
 @router.get("/{job_id}", response_model=JobResponse)
-def get_job(job_id: str, db: Session = Depends(get_db)):
+def get_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """Get job status by ID."""
     _ensure_table(db)
+    tenant_id = str(current_user.tenant_id)
     row = db.execute(
-        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"), { "id": job_id, "tid": str(current_user.tenant_id) }
+        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"),
+        {"id": job_id, "tid": tenant_id},
     ).fetchone()
     if not row:
         raise HTTPException(404, "Job not found")
@@ -154,7 +161,12 @@ def get_job(job_id: str, db: Session = Depends(get_db)):
 
 
 @router.patch("/{job_id}", response_model=JobResponse)
-def update_job(job_id: str, req: JobUpdateRequest, db: Session = Depends(get_db)):
+def update_job(
+    job_id: str,
+    req: JobUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """
     Transition a job to a new status.
     Used by the worker or human-in-the-loop to mark progress.
@@ -163,7 +175,8 @@ def update_job(job_id: str, req: JobUpdateRequest, db: Session = Depends(get_db)
     import json
 
     updates = ["status = :status", "updated_at = now()"]
-    params: dict[str, Any] = {"id": job_id, "status": req.status.value}
+    tenant_id = str(current_user.tenant_id)
+    params: dict[str, Any] = {"id": job_id, "tid": tenant_id, "status": req.status.value}
 
     if req.result is not None:
         updates.append("result = CAST(:result AS jsonb)")
@@ -177,7 +190,8 @@ def update_job(job_id: str, req: JobUpdateRequest, db: Session = Depends(get_db)
     db.commit()
 
     row = db.execute(
-        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"), { "id": job_id, "tid": str(current_user.tenant_id) }
+        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"),
+        {"id": job_id, "tid": tenant_id},
     ).fetchone()
     if not row:
         raise HTTPException(404, "Job not found")
@@ -217,13 +231,19 @@ def list_jobs(
 
 
 @router.post("/{job_id}/reprocess", response_model=JobResponse)
-def reprocess_job(job_id: str, db: Session = Depends(get_db)):
+def reprocess_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """
     Reset a FAILED or NEEDS_HUMAN job back to QUEUED for idempotent retry.
     """
     _ensure_table(db)
+    tenant_id = str(current_user.tenant_id)
     row = db.execute(
-        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"), { "id": job_id, "tid": str(current_user.tenant_id) }
+        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"),
+        {"id": job_id, "tid": tenant_id},
     ).fetchone()
     if not row:
         raise HTTPException(404, "Job not found")
@@ -234,12 +254,13 @@ def reprocess_job(job_id: str, db: Session = Depends(get_db)):
 
     db.execute(
         text("UPDATE jobs SET status = 'QUEUED', error_message = NULL, updated_at = now() WHERE id = :id AND tenant_id = :tid"),
-        { "id": job_id, "tid": str(current_user.tenant_id) },
+        {"id": job_id, "tid": tenant_id},
     )
     db.commit()
 
     row = db.execute(
-        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"), { "id": job_id, "tid": str(current_user.tenant_id) }
+        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"),
+        {"id": job_id, "tid": tenant_id},
     ).fetchone()
     return _row_to_response(row)
 
