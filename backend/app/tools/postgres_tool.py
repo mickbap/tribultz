@@ -15,6 +15,30 @@ def _session() -> Session:
     return SessionLocal()
 
 
+_JOBS_DDL = """
+CREATE TABLE IF NOT EXISTS jobs (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    job_type        VARCHAR(100) NOT NULL,
+    status          VARCHAR(30)  NOT NULL DEFAULT 'QUEUED',
+    idempotency_key VARCHAR(200),
+    payload         JSONB NOT NULL DEFAULT '{}',
+    result          JSONB,
+    error_message   TEXT,
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    UNIQUE (tenant_id, idempotency_key)
+);
+CREATE INDEX IF NOT EXISTS idx_jobs_tenant ON jobs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(tenant_id, status);
+"""
+
+
+def _ensure_jobs_table(db: Session) -> None:
+    db.execute(text(_JOBS_DDL))
+    db.commit()
+
+
 # ── 1. Audit Log ──────────────────────────────────────────────
 def insert_audit_log(
     tenant_id: str,
@@ -142,6 +166,61 @@ def persist_artifact_metadata(
 
 
 # ── 4. Job Status Update ─────────────────────────────────────
+def get_tenant_slug(tenant_id: str) -> str:
+    """Resolve tenant slug from tenant UUID string."""
+    db = _session()
+    try:
+        row = db.execute(
+            text("SELECT slug FROM tenants WHERE id = CAST(:id AS uuid)"),
+            {"id": tenant_id},
+        ).fetchone()
+        if not row:
+            raise ValueError(f"Tenant not found for id={tenant_id}")
+        return str(row.slug)
+    finally:
+        db.close()
+
+
+def job_create(
+    *,
+    job_id: str,
+    tenant_id: str,
+    job_type: str,
+    payload: Optional[dict] = None,
+    idempotency_key: Optional[str] = None,
+) -> dict:
+    """Create a QUEUED job row with a deterministic job_id."""
+    db = _session()
+    try:
+        _ensure_jobs_table(db)
+        db.execute(
+            text(
+                """
+                INSERT INTO jobs (id, tenant_id, job_type, status, idempotency_key, payload)
+                VALUES (
+                    CAST(:id AS uuid),
+                    CAST(:tenant_id AS uuid),
+                    :job_type,
+                    'QUEUED',
+                    :idempotency_key,
+                    CAST(:payload AS jsonb)
+                )
+                """
+            ),
+            {
+                "id": job_id,
+                "tenant_id": tenant_id,
+                "job_type": job_type,
+                "idempotency_key": idempotency_key,
+                "payload": json.dumps(payload or {}, default=str),
+            },
+        )
+        db.commit()
+        return {"id": job_id, "status": "QUEUED"}
+    finally:
+        db.close()
+
+
 def job_status_update(
     job_id: str,
     status: str,
