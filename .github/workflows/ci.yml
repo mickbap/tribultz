@@ -115,6 +115,7 @@ jobs:
           python tools/qa_gates/run_gates.py --mode ci
 
       - name: Upload QA report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: qa_gates_report
