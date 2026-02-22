@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock, Mock
+from typing import cast
+from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
 
+from app.crews.executor import TribultzChatOpsExecutor
 from app.services.chat_service import ChatService, render_br_tax_response
 
 
@@ -48,11 +50,9 @@ def test_handle_message_validate_uses_br_template() -> None:
     service.rate_limiter = Mock()
     service.rate_limiter.check_or_raise = Mock()
 
-    class _Executor:
-        async def trigger_task_a(self, *, tenant_id, user_id, message):  # noqa: ANN001
-            return job_id
-
-    service.executor = _Executor()
+    executor = Mock(spec=TribultzChatOpsExecutor)
+    executor.trigger_task_a = AsyncMock(return_value=job_id)
+    service.executor = cast(TribultzChatOpsExecutor, executor)
 
     result = asyncio.run(
         service.handle_message(
