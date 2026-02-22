@@ -1,22 +1,22 @@
-# Resultado (Tribultz - Padrao Fiscal BR)
+# Resultado (Tribultz — Padrão Fiscal BR)
 
 ## Resultado
 - **Status:** {STATUS}  <!-- ex: OK / ALERTA / FALHA -->
 - **Resumo executivo:** {RESUMO_EXECUTIVO}
 
-## Evidencias
-> Cada evidencia deve ser tipada e rastreavel (Job/Audit).
-- **Job:** [{JOB_LABEL}]({JOB_HREF}) - `job_id={JOB_ID}`
-- **Audit (se aplicavel):** {AUDIT_REF}
+## Evidências
+> Cada evidência deve ser **tipada** e **rastreável** (Job/Audit).
+- **Job:** [{JOB_LABEL}]({JOB_HREF}) — `job_id={JOB_ID}`
+- **Audit (se aplicável):** {AUDIT_REF}
 
-## Observacoes / Premissas
+## Observações / Premissas
 - **Premissas consideradas:** {PREMISSAS}
 - **Limites / Incertezas:** {LIMITES}
-- **Recomendacao pratica:** {RECOMENDACAO}
+- **Recomendação prática:** {RECOMENDACAO}
 
-## Detalhamento tecnico (opcional)
+## Detalhamento técnico (opcional)
 - **Regras avaliadas (CBS/IBS):** {REGRAS}
-- **Itens com divergencia:** {DIVERGENCIAS}
+- **Itens com divergência:** {DIVERGENCIAS}
 
 ## Valores (se houver)
 - **Valores em BRL:** {VALORES_BRL}  <!-- Formato: R$ 1.234,56 -->
