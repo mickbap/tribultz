@@ -1,107 +1,147 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import AuthGuard from "@/auth/AuthGuard";
-import { apiGet } from "@/services/api";
-import type { AuditSearchResponse, AuditLogItem } from "@/types/audit";
-
-function q(params: Record<string, string | undefined>) {
-    const sp = new URLSearchParams();
-    for (const [k, v] of Object.entries(params)) if (v) sp.set(k, v);
-    const s = sp.toString();
-    return s ? `?${s}` : "";
-}
+import { JsonViewer } from "@/components/common/JsonViewer";
+import { Skeleton } from "@/components/common/Skeleton";
+import { Toast } from "@/components/common/Toast";
+import { getAudits } from "@/lib/api";
+import { AuditLog } from "@/lib/types";
 
 function AuditContent() {
-    const searchParams = useSearchParams();
-    const action = searchParams.get("action") ?? undefined;
-    const entity = searchParams.get("entity") ?? undefined;
-    const limit = searchParams.get("limit") ?? "50";
-    const offset = searchParams.get("offset") ?? "0";
+  const searchParams = useSearchParams();
+  const jobIdFromUrl = searchParams.get("job_id") ?? "";
 
-    const [items, setItems] = useState<AuditLogItem[]>([]);
-    const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
+  const [audits, setAudits] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState(jobIdFromUrl);
+  const [actionFilter, setActionFilter] = useState("");
+  const [selected, setSelected] = useState<AuditLog | null>(null);
 
-    useEffect(() => {
-        const qs = q({ action, entity, limit, offset });
-        apiGet<AuditSearchResponse>(`/api/v1/audit/search${qs}`)
-            .then((data) => setItems(data.items ?? []))
-            .catch((err) => setError(String(err)))
-            .finally(() => setLoading(false));
-    }, [action, entity, limit, offset]);
+  useEffect(() => {
+    setLoading(true);
+    setQuery(jobIdFromUrl);
+    getAudits(jobIdFromUrl || undefined)
+      .then(setAudits)
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [jobIdFromUrl]);
 
-    if (loading) return <p>Loading…</p>;
-    if (error) return <p style={{ color: "#f87171" }}>Error: {error}</p>;
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const action = actionFilter.trim().toLowerCase();
+    return audits.filter((row) => {
+      if (q) {
+        const haystack = [row.id, row.jobId ?? "", row.action].join(" ").toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      if (action && !row.action.toLowerCase().includes(action)) return false;
+      return true;
+    });
+  }, [audits, query, actionFilter]);
 
-    return (
-        <>
-            <form style={{ display: "flex", gap: 12, margin: "12px 0" }}>
-                <input name="action" placeholder="action" defaultValue={action ?? ""} />
-                <input name="entity" placeholder="entity" defaultValue={entity ?? ""} />
-                <input name="limit" placeholder="limit" defaultValue={limit} style={{ width: 100 }} />
-                <input name="offset" placeholder="offset" defaultValue={offset} style={{ width: 100 }} />
-                <button type="submit">Buscar</button>
-            </form>
+  return (
+    <section className="space-y-4">
+      <header>
+        <h1 className="text-2xl font-bold text-slate-900">Auditoria</h1>
+        <p className="text-sm text-slate-500">Rastreamento de eventos por job, tenant e ação.</p>
+      </header>
 
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                    <tr>
-                        <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Quando</th>
-                        <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Action</th>
-                        <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Entity</th>
-                        <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Entity ID</th>
-                        <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Checksum</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {items.map((it) => (
-                        <tr key={it.id}>
-                            <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{it.created_at ?? ""}</td>
-                            <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{it.action}</td>
-                            <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{it.entity ?? ""}</td>
-                            <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{it.entity_id ?? ""}</td>
-                            <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0", fontFamily: "monospace" }}>{it.checksum ?? ""}</td>
-                        </tr>
-                    ))}
-                </tbody>
+      <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-2">
+        <label className="text-sm">
+          <span className="mb-1 block text-slate-500">Filtro por Job ID</span>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="job_id, action, audit id"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-slate-500">Filtro por ação</span>
+          <input
+            value={actionFilter}
+            onChange={(e) => setActionFilter(e.target.value)}
+            placeholder="validation_succeeded"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2"
+          />
+        </label>
+      </div>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        {loading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <p className="text-sm text-slate-500">Nenhum evento de auditoria encontrado.</p>
+        ) : (
+          <div className="scroll-thin overflow-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-left text-slate-500">
+                  <th className="px-2 py-2">Quando</th>
+                  <th className="px-2 py-2">Ação</th>
+                  <th className="px-2 py-2">Job</th>
+                  <th className="px-2 py-2">Detalhe</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((item) => (
+                  <tr key={item.id} className="border-b border-slate-100">
+                    <td className="px-2 py-2 text-slate-600">{new Date(item.createdAt).toLocaleString()}</td>
+                    <td className="px-2 py-2 font-medium text-slate-800">{item.action}</td>
+                    <td className="px-2 py-2 text-slate-600">{item.jobId ?? "-"}</td>
+                    <td className="px-2 py-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelected(item)}
+                        className="text-tribultz-700 hover:underline"
+                      >
+                        Ver JSON
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
+          </div>
+        )}
+      </section>
 
-            <div style={{ marginTop: 12, display: "flex", gap: 12 }}>
-                <a
-                    href={`/audit${q({
-                        action,
-                        entity,
-                        limit,
-                        offset: String(Math.max(0, Number(offset) - Number(limit))),
-                    })}`}
-                >
-                    ← Prev
-                </a>
-                <a
-                    href={`/audit${q({
-                        action,
-                        entity,
-                        limit,
-                        offset: String(Number(offset) + Number(limit)),
-                    })}`}
-                >
-                    Next →
-                </a>
+      {selected ? (
+        <div className="fixed inset-0 z-40 bg-slate-900/40" role="dialog" aria-modal="true">
+          <div className="mx-auto mt-10 w-[95%] max-w-2xl rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">Detalhe da auditoria</p>
+                <p className="text-xs text-slate-500">{selected.id}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                className="rounded border border-slate-300 px-2 py-1 text-xs"
+              >
+                Fechar
+              </button>
             </div>
-        </>
-    );
+            <JsonViewer title="Payload" data={selected.payload} />
+          </div>
+        </div>
+      ) : null}
+
+      {error ? <Toast message={error} tone="error" onClose={() => setError(null)} /> : null}
+    </section>
+  );
 }
 
 export default function AuditPage() {
-    return (
-        <AuthGuard>
-            <main style={{ padding: 24 }}>
-                <h1>Auditoria</h1>
-                <p>Busca read-only no audit log.</p>
-                <AuditContent />
-            </main>
-        </AuthGuard>
-    );
+  return (
+    <Suspense fallback={<Skeleton className="h-24 w-full" />}>
+      <AuditContent />
+    </Suspense>
+  );
 }
