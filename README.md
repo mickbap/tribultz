@@ -1,6 +1,13 @@
 ﻿# tribultz
 Plataforma de compliance e simulaÃ§Ã£o CBS/IBS (Reforma 2026): validaÃ§Ã£o fiscal em tempo real, reconciliaÃ§Ã£o, trilha auditÃ¡vel e dashboard executivo.
 
+## Status Sprint 5 (P0+P1)
+- Concluida no repositorio canonical `mickbap/tribultz`.
+- Fluxo demo oficial: `Login -> Dashboard -> Chat -> Validar CBS/IBS -> Job -> Audit`.
+- Console roda em Mock Mode por padrao (ON) e suporta API Mode.
+- Em API Mode, toda request envia `Authorization: Bearer <token>` e `X-Tenant-Id: <tenant>`.
+- Login real depende de backend/credenciais validos no ambiente.
+- `mickbap/tribultz-console-navigator` fica somente como referencia/export do Lovable (nao canonical).
 <!-- SPRINT4-START -->
 ## Runbook rapido (Dev/QA) - Chat Fiscal MVP
 
@@ -48,4 +55,5 @@ Bearer <access_token>
 ### Seguranca (Jobs anti-IDOR)
 Endpoints de Jobs sao tenant-scoped; tenants diferentes nao listam nem acessam jobs uns dos outros.
 <!-- SPRINT4-END -->
+
 

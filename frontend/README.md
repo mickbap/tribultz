@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+﻿# TRIBULTZ Console v2 (Sprint 5)
 
-## Getting Started
+Frontend Next.js (App Router + TypeScript + Tailwind) com **Mock Mode ON por padrão** e integração opcional com API FastAPI.
 
-First, run the development server:
+## Requisitos
+- Node 20+
+- npm 10+
 
+## Instalação
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Rodar local (Mock Mode)
+```bash
+npm run dev
+```
+Acesse `http://localhost:3000/login` e clique em **Entrar (Demo)**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Build
+```bash
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Modos de execução
 
-## Learn More
+### Mock Mode (default ON)
+- Funciona sem backend.
+- Simula chat, jobs e audit de forma determinística.
+- Simula transição de job `RUNNING -> SUCCESS`.
 
-To learn more about Next.js, take a look at the following resources:
+### API Mode
+1. Configure `NEXT_PUBLIC_API_BASE_URL` no `.env.local`:
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+```
+2. Em `/login`, use **Entrar (API)** com `email`, `password` e tenant.
+3. O login usa `POST /api/v1/auth/login` e salva `access_token` no storage.
+4. Em `/settings`, você também pode ajustar tenant/token manualmente.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Toda request em API Mode envia:
+- `Authorization: Bearer <token>`
+- `X-Tenant-Id: <tenant>`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Fluxo principal de demo
+`Login -> Dashboard -> Chat -> Validar CBS/IBS -> Job -> Audit`
 
-## Deploy on Vercel
+## Legado
+- `/validate` redireciona para `/chat`.
+- `/report` redireciona para `/jobs`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Estrutura principal
+- `src/app/login`
+- `src/app/dashboard`
+- `src/app/chat`
+- `src/app/jobs`
+- `src/app/jobs/[id]`
+- `src/app/audit`
+- `src/app/settings`
+- `src/components/*`
+- `src/lib/api.ts`
+- `src/lib/mock.ts`
+- `src/lib/types.ts`
+- `src/lib/storage.ts`
+## Governanca de repositorio
+- Repositorio canonical do produto: `mickbap/tribultz`.
+- `mickbap/tribultz-console-navigator` e apenas referencia/export do Lovable.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
