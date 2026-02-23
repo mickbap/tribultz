@@ -62,3 +62,7 @@ Toda request em API Mode envia:
 - `src/lib/mock.ts`
 - `src/lib/types.ts`
 - `src/lib/storage.ts`
+## Governanca de repositorio
+- Repositorio canonical do produto: `mickbap/tribultz`.
+- `mickbap/tribultz-console-navigator` e apenas referencia/export do Lovable.
+
