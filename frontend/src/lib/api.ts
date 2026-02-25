@@ -1,23 +1,33 @@
 ﻿import {
   ApiAudit,
+  ApiExceptionRequest,
   ApiJob,
   AuditLog,
   ChatApiResponse,
   ChatRequest,
   Conversation,
+  ExceptionDecision,
+  ExceptionRequest,
   Job,
   NormalizedChatResponse,
+  ValidateXmlRequest,
+  ValidationResultV11,
   normalizeAudit,
   normalizeChatResponse,
+  normalizeException,
   normalizeJob,
 } from "./types";
 import {
+  mockDecideException,
   mockGetConversation,
   mockGetJob,
   mockListAudits,
   mockListConversations,
+  mockListExceptions,
   mockListJobs,
+  mockOpenException,
   mockPostChatMessage,
+  mockValidateXml,
   resetMockData,
 } from "./mock";
 import { getMockMode, getTenantId, getToken } from "./storage";
@@ -89,6 +99,17 @@ export async function postChatMessage(payload: ChatRequest): Promise<NormalizedC
   return normalizeChatResponse(raw);
 }
 
+export async function validateXml(payload: ValidateXmlRequest): Promise<ValidationResultV11> {
+  const tenantId = getTenantId();
+  if (getMockMode()) {
+    return mockValidateXml(tenantId, payload);
+  }
+  return apiFetch<ValidationResultV11>("/api/v1/validate/xml", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function listConversations(): Promise<Conversation[]> {
   if (getMockMode()) {
     return mockListConversations(getTenantId());
@@ -109,7 +130,7 @@ export async function getJobs(): Promise<Job[]> {
     return mockListJobs(tenantId);
   }
   const payload = await apiFetch<ApiJob[] | { items?: ApiJob[] }>("/api/v1/jobs");
-  const rows = Array.isArray(payload) ? payload : (payload.items ?? []);
+  const rows = Array.isArray(payload) ? payload : payload.items ?? [];
   return rows.map((row) => normalizeJob(row, tenantId));
 }
 
@@ -129,12 +150,52 @@ export async function getAudits(jobId?: string): Promise<AuditLog[]> {
   }
   const q = jobId ? `?job_id=${encodeURIComponent(jobId)}` : "";
   const payload = await apiFetch<ApiAudit[] | { items?: ApiAudit[] }>(`/api/v1/audit${q}`);
-  const rows = Array.isArray(payload) ? payload : (payload.items ?? []);
+  const rows = Array.isArray(payload) ? payload : payload.items ?? [];
   return rows.map((row) => normalizeAudit(row, tenantId));
 }
 
 export async function getAudit(jobId?: string): Promise<AuditLog[]> {
   return getAudits(jobId);
+}
+
+export async function openExceptionRequest(payload: {
+  job_id: string;
+  finding_id: string;
+  rule_id: string;
+  justification: string;
+  created_by: string;
+}): Promise<ExceptionRequest> {
+  const tenantId = getTenantId();
+  if (getMockMode()) {
+    return mockOpenException(tenantId, payload);
+  }
+  const row = await apiFetch<ApiExceptionRequest>("/api/v1/exceptions", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return normalizeException(row, tenantId);
+}
+
+export async function listExceptionRequests(): Promise<ExceptionRequest[]> {
+  const tenantId = getTenantId();
+  if (getMockMode()) {
+    return mockListExceptions(tenantId);
+  }
+  const payload = await apiFetch<ApiExceptionRequest[] | { items?: ApiExceptionRequest[] }>("/api/v1/exceptions");
+  const rows = Array.isArray(payload) ? payload : payload.items ?? [];
+  return rows.map((row) => normalizeException(row, tenantId));
+}
+
+export async function decideExceptionRequest(exceptionId: string, decision: ExceptionDecision): Promise<ExceptionRequest> {
+  const tenantId = getTenantId();
+  if (getMockMode()) {
+    return mockDecideException(tenantId, exceptionId, decision);
+  }
+  const row = await apiFetch<ApiExceptionRequest>(`/api/v1/exceptions/${encodeURIComponent(exceptionId)}/decision`, {
+    method: "POST",
+    body: JSON.stringify(decision),
+  });
+  return normalizeException(row, tenantId);
 }
 
 export function resetDemoData(): void {

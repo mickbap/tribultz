@@ -82,12 +82,33 @@ export default function JobDetailPage() {
             )}
           </section>
 
+          {job.findings?.length ? (
+            <section className="rounded-xl border border-slate-200 bg-white p-4">
+              <h2 className="mb-2 text-sm font-semibold text-slate-700">Findings da validação</h2>
+              <ul className="space-y-2">
+                {job.findings.map((finding) => (
+                  <li key={finding.id} className="rounded border border-slate-200 p-2 text-sm">
+                    <p className="font-semibold">
+                      {finding.severity} - {finding.title}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      rule_id: {finding.rule_id} | finding_id: {finding.id}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
           <section className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-slate-700">Evidências</h2>
             <EvidenceList evidence={job.evidence} />
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap gap-4">
               <Link href={`/audit?job_id=${job.id}`} className="text-sm font-medium text-tribultz-700 hover:underline">
                 Abrir auditoria relacionada
+              </Link>
+              <Link href="/exceptions" className="text-sm font-medium text-tribultz-700 hover:underline">
+                Abrir fila de exceções
               </Link>
             </div>
           </section>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NFS-e>
+  <infNfse>
+    <PrestacaoServico>
+      <Servico>
+        <CodigoServico>123456</CodigoServico>
+        <cClassTrib>654321</cClassTrib>
+        <CST>090</CST>
+        <NCM>84713012</NCM>
+      </Servico>
+    </PrestacaoServico>
+  </infNfse>
+</NFS-e>

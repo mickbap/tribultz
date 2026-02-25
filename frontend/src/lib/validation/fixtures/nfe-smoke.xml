@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc>
+  <NFe>
+    <infNFe>
+      <det>
+        <prod>
+          <NCM>27101932</NCM>
+        </prod>
+        <imposto>
+          <ICMS>
+            <ICMS00>
+              <CST>060</CST>
+              <cClassTrib>123456</cClassTrib>
+            </ICMS00>
+          </ICMS>
+        </imposto>
+      </det>
+      <infAdic>
+        <CodigoServico>654321</CodigoServico>
+      </infAdic>
+    </infNFe>
+  </NFe>
+</nfeProc>
