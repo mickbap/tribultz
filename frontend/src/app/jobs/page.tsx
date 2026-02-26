@@ -5,8 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
-import { exportJobEvidenceZip, getJobs } from "@/lib/api";
-import { downloadZip } from "@/lib/export/jobEvidenceZip";
+import { getJobs } from "@/lib/api";
+import { exportEvidenceZipAndDownload } from "@/lib/export/evidenceExportUi";
 import { Job, JobStatus } from "@/lib/types";
 
 type PeriodFilter = "24h" | "7d" | "30d" | "all";
@@ -50,18 +50,9 @@ export default function JobsPage() {
 
   async function handleExport(jobId: string): Promise<void> {
     setExportingByJobId((prev) => ({ ...prev, [jobId]: true }));
-    try {
-      const result = await exportJobEvidenceZip(jobId);
-      downloadZip(result.bytes, result.filename);
-      setToast({ tone: "success", message: `ZIP exportado para ${jobId}.` });
-    } catch (err) {
-      setToast({
-        tone: "error",
-        message: err instanceof Error ? err.message : "Falha ao exportar evidencias.",
-      });
-    } finally {
-      setExportingByJobId((prev) => ({ ...prev, [jobId]: false }));
-    }
+    const feedback = await exportEvidenceZipAndDownload(jobId);
+    setToast(feedback);
+    setExportingByJobId((prev) => ({ ...prev, [jobId]: false }));
   }
 
   return (
@@ -153,7 +144,7 @@ export default function JobsPage() {
                           onClick={() => void handleExport(job.id)}
                           className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {exportingByJobId[job.id] ? "Exportando..." : "Exportar evidencias"}
+                          {exportingByJobId[job.id] ? "Exportando…" : "Exportar evidências"}
                         </button>
                       </div>
                     </td>
