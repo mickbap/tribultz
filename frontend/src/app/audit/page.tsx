@@ -11,6 +11,7 @@ import { AuditLog } from "@/lib/types";
 function AuditContent() {
   const searchParams = useSearchParams();
   const jobIdFromUrl = searchParams.get("job_id") ?? "";
+  const auditIdFromUrl = searchParams.get("audit_id") ?? "";
 
   const [audits, setAudits] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,12 +22,19 @@ function AuditContent() {
 
   useEffect(() => {
     setLoading(true);
-    setQuery(jobIdFromUrl);
-    getAudits(jobIdFromUrl || undefined)
-      .then(setAudits)
+    setQuery(jobIdFromUrl || auditIdFromUrl);
+    const load = auditIdFromUrl ? getAudits() : getAudits(jobIdFromUrl || undefined);
+    load
+      .then((rows) => {
+        if (auditIdFromUrl) {
+          setAudits(rows.filter((row) => row.id === auditIdFromUrl));
+          return;
+        }
+        setAudits(rows);
+      })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [jobIdFromUrl]);
+  }, [jobIdFromUrl, auditIdFromUrl]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

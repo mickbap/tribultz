@@ -8,6 +8,12 @@ Plataforma de compliance e simulaÃ§Ã£o CBS/IBS (Reforma 2026): validaÃ§Ã�
 - Em API Mode, toda request envia `Authorization: Bearer <token>` e `X-Tenant-Id: <tenant>`.
 - Login real depende de backend/credenciais validos no ambiente.
 - `mickbap/tribultz-console-navigator` fica somente como referencia/export do Lovable (nao canonical).
+
+## Status Sprint 6 (P0)
+- Validacao XML com evidencias auditaveis em `/validate-xml` (NFS-e primeiro, NF-e suportado).
+- Contrato Findings + Evidence v1.1 implementado (types + schema + example payload).
+- Regras MVP aplicadas (FATAL: CST/cClassTrib/CodigoServico; ALERT: NCM e beneficios/creditos).
+- Workflow de excecao implementado em `/exceptions` (OPEN -> APPROVED/REJECTED) com eventos no audit.
 <!-- SPRINT4-START -->
 ## Runbook rapido (Dev/QA) - Chat Fiscal MVP
 

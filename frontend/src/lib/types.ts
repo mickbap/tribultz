@@ -1,12 +1,99 @@
-﻿export type EvidenceType = "job" | "audit" | "file" | "link";
+﻿export type XmlDocumentType = "NFSE" | "NFE";
+
+export type EvidenceType = "xml" | "link" | "print" | "job" | "audit" | "file";
 
 export type Evidence = {
+  id?: string;
   type: EvidenceType;
   job_id?: string;
   audit_id?: string;
-  href: string;
+  href?: string;
   label: string;
+  xpath?: string;
+  snippet?: string;
   payload?: Record<string, unknown> | null;
+};
+
+export type FindingSeverity = "FATAL" | "ALERT";
+
+export type FindingWhere = {
+  field?: string;
+  xpath?: string;
+  snippet?: string;
+};
+
+export type Finding = {
+  id: string;
+  severity: FindingSeverity;
+  rule_id: string;
+  title: string;
+  where: FindingWhere;
+  recommendation: string;
+  evidence_ids: string[];
+};
+
+export type ValidationEvidence = {
+  id: string;
+  type: "xml" | "link" | "print" | "job" | "audit";
+  label: string;
+  href?: string;
+  xpath?: string;
+  snippet?: string;
+};
+
+export type ValidationJobRef = {
+  id: string;
+  created_at: string;
+  tenant_id: string;
+};
+
+export type ValidationAuditEvent = {
+  id: string;
+  action: string;
+  created_at: string;
+  payload: Record<string, unknown>;
+};
+
+export type ValidationAuditRef = {
+  id: string;
+  job_id: string;
+  events: ValidationAuditEvent[];
+};
+
+export type ValidationResultV11 = {
+  job: ValidationJobRef;
+  audit: ValidationAuditRef;
+  findings: Finding[];
+  evidences: ValidationEvidence[];
+};
+
+export type ExceptionRequestStatus = "OPEN" | "APPROVED" | "REJECTED";
+
+export type ExceptionRequest = {
+  id: string;
+  tenant_id: string;
+  job_id: string;
+  finding_id: string;
+  rule_id: string;
+  justification: string;
+  status: ExceptionRequestStatus;
+  created_by: string;
+  created_at: string;
+  decided_by?: string;
+  decided_at?: string;
+  decision_comment?: string;
+};
+
+export type ExceptionDecision = {
+  status: "APPROVED" | "REJECTED";
+  decision_comment?: string;
+  decided_by: string;
+};
+
+export type ValidateXmlRequest = {
+  document_type: XmlDocumentType;
+  xml: string;
+  source?: "paste" | "upload";
 };
 
 export type ChatMessage = {
@@ -37,6 +124,8 @@ export type Job = {
   output?: Record<string, unknown> | null;
   reportMarkdown?: string | null;
   evidence: Evidence[];
+  findings?: Finding[];
+  exceptionRequests?: ExceptionRequest[];
 };
 
 export type AuditLog = {
@@ -89,6 +178,7 @@ export type ApiJob = {
   report_markdown?: string | null;
   reportMarkdown?: string | null;
   evidence?: Evidence[];
+  findings?: Finding[];
 };
 
 export type ApiAudit = {
@@ -101,6 +191,21 @@ export type ApiAudit = {
   created_at?: string;
   createdAt?: string;
   payload?: Record<string, unknown>;
+};
+
+export type ApiExceptionRequest = {
+  id: string;
+  tenant_id?: string;
+  job_id: string;
+  finding_id: string;
+  rule_id: string;
+  justification: string;
+  status: ExceptionRequestStatus;
+  created_by: string;
+  created_at: string;
+  decided_by?: string;
+  decided_at?: string;
+  decision_comment?: string;
 };
 
 export type NormalizedChatResponse = {
@@ -126,13 +231,20 @@ function asEvidenceList(raw: unknown): Evidence[] {
     .filter((item) => item && typeof item === "object")
     .map((item) => {
       const row = item as Record<string, unknown>;
-      const type = typeof row.type === "string" ? row.type : "link";
+      const type = typeof row.type === "string" ? row.type.toLowerCase() : "link";
+      const normalizedType: EvidenceType =
+        type === "xml" || type === "link" || type === "print" || type === "job" || type === "audit" || type === "file"
+          ? (type as EvidenceType)
+          : "link";
       return {
-        type: (type === "job" || type === "audit" || type === "file" || type === "link" ? type : "link") as EvidenceType,
+        id: typeof row.id === "string" ? row.id : undefined,
+        type: normalizedType,
         job_id: typeof row.job_id === "string" ? row.job_id : undefined,
         audit_id: typeof row.audit_id === "string" ? row.audit_id : undefined,
-        href: typeof row.href === "string" ? row.href : "#",
+        href: typeof row.href === "string" ? row.href : undefined,
         label: typeof row.label === "string" ? row.label : "Evidence",
+        xpath: typeof row.xpath === "string" ? row.xpath : undefined,
+        snippet: typeof row.snippet === "string" ? row.snippet : undefined,
         payload: row.payload && typeof row.payload === "object" ? (row.payload as Record<string, unknown>) : null,
       };
     });
@@ -181,6 +293,7 @@ export function normalizeJob(raw: ApiJob, fallbackTenant: string): Job {
     output: raw.output ?? raw.output_data ?? null,
     reportMarkdown: raw.reportMarkdown ?? raw.report_markdown ?? null,
     evidence,
+    findings: Array.isArray(raw.findings) ? raw.findings : undefined,
   };
 }
 
@@ -195,3 +308,19 @@ export function normalizeAudit(raw: ApiAudit, fallbackTenant: string): AuditLog 
   };
 }
 
+export function normalizeException(raw: ApiExceptionRequest, fallbackTenant: string): ExceptionRequest {
+  return {
+    id: raw.id,
+    tenant_id: raw.tenant_id ?? fallbackTenant,
+    job_id: raw.job_id,
+    finding_id: raw.finding_id,
+    rule_id: raw.rule_id,
+    justification: raw.justification,
+    status: raw.status,
+    created_by: raw.created_by,
+    created_at: raw.created_at,
+    decided_by: raw.decided_by,
+    decided_at: raw.decided_at,
+    decision_comment: raw.decision_comment,
+  };
+}

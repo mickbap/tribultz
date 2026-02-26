@@ -5,8 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
-import { getAudits, getJobs } from "@/lib/api";
-import { AuditLog, Job } from "@/lib/types";
+import { getAudits, getJobs, listExceptionRequests } from "@/lib/api";
+import { AuditLog, ExceptionRequest, Job } from "@/lib/types";
 
 function percent(success: number, total: number): string {
   if (!total) return "0%";
@@ -16,15 +16,17 @@ function percent(success: number, total: number): string {
 export default function DashboardPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [audits, setAudits] = useState<AuditLog[]>([]);
+  const [exceptions, setExceptions] = useState<ExceptionRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([getJobs(), getAudits()])
-      .then(([jobsData, auditsData]) => {
+    Promise.all([getJobs(), getAudits(), listExceptionRequests()])
+      .then(([jobsData, auditsData, exceptionsData]) => {
         setJobs(jobsData);
         setAudits(auditsData);
+        setExceptions(exceptionsData);
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
@@ -33,13 +35,13 @@ export default function DashboardPage() {
   const metrics = useMemo(() => {
     const jobs24h = jobs.filter((job) => Date.now() - new Date(job.createdAt).getTime() <= 24 * 60 * 60 * 1000);
     const successCount = jobs.filter((job) => job.status === "SUCCESS").length;
-    const failedCount = jobs.filter((job) => job.status === "FAILED").length;
+    const openExceptions = exceptions.filter((row) => row.status === "OPEN").length;
     return {
       total24h: jobs24h.length,
       successRate: percent(successCount, jobs.length),
-      exceptionsOpen: failedCount,
+      exceptionsOpen: openExceptions,
     };
-  }, [jobs]);
+  }, [jobs, exceptions]);
 
   return (
     <section className="space-y-5">

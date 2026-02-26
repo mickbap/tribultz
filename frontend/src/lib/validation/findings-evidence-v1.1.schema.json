@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tribultz.local/schemas/findings-evidence-v1.1.json",
+  "title": "Findings + Evidence v1.1",
+  "type": "object",
+  "required": ["job", "audit", "findings", "evidences"],
+  "properties": {
+    "job": {
+      "type": "object",
+      "required": ["id", "created_at", "tenant_id"],
+      "properties": {
+        "id": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "tenant_id": { "type": "string" }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "required": ["id", "job_id", "events"],
+      "properties": {
+        "id": { "type": "string" },
+        "job_id": { "type": "string" },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "action", "created_at", "payload"],
+            "properties": {
+              "id": { "type": "string" },
+              "action": { "type": "string" },
+              "created_at": { "type": "string", "format": "date-time" },
+              "payload": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "rule_id", "title", "where", "recommendation", "evidence_ids"],
+        "properties": {
+          "id": { "type": "string" },
+          "severity": { "enum": ["FATAL", "ALERT"] },
+          "rule_id": { "type": "string" },
+          "title": { "type": "string" },
+          "where": {
+            "type": "object",
+            "properties": {
+              "field": { "type": "string" },
+              "xpath": { "type": "string" },
+              "snippet": { "type": "string" }
+            }
+          },
+          "recommendation": { "type": "string" },
+          "evidence_ids": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "evidences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "enum": ["xml", "link", "print", "job", "audit"] },
+          "label": { "type": "string" },
+          "href": { "type": "string" },
+          "xpath": { "type": "string" },
+          "snippet": { "type": "string" }
+        }
+      }
+    }
+  }
+}

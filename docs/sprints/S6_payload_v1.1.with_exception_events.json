@@ -1,0 +1,158 @@
+{
+  "job": {
+    "id": "job_xml_8b11099f",
+    "created_at": "2026-02-26T14:04:34.299Z",
+    "tenant_id": "tenant-a"
+  },
+  "audit": {
+    "id": "audit_xml_8b11099f",
+    "job_id": "job_xml_8b11099f",
+    "events": [
+      {
+        "id": "evt_8b11099f_created",
+        "action": "xml_validation_started",
+        "created_at": "2026-02-26T14:04:34.300Z",
+        "payload": {
+          "document_type": "NFSE",
+          "findings_total": 5,
+          "fatals": 3
+        }
+      },
+      {
+        "id": "evt_8b11099f_exception_opened",
+        "action": "exception_opened",
+        "created_at": "2026-02-26T14:04:35.300Z",
+        "payload": {
+          "job_id": "job_xml_8b11099f",
+          "finding_id": "F_CST_LEN",
+          "rule_id": "CST_3_DIGITS",
+          "justification": "Documento emitido em contingência; correção programada no ERP para o próximo ciclo.",
+          "status": "OPEN"
+        }
+      },
+      {
+        "id": "evt_8b11099f_exception_approved",
+        "action": "exception_approved",
+        "created_at": "2026-02-26T14:04:36.300Z",
+        "payload": {
+          "job_id": "job_xml_8b11099f",
+          "finding_id": "F_CST_LEN",
+          "rule_id": "CST_3_DIGITS",
+          "decision_comment": "Exceção aprovada para fechamento com ajuste formal registrado.",
+          "status": "APPROVED"
+        }
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "F_CST_LEN",
+      "severity": "FATAL",
+      "rule_id": "CST_3_DIGITS",
+      "title": "CST inválido (esperado 3 dígitos)",
+      "where": {
+        "field": "CST",
+        "xpath": "/NFS-e/infNfse//CST",
+        "snippet": "<CST>12</CST>"
+      },
+      "recommendation": "Corrigir no ERP e reemitir (com justificativa se necessário).",
+      "evidence_ids": [
+        "E_XML_CST_LEN"
+      ]
+    },
+    {
+      "id": "F_CCLASSTRIB_LEN",
+      "severity": "FATAL",
+      "rule_id": "CCLASSTRIB_6_DIGITS",
+      "title": "cClassTrib inválido (esperado 6 dígitos)",
+      "where": {
+        "field": "cClassTrib",
+        "xpath": "/NFS-e/infNfse//cClassTrib",
+        "snippet": "<cClassTrib>65432</cClassTrib>"
+      },
+      "recommendation": "Corrigir no ERP e reemitir (com justificativa se necessário).",
+      "evidence_ids": [
+        "E_XML_CCLASSTRIB_LEN"
+      ]
+    },
+    {
+      "id": "F_SERVICE_CODE_LEN",
+      "severity": "FATAL",
+      "rule_id": "SERVICE_CODE_6_DIGITS",
+      "title": "Código de serviço inválido (esperado 6 dígitos)",
+      "where": {
+        "field": "CodigoServico",
+        "xpath": "/NFS-e/infNfse//CodigoServico",
+        "snippet": "<CodigoServico>1234</CodigoServico>"
+      },
+      "recommendation": "Corrigir no ERP e reemitir (com justificativa se necessário).",
+      "evidence_ids": [
+        "E_XML_SERVICE_CODE_LEN"
+      ]
+    },
+    {
+      "id": "A_NCM_REVIEW",
+      "severity": "ALERT",
+      "rule_id": "NCM_PLACEHOLDER",
+      "title": "Revisar NCM conforme classificação fiscal vigente",
+      "where": {
+        "field": "NCM",
+        "xpath": "/NFS-e/infNfse//NCM",
+        "snippet": "<NCM>84713012</NCM>"
+      },
+      "recommendation": "Conferir classificação fiscal (NCM) e manter evidência de suporte.",
+      "evidence_ids": [
+        "E_XML_NCM_INFO"
+      ]
+    },
+    {
+      "id": "A_BENEFITS_REVIEW",
+      "severity": "ALERT",
+      "rule_id": "BENEFITS_PLACEHOLDER",
+      "title": "Revisar benefícios e créditos aplicáveis",
+      "where": {
+        "field": "beneficios_creditos"
+      },
+      "recommendation": "Documentar justificativa fiscal para benefícios e créditos utilizados.",
+      "evidence_ids": [
+        "E_XML_BENEFITS_INFO"
+      ]
+    }
+  ],
+  "evidences": [
+    {
+      "id": "E_XML_CST_LEN",
+      "type": "xml",
+      "label": "Trecho XML — CST",
+      "xpath": "/NFS-e/infNfse//CST",
+      "snippet": "<CST>12</CST>"
+    },
+    {
+      "id": "E_XML_CCLASSTRIB_LEN",
+      "type": "xml",
+      "label": "Trecho XML — cClassTrib",
+      "xpath": "/NFS-e/infNfse//cClassTrib",
+      "snippet": "<cClassTrib>65432</cClassTrib>"
+    },
+    {
+      "id": "E_XML_SERVICE_CODE_LEN",
+      "type": "xml",
+      "label": "Trecho XML — CodigoServico",
+      "xpath": "/NFS-e/infNfse//CodigoServico",
+      "snippet": "<CodigoServico>1234</CodigoServico>"
+    },
+    {
+      "id": "E_XML_NCM_INFO",
+      "type": "xml",
+      "label": "NCM (avaliação informativa)",
+      "xpath": "/NFS-e/infNfse//NCM",
+      "snippet": "<NCM>84713012</NCM>"
+    },
+    {
+      "id": "E_XML_BENEFITS_INFO",
+      "type": "print",
+      "label": "Checklist de benefícios/créditos",
+      "snippet": "Validar benefícios e créditos aplicáveis antes do fechamento."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "job": { "id": "job_xml_a12f0b31", "created_at": "2026-02-25T00:00:00.000Z", "tenant_id": "tenant-a" },
+  "audit": { "id": "audit_xml_a12f0b31", "job_id": "job_xml_a12f0b31", "events": [] },
+  "findings": [
+    {
+      "id": "F_CST_LEN",
+      "severity": "FATAL",
+      "rule_id": "CST_3_DIGITS",
+      "title": "CST inválido (esperado 3 dígitos)",
+      "where": { "field": "CST", "xpath": "/NFS-e/infNfse//CST", "snippet": "<CST>12</CST>" },
+      "recommendation": "Corrigir no ERP e reemitir (com justificativa se necessário).",
+      "evidence_ids": ["E_XML_CST_LEN"]
+    }
+  ],
+  "evidences": [
+    {
+      "id": "E_XML_CST_LEN",
+      "type": "xml",
+      "label": "Trecho XML — CST",
+      "xpath": "/NFS-e/infNfse//CST",
+      "snippet": "<CST>12</CST>"
+    }
+  ]
+}
