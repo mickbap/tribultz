@@ -41,6 +41,12 @@ Todos os findings geram `where` e `evidence_ids`, com evidência de fonte (`xml`
 - `cd frontend && npm run test:rules` (PASS)
 - `cd frontend && npm run build` (PASS)
 
+## Evidências solicitadas (capturas + payload real)
+- Screenshot (finding FATAL com snippet/xpath): `docs/sprints/assets/s6_validate_xml_fatal.png`
+- Screenshot (modal de exceção): `docs/sprints/assets/s6_exception_modal.png`
+- Screenshot (exceção aprovada): `docs/sprints/assets/s6_exception_approved.png`
+- Payload real v1.1 (mock): `docs/sprints/S6_payload_v1.1.real.json`
+
 ## DoD Sprint 6 P0 checklist
 - [x] Colar/upload XML -> validar -> findings com evidências.
 - [x] Links/atalhos para Job e Audit no resultado.
