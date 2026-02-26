@@ -5,7 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { JsonViewer } from "@/components/common/JsonViewer";
 import { Skeleton } from "@/components/common/Skeleton";
 import { Toast } from "@/components/common/Toast";
-import { getAudits } from "@/lib/api";
+import { exportJobEvidenceZip, getAudits } from "@/lib/api";
+import { downloadZip } from "@/lib/export/jobEvidenceZip";
 import { AuditLog } from "@/lib/types";
 
 function AuditContent() {
@@ -16,9 +17,11 @@ function AuditContent() {
   const [audits, setAudits] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [query, setQuery] = useState(jobIdFromUrl);
   const [actionFilter, setActionFilter] = useState("");
   const [selected, setSelected] = useState<AuditLog | null>(null);
+  const [exportingByJobId, setExportingByJobId] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setLoading(true);
@@ -48,6 +51,22 @@ function AuditContent() {
       return true;
     });
   }, [audits, query, actionFilter]);
+
+  async function handleExport(jobId: string): Promise<void> {
+    setExportingByJobId((prev) => ({ ...prev, [jobId]: true }));
+    try {
+      const result = await exportJobEvidenceZip(jobId);
+      downloadZip(result.bytes, result.filename);
+      setToast({ tone: "success", message: `ZIP exportado para ${jobId}.` });
+    } catch (err) {
+      setToast({
+        tone: "error",
+        message: err instanceof Error ? err.message : "Falha ao exportar evidencias.",
+      });
+    } finally {
+      setExportingByJobId((prev) => ({ ...prev, [jobId]: false }));
+    }
+  }
 
   return (
     <section className="space-y-4">
@@ -104,13 +123,25 @@ function AuditContent() {
                     <td className="px-2 py-2 font-medium text-slate-800">{item.action}</td>
                     <td className="px-2 py-2 text-slate-600">{item.jobId ?? "-"}</td>
                     <td className="px-2 py-2">
-                      <button
-                        type="button"
-                        onClick={() => setSelected(item)}
-                        className="text-tribultz-700 hover:underline"
-                      >
-                        Ver JSON
-                      </button>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setSelected(item)}
+                          className="text-tribultz-700 hover:underline"
+                        >
+                          Ver JSON
+                        </button>
+                        {item.jobId ? (
+                          <button
+                            type="button"
+                            disabled={!!exportingByJobId[item.jobId]}
+                            onClick={() => void handleExport(item.jobId as string)}
+                            className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {exportingByJobId[item.jobId] ? "Exportando..." : "Exportar evidencias"}
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -142,6 +173,7 @@ function AuditContent() {
       ) : null}
 
       {error ? <Toast message={error} tone="error" onClose={() => setError(null)} /> : null}
+      {toast ? <Toast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} /> : null}
     </section>
   );
 }
