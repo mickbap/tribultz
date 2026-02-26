@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { JsonViewer } from "@/components/common/JsonViewer";
 import { Skeleton } from "@/components/common/Skeleton";
 import { Toast } from "@/components/common/Toast";
-import { exportJobEvidenceZip, getAudits } from "@/lib/api";
-import { downloadZip } from "@/lib/export/jobEvidenceZip";
+import { getAudits } from "@/lib/api";
+import { exportEvidenceZipAndDownload } from "@/lib/export/evidenceExportUi";
 import { AuditLog } from "@/lib/types";
 
 function AuditContent() {
@@ -54,18 +54,9 @@ function AuditContent() {
 
   async function handleExport(jobId: string): Promise<void> {
     setExportingByJobId((prev) => ({ ...prev, [jobId]: true }));
-    try {
-      const result = await exportJobEvidenceZip(jobId);
-      downloadZip(result.bytes, result.filename);
-      setToast({ tone: "success", message: `ZIP exportado para ${jobId}.` });
-    } catch (err) {
-      setToast({
-        tone: "error",
-        message: err instanceof Error ? err.message : "Falha ao exportar evidencias.",
-      });
-    } finally {
-      setExportingByJobId((prev) => ({ ...prev, [jobId]: false }));
-    }
+    const feedback = await exportEvidenceZipAndDownload(jobId);
+    setToast(feedback);
+    setExportingByJobId((prev) => ({ ...prev, [jobId]: false }));
   }
 
   return (
@@ -138,7 +129,7 @@ function AuditContent() {
                             onClick={() => void handleExport(item.jobId as string)}
                             className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            {exportingByJobId[item.jobId] ? "Exportando..." : "Exportar evidencias"}
+                            {exportingByJobId[item.jobId] ? "Exportando…" : "Exportar evidências"}
                           </button>
                         ) : null}
                       </div>

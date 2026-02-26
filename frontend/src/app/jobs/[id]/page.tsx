@@ -9,8 +9,8 @@ import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { Skeleton } from "@/components/common/Skeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
-import { exportJobEvidenceZip, getJob } from "@/lib/api";
-import { downloadZip } from "@/lib/export/jobEvidenceZip";
+import { getJob } from "@/lib/api";
+import { exportEvidenceZipAndDownload } from "@/lib/export/evidenceExportUi";
 import { Job } from "@/lib/types";
 
 export default function JobDetailPage() {
@@ -33,21 +33,9 @@ export default function JobDetailPage() {
   async function exportEvidenceBundle(): Promise<void> {
     if (!job || exporting) return;
     setExporting(true);
-    try {
-      const zip = await exportJobEvidenceZip(job.id);
-      downloadZip(zip.bytes, zip.filename);
-      setToast({
-        tone: "success",
-        message: "ZIP de evidencias exportado com sucesso.",
-      });
-    } catch (err) {
-      setToast({
-        tone: "error",
-        message: err instanceof Error ? err.message : "Falha ao exportar evidencias.",
-      });
-    } finally {
-      setExporting(false);
-    }
+    const feedback = await exportEvidenceZipAndDownload(job.id);
+    setToast(feedback);
+    setExporting(false);
   }
 
   return (
@@ -64,7 +52,7 @@ export default function JobDetailPage() {
             onClick={() => void exportEvidenceBundle()}
             className="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {exporting ? "Exportando..." : "Exportar evidencias"}
+            {exporting ? "Exportando…" : "Exportar evidências"}
           </button>
           {job ? <StatusBadge status={job.status} /> : null}
         </div>
