@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
-import { getJobs } from "@/lib/api";
+import { exportJobEvidenceZip, getJobs } from "@/lib/api";
+import { downloadZip } from "@/lib/export/jobEvidenceZip";
 import { Job, JobStatus } from "@/lib/types";
 
 type PeriodFilter = "24h" | "7d" | "30d" | "all";
@@ -22,6 +23,8 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const [exportingByJobId, setExportingByJobId] = useState<Record<string, boolean>>({});
 
   const [status, setStatus] = useState<JobStatus | "ALL">("ALL");
   const [period, setPeriod] = useState<PeriodFilter>("all");
@@ -44,6 +47,22 @@ export default function JobsPage() {
       return [job.id, job.jobType, job.status].some((text) => text.toLowerCase().includes(q));
     });
   }, [jobs, status, period, query]);
+
+  async function handleExport(jobId: string): Promise<void> {
+    setExportingByJobId((prev) => ({ ...prev, [jobId]: true }));
+    try {
+      const result = await exportJobEvidenceZip(jobId);
+      downloadZip(result.bytes, result.filename);
+      setToast({ tone: "success", message: `ZIP exportado para ${jobId}.` });
+    } catch (err) {
+      setToast({
+        tone: "error",
+        message: err instanceof Error ? err.message : "Falha ao exportar evidencias.",
+      });
+    } finally {
+      setExportingByJobId((prev) => ({ ...prev, [jobId]: false }));
+    }
+  }
 
   return (
     <section className="space-y-4">
@@ -124,9 +143,19 @@ export default function JobsPage() {
                     </td>
                     <td className="px-2 py-2 text-slate-500">{new Date(job.createdAt).toLocaleString()}</td>
                     <td className="px-2 py-2">
-                      <Link href={`/jobs/${job.id}`} className="text-tribultz-700 hover:underline">
-                        Abrir detalhe
-                      </Link>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Link href={`/jobs/${job.id}`} className="text-tribultz-700 hover:underline">
+                          Abrir detalhe
+                        </Link>
+                        <button
+                          type="button"
+                          disabled={!!exportingByJobId[job.id]}
+                          onClick={() => void handleExport(job.id)}
+                          className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {exportingByJobId[job.id] ? "Exportando..." : "Exportar evidencias"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -137,6 +166,7 @@ export default function JobsPage() {
       </section>
 
       {error ? <Toast message={error} tone="error" onClose={() => setError(null)} /> : null}
+      {toast ? <Toast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} /> : null}
     </section>
   );
 }
