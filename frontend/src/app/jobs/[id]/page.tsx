@@ -9,13 +9,16 @@ import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { Skeleton } from "@/components/common/Skeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
-import { getJob } from "@/lib/api";
+import { getAudits, getJob } from "@/lib/api";
+import { buildJobEvidenceBundle, downloadJobEvidenceBundle } from "@/lib/export/jobEvidenceBundle";
 import { Job } from "@/lib/types";
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,6 +30,27 @@ export default function JobDetailPage() {
       .finally(() => setLoading(false));
   }, [params.id]);
 
+  async function exportEvidenceBundle(): Promise<void> {
+    if (!job || exporting) return;
+    setExporting(true);
+    try {
+      const audits = await getAudits(job.id);
+      const bundle = buildJobEvidenceBundle(job, audits);
+      downloadJobEvidenceBundle(bundle, job.id);
+      setToast({
+        tone: "success",
+        message: `Bundle exportado com ${bundle.artifacts.length} arquivo(s).`,
+      });
+    } catch (err) {
+      setToast({
+        tone: "error",
+        message: err instanceof Error ? err.message : "Falha ao exportar evidencias.",
+      });
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <section className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -34,7 +58,17 @@ export default function JobDetailPage() {
           <h1 className="text-2xl font-bold text-slate-900">Detalhe do Job</h1>
           <p className="text-sm text-slate-500">Inspeção completa de entrada, saída e trilha de evidências.</p>
         </div>
-        {job ? <StatusBadge status={job.status} /> : null}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={!job || loading || exporting}
+            onClick={() => void exportEvidenceBundle()}
+            className="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {exporting ? "Exportando..." : "Exportar evidencias"}
+          </button>
+          {job ? <StatusBadge status={job.status} /> : null}
+        </div>
       </header>
 
       {loading ? (
@@ -116,6 +150,7 @@ export default function JobDetailPage() {
       )}
 
       {error ? <Toast message={error} tone="error" onClose={() => setError(null)} /> : null}
+      {toast ? <Toast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} /> : null}
     </section>
   );
 }
