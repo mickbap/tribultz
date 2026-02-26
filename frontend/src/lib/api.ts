@@ -17,6 +17,8 @@
   normalizeException,
   normalizeJob,
 } from "./types";
+import { buildJobEvidenceBundle } from "./export/jobEvidenceBundle";
+import { buildJobEvidenceZip, makeJobEvidenceZipFilename } from "./export/jobEvidenceZip";
 import {
   mockDecideException,
   mockGetConversation,
@@ -43,6 +45,11 @@ type LoginRequest = {
 type LoginResponse = {
   access_token: string;
   token_type?: string;
+};
+
+export type JobEvidenceZipResult = {
+  filename: string;
+  bytes: Uint8Array;
 };
 
 function headers(extra?: HeadersInit): HeadersInit {
@@ -156,6 +163,57 @@ export async function getAudits(jobId?: string): Promise<AuditLog[]> {
 
 export async function getAudit(jobId?: string): Promise<AuditLog[]> {
   return getAudits(jobId);
+}
+
+function contentDispositionFilename(raw: string | null): string | null {
+  if (!raw) return null;
+  const utf8 = raw.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8?.[1]) return decodeURIComponent(utf8[1]);
+  const plain = raw.match(/filename="?([^";]+)"?/i);
+  if (plain?.[1]) return plain[1];
+  return null;
+}
+
+export async function exportJobEvidenceZip(jobId: string): Promise<JobEvidenceZipResult> {
+  if (!jobId) {
+    throw new Error("jobId obrigatorio para exportar evidencias.");
+  }
+
+  if (getMockMode()) {
+    const job = await getJob(jobId);
+    if (!job) {
+      throw new Error(`Job ${jobId} nao encontrado.`);
+    }
+    const audits = await getAudits(jobId);
+    const bundle = buildJobEvidenceBundle(job, audits);
+    const bytes = buildJobEvidenceZip(bundle);
+    return {
+      filename: makeJobEvidenceZipFilename(job.id),
+      bytes,
+    };
+  }
+
+  const res = await fetch(`${API_BASE}/api/v1/jobs/${encodeURIComponent(jobId)}/evidence.zip`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+      "X-Tenant-Id": getTenantId(),
+      Accept: "application/zip",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    if (res.status === 404 || res.status === 501) {
+      throw new Error("Export via API ainda nao disponivel.");
+    }
+    const detail = await res.text().catch(() => "Erro de API");
+    throw new Error(`API ${res.status}: ${detail}`);
+  }
+
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  const filename = contentDispositionFilename(res.headers.get("content-disposition")) ?? makeJobEvidenceZipFilename(jobId);
+  return { filename, bytes };
 }
 
 export async function openExceptionRequest(payload: {

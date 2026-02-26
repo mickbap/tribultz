@@ -9,9 +9,8 @@ import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { Skeleton } from "@/components/common/Skeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
-import { getAudits, getJob } from "@/lib/api";
-import { buildJobEvidenceBundle } from "@/lib/export/jobEvidenceBundle";
-import { buildJobEvidenceZip, downloadZip, makeJobEvidenceZipFilename } from "@/lib/export/jobEvidenceZip";
+import { exportJobEvidenceZip, getJob } from "@/lib/api";
+import { downloadZip } from "@/lib/export/jobEvidenceZip";
 import { Job } from "@/lib/types";
 
 export default function JobDetailPage() {
@@ -35,10 +34,8 @@ export default function JobDetailPage() {
     if (!job || exporting) return;
     setExporting(true);
     try {
-      const audits = await getAudits(job.id);
-      const bundle = buildJobEvidenceBundle(job, audits);
-      const zip = buildJobEvidenceZip(bundle);
-      downloadZip(zip, makeJobEvidenceZipFilename(job.id));
+      const zip = await exportJobEvidenceZip(job.id);
+      downloadZip(zip.bytes, zip.filename);
       setToast({
         tone: "success",
         message: "ZIP de evidencias exportado com sucesso.",
