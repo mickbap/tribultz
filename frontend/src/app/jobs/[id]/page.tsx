@@ -10,7 +10,8 @@ import { Skeleton } from "@/components/common/Skeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
 import { getAudits, getJob } from "@/lib/api";
-import { buildJobEvidenceBundle, downloadJobEvidenceBundle } from "@/lib/export/jobEvidenceBundle";
+import { buildJobEvidenceBundle } from "@/lib/export/jobEvidenceBundle";
+import { buildJobEvidenceZip, downloadZip, makeJobEvidenceZipFilename } from "@/lib/export/jobEvidenceZip";
 import { Job } from "@/lib/types";
 
 export default function JobDetailPage() {
@@ -36,10 +37,11 @@ export default function JobDetailPage() {
     try {
       const audits = await getAudits(job.id);
       const bundle = buildJobEvidenceBundle(job, audits);
-      downloadJobEvidenceBundle(bundle, job.id);
+      const zip = buildJobEvidenceZip(bundle);
+      downloadZip(zip, makeJobEvidenceZipFilename(job.id));
       setToast({
         tone: "success",
-        message: `Bundle exportado com ${bundle.artifacts.length} arquivo(s).`,
+        message: "ZIP de evidencias exportado com sucesso.",
       });
     } catch (err) {
       setToast({
