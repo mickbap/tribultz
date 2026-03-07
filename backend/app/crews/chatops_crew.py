@@ -13,7 +13,9 @@ from crewai import Agent, Crew, LLM, Process, Task
 load_dotenv()
 
 from app.crews.tools.get_job_status_tool import GetJobStatusTool
+from app.crews.tools.parse_nfse_xml_tool import ParseNFSeXMLTool
 from app.crews.tools.trigger_task_a_tool import TriggerTaskATool
+from app.crews.tools.validate_fiscal_rules_tool import ValidateFiscalRulesTool
 
 _CONFIG_DIR = (
     Path(__file__).resolve().parents[3] / "crews" / "tribultz_chatops" / "config"
@@ -64,6 +66,8 @@ class TribultzChatOpsCrew:
 
         trigger_tool = TriggerTaskATool(tenant_id=self._tenant_id, user_id=self._user_id)
         status_tool = GetJobStatusTool(tenant_id=self._tenant_id)
+        parse_nfse_tool = ParseNFSeXMLTool(tenant_id=self._tenant_id)
+        validate_rules_tool = ValidateFiscalRulesTool()
 
         triage = Agent(
             role=agents_cfg["triage"]["role"],
@@ -76,7 +80,7 @@ class TribultzChatOpsCrew:
             role=agents_cfg["operator"]["role"],
             goal=agents_cfg["operator"]["goal"],
             backstory=agents_cfg["operator"]["backstory"],
-            tools=[trigger_tool, status_tool],
+            tools=[trigger_tool, status_tool, parse_nfse_tool, validate_rules_tool],
             llm=llm,
             verbose=False,
         )
@@ -96,10 +100,10 @@ class TribultzChatOpsCrew:
             agent=triage,
         )
         task_trigger = Task(
-            description=tasks_cfg["trigger_validate_task_a"]["description"].format(
+            description=tasks_cfg["execute_operation"]["description"].format(
                 tenant_id=self._tenant_id
             ),
-            expected_output=tasks_cfg["trigger_validate_task_a"]["expected_output"],
+            expected_output=tasks_cfg["execute_operation"]["expected_output"],
             agent=operator,
             context=[task_classify],
         )

@@ -9,12 +9,15 @@ triage:
 
 operator:
   role: >
-    Task Operator (Task A)
+    Task Operator
   goal: >
-    Trigger Task A (Validate CBS/IBS) using internal tools and return a job id.
+    Execute the operation indicated by the triage agent using the available tools.
+    For CBS/IBS validation: use trigger_task_a and return the job_id.
+    For NFS-e XML validation: use parse_nfse_xml then validate_fiscal_rules and return findings.
   backstory: >
-    You execute exactly one operation: trigger Task A for the current tenant.
+    You execute operations precisely based on the intent classified by triage.
     You never accept tenant_id from user text; it is injected by the service.
+    You always call the correct tool sequence and return structured JSON output.
 
 narrator:
   role: >
