@@ -35,7 +35,7 @@ def test_render_br_tax_response_has_required_sections() -> None:
     assert "R$ 1.234,56" in markdown
 
 
-def test_handle_message_validate_uses_br_template() -> None:
+def test_handle_message_passes_crew_output_through() -> None:
     tenant_id = uuid4()
     user_id = uuid4()
     conversation_id = uuid4()
@@ -51,8 +51,14 @@ def test_handle_message_validate_uses_br_template() -> None:
     service.rate_limiter = Mock()
     service.rate_limiter.check_or_raise = Mock()
 
+    job_href = f"/jobs/{job_id}"
+    mock_markdown = f"Validation started.\n\nJob: `{job_id}`"
+    mock_evidence = [
+        {"type": "job", "job_id": str(job_id), "href": job_href, "label": "Validation job"}
+    ]
+
     executor = Mock(spec=TribultzChatOpsExecutor)
-    executor.trigger_task_a = AsyncMock(return_value=job_id)
+    executor.handle_message = AsyncMock(return_value=(mock_markdown, mock_evidence))
     service.executor = cast(TribultzChatOpsExecutor, executor)
 
     result = asyncio.run(
@@ -64,15 +70,16 @@ def test_handle_message_validate_uses_br_template() -> None:
         )
     )
 
-    assert "Padrão Fiscal BR" in result.response_markdown
-    assert "## Resultado" in result.response_markdown
-    assert "## Evidências" in result.response_markdown
-    assert "## Observações" in result.response_markdown
-    assert f"/jobs/{job_id}" in result.response_markdown
-    assert str(job_id) in result.response_markdown
-
+    assert result.response_markdown == mock_markdown
     assert len(result.evidence) == 1
     assert result.evidence[0].type == "job"
-    assert result.evidence[0].href == f"/jobs/{job_id}"
-    assert result.evidence[0].job_id == job_id
+    assert result.evidence[0].href == job_href
+    assert str(result.evidence[0].job_id) == str(job_id)
+
+    executor.handle_message.assert_called_once()
+    call_kwargs = executor.handle_message.call_args.kwargs
+    assert call_kwargs["tenant_id"] == tenant_id
+    assert call_kwargs["user_id"] == user_id
+    assert call_kwargs["message"] == "Validate invoice INV-999"
+
     db.commit.assert_called_once()

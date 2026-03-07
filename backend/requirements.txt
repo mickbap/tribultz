@@ -1,4 +1,4 @@
-fastapi==0.115.6
+fastapi==0.135.1
 uvicorn[standard]==0.34.0
 pydantic[email]==2.10.4
 pydantic-settings==2.7.1
@@ -15,3 +15,5 @@ httpx==0.28.1
 celery==5.4.0
 gunicorn==23.0.0
 pytest>=8.0.0
+crewai>=0.80.0
+litellm>=1.82.0
