@@ -71,6 +71,18 @@ jobs:
           if [ -f requirements.txt ]; then uv pip install --system -r requirements.txt; fi
           if [ -f pyproject.toml ]; then uv pip install --system -e ".[dev]" || uv pip install --system -e "."; fi
           uv pip install --system "ruff==0.6.9" "pytest==8.3.3"
+
+      - name: CrewAI import sanity
+        working-directory: backend
+        run: |
+          python - << 'PY'
+          import crewai
+          import litellm
+          from app.crews.chatops_crew import TribultzChatOpsCrew
+          print("crewai import ok")
+          print("litellm import ok")
+          print("chatops crew import ok", bool(TribultzChatOpsCrew))
+          PY
       - name: Wait for services healthy
         run: |
           python - << 'PY'

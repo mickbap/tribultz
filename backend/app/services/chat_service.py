@@ -11,7 +11,11 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.crews.executor import TribultzChatOpsExecutor
+from app.crews.executor import (
+    CrewExecutionError,
+    CrewExecutionTimeoutError,
+    TribultzChatOpsExecutor,
+)
 from app.models.chat import Conversation, Message
 from app.schemas.chat import ChatResult, JobEvidence
 from app.services.rate_limit import RateLimiter
@@ -161,6 +165,16 @@ class ChatService:
                 message=message,
             )
             evidence_list = [JobEvidence(**e) for e in evidence_dicts]
+        except CrewExecutionTimeoutError as exc:
+            logger.error("Chat execution timeout: %s", exc)
+            response_markdown = (
+                "The operation took too long to complete. Please try again in a moment."
+            )
+        except CrewExecutionError as exc:
+            logger.error("Chat execution crew error: %s", exc)
+            response_markdown = (
+                "I encountered an error trying to process your request. Please try again."
+            )
         except Exception as exc:
             logger.error("Chat execution error: %s", exc)
             response_markdown = "I encountered an error trying to process your request. Please try again."

@@ -6,7 +6,11 @@ from typing import cast
 from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
 
-from app.crews.executor import TribultzChatOpsExecutor
+from app.crews.executor import (
+    CrewExecutionError,
+    CrewExecutionTimeoutError,
+    TribultzChatOpsExecutor,
+)
 from app.services.chat_service import ChatService, render_br_tax_response
 
 
@@ -82,4 +86,70 @@ def test_handle_message_passes_crew_output_through() -> None:
     assert call_kwargs["user_id"] == user_id
     assert call_kwargs["message"] == "Validate invoice INV-999"
 
+    db.commit.assert_called_once()
+
+
+def test_handle_message_returns_timeout_fallback_message() -> None:
+    tenant_id = uuid4()
+    user_id = uuid4()
+    conversation_id = uuid4()
+
+    db = MagicMock()
+    db.execute.return_value.scalar_one_or_none.return_value = SimpleNamespace(
+        id=conversation_id,
+        tenant_id=tenant_id,
+    )
+
+    service = ChatService(db=db)
+    service.rate_limiter = Mock()
+    service.rate_limiter.check_or_raise = Mock()
+
+    executor = Mock(spec=TribultzChatOpsExecutor)
+    executor.handle_message = AsyncMock(side_effect=CrewExecutionTimeoutError("timeout"))
+    service.executor = cast(TribultzChatOpsExecutor, executor)
+
+    result = asyncio.run(
+        service.handle_message(
+            tenant_id=tenant_id,
+            user_id=user_id,
+            message="Validate invoice INV-100",
+            conversation_id=conversation_id,
+        )
+    )
+
+    assert "too long" in result.response_markdown
+    assert result.evidence == []
+    db.commit.assert_called_once()
+
+
+def test_handle_message_returns_crew_error_fallback_message() -> None:
+    tenant_id = uuid4()
+    user_id = uuid4()
+    conversation_id = uuid4()
+
+    db = MagicMock()
+    db.execute.return_value.scalar_one_or_none.return_value = SimpleNamespace(
+        id=conversation_id,
+        tenant_id=tenant_id,
+    )
+
+    service = ChatService(db=db)
+    service.rate_limiter = Mock()
+    service.rate_limiter.check_or_raise = Mock()
+
+    executor = Mock(spec=TribultzChatOpsExecutor)
+    executor.handle_message = AsyncMock(side_effect=CrewExecutionError("boom"))
+    service.executor = cast(TribultzChatOpsExecutor, executor)
+
+    result = asyncio.run(
+        service.handle_message(
+            tenant_id=tenant_id,
+            user_id=user_id,
+            message="Validate invoice INV-101",
+            conversation_id=conversation_id,
+        )
+    )
+
+    assert "encountered an error" in result.response_markdown
+    assert result.evidence == []
     db.commit.assert_called_once()

@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     # ── HubSpot ───────────────────────────────────────────────
     HUBSPOT_ENABLED: bool = False
     HUBSPOT_PRIVATE_APP_TOKEN: str = ""
+    CHATOPS_TIMEOUT_SECONDS: int = 45
 
     class Config:
         env_file = ".env"

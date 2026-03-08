@@ -5,7 +5,19 @@ import logging
 from typing import Any
 from uuid import UUID, uuid4
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
+
+CREW_ERROR_MESSAGE = "Crew execution failed"
+
+
+class CrewExecutionError(RuntimeError):
+    """Raised when the Crew runtime fails for non-timeout reasons."""
+
+
+class CrewExecutionTimeoutError(CrewExecutionError):
+    """Raised when the Crew runtime exceeds the allowed timeout."""
 
 
 class TribultzChatOpsExecutor:
@@ -41,11 +53,28 @@ class TribultzChatOpsExecutor:
         from app.crews.chatops_crew import TribultzChatOpsCrew
 
         crew = TribultzChatOpsCrew(tenant_id=str(tenant_id), user_id=str(user_id))
+        timeout_s = max(1, int(settings.CHATOPS_TIMEOUT_SECONDS))
         try:
-            result = await asyncio.to_thread(crew.run, message)
+            result = await asyncio.wait_for(
+                asyncio.to_thread(crew.run, message),
+                timeout=timeout_s,
+            )
+        except asyncio.TimeoutError as exc:
+            logger.error(
+                "Crew execution timeout (tenant_id=%s user_id=%s timeout_s=%s)",
+                tenant_id,
+                user_id,
+                timeout_s,
+            )
+            raise CrewExecutionTimeoutError(CREW_ERROR_MESSAGE) from exc
         except Exception as exc:
-            logger.error("Crew execution error: %s", exc)
-            raise
+            logger.exception(
+                "Crew execution error (tenant_id=%s user_id=%s): %s",
+                tenant_id,
+                user_id,
+                exc,
+            )
+            raise CrewExecutionError(CREW_ERROR_MESSAGE) from exc
 
         response_markdown: str = result.get("response_markdown", "")
         evidence: list[dict[str, Any]] = result.get("evidence", [])

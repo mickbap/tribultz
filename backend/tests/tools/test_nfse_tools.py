@@ -2,8 +2,6 @@
 import json
 from unittest.mock import patch
 
-import pytest
-
 from app.crews.tools.parse_nfse_xml_tool import ParseNFSeXMLTool
 from app.crews.tools.validate_fiscal_rules_tool import ValidateFiscalRulesTool
 
