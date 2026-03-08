@@ -1,26 +1,47 @@
 classify_intent:
   description: >
-    Classify the user message into one of: validate, unknown.
-    Use only keywords/regex rules. Do not invent.
+    Classify the user message into one of: validate, validate_nfse, unknown.
+    Use only these rules:
+    - validate_nfse: message contains XML content (starts with < or contains <?xml or <NFS-e or <nfseMsg)
+    - validate: message contains keywords like "validar", "validate", "CBS", "IBS", "invoice"
+    - unknown: anything else
+    Do not invent. Pass through the original user message unchanged.
     Message: {message}
   expected_output: >
-    A single word: validate OR unknown.
+    A single word: validate OR validate_nfse OR unknown.
 
-trigger_validate_task_a:
+execute_operation:
   description: >
-    If intent is validate, trigger Task A for tenant {tenant_id}.
-    Use TriggerTaskATool. Return the job id.
+    Execute the operation for tenant {tenant_id} based on the triage intent:
+
+    IF intent is "validate":
+      - Call trigger_task_a with the invoice_number from the user message (default: INV-UNKNOWN)
+      - Return: {{"intent": "validate", "job_id": "<uuid>"}}
+
+    IF intent is "validate_nfse":
+      - Call parse_nfse_xml with the XML content from the user message
+      - Then call validate_fiscal_rules with the invoice_id and fields_json from parse_nfse_xml output
+      - Return: {{"intent": "validate_nfse", "invoice_id": "<uuid>", "findings": [...]}}
+
+    IF intent is "unknown":
+      - Return: {{"intent": "unknown"}}
   expected_output: >
-    JSON with: {"job_id": "<uuid>"}.
+    JSON with intent and result fields as described above.
 
 compose_response:
   description: >
-    Write response_markdown and evidence[].
-    evidence must be typed:
-      - type="job"
-      - job_id UUID
-      - href "/jobs/<id>"
-      - label "Validation job"
+    Write response_markdown and evidence[] based on the operation result.
+
+    For intent="validate":
+      evidence: [{type: "job", job_id: "<uuid>", href: "/jobs/<uuid>", label: "Validation job"}]
+
+    For intent="validate_nfse":
+      Summarize findings in response_markdown. List each finding as a bullet with rule_id, severity, and recommendation.
+      evidence: [{type: "audit", href: "/invoices/<invoice_id>", label: "NFS-e validation", payload: {findings: [...]}}]
+
+    For intent="unknown":
+      response_markdown: polite message saying the request was not understood.
+      evidence: []
   expected_output: >
     JSON with: {"response_markdown": "...", "evidence": [{...}]}.
 
