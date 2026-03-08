@@ -7,15 +7,15 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from dotenv import load_dotenv
 from crewai import Agent, Crew, LLM, Process, Task
-
-load_dotenv()
+from dotenv import load_dotenv
 
 from app.crews.tools.get_job_status_tool import GetJobStatusTool
 from app.crews.tools.parse_nfse_xml_tool import ParseNFSeXMLTool
 from app.crews.tools.trigger_task_a_tool import TriggerTaskATool
 from app.crews.tools.validate_fiscal_rules_tool import ValidateFiscalRulesTool
+
+load_dotenv()
 
 _CONFIG_DIR = (
     Path(__file__).resolve().parents[3] / "crews" / "tribultz_chatops" / "config"
