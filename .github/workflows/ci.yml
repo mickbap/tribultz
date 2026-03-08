@@ -68,9 +68,9 @@ jobs:
         working-directory: backend
         run: |
           python -m pip install --upgrade pip uv
-          if [ -f requirements.txt ]; then uv pip install -r requirements.txt; fi
-          if [ -f pyproject.toml ]; then uv pip install -e ".[dev]" || uv pip install -e "."; fi
-          uv pip install "ruff==0.6.9" "pytest==8.3.3"
+          if [ -f requirements.txt ]; then uv pip install --system -r requirements.txt; fi
+          if [ -f pyproject.toml ]; then uv pip install --system -e ".[dev]" || uv pip install --system -e "."; fi
+          uv pip install --system "ruff==0.6.9" "pytest==8.3.3"
       - name: Wait for services healthy
         run: |
           python - << 'PY'
