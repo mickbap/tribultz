@@ -1,19 +1,22 @@
 ﻿# tribultz
 Plataforma de compliance e simulaÃ§Ã£o CBS/IBS (Reforma 2026): validaÃ§Ã£o fiscal em tempo real, reconciliaÃ§Ã£o, trilha auditÃ¡vel e dashboard executivo.
 
-## Status Sprint 5 (P0+P1)
-- Concluida no repositorio canonical `mickbap/tribultz`.
-- Fluxo demo oficial: `Login -> Dashboard -> Chat -> Validar CBS/IBS -> Job -> Audit`.
+## Status atual (2026-03-08)
+- Sprint 6 encerrada com release `sprint-6-crewai-runtime-v1`.
+- PRs de fechamento mergeadas em `main`: #32 (CrewAI runtime hardening) e #30 (discovery scaffold).
+- Sprint 5 permanece disponivel via release `sprint-5-console-v2`.
+- Fluxo demo oficial mantido: `Login -> Dashboard -> Chat -> Validar CBS/IBS -> Job -> Audit`.
 - Console roda em Mock Mode por padrao (ON) e suporta API Mode.
 - Em API Mode, toda request envia `Authorization: Bearer <token>` e `X-Tenant-Id: <tenant>`.
-- Login real depende de backend/credenciais validos no ambiente.
-- `mickbap/tribultz-console-navigator` fica somente como referencia/export do Lovable (nao canonical).
 
-## Status Sprint 6 (P0)
-- Validacao XML com evidencias auditaveis em `/validate-xml` (NFS-e primeiro, NF-e suportado).
-- Contrato Findings + Evidence v1.1 implementado (types + schema + example payload).
-- Regras MVP aplicadas (FATAL: CST/cClassTrib/CodigoServico; ALERT: NCM e beneficios/creditos).
-- Workflow de excecao implementado em `/exceptions` (OPEN -> APPROVED/REJECTED) com eventos no audit.
+## Sprint 7 (North Star)
+- North Star: transformar discovery da Roberta em regras deterministicas auditaveis sem quebrar o contrato Findings/Evidence v1.1.
+- Backlog ativo S7:
+  - #37 `[S7-01]` Pacote de 3 XML anonimizados + gabarito validado.
+  - #34 `[S7-02]` Top 10 rules phase 1 no motor (deterministico + evidencias).
+  - #35 `[S7-03]` Cobertura de variacoes de paths NFS-e.
+  - #33 `[S7-04]` Runbook S7 + criterios de aceite QA.
+- Carryover de discovery (migrado para S7): #13 e #21.
 <!-- SPRINT4-START -->
 ## Runbook rapido (Dev/QA) - Chat Fiscal MVP
 
