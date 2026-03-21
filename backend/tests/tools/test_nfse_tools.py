@@ -11,10 +11,24 @@ VALID_NFSE_XML = """\
 <?xml version="1.0" encoding="UTF-8"?>
 <NFS-e>
   <infNfse>
-    <CST>400</CST>
-    <cClassTrib>654321</cClassTrib>
-    <CodigoServico>123456</CodigoServico>
-    <NCM>12345678</NCM>
+    <PrestadorServico><RazaoSocial>X</RazaoSocial></PrestadorServico>
+    <TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>
+    <PrestacaoServico>
+      <Servico>
+        <CST>400</CST>
+        <cClassTrib>654321</cClassTrib>
+        <CodigoServico>123456</CodigoServico>
+        <NCM>12345678</NCM>
+        <CEST>2104900</CEST>
+      </Servico>
+      <Valores>
+        <BaseCalculo>10000.00</BaseCalculo>
+        <AliquotaCBS>0.0010</AliquotaCBS>
+        <ValorCBS>10.00</ValorCBS>
+        <AliquotaIBS>0.0090</AliquotaIBS>
+        <ValorIBS>90.00</ValorIBS>
+      </Valores>
+    </PrestacaoServico>
   </infNfse>
 </NFS-e>"""
 
@@ -48,6 +62,13 @@ class TestParseNFSeXMLTool:
         assert result["fields"]["cclasstrib"] == "654321"
         assert result["fields"]["codigo_servico"] == "123456"
         assert result["fields"]["ncm"] == "12345678"
+        assert result["fields"]["cest"] == "2104900"
+        assert result["fields"]["base_calculo"] == "10000.00"
+        assert result["fields"]["valor_cbs"] == "10.00"
+        assert result["fields"]["valor_ibs"] == "90.00"
+        assert "Valores" in result["fields"]["layout_tags"]
+        assert "PrestadorServico" in result["fields"]["layout_tags"]
+        assert "TomadorServico" in result["fields"]["layout_tags"]
         assert "invoice_id" in result
 
     @patch("app.crews.tools.parse_nfse_xml_tool.put_object")
@@ -84,6 +105,13 @@ class TestValidateFiscalRulesTool:
             "cclasstrib": "654321",
             "codigo_servico": "123456",
             "ncm": "12345678",
+            "cest": "2104900",
+            "base_calculo": "10000.00",
+            "aliquota_cbs": "0.0010",
+            "valor_cbs": "10.00",
+            "aliquota_ibs": "0.0090",
+            "valor_ibs": "90.00",
+            "layout_tags": "Valores,PrestadorServico,TomadorServico",
             "parse_error": None,
         }
         base.update(overrides)
@@ -127,3 +155,70 @@ class TestValidateFiscalRulesTool:
         f = result["findings"][0]
         for key in ("rule_id", "severity", "field", "xpath", "snippet", "recommendation"):
             assert key in f, f"Missing key: {key}"
+
+    # ── New rules (S7) ──────────────────────────────────────────────────────
+
+    def test_ibscbs_missing_is_fatal(self):
+        result = json.loads(self._tool()._run(
+            "inv-1", self._fields_json(valor_cbs="", valor_ibs="", aliquota_cbs="", aliquota_ibs="")
+        ))
+        rule_ids = [f["rule_id"] for f in result["findings"]]
+        assert "IBSCBS_MISSING" in rule_ids
+        f = next(f for f in result["findings"] if f["rule_id"] == "IBSCBS_MISSING")
+        assert f["severity"] == "FATAL"
+
+    def test_ibscbs_calc_cbs_wrong_is_fatal(self):
+        result = json.loads(self._tool()._run(
+            "inv-1", self._fields_json(valor_cbs="15.00")
+        ))
+        cbs_findings = [f for f in result["findings"] if f["rule_id"] == "IBSCBS_CALC" and f["field"] == "ValorCBS"]
+        assert len(cbs_findings) == 1
+        assert cbs_findings[0]["severity"] == "FATAL"
+        assert "10.00" in cbs_findings[0]["recommendation"]
+
+    def test_ibscbs_calc_ibs_wrong_is_fatal(self):
+        result = json.loads(self._tool()._run(
+            "inv-1", self._fields_json(valor_ibs="50.00")
+        ))
+        ibs_findings = [f for f in result["findings"] if f["rule_id"] == "IBSCBS_CALC" and f["field"] == "ValorIBS"]
+        assert len(ibs_findings) == 1
+        assert ibs_findings[0]["severity"] == "FATAL"
+        assert "90.00" in ibs_findings[0]["recommendation"]
+
+    def test_ibscbs_calc_correct_no_finding(self):
+        result = json.loads(self._tool()._run("inv-1", self._fields_json()))
+        calc_findings = [f for f in result["findings"] if f["rule_id"] == "IBSCBS_CALC"]
+        assert calc_findings == []
+
+    def test_cest_missing_is_fatal(self):
+        result = json.loads(self._tool()._run("inv-1", self._fields_json(cest="")))
+        rule_ids = [f["rule_id"] for f in result["findings"]]
+        assert "CEST_MISSING" in rule_ids
+        f = next(f for f in result["findings"] if f["rule_id"] == "CEST_MISSING")
+        assert f["severity"] == "FATAL"
+
+    def test_cest_format_wrong_is_fatal(self):
+        result = json.loads(self._tool()._run("inv-1", self._fields_json(cest="21049")))
+        rule_ids = [f["rule_id"] for f in result["findings"]]
+        assert "CEST_FORMAT" in rule_ids
+        f = next(f for f in result["findings"] if f["rule_id"] == "CEST_FORMAT")
+        assert f["severity"] == "FATAL"
+
+    def test_cest_7_digits_no_finding(self):
+        result = json.loads(self._tool()._run("inv-1", self._fields_json()))
+        cest_findings = [f for f in result["findings"] if f["rule_id"] in ("CEST_MISSING", "CEST_FORMAT")]
+        assert cest_findings == []
+
+    def test_layout_portal_missing_tags_is_fatal(self):
+        result = json.loads(self._tool()._run(
+            "inv-1", self._fields_json(layout_tags="")
+        ))
+        rule_ids = [f["rule_id"] for f in result["findings"]]
+        assert "LAYOUT_PORTAL" in rule_ids
+        f = next(f for f in result["findings"] if f["rule_id"] == "LAYOUT_PORTAL")
+        assert f["severity"] == "FATAL"
+
+    def test_layout_portal_complete_no_finding(self):
+        result = json.loads(self._tool()._run("inv-1", self._fields_json()))
+        layout_findings = [f for f in result["findings"] if f["rule_id"] == "LAYOUT_PORTAL"]
+        assert layout_findings == []
