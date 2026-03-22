@@ -1,13 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <NFS-e>
   <infNfse>
+    <PrestadorServico>
+      <IdentificacaoPrestador>
+        <CpfCnpj><Cnpj>00000000000100</Cnpj></CpfCnpj>
+      </IdentificacaoPrestador>
+      <RazaoSocial>EMPRESA TESTE LTDA</RazaoSocial>
+    </PrestadorServico>
+    <TomadorServico>
+      <IdentificacaoTomador>
+        <CpfCnpj><Cnpj>00000000000200</Cnpj></CpfCnpj>
+      </IdentificacaoTomador>
+      <RazaoSocial>TOMADOR TESTE S.A.</RazaoSocial>
+    </TomadorServico>
     <PrestacaoServico>
       <Servico>
         <CodigoServico>123456</CodigoServico>
         <cClassTrib>654321</cClassTrib>
         <CST>090</CST>
         <NCM>84713012</NCM>
+        <CEST>2104900</CEST>
       </Servico>
+      <Valores>
+        <ValorServicos>10000.00</ValorServicos>
+        <BaseCalculo>10000.00</BaseCalculo>
+        <AliquotaISS>0.0500</AliquotaISS>
+        <ValorISS>500.00</ValorISS>
+        <AliquotaCBS>0.0010</AliquotaCBS>
+        <ValorCBS>10.00</ValorCBS>
+        <AliquotaIBS>0.0090</AliquotaIBS>
+        <ValorIBS>90.00</ValorIBS>
+        <ValorLiquido>9400.00</ValorLiquido>
+      </Valores>
     </PrestacaoServico>
   </infNfse>
 </NFS-e>

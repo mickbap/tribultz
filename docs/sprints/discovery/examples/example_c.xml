@@ -1,2 +1,65 @@
-﻿<!-- Cole aqui o XML ANONIMIZADO do Exemplo C -->
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Exemplo C — NFS-e válida (PASS)
+     Cenário: Nota de serviço de desenvolvimento de software.
+     Todos os campos corretos:
+       - CST 3 dígitos ✓
+       - cClassTrib 6 dígitos ✓
+       - CodigoServico 6 dígitos ✓
+       - CEST 7 dígitos (novo formato) ✓
+       - IBS 0,90% calculado corretamente ✓
+       - CBS 0,10% calculado corretamente ✓
+       - Layout conforme Portal Nacional ✓
+     Dados anonimizados conforme checklist S6-06-2.
+-->
+<NFS-e>
+  <infNfse>
+    <Numero>000000099</Numero>
+    <CodigoVerificacao>ANON-G7H8I9</CodigoVerificacao>
+    <DataEmissao>2026-03-20</DataEmissao>
+    <Competencia>2026-03</Competencia>
 
+    <PrestadorServico>
+      <IdentificacaoPrestador>
+        <CpfCnpj><Cnpj>00000000000500</Cnpj></CpfCnpj>
+        <InscricaoMunicipal>***</InscricaoMunicipal>
+      </IdentificacaoPrestador>
+      <RazaoSocial>SOFTWARE HOUSE ANONIMIZADA LTDA</RazaoSocial>
+      <Endereco>
+        <CodigoMunicipio>3550308</CodigoMunicipio>
+        <Uf>SP</Uf>
+      </Endereco>
+    </PrestadorServico>
+
+    <TomadorServico>
+      <IdentificacaoTomador>
+        <CpfCnpj><Cnpj>00000000000600</Cnpj></CpfCnpj>
+      </IdentificacaoTomador>
+      <RazaoSocial>CONTRATANTE ANONIMIZADO S.A.</RazaoSocial>
+    </TomadorServico>
+
+    <PrestacaoServico>
+      <Servico>
+        <CodigoServico>140101</CodigoServico>
+        <Discriminacao>Desenvolvimento de software sob encomenda conforme OS 2026/055</Discriminacao>
+        <cClassTrib>140101</cClassTrib>
+        <CST>090</CST>
+        <NCM>84713012</NCM>
+        <CEST>2104900</CEST>
+      </Servico>
+
+      <Valores>
+        <ValorServicos>25000.00</ValorServicos>
+        <BaseCalculo>25000.00</BaseCalculo>
+        <AliquotaISS>0.0500</AliquotaISS>
+        <ValorISS>1250.00</ValorISS>
+        <AliquotaCBS>0.0010</AliquotaCBS>
+        <ValorCBS>25.00</ValorCBS>
+        <!-- CBS correto: 0,10% × 25000.00 = 25.00 ✓ -->
+        <AliquotaIBS>0.0090</AliquotaIBS>
+        <ValorIBS>225.00</ValorIBS>
+        <!-- IBS correto: 0,90% × 25000.00 = 225.00 ✓ -->
+        <ValorLiquido>23500.00</ValorLiquido>
+      </Valores>
+    </PrestacaoServico>
+  </infNfse>
+</NFS-e>

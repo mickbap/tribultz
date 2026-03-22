@@ -53,8 +53,21 @@ class ParseNFSeXMLTool(BaseTool):
             "cclasstrib": "",
             "codigo_servico": "",
             "ncm": "",
+            "cest": "",
+            "base_calculo": "",
+            "aliquota_cbs": "",
+            "valor_cbs": "",
+            "aliquota_ibs": "",
+            "valor_ibs": "",
         }
         parse_error: str | None = None
+
+        # Track which layout sections are present
+        layout_tags: dict[str, bool] = {
+            "Valores": False,
+            "PrestadorServico": False,
+            "TomadorServico": False,
+        }
 
         try:
             root = ET.fromstring(xml_content.strip())
@@ -69,8 +82,25 @@ class ParseNFSeXMLTool(BaseTool):
                     fields["codigo_servico"] = text
                 elif tag == "NCM" and not fields["ncm"]:
                     fields["ncm"] = text
+                elif tag == "CEST" and not fields["cest"]:
+                    fields["cest"] = text
+                elif tag == "BaseCalculo" and not fields["base_calculo"]:
+                    fields["base_calculo"] = text
+                elif tag == "AliquotaCBS" and not fields["aliquota_cbs"]:
+                    fields["aliquota_cbs"] = text
+                elif tag == "ValorCBS" and not fields["valor_cbs"]:
+                    fields["valor_cbs"] = text
+                elif tag == "AliquotaIBS" and not fields["aliquota_ibs"]:
+                    fields["aliquota_ibs"] = text
+                elif tag == "ValorIBS" and not fields["valor_ibs"]:
+                    fields["valor_ibs"] = text
+                # Track layout tags
+                if tag in layout_tags:
+                    layout_tags[tag] = True
         except ET.ParseError as exc:
             parse_error = str(exc)
+
+        fields["layout_tags"] = ",".join(t for t, present in layout_tags.items() if present)
 
         return json.dumps({
             "invoice_id": invoice_id,

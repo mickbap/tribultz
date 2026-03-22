@@ -1,2 +1,63 @@
-﻿<!-- Cole aqui o XML ANONIMIZADO do Exemplo B -->
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Exemplo B — NFS-e com erros de cálculo (FAIL)
+     Cenário: Nota de serviço de manutenção de TI.
+     Erros intencionais:
+       1. ValorCBS = 15.00 mas deveria ser 10.00 (0,10% de 10000.00)
+       2. ValorIBS = 50.00 mas deveria ser 90.00 (0,90% de 10000.00)
+       3. CEST presente mas código antigo/inválido (5 dígitos em vez de 7)
+     Campos estruturais (CST, cClassTrib, CodigoServico) estão corretos.
+     Dados anonimizados conforme checklist S6-06-2.
+-->
+<NFS-e>
+  <infNfse>
+    <Numero>000000042</Numero>
+    <CodigoVerificacao>ANON-D4E5F6</CodigoVerificacao>
+    <DataEmissao>2026-03-18</DataEmissao>
+    <Competencia>2026-03</Competencia>
 
+    <PrestadorServico>
+      <IdentificacaoPrestador>
+        <CpfCnpj><Cnpj>00000000000300</Cnpj></CpfCnpj>
+        <InscricaoMunicipal>***</InscricaoMunicipal>
+      </IdentificacaoPrestador>
+      <RazaoSocial>TECH SERVICOS ANONIMIZADOS LTDA</RazaoSocial>
+      <Endereco>
+        <CodigoMunicipio>3550308</CodigoMunicipio>
+        <Uf>SP</Uf>
+      </Endereco>
+    </PrestadorServico>
+
+    <TomadorServico>
+      <IdentificacaoTomador>
+        <CpfCnpj><Cnpj>00000000000400</Cnpj></CpfCnpj>
+      </IdentificacaoTomador>
+      <RazaoSocial>CLIENTE ANONIMIZADO LTDA</RazaoSocial>
+    </TomadorServico>
+
+    <PrestacaoServico>
+      <Servico>
+        <CodigoServico>140501</CodigoServico>
+        <Discriminacao>Manutencao preventiva e corretiva de infraestrutura de TI</Discriminacao>
+        <cClassTrib>140501</cClassTrib>
+        <CST>090</CST>
+        <NCM>84714900</NCM>
+        <CEST>21049</CEST>
+        <!-- ERRO: CEST deve ter 7 dígitos (ex: 2104900), aqui tem apenas 5 -->
+      </Servico>
+
+      <Valores>
+        <ValorServicos>10000.00</ValorServicos>
+        <BaseCalculo>10000.00</BaseCalculo>
+        <AliquotaISS>0.0500</AliquotaISS>
+        <ValorISS>500.00</ValorISS>
+        <AliquotaCBS>0.0010</AliquotaCBS>
+        <ValorCBS>15.00</ValorCBS>
+        <!-- ERRO: CBS deveria ser 10.00 (0,10% × 10000.00 = 10.00) -->
+        <AliquotaIBS>0.0090</AliquotaIBS>
+        <ValorIBS>50.00</ValorIBS>
+        <!-- ERRO: IBS deveria ser 90.00 (0,90% × 10000.00 = 90.00) -->
+        <ValorLiquido>9435.00</ValorLiquido>
+      </Valores>
+    </PrestacaoServico>
+  </infNfse>
+</NFS-e>

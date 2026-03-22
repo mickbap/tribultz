@@ -1,2 +1,64 @@
-﻿<!-- Cole aqui o XML ANONIMIZADO do Exemplo A -->
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Exemplo A — NFS-e com erros graves (FAIL)
+     Cenário: Nota de serviço de consultoria empresarial.
+     Erros intencionais:
+       1. IBS e CBS ausentes (campos obrigatórios na reforma)
+       2. cClassTrib com apenas 4 dígitos (esperado 6)
+       3. CEST ausente (obrigatório conforme classificação)
+       4. Layout incompleto — faltam tags de valores tributários
+     Dados anonimizados conforme checklist S6-06-2.
+-->
+<NFS-e>
+  <infNfse>
+    <Numero>000000001</Numero>
+    <CodigoVerificacao>ANON-A1B2C3</CodigoVerificacao>
+    <DataEmissao>2026-03-15</DataEmissao>
+    <Competencia>2026-03</Competencia>
 
+    <PrestadorServico>
+      <IdentificacaoPrestador>
+        <CpfCnpj><Cnpj>00000000000100</Cnpj></CpfCnpj>
+        <InscricaoMunicipal>***</InscricaoMunicipal>
+      </IdentificacaoPrestador>
+      <RazaoSocial>EMPRESA ANONIMIZADA LTDA</RazaoSocial>
+      <Endereco>
+        <CodigoMunicipio>3550308</CodigoMunicipio>
+        <Uf>SP</Uf>
+      </Endereco>
+    </PrestadorServico>
+
+    <TomadorServico>
+      <IdentificacaoTomador>
+        <CpfCnpj><Cnpj>00000000000200</Cnpj></CpfCnpj>
+      </IdentificacaoTomador>
+      <RazaoSocial>TOMADOR ANONIMIZADO S.A.</RazaoSocial>
+    </TomadorServico>
+
+    <PrestacaoServico>
+      <Servico>
+        <CodigoServico>172201</CodigoServico>
+        <Discriminacao>Servicos de consultoria empresarial conforme contrato 2026/001</Discriminacao>
+        <cClassTrib>1722</cClassTrib>
+        <!-- ERRO: cClassTrib deve ter 6 dígitos, aqui tem apenas 4 -->
+        <CST>090</CST>
+        <NCM>84713012</NCM>
+        <!-- CEST ausente — deveria constar conforme nova classificação -->
+      </Servico>
+
+      <Valores>
+        <ValorServicos>10000.00</ValorServicos>
+        <BaseCalculo>10000.00</BaseCalculo>
+        <AliquotaISS>0.0500</AliquotaISS>
+        <ValorISS>500.00</ValorISS>
+        <!-- ERRO: Tags IBS e CBS ausentes.
+             Esperado conforme reforma (LC 214/LC 227):
+               <AliquotaCBS>0.0010</AliquotaCBS>
+               <ValorCBS>10.00</ValorCBS>
+               <AliquotaIBS>0.0090</AliquotaIBS>
+               <ValorIBS>90.00</ValorIBS>
+        -->
+        <ValorLiquido>9500.00</ValorLiquido>
+      </Valores>
+    </PrestacaoServico>
+  </infNfse>
+</NFS-e>
