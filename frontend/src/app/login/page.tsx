@@ -147,6 +147,11 @@ export default function LoginPage() {
                     </div>
                   )}
                 </form>
+                <p className="mt-3 text-center text-xs text-slate-500">
+                  <a href="/forgot-password" className="font-medium text-tribultz-700 hover:underline">
+                    Esqueci minha senha
+                  </a>
+                </p>
               </div>
             </div>
           </div>

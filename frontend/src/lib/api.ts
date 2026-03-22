@@ -138,6 +138,34 @@ export async function resendVerificationEmail(payload: LoginRequest): Promise<vo
   }
 }
 
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: "Erro ao solicitar" }));
+    throw new Error(body.detail ?? `Erro ${res.status}`);
+  }
+  return (await res.json()) as { message: string };
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, new_password: newPassword }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: "Erro ao redefinir" }));
+    throw new Error(body.detail ?? `Erro ${res.status}`);
+  }
+  return (await res.json()) as { message: string };
+}
+
 export async function registerWithApi(payload: RegisterRequest): Promise<RegisterResponse> {
   const res = await fetch(`${API_BASE}/api/v1/auth/register`, {
     method: "POST",

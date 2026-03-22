@@ -41,6 +41,30 @@ def verify_email_verification_token(token: str) -> Optional[str]:
         return None
 
 
+def create_password_reset_token(user_id: str) -> str:
+    """Create a JWT token for password reset (1h expiry)."""
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(hours=1)
+    to_encode = {
+        "exp": expire,
+        "iat": now,
+        "sub": user_id,
+        "purpose": "password_reset",
+    }
+    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALG)
+
+
+def verify_password_reset_token(token: str) -> Optional[str]:
+    """Verify password reset token. Returns user_id or None."""
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALG])
+        if payload.get("purpose") != "password_reset":
+            return None
+        return payload.get("sub")
+    except Exception:
+        return None
+
+
 def create_access_token(subject: Union[str, Any], extra_claims: Optional[dict[str, Any]] = None) -> str:
     if extra_claims is None:
         extra_claims = {}

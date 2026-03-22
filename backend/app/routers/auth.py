@@ -18,10 +18,12 @@ from app.core.security import (
     create_access_token,
     create_email_verification_token,
     verify_email_verification_token,
+    create_password_reset_token,
+    verify_password_reset_token,
 )
 from app.services.captcha_service import verify_captcha
 from app.services.cnpj_validator import validate_cnpj
-from app.services.email_service import send_verification_email
+from app.services.email_service import send_verification_email, send_password_reset_email
 from app.services.rate_limit import RateLimiter
 
 logger = logging.getLogger(__name__)
@@ -474,3 +476,82 @@ async def switch_tenant(
         "tenant_id": str(data.tenant_id),
         "tenant_name": cast(str, tenant.name) if tenant else "",
     }
+
+
+# ── Forgot Password ──────────────────────────────────────────
+
+_forgot_limiter = RateLimiter()
+_forgot_limiter.limit = 3
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+@router.post("/forgot-password")
+def forgot_password(
+    data: ForgotPasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Send password reset email. Always returns 200 to prevent email enumeration."""
+    ip = _client_ip(request)
+    _forgot_limiter.check_or_raise(f"forgot:{ip}")
+
+    user = db.execute(
+        select(User).where(User.email == data.email)
+    ).scalar_one_or_none()
+
+    if user and cast(bool, user.is_active) and user.deleted_at is None:
+        token = create_password_reset_token(str(user.id))
+        send_password_reset_email(
+            to_email=cast(str, user.email),
+            user_name=cast(str, user.full_name),
+            token=token,
+        )
+        logger.info("password_reset_requested", extra={"email": data.email})
+    else:
+        logger.info("password_reset_ignored", extra={"email": data.email})
+
+    return {"message": "Se o email estiver cadastrado, voce recebera um link para redefinir sua senha."}
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+@router.post("/reset-password")
+def reset_password(
+    data: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """Reset password using a valid reset token."""
+    if len(data.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Senha deve ter no minimo 8 caracteres.",
+        )
+
+    user_id = verify_password_reset_token(data.token)
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Link expirado ou invalido. Solicite um novo link.",
+        )
+
+    user = db.execute(
+        select(User).where(User.id == user_id)
+    ).scalar_one_or_none()
+
+    if not user or not cast(bool, user.is_active):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Conta nao encontrada ou inativa.",
+        )
+
+    user.password_hash = get_password_hash(data.new_password)
+    db.commit()
+
+    logger.info("password_reset_completed", extra={"user_id": user_id})
+    return {"message": "Senha redefinida com sucesso. Faca login com sua nova senha."}

@@ -14,7 +14,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setMobileOpen(false);
   }, [pathname]);
 
-  if (pathname === "/login") return <>{children}</>;
+  const noShell = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
+  if (noShell.includes(pathname)) return <>{children}</>;
 
   return (
     <div className="min-h-screen md:flex">

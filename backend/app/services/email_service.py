@@ -56,10 +56,61 @@ def send_verification_email(to_email: str, user_name: str, token: str) -> bool:
         "Tribultz Tecnologia Ltda."
     )
 
+    return _send_email(to_email, subject, html_body, text_body, verify_url)
+
+
+def send_password_reset_email(to_email: str, user_name: str, token: str) -> bool:
+    """Send password reset link. Returns True on success."""
+    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+
+    subject = "Tribultz — Redefinir senha"
+    html_body = f"""\
+<html>
+<body style="font-family: sans-serif; color: #1e293b; max-width: 560px; margin: 0 auto;">
+  <h2 style="color: #1d4ed8;">Tribultz</h2>
+  <p>Ola, <strong>{user_name}</strong>!</p>
+  <p>Recebemos uma solicitacao para redefinir a senha da sua conta no Tribultz Console.
+     Clique no botao abaixo para criar uma nova senha:</p>
+  <p style="text-align: center; margin: 24px 0;">
+    <a href="{reset_url}"
+       style="background: #2563eb; color: white; padding: 12px 28px;
+              border-radius: 8px; text-decoration: none; font-weight: 600;">
+      Redefinir senha
+    </a>
+  </p>
+  <p style="font-size: 13px; color: #64748b;">
+    Ou copie e cole este link no navegador:<br/>
+    <a href="{reset_url}">{reset_url}</a>
+  </p>
+  <p style="font-size: 13px; color: #64748b;">
+    Este link expira em 1 hora. Se voce nao solicitou a redefinicao,
+    ignore este email — sua senha permanece inalterada.
+  </p>
+  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;"/>
+  <p style="font-size: 11px; color: #94a3b8;">
+    Tribultz Tecnologia Ltda. — Conformidade tributaria em tempo de execucao.<br/>
+    DPO: dpo@tribultz.com.br
+  </p>
+</body>
+</html>"""
+
+    text_body = (
+        f"Ola, {user_name}!\n\n"
+        f"Redefina sua senha acessando: {reset_url}\n\n"
+        "Este link expira em 1 hora.\n"
+        "Se voce nao solicitou, ignore este email.\n"
+        "Tribultz Tecnologia Ltda."
+    )
+
+    return _send_email(to_email, subject, html_body, text_body, reset_url)
+
+
+def _send_email(to_email: str, subject: str, html_body: str, text_body: str, log_url: str) -> bool:
+    """Internal: send or log an email."""
     if not settings.EMAIL_VERIFICATION_ENABLED or not settings.SMTP_HOST:
         logger.info(
-            "email_verification_logged (SMTP disabled)",
-            extra={"to": to_email, "verify_url": verify_url},
+            "email_logged (SMTP disabled)",
+            extra={"to": to_email, "url": log_url},
         )
         return True
 
@@ -84,8 +135,8 @@ def send_verification_email(to_email: str, user_name: str, token: str) -> bool:
         server.sendmail(settings.SMTP_FROM_EMAIL, to_email, msg.as_string())
         server.quit()
 
-        logger.info("email_verification_sent", extra={"to": to_email})
+        logger.info("email_sent", extra={"to": to_email, "subject": subject})
         return True
     except Exception:
-        logger.exception("email_verification_failed", extra={"to": to_email})
+        logger.exception("email_send_failed", extra={"to": to_email, "subject": subject})
         return False
