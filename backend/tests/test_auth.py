@@ -76,12 +76,31 @@ def test_user(session, test_tenant):
         full_name="Test User",
         password_hash=get_password_hash("password123"),
         tenant_id=test_tenant.id,
-        role="admin"
+        role="admin",
+        email_verified=True,
     )
     session.add(user)
     session.commit()
     session.refresh(user)
     return user
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiters():
+    """Clear rate-limiter state so repeated pytest runs (QA Gates) don't 429."""
+    from app.routers.auth import _login_limiter, _register_limiter, _forgot_limiter
+
+    prefixes = ["ratelimit:login:", "ratelimit:register:", "ratelimit:resend:", "ratelimit:forgot:"]
+    for rl in (_login_limiter, _register_limiter, _forgot_limiter):
+        rl._memory_store.clear()
+
+    redis_conn = _login_limiter.redis
+    if redis_conn is not None:
+        for prefix in prefixes:
+            # Delete the specific key that testclient uses (IP "testclient")
+            redis_conn.delete(f"{prefix}testclient")
+            redis_conn.delete(f"{prefix}127.0.0.1")
+            redis_conn.delete(f"{prefix}unknown")
 
 
 # ── Tests ─────────────────────────────────────────────────────
@@ -111,7 +130,7 @@ def test_login_wrong_password(client, test_user, test_tenant):
         }
     )
     assert response.status_code == 401
-    assert response.json()["detail"] == "Incorrect email or password"
+    assert response.json()["detail"] == "Email ou senha incorretos"
 
 
 def test_login_inactive_user(client, session, test_user, test_tenant):
@@ -128,16 +147,18 @@ def test_login_inactive_user(client, session, test_user, test_tenant):
         }
     )
     assert response.status_code == 401
-    assert response.json()["detail"] == "Inactive user"
+    assert response.json()["detail"] == "Usuario inativo"
 
 
-def test_login_wrong_tenant(client, test_user):
+def test_login_nonexistent_email(client, test_user):
+    """Login with email that does not exist returns 401."""
     response = client.post(
         "/api/v1/auth/login",
         json={
-            "email": test_user.email,
+            "email": "nobody@example.com",
             "password": "password123",
-            "tenant_slug": "non-existent-tenant"
+            "tenant_slug": "any-tenant"
         }
     )
     assert response.status_code == 401
+    assert response.json()["detail"] == "Email ou senha incorretos"

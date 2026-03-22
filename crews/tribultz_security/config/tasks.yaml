@@ -1,0 +1,65 @@
+# ── Tribultz Security Tasks ──────────────────────────────────
+
+# SOC tasks
+analyze_access_logs:
+  description: >
+    Analyze the following access log data for tenant {tenant_id}:
+    {log_data}
+
+    Look for:
+    1. Failed login attempts (brute force patterns: >5 failures in 60s)
+    2. Logins from unusual IPs or at unusual hours
+    3. Privilege escalation attempts (role changes, admin access)
+    4. Soft-deleted accounts attempting access
+    5. Rate limit violations
+
+    Produce a structured JSON alert for each finding.
+  expected_output: >
+    JSON array of security alerts:
+    [{"severity": "INFO|WARNING|CRITICAL", "event_type": "...",
+      "tenant_id": "...", "user_id": "...", "timestamp": "...",
+      "description": "...", "recommended_action": "..."}]
+
+# CloudSec tasks
+audit_storage_security:
+  description: >
+    Audit the storage configuration for tenant {tenant_id}:
+    {storage_config}
+
+    Verify against CIS S3 Benchmark and LGPD requirements:
+    1. Encryption at rest (AES-256 or SSE)
+    2. Encryption in transit (TLS 1.2+)
+    3. Bucket access policy (no public access)
+    4. RBAC per tenant (tenant isolation)
+    5. Data residency (Brazil region)
+    6. Versioning and backup policy
+    7. Access logging enabled
+
+    Produce a structured audit report.
+  expected_output: >
+    JSON audit report:
+    {"tenant_id": "...", "audit_date": "...", "checks": [
+      {"check_id": "CIS-S3-01", "name": "...", "status": "PASS|FAIL",
+       "detail": "...", "remediation": "..."}
+    ], "summary": {"total": N, "pass": N, "fail": N, "score_pct": N}}
+
+# SRE tasks
+generate_executive_report:
+  description: >
+    Generate an executive security posture report based on:
+    - SOC alerts: {soc_alerts}
+    - CloudSec audit: {cloudsec_audit}
+    - Period: {report_period}
+
+    The report must include:
+    1. Resumo Executivo (2-3 paragraphs)
+    2. KPIs: total de alertas, alertas criticos, score de conformidade,
+       tempo medio de deteccao
+    3. Top 5 riscos prioritizados com impacto e probabilidade
+    4. Plano de acao com responsaveis e prazos
+    5. Recomendacoes para proxima sprint
+
+    Write in Portuguese (pt-BR). Format as Markdown.
+  expected_output: >
+    Markdown report with sections: Resumo Executivo, KPIs, Riscos,
+    Plano de Acao, Recomendacoes.

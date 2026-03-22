@@ -1,15 +1,13 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { Toast } from "@/components/common/Toast";
 import { resetDemoData } from "@/lib/api";
 import {
-  DEFAULT_TENANT,
   getMockMode,
   getTenantId,
   getToken,
   setMockMode,
-  setTenantId,
   setToken,
 } from "@/lib/storage";
 
@@ -17,7 +15,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"
 
 export default function SettingsPage() {
   const [mockMode, setMock] = useState(true);
-  const [tenant, setTenant] = useState(DEFAULT_TENANT);
+  const [tenant, setTenant] = useState("");
   const [token, setTokenValue] = useState("demo-token");
   const [toast, setToast] = useState<{ tone: "error" | "success" | "info"; msg: string } | null>(null);
 
@@ -29,29 +27,28 @@ export default function SettingsPage() {
 
   function saveSettings(): void {
     setMockMode(mockMode);
-    setTenantId(tenant.trim() || DEFAULT_TENANT);
     setToken(token.trim() || "demo-token");
     window.dispatchEvent(new Event("tribultz-settings-updated"));
-    setToast({ tone: "success", msg: "Configurações salvas." });
+    setToast({ tone: "success", msg: "Configuracoes salvas." });
   }
 
   function reset(): void {
     resetDemoData();
     window.dispatchEvent(new Event("tribultz-settings-updated"));
-    setToast({ tone: "info", msg: "Dados de demonstração resetados para o tenant atual." });
+    setToast({ tone: "info", msg: "Dados de demonstracao resetados." });
   }
 
   return (
     <section className="space-y-4">
       <header>
-        <h1 className="text-2xl font-bold text-slate-900">Configurações</h1>
-        <p className="text-sm text-slate-500">Controle de Mock Mode, tenant e token para API Mode.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Configuracoes</h1>
+        <p className="text-sm text-slate-500">Controle de Mock Mode e token para API Mode.</p>
       </header>
 
       <section className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-2">
         <label className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
           <span>
-            <span className="block text-sm font-medium text-slate-800">Mock Mode (padrão ON)</span>
+            <span className="block text-sm font-medium text-slate-800">Mock Mode (padrao ON)</span>
             <span className="text-xs text-slate-500">Quando ON, o app roda sem backend.</span>
           </span>
           <input
@@ -68,21 +65,14 @@ export default function SettingsPage() {
           <p className="mt-1 break-all text-xs text-slate-500">{API_BASE}</p>
         </div>
 
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-500">Tenant</span>
-          <select
-            value={tenant}
-            onChange={(e) => setTenant(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          >
-            <option value="tenant-a">tenant-a</option>
-            <option value="tenant-b">tenant-b</option>
-            <option value="tenant-prod">tenant-prod</option>
-          </select>
-        </label>
+        <div className="rounded-lg border border-slate-200 px-3 py-2">
+          <p className="text-sm font-medium text-slate-800">Tenant</p>
+          <p className="mt-1 text-xs text-slate-500 font-mono">{tenant}</p>
+          <p className="mt-1 text-xs text-slate-400">Definido pelo perfil do usuario (AWS).</p>
+        </div>
 
         <label className="text-sm">
-          <span className="mb-1 block text-slate-500">Token de autorização</span>
+          <span className="mb-1 block text-slate-500">Token de autorizacao</span>
           <input
             value={token}
             onChange={(e) => setTokenValue(e.target.value)}
@@ -108,6 +98,80 @@ export default function SettingsPage() {
           Resetar demo
         </button>
       </div>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 className="text-lg font-semibold text-slate-900">Meus Dados (LGPD)</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Seus direitos conforme a Lei Geral de Protecao de Dados (Lei 13.709/2018).
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={async () => {
+              if (mockMode) {
+                setToast({ tone: "info", msg: "Disponivel apenas em API Mode." });
+                return;
+              }
+              try {
+                const res = await fetch(`${API_BASE}/api/v1/lgpd/my-data`, {
+                  headers: { Authorization: `Bearer ${token}`, "X-Tenant-Id": tenant },
+                });
+                const data = await res.json();
+                setToast({ tone: "success", msg: `Dados carregados: ${data.user?.email ?? "OK"}` });
+              } catch {
+                setToast({ tone: "error", msg: "Falha ao carregar dados." });
+              }
+            }}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            Ver meus dados
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              if (mockMode) {
+                setToast({ tone: "info", msg: "Disponivel apenas em API Mode." });
+                return;
+              }
+              window.open(`${API_BASE}/api/v1/lgpd/export`, "_blank");
+            }}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            Exportar dados (JSON)
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              if (mockMode) {
+                setToast({ tone: "info", msg: "Disponivel apenas em API Mode." });
+                return;
+              }
+              if (!window.confirm("Tem certeza? Esta acao e irreversivel. Seus dados serao anonimizados.")) return;
+              try {
+                const res = await fetch(`${API_BASE}/api/v1/lgpd/delete-account`, {
+                  method: "POST",
+                  headers: { Authorization: `Bearer ${token}`, "X-Tenant-Id": tenant, "Content-Type": "application/json" },
+                });
+                if (res.ok) {
+                  setToast({ tone: "success", msg: "Conta desativada. Redirecionando..." });
+                  setTimeout(() => window.location.href = "/login", 2000);
+                } else {
+                  const data = await res.json().catch(() => ({}));
+                  setToast({ tone: "error", msg: data.detail ?? "Falha ao excluir conta." });
+                }
+              } catch {
+                setToast({ tone: "error", msg: "Falha ao excluir conta." });
+              }
+            }}
+            className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+          >
+            Excluir minha conta
+          </button>
+        </div>
+        <p className="mt-3 text-xs text-slate-400">
+          Dados fiscais sao retidos conforme obrigacao legal. Contato DPO: dpo@tribultz.com.br
+        </p>
+      </section>
 
       {toast ? <Toast message={toast.msg} tone={toast.tone} onClose={() => setToast(null)} /> : null}
     </section>

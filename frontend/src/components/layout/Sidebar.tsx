@@ -53,7 +53,16 @@ export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNa
           })}
         </ul>
       </nav>
-      <div className="border-t border-slate-200 p-3">
+      <div className="border-t border-slate-200 p-3 space-y-1">
+        <Link
+          href="/feedback"
+          onClick={onNavigate}
+          className={`block rounded-lg px-3 py-2 text-sm ${
+            pathname === "/feedback" ? "bg-tribultz-100 text-tribultz-700" : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          Feedback
+        </Link>
         <button
           type="button"
           onClick={handleLogout}

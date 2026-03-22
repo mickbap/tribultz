@@ -31,6 +31,25 @@ class Settings(BaseSettings):
     HUBSPOT_PRIVATE_APP_TOKEN: str = ""
     CHATOPS_TIMEOUT_SECONDS: int = 45
 
+    # ── Security ────────────────────────────────────────────
+    ALLOWED_ORIGINS: str = "http://localhost:3000"
+    ENVIRONMENT: str = "development"  # development | staging | production
+
+    # ── Turnstile (CAPTCHA) ─────────────────────────────────
+    TURNSTILE_SECRET_KEY: str = ""
+    CAPTCHA_ENABLED: bool = False
+
+    # ── Email / SMTP ──────────────────────────────────────
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "noreply@tribultz.com.br"
+    SMTP_FROM_NAME: str = "Tribultz"
+    SMTP_TLS: bool = True
+    EMAIL_VERIFICATION_ENABLED: bool = False
+    FRONTEND_URL: str = "http://localhost:3000"
+
     # ── LLM / OpenRouter ─────────────────────────────────────
     OPENROUTER_API_KEY: str = ""
     LLM_FREE_PRIMARY: str = "openrouter/google/gemini-2.0-flash-exp:free"

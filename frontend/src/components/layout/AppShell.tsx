@@ -14,7 +14,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setMobileOpen(false);
   }, [pathname]);
 
-  if (pathname === "/login") return <>{children}</>;
+  const noShell = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
+  if (noShell.includes(pathname)) return <>{children}</>;
 
   return (
     <div className="min-h-screen md:flex">
@@ -23,7 +24,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Topbar
           stateVersion={stateVersion}
           onOpenMenu={() => setMobileOpen(true)}
-          onTenantChanged={() => setStateVersion((v) => v + 1)}
         />
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>

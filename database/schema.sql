@@ -25,14 +25,37 @@ CREATE TABLE IF NOT EXISTS users (
     email       VARCHAR(255)  NOT NULL,
     full_name   VARCHAR(200)  NOT NULL,
     password_hash TEXT         NOT NULL,
+    cnpj        VARCHAR(18),
+    account_type VARCHAR(20)  NOT NULL DEFAULT 'empresa',  -- empresa | contador
     role        VARCHAR(50)   NOT NULL DEFAULT 'user',
     is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
+    lgpd_consent_at TIMESTAMPTZ,
+    email_verified  BOOLEAN   NOT NULL DEFAULT FALSE,
+    email_verification_token VARCHAR(500),
+    deleted_at  TIMESTAMPTZ,
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ   NOT NULL DEFAULT now(),
     UNIQUE (tenant_id, email)
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_tenant ON users(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_users_email  ON users(email);
+
+-- ------------------------------------------------------------
+-- 2b. User ↔ Tenant association (multi-tenant access)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS user_tenants (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    tenant_id   UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    role        VARCHAR(50)   NOT NULL DEFAULT 'user',
+    is_default  BOOLEAN       NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMPTZ   NOT NULL DEFAULT now(),
+    UNIQUE (user_id, tenant_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_tenants_user   ON user_tenants(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_tenants_tenant ON user_tenants(tenant_id);
 
 -- ------------------------------------------------------------
 -- 3. Companies (contribuintes)
@@ -175,6 +198,20 @@ CREATE TABLE IF NOT EXISTS audit_log (
 
 CREATE INDEX IF NOT EXISTS idx_audit_log_tenant ON audit_log(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log(entity_type, entity_id);
+
+-- ------------------------------------------------------------
+-- 10. Feedback (customer feedback channel)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS feedback (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id   UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id     UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    category    VARCHAR(50)   NOT NULL,  -- bug, sugestao, elogio
+    message     TEXT          NOT NULL,
+    created_at  TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_tenant ON feedback(tenant_id);
 
 -- ============================================================
 -- SEED DATA
