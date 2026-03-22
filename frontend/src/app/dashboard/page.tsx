@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
 import { getAudits, getJobs, listExceptionRequests } from "@/lib/api";
 import { AuditLog, ExceptionRequest, Finding, Job } from "@/lib/types";
+import { getAccountType, getTenantId, getTenants, type StoredTenant } from "@/lib/storage";
 
 function percent(success: number, total: number): string {
   if (!total) return "0%";
@@ -96,8 +97,21 @@ export default function DashboardPage() {
   const [exceptions, setExceptions] = useState<ExceptionRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tenantId, setTenantIdState] = useState("");
+  const [tenantName, setTenantName] = useState("");
+  const [accountType, setAccType] = useState("empresa");
+  const [tenantCount, setTenantCount] = useState(0);
 
   useEffect(() => {
+    const tid = getTenantId();
+    const tenants = getTenants();
+    const accType = getAccountType();
+    setTenantIdState(tid);
+    setAccType(accType);
+    setTenantCount(tenants.length);
+    const match = tenants.find((t) => t.id === tid) ?? tenants.find((t) => t.slug === tid);
+    setTenantName(match?.name ?? tid);
+
     setLoading(true);
     Promise.all([getJobs(), getAudits(), listExceptionRequests()])
       .then(([jobsData, auditsData, exceptionsData]) => {
@@ -137,6 +151,38 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-slate-900">Painel</h1>
         <p className="text-sm text-slate-500">Visão executiva da operação tributária.</p>
       </header>
+
+      <div className={`flex items-center gap-3 rounded-xl border p-4 ${
+        accountType === "contador"
+          ? "border-amber-200 bg-amber-50"
+          : "border-slate-200 bg-white"
+      }`}>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${
+          accountType === "contador"
+            ? "bg-amber-100 text-amber-700"
+            : "bg-tribultz-100 text-tribultz-700"
+        }`}>
+          {accountType === "contador" ? "CT" : "TB"}
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-slate-800">
+            Tenant ativo: <span className="font-mono">{tenantName}</span>
+          </p>
+          <p className="text-xs text-slate-500">
+            {accountType === "contador"
+              ? `Conta Contador — ${tenantCount > 1 ? `${tenantCount} CNPJs vinculados` : "1 CNPJ vinculado"}. Dados abaixo referem-se ao CNPJ selecionado.`
+              : "Conta Empresa — dados exclusivos do seu CNPJ."}
+          </p>
+        </div>
+        {accountType === "contador" && (
+          <Link
+            href="/settings"
+            className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50"
+          >
+            Gerenciar CNPJs
+          </Link>
+        )}
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
         <article className="rounded-xl border border-slate-200 bg-white p-4">

@@ -27,6 +27,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [lgpdConsent, setLgpdConsent] = useState(false);
+  const [multiTenantConsent, setMultiTenantConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
   const [toast, setToast] = useState<{ tone: "success" | "error"; msg: string } | null>(null);
@@ -54,6 +55,10 @@ export default function RegisterPage() {
     }
     if (!lgpdConsent) {
       setToast({ tone: "error", msg: "Voce deve aceitar a Politica de Privacidade para prosseguir." });
+      return;
+    }
+    if (accountType === "contador" && !multiTenantConsent) {
+      setToast({ tone: "error", msg: "Voce deve aceitar o termo de Responsabilidade Multi-Tenant para prosseguir." });
       return;
     }
 
@@ -174,7 +179,11 @@ export default function RegisterPage() {
           </label>
 
           <label className="block text-sm">
-            <span className="mb-1 block text-slate-600">CNPJ</span>
+            <span className="mb-1 block text-slate-600">
+              {accountType === "contador"
+                ? "CNPJ do escritorio contabil"
+                : "CNPJ da empresa"}
+            </span>
             <input
               type="text"
               value={cnpj}
@@ -183,6 +192,11 @@ export default function RegisterPage() {
               className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono"
               inputMode="numeric"
             />
+            {accountType === "contador" && (
+              <span className="mt-1 block text-xs text-amber-700">
+                Informe o CNPJ do seu escritorio, nao de um cliente. CNPJs de clientes serao adicionados apos o cadastro.
+              </span>
+            )}
           </label>
 
           <label className="block text-sm">
@@ -236,6 +250,26 @@ export default function RegisterPage() {
               dados fiscais enviados.
             </span>
           </label>
+
+          {accountType === "contador" && (
+            <label className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+              <input
+                type="checkbox"
+                checked={multiTenantConsent}
+                onChange={(e) => setMultiTenantConsent(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-slate-300"
+              />
+              <span className="text-amber-900">
+                <strong>Responsabilidade Multi-Tenant:</strong> Declaro estar ciente de que, como
+                contador, terei acesso aos dados fiscais de multiplos CNPJs (tenants) dentro da
+                plataforma. Comprometo-me a operar sempre no tenant correto, evitando
+                contaminacao cruzada de dados entre clientes. Reconheco que processar dados no
+                tenant errado pode gerar inconsistencias fiscais graves. Comprometo-me com a
+                confidencialidade dos dados de cada cliente conforme a LGPD (Art. 46) e o Codigo
+                de Etica do CFC.
+              </span>
+            </label>
+          )}
 
           <button
             type="submit"

@@ -47,6 +47,9 @@ export function Topbar({ onOpenMenu, stateVersion }: TopbarProps) {
 
   async function handleSwitchTenant(tenantId: string) {
     if (mockMode || switching) return;
+    const target = tenants.find((t) => t.id === tenantId);
+    const targetName = target?.name ?? tenantId;
+    if (!window.confirm(`Voce esta mudando para o tenant "${targetName}". Confirma?`)) return;
     setSwitching(true);
     try {
       const token = typeof window !== "undefined"
