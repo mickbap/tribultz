@@ -128,6 +128,12 @@ export default function LoginPage() {
           </div>
         </div>
       </section>
+      <p className="mt-4 text-center text-sm text-slate-500">
+        Nao tem conta?{" "}
+        <a href="/register" className="font-medium text-tribultz-700 hover:underline">
+          Criar conta
+        </a>
+      </p>
       {error ? <Toast message={error} tone="error" onClose={() => setError(null)} /> : null}
     </main>
   );

@@ -47,6 +47,22 @@ type LoginResponse = {
   token_type?: string;
 };
 
+type RegisterRequest = {
+  email: string;
+  password: string;
+  full_name: string;
+  tenant_slug: string;
+};
+
+type RegisterResponse = {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  tenant_id: string;
+  is_active: boolean;
+};
+
 export type JobEvidenceZipResult = {
   filename: string;
   bytes: Uint8Array;
@@ -93,6 +109,23 @@ export async function loginWithApi(payload: LoginRequest): Promise<LoginResponse
   return (await res.json()) as LoginResponse;
 }
 
+export async function registerWithApi(payload: RegisterRequest): Promise<RegisterResponse> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Tenant-Id": payload.tenant_slug,
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "Erro ao registrar");
+    throw new Error(`Registro ${res.status}: ${detail}`);
+  }
+  return (await res.json()) as RegisterResponse;
+}
+
 export async function postChatMessage(payload: ChatRequest): Promise<NormalizedChatResponse> {
   const tenantId = getTenantId();
   if (getMockMode()) {
@@ -121,14 +154,23 @@ export async function listConversations(): Promise<Conversation[]> {
   if (getMockMode()) {
     return mockListConversations(getTenantId());
   }
-  return [];
+  try {
+    const payload = await apiFetch<Conversation[]>("/api/v1/chat/conversations");
+    return Array.isArray(payload) ? payload : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function getConversation(conversationId: string): Promise<Conversation | null> {
   if (getMockMode()) {
     return mockGetConversation(getTenantId(), conversationId);
   }
-  return null;
+  try {
+    return await apiFetch<Conversation>(`/api/v1/chat/conversations/${encodeURIComponent(conversationId)}`);
+  } catch {
+    return null;
+  }
 }
 
 export async function getJobs(): Promise<Job[]> {
