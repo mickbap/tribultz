@@ -109,6 +109,80 @@ export default function SettingsPage() {
         </button>
       </div>
 
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 className="text-lg font-semibold text-slate-900">Meus Dados (LGPD)</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Seus direitos conforme a Lei Geral de Protecao de Dados (Lei 13.709/2018).
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={async () => {
+              if (mockMode) {
+                setToast({ tone: "info", msg: "Disponivel apenas em API Mode." });
+                return;
+              }
+              try {
+                const res = await fetch(`${API_BASE}/api/v1/lgpd/my-data`, {
+                  headers: { Authorization: `Bearer ${token}`, "X-Tenant-Id": tenant },
+                });
+                const data = await res.json();
+                setToast({ tone: "success", msg: `Dados carregados: ${data.user?.email ?? "OK"}` });
+              } catch {
+                setToast({ tone: "error", msg: "Falha ao carregar dados." });
+              }
+            }}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            Ver meus dados
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              if (mockMode) {
+                setToast({ tone: "info", msg: "Disponivel apenas em API Mode." });
+                return;
+              }
+              window.open(`${API_BASE}/api/v1/lgpd/export`, "_blank");
+            }}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            Exportar dados (JSON)
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              if (mockMode) {
+                setToast({ tone: "info", msg: "Disponivel apenas em API Mode." });
+                return;
+              }
+              if (!window.confirm("Tem certeza? Esta acao e irreversivel. Seus dados serao anonimizados.")) return;
+              try {
+                const res = await fetch(`${API_BASE}/api/v1/lgpd/delete-account`, {
+                  method: "POST",
+                  headers: { Authorization: `Bearer ${token}`, "X-Tenant-Id": tenant, "Content-Type": "application/json" },
+                });
+                if (res.ok) {
+                  setToast({ tone: "success", msg: "Conta desativada. Redirecionando..." });
+                  setTimeout(() => window.location.href = "/login", 2000);
+                } else {
+                  const data = await res.json().catch(() => ({}));
+                  setToast({ tone: "error", msg: data.detail ?? "Falha ao excluir conta." });
+                }
+              } catch {
+                setToast({ tone: "error", msg: "Falha ao excluir conta." });
+              }
+            }}
+            className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+          >
+            Excluir minha conta
+          </button>
+        </div>
+        <p className="mt-3 text-xs text-slate-400">
+          Dados fiscais sao retidos conforme obrigacao legal. Contato DPO: dpo@tribultz.com.br
+        </p>
+      </section>
+
       {toast ? <Toast message={toast.msg} tone={toast.tone} onClose={() => setToast(null)} /> : null}
     </section>
   );

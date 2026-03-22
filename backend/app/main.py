@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
-from app.routers import auth, audit, chat, feedback, health, jobs, tasks, validate, validation
+from app.routers import auth, audit, chat, feedback, health, jobs, lgpd, tasks, validate, validation
 
 
 app = FastAPI(
@@ -54,6 +54,7 @@ app.include_router(jobs.router)
 app.include_router(tasks.router)
 app.include_router(chat.router)
 app.include_router(feedback.router)
+app.include_router(lgpd.router)
 
 
 @app.get("/", tags=["root"])
