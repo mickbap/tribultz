@@ -14,7 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setMobileOpen(false);
   }, [pathname]);
 
-  const noShell = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
+  const noShell = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/changelog"];
   if (noShell.includes(pathname)) return <>{children}</>;
 
   return (
