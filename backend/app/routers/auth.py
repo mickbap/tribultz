@@ -1,4 +1,5 @@
 from typing import cast
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -105,10 +106,10 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
     db.refresh(user)
 
     return UserRead(
-        id=user.id,
+        id=cast(UUID, user.id),
         email=cast(str, user.email),
         full_name=cast(str, user.full_name),
         role=cast(str, user.role),
-        tenant_id=user.tenant_id,
+        tenant_id=cast(UUID, user.tenant_id),
         is_active=cast(bool, user.is_active),
     )
