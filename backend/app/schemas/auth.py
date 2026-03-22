@@ -30,6 +30,7 @@ class UserRegister(BaseModel):
     password: str
     full_name: str
     cnpj: str = ""
+    account_type: str = "empresa"  # empresa | contador
     lgpd_consent: bool = False
     tenant_slug: str = "default"
     captcha_token: str = ""
@@ -59,6 +60,13 @@ class UserRegister(BaseModel):
             raise ValueError("CNPJ deve ter 14 digitos.")
         return digits
 
+    @field_validator("account_type")
+    @classmethod
+    def validate_account_type(cls, v: str) -> str:
+        if v not in ("empresa", "contador"):
+            raise ValueError("Tipo de conta deve ser 'empresa' ou 'contador'.")
+        return v
+
     @field_validator("lgpd_consent")
     @classmethod
     def validate_lgpd_consent(cls, v: bool) -> bool:
@@ -69,6 +77,13 @@ class UserRegister(BaseModel):
         return v
 
 
+class TenantInfo(BaseModel):
+    id: UUID
+    name: str
+    slug: str
+    is_default: bool = False
+
+
 class UserRead(BaseModel):
     id: UUID
     email: EmailStr
@@ -77,7 +92,9 @@ class UserRead(BaseModel):
     tenant_id: UUID
     is_active: bool
     cnpj: Optional[str] = None
+    account_type: str = "empresa"
     lgpd_consent_at: Optional[datetime] = None
+    tenants: list[TenantInfo] = []
 
     class Config:
         from_attributes = True

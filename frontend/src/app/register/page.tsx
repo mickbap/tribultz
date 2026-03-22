@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { Toast } from "@/components/common/Toast";
 import { registerWithApi } from "@/lib/api";
+import { DEFAULT_TENANT } from "@/lib/storage";
 
 function formatCnpj(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 14);
@@ -19,7 +20,7 @@ function cnpjDigits(formatted: string): string {
 }
 
 export default function RegisterPage() {
-  const [tenant, setTenant] = useState("tenant-a");
+  const [accountType, setAccountType] = useState<"empresa" | "contador">("empresa");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [cnpj, setCnpj] = useState("");
@@ -63,8 +64,9 @@ export default function RegisterPage() {
         password,
         full_name: fullName.trim(),
         cnpj: digits,
+        account_type: accountType,
         lgpd_consent: true,
-        tenant_slug: tenant,
+        tenant_slug: DEFAULT_TENANT,
       });
 
       setRegistered(true);
@@ -112,18 +114,52 @@ export default function RegisterPage() {
         <p className="mt-1 text-sm text-slate-500">Cadastre-se para acessar o Tribultz Console.</p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <label className="block text-sm">
-            <span className="mb-1 block text-slate-600">Tenant</span>
-            <select
-              value={tenant}
-              onChange={(e) => setTenant(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
-            >
-              <option value="tenant-a">tenant-a</option>
-              <option value="tenant-b">tenant-b</option>
-              <option value="tenant-prod">tenant-prod</option>
-            </select>
-          </label>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium text-slate-700">Tipo de conta</legend>
+            <div className="grid grid-cols-2 gap-2">
+              <label
+                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition ${
+                  accountType === "empresa"
+                    ? "border-tribultz-500 bg-tribultz-50 text-tribultz-700"
+                    : "border-slate-200 text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="account_type"
+                  value="empresa"
+                  checked={accountType === "empresa"}
+                  onChange={() => setAccountType("empresa")}
+                  className="sr-only"
+                />
+                <span className="font-semibold">Empresa</span>
+                <span className="text-xs text-slate-400">1 CNPJ</span>
+              </label>
+              <label
+                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition ${
+                  accountType === "contador"
+                    ? "border-tribultz-500 bg-tribultz-50 text-tribultz-700"
+                    : "border-slate-200 text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="account_type"
+                  value="contador"
+                  checked={accountType === "contador"}
+                  onChange={() => setAccountType("contador")}
+                  className="sr-only"
+                />
+                <span className="font-semibold">Contador</span>
+                <span className="text-xs text-slate-400">Multi-CNPJ</span>
+              </label>
+            </div>
+            <p className="text-xs text-slate-400">
+              {accountType === "empresa"
+                ? "Sua empresa tera acesso exclusivo ao seu CNPJ."
+                : "Voce podera gerenciar multiplos CNPJs de clientes."}
+            </p>
+          </fieldset>
 
           <label className="block text-sm">
             <span className="mb-1 block text-slate-600">Nome completo</span>

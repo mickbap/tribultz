@@ -1,15 +1,17 @@
 import logging
+import re
 from datetime import datetime, timezone
 from typing import cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.auth import Tenant, User
-from app.schemas.auth import Token, UserLogin, UserRead, UserRegister
+from app.models.auth import Tenant, User, UserTenant
+from app.schemas.auth import Token, TenantInfo, UserLogin, UserRead, UserRegister
 from app.core.security import (
     get_password_hash,
     verify_password,
@@ -42,91 +44,136 @@ def _client_ip(request: Request) -> str:
     return "unknown"
 
 
+def _cnpj_to_slug(cnpj: str) -> str:
+    """Convert CNPJ digits to a tenant slug: 12345678000199 → cnpj-12345678000199."""
+    digits = re.sub(r"\D", "", cnpj)
+    return f"cnpj-{digits}"
+
+
+def _get_or_create_tenant_for_cnpj(
+    db: Session, cnpj: str, company_name: str = ""
+) -> Tenant:
+    """Find existing tenant by CNPJ slug or create a new one."""
+    slug = _cnpj_to_slug(cnpj)
+    tenant = db.execute(
+        select(Tenant).where(Tenant.slug == slug)
+    ).scalar_one_or_none()
+
+    if tenant:
+        return tenant
+
+    name = company_name or f"Empresa {cnpj}"
+    tenant = Tenant(name=name, slug=slug)
+    db.add(tenant)
+    db.flush()  # get the ID without committing
+    return tenant
+
+
+def _get_user_tenants(db: Session, user_id: UUID) -> list[TenantInfo]:
+    """Get all tenants a user has access to."""
+    rows = db.execute(
+        select(Tenant, UserTenant.is_default, UserTenant.role)
+        .join(UserTenant, UserTenant.tenant_id == Tenant.id)
+        .where(UserTenant.user_id == user_id)
+        .order_by(UserTenant.is_default.desc(), Tenant.name)
+    ).all()
+
+    return [
+        TenantInfo(
+            id=cast(UUID, t.id),
+            name=cast(str, t.name),
+            slug=cast(str, t.slug),
+            is_default=is_def,
+        )
+        for t, is_def, _role in rows
+    ]
+
+
+# ── Login ────────────────────────────────────────────────────
+
 @router.post("/login", response_model=Token)
 async def login(login_data: UserLogin, request: Request, db: Session = Depends(get_db)):
     ip = _client_ip(request)
     _login_limiter.check_or_raise(f"login:{ip}")
 
-    # CAPTCHA check
     if not await verify_captcha(login_data.captcha_token, ip):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="CAPTCHA verification failed",
         )
 
-    # 1. Resolve Tenant
-    stmt_tenant = select(Tenant).where(Tenant.slug == login_data.tenant_slug)
-    tenant = db.execute(stmt_tenant).scalar_one_or_none()
-
-    if not tenant or not cast(bool, tenant.is_active):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    # 2. Resolve User within Tenant
-    stmt_user = select(User).where(
-        User.email == login_data.email,
-        User.tenant_id == tenant.id,
-    )
-    user = db.execute(stmt_user).scalar_one_or_none()
+    # Find user by email (across all tenants — email is the primary identity)
+    user = db.execute(
+        select(User).where(User.email == login_data.email)
+    ).scalar_one_or_none()
 
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Email ou senha incorretos",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not verify_password(login_data.password, cast(str, user.password_hash)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Email ou senha incorretos",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not cast(bool, user.is_active):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Inactive user",
+            detail="Usuario inativo",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 3. Check email verification
     if not cast(bool, user.email_verified):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Email nao verificado. Verifique sua caixa de entrada.",
         )
 
-    # 4. Check soft-delete
     if user.deleted_at is not None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Account has been deactivated",
+            detail="Conta desativada",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 5. Create Token
+    # Resolve default tenant from user_tenants
+    user_tenant_list = _get_user_tenants(db, cast(UUID, user.id))
+    default_tenant_id = str(user.tenant_id)
+    if user_tenant_list:
+        default_entry = next((t for t in user_tenant_list if t.is_default), user_tenant_list[0])
+        default_tenant_id = str(default_entry.id)
+
     access_token = create_access_token(
         subject=str(user.id),
         extra_claims={
-            "tenant_id": str(tenant.id),
+            "tenant_id": default_tenant_id,
             "role": cast(str, user.role),
+            "account_type": cast(str, user.account_type),
         },
     )
 
     logger.info("login_success", extra={"user_id": str(user.id), "ip": ip})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "tenant_id": default_tenant_id,
+        "account_type": cast(str, user.account_type),
+        "tenants": [t.model_dump() for t in user_tenant_list],
+    }
 
+
+# ── Register ─────────────────────────────────────────────────
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def register(data: UserRegister, request: Request, db: Session = Depends(get_db)):
     ip = _client_ip(request)
     _register_limiter.check_or_raise(f"register:{ip}")
 
-    # CAPTCHA check
     if not await verify_captcha(data.captcha_token, ip):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -134,6 +181,7 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         )
 
     # CNPJ validation via BrasilAPI
+    company_name = ""
     if data.cnpj:
         cnpj_result = await validate_cnpj(data.cnpj)
         if not cnpj_result.valid:
@@ -141,44 +189,58 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=cnpj_result.error,
             )
+        company_name = cnpj_result.company_name
 
-    # 1. Resolve Tenant
-    stmt_tenant = select(Tenant).where(Tenant.slug == data.tenant_slug)
-    tenant = db.execute(stmt_tenant).scalar_one_or_none()
-
-    if not tenant or not cast(bool, tenant.is_active):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Tenant not found or inactive",
-        )
-
-    # 2. Check duplicate email within tenant
-    stmt_existing = select(User).where(
-        User.email == data.email,
-        User.tenant_id == tenant.id,
-    )
-    if db.execute(stmt_existing).scalar_one_or_none():
+    # Check duplicate email globally
+    existing = db.execute(
+        select(User).where(User.email == data.email)
+    ).scalar_one_or_none()
+    if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered for this tenant",
+            detail="Email ja cadastrado.",
         )
 
-    # 3. Create user with LGPD consent timestamp
+    # Auto-create tenant from CNPJ
+    if data.cnpj:
+        tenant = _get_or_create_tenant_for_cnpj(db, data.cnpj, company_name)
+    else:
+        # Fallback to default tenant
+        tenant = db.execute(
+            select(Tenant).where(Tenant.slug == "default")
+        ).scalar_one_or_none()
+        if not tenant:
+            tenant = Tenant(name="Default", slug="default")
+            db.add(tenant)
+            db.flush()
+
+    # Create user
     user = User(
         tenant_id=tenant.id,
         email=data.email,
         full_name=data.full_name,
         password_hash=get_password_hash(data.password),
         cnpj=data.cnpj or None,
-        role="user",
+        account_type=data.account_type,
+        role="admin" if data.account_type == "empresa" else "contador",
         lgpd_consent_at=datetime.now(timezone.utc),
         email_verified=False,
     )
     db.add(user)
+    db.flush()
+
+    # Create user_tenants association
+    user_tenant = UserTenant(
+        user_id=user.id,
+        tenant_id=tenant.id,
+        role=user.role,
+        is_default=True,
+    )
+    db.add(user_tenant)
     db.commit()
     db.refresh(user)
 
-    # 4. Send verification email
+    # Send verification email
     verification_token = create_email_verification_token(str(user.id))
     user.email_verification_token = verification_token  # type: ignore[assignment]
     db.commit()
@@ -191,8 +253,15 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
 
     logger.info(
         "user_registered",
-        extra={"user_id": str(user.id), "tenant": data.tenant_slug, "ip": ip},
+        extra={
+            "user_id": str(user.id),
+            "tenant_slug": cast(str, tenant.slug),
+            "account_type": data.account_type,
+            "ip": ip,
+        },
     )
+
+    tenants = _get_user_tenants(db, cast(UUID, user.id))
 
     return UserRead(
         id=cast(UUID, user.id),
@@ -202,9 +271,13 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         tenant_id=cast(UUID, user.tenant_id),
         is_active=cast(bool, user.is_active),
         cnpj=cast(str, user.cnpj) if user.cnpj else None,
+        account_type=cast(str, user.account_type),
         lgpd_consent_at=user.lgpd_consent_at,  # type: ignore[arg-type]
+        tenants=tenants,
     )
 
+
+# ── Verify Email ─────────────────────────────────────────────
 
 @router.get("/verify-email")
 def verify_email(token: str, db: Session = Depends(get_db)):
@@ -237,6 +310,8 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     return {"status": "verified", "message": "Email verificado com sucesso!"}
 
 
+# ── Resend Verification ──────────────────────────────────────
+
 @router.post("/resend-verification")
 async def resend_verification(
     data: UserLogin, request: Request, db: Session = Depends(get_db)
@@ -245,26 +320,16 @@ async def resend_verification(
     ip = _client_ip(request)
     _register_limiter.check_or_raise(f"resend:{ip}")
 
-    # Resolve tenant + user
-    tenant = db.execute(
-        select(Tenant).where(Tenant.slug == data.tenant_slug)
-    ).scalar_one_or_none()
-
-    if not tenant:
-        raise HTTPException(status_code=400, detail="Tenant nao encontrado.")
-
     user = db.execute(
-        select(User).where(User.email == data.email, User.tenant_id == tenant.id)
+        select(User).where(User.email == data.email)
     ).scalar_one_or_none()
 
     if not user:
-        # Don't reveal whether email exists
         return {"message": "Se o email estiver cadastrado, um novo link sera enviado."}
 
     if cast(bool, user.email_verified):
         return {"message": "Email ja verificado. Faca login normalmente."}
 
-    # Generate new token and send
     new_token = create_email_verification_token(str(user.id))
     user.email_verification_token = new_token  # type: ignore[assignment]
     db.commit()
@@ -276,3 +341,144 @@ async def resend_verification(
     )
 
     return {"message": "Se o email estiver cadastrado, um novo link sera enviado."}
+
+
+# ── Add CNPJ (for contadores) ────────────────────────────────
+
+class AddCnpjRequest(BaseModel):
+    cnpj: str
+
+    @classmethod
+    def validate_cnpj_format(cls, v: str) -> str:
+        digits = re.sub(r"\D", "", v)
+        if len(digits) != 14:
+            raise ValueError("CNPJ deve ter 14 digitos.")
+        return digits
+
+
+@router.post("/add-cnpj")
+async def add_cnpj(
+    data: AddCnpjRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Add a new CNPJ/tenant for contador accounts."""
+    from app.api.deps import get_current_user
+
+    current_user = get_current_user(request, db)
+    user_id = current_user["user_id"]
+
+    user = db.execute(
+        select(User).where(User.id == user_id)
+    ).scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario nao encontrado.")
+
+    if cast(str, user.account_type) != "contador":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas contas de contador podem adicionar CNPJs.",
+        )
+
+    cnpj_digits = re.sub(r"\D", "", data.cnpj)
+    if len(cnpj_digits) != 14:
+        raise HTTPException(status_code=400, detail="CNPJ deve ter 14 digitos.")
+
+    # Validate CNPJ
+    cnpj_result = await validate_cnpj(cnpj_digits)
+    company_name = cnpj_result.company_name if cnpj_result.valid else ""
+
+    # Get or create tenant
+    tenant = _get_or_create_tenant_for_cnpj(db, cnpj_digits, company_name)
+
+    # Check if association already exists
+    existing = db.execute(
+        select(UserTenant).where(
+            UserTenant.user_id == user_id,
+            UserTenant.tenant_id == tenant.id,
+        )
+    ).scalar_one_or_none()
+
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="CNPJ ja associado a sua conta.",
+        )
+
+    user_tenant = UserTenant(
+        user_id=user_id,
+        tenant_id=tenant.id,
+        role="contador",
+        is_default=False,
+    )
+    db.add(user_tenant)
+    db.commit()
+
+    logger.info(
+        "cnpj_added",
+        extra={"user_id": str(user_id), "cnpj": cnpj_digits, "tenant_slug": cast(str, tenant.slug)},
+    )
+
+    tenants = _get_user_tenants(db, user_id)
+    return {"tenants": [t.model_dump() for t in tenants]}
+
+
+# ── Switch Tenant ─────────────────────────────────────────────
+
+class SwitchTenantRequest(BaseModel):
+    tenant_id: UUID
+
+
+@router.post("/switch-tenant", response_model=Token)
+def switch_tenant(
+    data: SwitchTenantRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Switch active tenant — returns new JWT with updated tenant_id."""
+    from app.api.deps import get_current_user
+
+    current_user = get_current_user(request, db)
+    user_id = current_user["user_id"]
+
+    # Verify user has access to this tenant
+    user_tenant = db.execute(
+        select(UserTenant).where(
+            UserTenant.user_id == user_id,
+            UserTenant.tenant_id == data.tenant_id,
+        )
+    ).scalar_one_or_none()
+
+    if not user_tenant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Voce nao tem acesso a este tenant.",
+        )
+
+    user = db.execute(
+        select(User).where(User.id == user_id)
+    ).scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario nao encontrado.")
+
+    access_token = create_access_token(
+        subject=str(user.id),
+        extra_claims={
+            "tenant_id": str(data.tenant_id),
+            "role": cast(str, user_tenant.role),
+            "account_type": cast(str, user.account_type),
+        },
+    )
+
+    tenant = db.execute(
+        select(Tenant).where(Tenant.id == data.tenant_id)
+    ).scalar_one_or_none()
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "tenant_id": str(data.tenant_id),
+        "tenant_name": cast(str, tenant.name) if tenant else "",
+    }

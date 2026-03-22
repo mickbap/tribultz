@@ -1,15 +1,13 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { Toast } from "@/components/common/Toast";
 import { resetDemoData } from "@/lib/api";
 import {
-  DEFAULT_TENANT,
   getMockMode,
   getTenantId,
   getToken,
   setMockMode,
-  setTenantId,
   setToken,
 } from "@/lib/storage";
 
@@ -17,7 +15,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"
 
 export default function SettingsPage() {
   const [mockMode, setMock] = useState(true);
-  const [tenant, setTenant] = useState(DEFAULT_TENANT);
+  const [tenant, setTenant] = useState("");
   const [token, setTokenValue] = useState("demo-token");
   const [toast, setToast] = useState<{ tone: "error" | "success" | "info"; msg: string } | null>(null);
 
@@ -29,29 +27,28 @@ export default function SettingsPage() {
 
   function saveSettings(): void {
     setMockMode(mockMode);
-    setTenantId(tenant.trim() || DEFAULT_TENANT);
     setToken(token.trim() || "demo-token");
     window.dispatchEvent(new Event("tribultz-settings-updated"));
-    setToast({ tone: "success", msg: "Configurações salvas." });
+    setToast({ tone: "success", msg: "Configuracoes salvas." });
   }
 
   function reset(): void {
     resetDemoData();
     window.dispatchEvent(new Event("tribultz-settings-updated"));
-    setToast({ tone: "info", msg: "Dados de demonstração resetados para o tenant atual." });
+    setToast({ tone: "info", msg: "Dados de demonstracao resetados." });
   }
 
   return (
     <section className="space-y-4">
       <header>
-        <h1 className="text-2xl font-bold text-slate-900">Configurações</h1>
-        <p className="text-sm text-slate-500">Controle de Mock Mode, tenant e token para API Mode.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Configuracoes</h1>
+        <p className="text-sm text-slate-500">Controle de Mock Mode e token para API Mode.</p>
       </header>
 
       <section className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-2">
         <label className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
           <span>
-            <span className="block text-sm font-medium text-slate-800">Mock Mode (padrão ON)</span>
+            <span className="block text-sm font-medium text-slate-800">Mock Mode (padrao ON)</span>
             <span className="text-xs text-slate-500">Quando ON, o app roda sem backend.</span>
           </span>
           <input
@@ -68,21 +65,14 @@ export default function SettingsPage() {
           <p className="mt-1 break-all text-xs text-slate-500">{API_BASE}</p>
         </div>
 
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-500">Tenant</span>
-          <select
-            value={tenant}
-            onChange={(e) => setTenant(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          >
-            <option value="tenant-a">tenant-a</option>
-            <option value="tenant-b">tenant-b</option>
-            <option value="tenant-prod">tenant-prod</option>
-          </select>
-        </label>
+        <div className="rounded-lg border border-slate-200 px-3 py-2">
+          <p className="text-sm font-medium text-slate-800">Tenant</p>
+          <p className="mt-1 text-xs text-slate-500 font-mono">{tenant}</p>
+          <p className="mt-1 text-xs text-slate-400">Definido pelo perfil do usuario (AWS).</p>
+        </div>
 
         <label className="text-sm">
-          <span className="mb-1 block text-slate-500">Token de autorização</span>
+          <span className="mb-1 block text-slate-500">Token de autorizacao</span>
           <input
             value={token}
             onChange={(e) => setTokenValue(e.target.value)}

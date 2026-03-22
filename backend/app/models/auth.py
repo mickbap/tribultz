@@ -58,6 +58,7 @@ class User(Base):
     password_hash = Column(Text, nullable=False)
     role = Column(String(50), nullable=False, default="user")
     cnpj = Column(String(18), nullable=True)
+    account_type = Column(String(20), nullable=False, default="empresa")  # empresa | contador
     is_active = Column(Boolean, nullable=False, default=True)
     lgpd_consent_at = Column(DateTime(timezone=True), nullable=True)
     email_verified = Column(Boolean, nullable=False, default=False)
@@ -74,3 +75,30 @@ class User(Base):
     )
 
     __table_args__ = (UniqueConstraint("tenant_id", "email", name="users_tenant_id_email_key"),)
+
+
+class UserTenant(Base):
+    __tablename__ = "user_tenants"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    tenant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    role = Column(String(50), nullable=False, default="user")
+    is_default = Column(Boolean, nullable=False, default=False)
+    created_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (UniqueConstraint("user_id", "tenant_id", name="user_tenants_user_tenant_key"),)

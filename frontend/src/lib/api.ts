@@ -42,9 +42,19 @@ type LoginRequest = {
   tenant_slug: string;
 };
 
+type TenantInfo = {
+  id: string;
+  name: string;
+  slug: string;
+  is_default: boolean;
+};
+
 type LoginResponse = {
   access_token: string;
   token_type?: string;
+  tenant_id?: string;
+  account_type?: string;
+  tenants?: TenantInfo[];
 };
 
 type RegisterRequest = {
@@ -52,6 +62,7 @@ type RegisterRequest = {
   password: string;
   full_name: string;
   cnpj: string;
+  account_type: string;
   lgpd_consent: boolean;
   tenant_slug: string;
 };
