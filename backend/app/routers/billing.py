@@ -349,6 +349,13 @@ async def cancel_subscription_endpoint(
 
     sub.status = "cancelled"  # type: ignore[assignment]
     sub.cancelled_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+    # User keeps access until current_period_end — do NOT deactivate
     db.commit()
 
-    return {"status": "cancelled", "message": "Assinatura cancelada com sucesso."}
+    period_end = sub.current_period_end.isoformat() if sub.current_period_end is not None else None
+
+    return {
+        "status": "cancelled",
+        "message": "Assinatura cancelada. Acesso mantido até o fim do período atual.",
+        "access_until": period_end,
+    }

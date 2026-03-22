@@ -151,7 +151,11 @@ export default function BillingPage() {
   }
 
   async function handleCancel() {
-    if (!confirm("Tem certeza que deseja cancelar sua assinatura?")) return;
+    const periodEnd = info?.current_period_end ? formatDate(info.current_period_end) : "";
+    const msg = periodEnd
+      ? `Tem certeza que deseja cancelar? A cobrança será interrompida, mas você terá acesso até ${periodEnd}.`
+      : "Tem certeza que deseja cancelar sua assinatura?";
+    if (!confirm(msg)) return;
     try {
       await apiFetch("/api/v1/billing/cancel", { method: "POST" });
       await fetchBilling();
@@ -292,9 +296,25 @@ export default function BillingPage() {
                     {plan.hasDashboard && <li>Dashboard</li>}
                   </ul>
                   {isCurrent ? (
-                    <span className="mt-3 inline-block text-xs font-medium text-blue-700">
-                      Plano atual
-                    </span>
+                    <div className="mt-3 space-y-2">
+                      <span className="inline-block text-xs font-medium text-blue-700">
+                        Plano atual
+                      </span>
+                      {info?.status === "active" && !isMock && (
+                        <button
+                          type="button"
+                          onClick={handleCancel}
+                          className="block w-full rounded border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
+                        >
+                          Cancelar assinatura
+                        </button>
+                      )}
+                      {info?.status === "cancelled" && info.current_period_end && (
+                        <p className="text-xs text-slate-500">
+                          Acesso até {formatDate(info.current_period_end)}
+                        </p>
+                      )}
+                    </div>
                   ) : (
                     <button
                       type="button"
@@ -353,16 +373,10 @@ export default function BillingPage() {
         </div>
       )}
 
-      {/* ── Cancel ────────────────────────── */}
-      {info?.status && ["active", "trial"].includes(info.status) && !isMock && (
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="text-sm text-slate-400 underline hover:text-red-600"
-          >
-            Cancelar assinatura
-          </button>
+      {/* ── Cancelled notice ─────────────── */}
+      {info?.status === "cancelled" && info.current_period_end && (
+        <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 text-center text-sm text-orange-800">
+          Sua assinatura foi cancelada. Você ainda tem acesso até <strong>{formatDate(info.current_period_end)}</strong>.
         </div>
       )}
     </div>

@@ -144,7 +144,7 @@ def _get_active_subscription(db: Session, user: User) -> tuple[Any, Any]:
         .join(Plan, Subscription.plan_id == Plan.id)
         .where(
             Subscription.user_id == user.id,
-            Subscription.status.in_(("active", "trial", "pending")),
+            Subscription.status.in_(("active", "trial", "pending", "cancelled")),
         )
         .order_by(Subscription.created_at.desc())
         .limit(1)
@@ -152,4 +152,16 @@ def _get_active_subscription(db: Session, user: User) -> tuple[Any, Any]:
 
     if not result:
         return (None, None)
-    return (result[0], result[1])
+
+    sub, plan = result[0], result[1]
+
+    # Cancelled subs: only grant access if period hasn't ended
+    if cast(str, sub.status) == "cancelled":
+        if sub.current_period_end is not None:
+            period_end = cast(datetime, sub.current_period_end)
+            if period_end < datetime.now(timezone.utc):
+                return (None, None)
+        else:
+            return (None, None)
+
+    return (sub, plan)
