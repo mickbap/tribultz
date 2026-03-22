@@ -270,7 +270,7 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         role=cast(str, user.role),
         tenant_id=cast(UUID, user.tenant_id),
         is_active=cast(bool, user.is_active),
-        cnpj=cast(str, user.cnpj) if user.cnpj else None,
+        cnpj=cast(str, user.cnpj) if cast(str, user.cnpj) else None,
         account_type=cast(str, user.account_type),
         lgpd_consent_at=user.lgpd_consent_at,  # type: ignore[arg-type]
         tenants=tenants,
@@ -363,17 +363,13 @@ async def add_cnpj(
     db: Session = Depends(get_db),
 ):
     """Add a new CNPJ/tenant for contador accounts."""
-    from app.api.deps import get_current_user
+    from app.api.deps import get_current_user, oauth2_scheme
 
-    current_user = get_current_user(request, db)
-    user_id = current_user["user_id"]
-
-    user = db.execute(
-        select(User).where(User.id == user_id)
-    ).scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario nao encontrado.")
+    token = await oauth2_scheme(request)
+    if not token:
+        raise HTTPException(status_code=401, detail="Token ausente.")
+    user = await get_current_user(token, db)
+    user_id = cast(UUID, user.id)
 
     if cast(str, user.account_type) != "contador":
         raise HTTPException(
@@ -431,16 +427,19 @@ class SwitchTenantRequest(BaseModel):
 
 
 @router.post("/switch-tenant", response_model=Token)
-def switch_tenant(
+async def switch_tenant(
     data: SwitchTenantRequest,
     request: Request,
     db: Session = Depends(get_db),
 ):
     """Switch active tenant — returns new JWT with updated tenant_id."""
-    from app.api.deps import get_current_user
+    from app.api.deps import get_current_user, oauth2_scheme
 
-    current_user = get_current_user(request, db)
-    user_id = current_user["user_id"]
+    token = await oauth2_scheme(request)
+    if not token:
+        raise HTTPException(status_code=401, detail="Token ausente.")
+    user = await get_current_user(token, db)
+    user_id = cast(UUID, user.id)
 
     # Verify user has access to this tenant
     user_tenant = db.execute(
@@ -455,13 +454,6 @@ def switch_tenant(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Voce nao tem acesso a este tenant.",
         )
-
-    user = db.execute(
-        select(User).where(User.id == user_id)
-    ).scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario nao encontrado.")
 
     access_token = create_access_token(
         subject=str(user.id),
