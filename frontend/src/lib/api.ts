@@ -40,6 +40,7 @@ type LoginRequest = {
   email: string;
   password: string;
   tenant_slug: string;
+  captcha_token?: string;
 };
 
 type TenantInfo = {
@@ -65,6 +66,7 @@ type RegisterRequest = {
   account_type: string;
   lgpd_consent: boolean;
   tenant_slug: string;
+  captcha_token?: string;
 };
 
 type RegisterResponse = {

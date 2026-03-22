@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Toast } from "@/components/common/Toast";
 import { registerWithApi } from "@/lib/api";
 import { DEFAULT_TENANT } from "@/lib/storage";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA";
 
 function formatCnpj(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 14);
@@ -31,6 +34,8 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
   const [toast, setToast] = useState<{ tone: "success" | "error"; msg: string } | null>(null);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   async function onSubmit(event: FormEvent): Promise<void> {
     event.preventDefault();
@@ -61,6 +66,10 @@ export default function RegisterPage() {
       setToast({ tone: "error", msg: "Voce deve aceitar o termo de Responsabilidade Multi-Tenant para prosseguir." });
       return;
     }
+    if (!captchaToken) {
+      setToast({ tone: "error", msg: "Aguarde a verificacao de seguranca (CAPTCHA)." });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -72,6 +81,7 @@ export default function RegisterPage() {
         account_type: accountType,
         lgpd_consent: true,
         tenant_slug: DEFAULT_TENANT,
+        captcha_token: captchaToken,
       });
 
       setRegistered(true);
@@ -80,6 +90,8 @@ export default function RegisterPage() {
         tone: "error",
         msg: err instanceof Error ? err.message : "Falha ao registrar.",
       });
+      setCaptchaToken("");
+      turnstileRef.current?.reset();
     } finally {
       setLoading(false);
     }
@@ -271,9 +283,17 @@ export default function RegisterPage() {
             </label>
           )}
 
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={TURNSTILE_SITE_KEY}
+            onSuccess={setCaptchaToken}
+            onExpire={() => setCaptchaToken("")}
+            options={{ theme: "light", size: "flexible" }}
+          />
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !captchaToken}
             className="w-full rounded-lg bg-tribultz-600 px-4 py-2.5 font-semibold text-white hover:bg-tribultz-700 disabled:opacity-70"
           >
             {loading ? "Registrando..." : "Criar conta"}
