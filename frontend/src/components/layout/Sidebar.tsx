@@ -8,6 +8,7 @@ const links = [
   { href: "/dashboard", label: "Painel" },
   { href: "/closing", label: "Fechamento" },
   { href: "/validate-xml", label: "Validar XML" },
+  { href: "/validate-batch", label: "Lote" },
   { href: "/chat", label: "Chat" },
   { href: "/jobs", label: "Jobs" },
   { href: "/audit", label: "Auditoria" },
