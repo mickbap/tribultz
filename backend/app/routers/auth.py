@@ -550,7 +550,7 @@ def reset_password(
             detail="Conta nao encontrada ou inativa.",
         )
 
-    user.password_hash = get_password_hash(data.new_password)
+    user.password_hash = get_password_hash(data.new_password)  # type: ignore[assignment]
     db.commit()
 
     logger.info("password_reset_completed", extra={"user_id": user_id})
