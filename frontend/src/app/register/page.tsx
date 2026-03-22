@@ -7,13 +7,28 @@ import { Toast } from "@/components/common/Toast";
 import { registerWithApi, loginWithApi } from "@/lib/api";
 import { setMockMode, setTenantId, setToken } from "@/lib/storage";
 
+function formatCnpj(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 14);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+  if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
+  if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
+  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+}
+
+function cnpjDigits(formatted: string): string {
+  return formatted.replace(/\D/g, "");
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const [tenant, setTenant] = useState("tenant-a");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [cnpj, setCnpj] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [lgpdConsent, setLgpdConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ tone: "success" | "error"; msg: string } | null>(null);
 
@@ -22,15 +37,24 @@ export default function RegisterPage() {
     setToast(null);
 
     if (!fullName.trim() || !email.trim() || !password.trim()) {
-      setToast({ tone: "error", msg: "Preencha todos os campos." });
+      setToast({ tone: "error", msg: "Preencha todos os campos obrigatorios." });
+      return;
+    }
+    const digits = cnpjDigits(cnpj);
+    if (digits.length !== 14) {
+      setToast({ tone: "error", msg: "CNPJ deve ter 14 digitos." });
       return;
     }
     if (password !== confirmPassword) {
       setToast({ tone: "error", msg: "Senhas nao conferem." });
       return;
     }
-    if (password.length < 6) {
-      setToast({ tone: "error", msg: "Senha deve ter no minimo 6 caracteres." });
+    if (password.length < 8) {
+      setToast({ tone: "error", msg: "Senha deve ter no minimo 8 caracteres." });
+      return;
+    }
+    if (!lgpdConsent) {
+      setToast({ tone: "error", msg: "Voce deve aceitar a Politica de Privacidade para prosseguir." });
       return;
     }
 
@@ -40,6 +64,8 @@ export default function RegisterPage() {
         email: email.trim(),
         password,
         full_name: fullName.trim(),
+        cnpj: digits,
+        lgpd_consent: true,
         tenant_slug: tenant,
       });
 
@@ -93,11 +119,24 @@ export default function RegisterPage() {
               onChange={(e) => setFullName(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2"
               autoComplete="name"
+              maxLength={200}
             />
           </label>
 
           <label className="block text-sm">
-            <span className="mb-1 block text-slate-600">Email</span>
+            <span className="mb-1 block text-slate-600">CNPJ</span>
+            <input
+              type="text"
+              value={cnpj}
+              onChange={(e) => setCnpj(formatCnpj(e.target.value))}
+              placeholder="00.000.000/0000-00"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono"
+              inputMode="numeric"
+            />
+          </label>
+
+          <label className="block text-sm">
+            <span className="mb-1 block text-slate-600">Email corporativo</span>
             <input
               type="email"
               value={email}
@@ -108,13 +147,14 @@ export default function RegisterPage() {
           </label>
 
           <label className="block text-sm">
-            <span className="mb-1 block text-slate-600">Senha</span>
+            <span className="mb-1 block text-slate-600">Senha (min. 8 caracteres)</span>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2"
               autoComplete="new-password"
+              minLength={8}
             />
           </label>
 
@@ -127,6 +167,24 @@ export default function RegisterPage() {
               className="w-full rounded-lg border border-slate-300 px-3 py-2"
               autoComplete="new-password"
             />
+          </label>
+
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={lgpdConsent}
+              onChange={(e) => setLgpdConsent(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-slate-300"
+            />
+            <span className="text-slate-600">
+              Li e concordo com a{" "}
+              <Link href="/privacy" target="_blank" className="font-medium text-tribultz-700 underline">
+                Politica de Privacidade
+              </Link>{" "}
+              e autorizo o tratamento dos meus dados pessoais e financeiros conforme a LGPD
+              (Lei 13.709/2018). Estou ciente de que o Tribultz atuara como custodiante dos
+              dados fiscais enviados.
+            </span>
           </label>
 
           <button

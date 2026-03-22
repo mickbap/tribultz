@@ -51,6 +51,8 @@ type RegisterRequest = {
   email: string;
   password: string;
   full_name: string;
+  cnpj: string;
+  lgpd_consent: boolean;
   tenant_slug: string;
 };
 

@@ -57,13 +57,18 @@ class User(Base):
     full_name = Column(String(200), nullable=False)
     password_hash = Column(Text, nullable=False)
     role = Column(String(50), nullable=False, default="user")
+    cnpj = Column(String(18), nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
+    lgpd_consent_at = Column(DateTime(timezone=True), nullable=True)
+    email_verified = Column(Boolean, nullable=False, default=False)
+    email_verification_token = Column(String(500), nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at = Column(
-        DateTime(timezone=True), 
-        nullable=False, 
+        DateTime(timezone=True),
+        nullable=False,
         server_default=func.now(),
         onupdate=func.now()
     )

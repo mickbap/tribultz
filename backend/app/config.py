@@ -31,6 +31,14 @@ class Settings(BaseSettings):
     HUBSPOT_PRIVATE_APP_TOKEN: str = ""
     CHATOPS_TIMEOUT_SECONDS: int = 45
 
+    # ── Security ────────────────────────────────────────────
+    ALLOWED_ORIGINS: str = "http://localhost:3000"
+    ENVIRONMENT: str = "development"  # development | staging | production
+
+    # ── Turnstile (CAPTCHA) ─────────────────────────────────
+    TURNSTILE_SECRET_KEY: str = ""
+    CAPTCHA_ENABLED: bool = False
+
     # ── LLM / OpenRouter ─────────────────────────────────────
     OPENROUTER_API_KEY: str = ""
     LLM_FREE_PRIMARY: str = "openrouter/google/gemini-2.0-flash-exp:free"

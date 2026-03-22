@@ -25,8 +25,13 @@ CREATE TABLE IF NOT EXISTS users (
     email       VARCHAR(255)  NOT NULL,
     full_name   VARCHAR(200)  NOT NULL,
     password_hash TEXT         NOT NULL,
+    cnpj        VARCHAR(18),
     role        VARCHAR(50)   NOT NULL DEFAULT 'user',
     is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
+    lgpd_consent_at TIMESTAMPTZ,
+    email_verified  BOOLEAN   NOT NULL DEFAULT FALSE,
+    email_verification_token VARCHAR(500),
+    deleted_at  TIMESTAMPTZ,
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ   NOT NULL DEFAULT now(),
     UNIQUE (tenant_id, email)
@@ -175,6 +180,20 @@ CREATE TABLE IF NOT EXISTS audit_log (
 
 CREATE INDEX IF NOT EXISTS idx_audit_log_tenant ON audit_log(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log(entity_type, entity_id);
+
+-- ------------------------------------------------------------
+-- 10. Feedback (customer feedback channel)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS feedback (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id   UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id     UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    category    VARCHAR(50)   NOT NULL,  -- bug, sugestao, elogio
+    message     TEXT          NOT NULL,
+    created_at  TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_tenant ON feedback(tenant_id);
 
 -- ============================================================
 -- SEED DATA
