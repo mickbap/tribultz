@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Toast } from "@/components/common/Toast";
-import { loginWithApi } from "@/lib/api";
+import { loginWithApi, resendVerificationEmail } from "@/lib/api";
 import { setMockMode, setTenantId, setToken } from "@/lib/storage";
 
 export default function LoginPage() {
@@ -13,6 +13,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loadingApi, setLoadingApi] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailUnverified, setEmailUnverified] = useState(false);
+  const [resending, setResending] = useState(false);
 
   function enterDemo(): void {
     setMockMode(true);
@@ -46,7 +48,11 @@ export default function LoginPage() {
       window.dispatchEvent(new Event("tribultz-settings-updated"));
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao autenticar em API Mode.");
+      const msg = err instanceof Error ? err.message : "Falha ao autenticar em API Mode.";
+      if (msg.includes("nao verificado") || msg.includes("not verified")) {
+        setEmailUnverified(true);
+      }
+      setError(msg);
     } finally {
       setLoadingApi(false);
     }
@@ -122,6 +128,37 @@ export default function LoginPage() {
                   >
                     {loadingApi ? "Autenticando..." : "Entrar (API)"}
                   </button>
+                  {emailUnverified && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                      <p className="text-xs text-amber-800">
+                        Email nao verificado. Verifique sua caixa de entrada.
+                      </p>
+                      <button
+                        type="button"
+                        disabled={resending}
+                        onClick={async () => {
+                          setResending(true);
+                          try {
+                            await resendVerificationEmail({
+                              email: email.trim(),
+                              password: password,
+                              tenant_slug: tenant,
+                            });
+                            setError(null);
+                            setEmailUnverified(false);
+                            setError("Novo link enviado! Verifique sua caixa de entrada.");
+                          } catch {
+                            setError("Falha ao reenviar. Tente novamente.");
+                          } finally {
+                            setResending(false);
+                          }
+                        }}
+                        className="mt-2 text-xs font-semibold text-amber-700 underline hover:text-amber-900 disabled:opacity-50"
+                      >
+                        {resending ? "Reenviando..." : "Reenviar email de verificacao"}
+                      </button>
+                    </div>
+                  )}
                 </form>
               </div>
             </div>

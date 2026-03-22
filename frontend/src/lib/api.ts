@@ -105,10 +105,26 @@ export async function loginWithApi(payload: LoginRequest): Promise<LoginResponse
     cache: "no-store",
   });
   if (!res.ok) {
-    const detail = await res.text().catch(() => "Erro ao autenticar");
-    throw new Error(`Login ${res.status}: ${detail}`);
+    const body = await res.json().catch(() => ({ detail: "Erro ao autenticar" }));
+    throw new Error(body.detail ?? `Login ${res.status}`);
   }
   return (await res.json()) as LoginResponse;
+}
+
+export async function resendVerificationEmail(payload: LoginRequest): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/resend-verification`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Tenant-Id": payload.tenant_slug,
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: "Erro ao reenviar" }));
+    throw new Error(body.detail ?? `Resend ${res.status}`);
+  }
 }
 
 export async function registerWithApi(payload: RegisterRequest): Promise<RegisterResponse> {

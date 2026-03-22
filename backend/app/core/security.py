@@ -17,6 +17,30 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
+def create_email_verification_token(user_id: str) -> str:
+    """Create a JWT token for email verification (24h expiry)."""
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(hours=24)
+    to_encode = {
+        "exp": expire,
+        "iat": now,
+        "sub": user_id,
+        "purpose": "email_verification",
+    }
+    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALG)
+
+
+def verify_email_verification_token(token: str) -> Optional[str]:
+    """Verify email verification token. Returns user_id or None."""
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALG])
+        if payload.get("purpose") != "email_verification":
+            return None
+        return payload.get("sub")
+    except Exception:
+        return None
+
+
 def create_access_token(subject: Union[str, Any], extra_claims: Optional[dict[str, Any]] = None) -> str:
     if extra_claims is None:
         extra_claims = {}

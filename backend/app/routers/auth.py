@@ -10,9 +10,16 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.auth import Tenant, User
 from app.schemas.auth import Token, UserLogin, UserRead, UserRegister
-from app.core.security import get_password_hash, verify_password, create_access_token
+from app.core.security import (
+    get_password_hash,
+    verify_password,
+    create_access_token,
+    create_email_verification_token,
+    verify_email_verification_token,
+)
 from app.services.captcha_service import verify_captcha
 from app.services.cnpj_validator import validate_cnpj
+from app.services.email_service import send_verification_email
 from app.services.rate_limit import RateLimiter
 
 logger = logging.getLogger(__name__)
@@ -86,7 +93,14 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 3. Check soft-delete
+    # 3. Check email verification
+    if not cast(bool, user.email_verified):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email nao verificado. Verifique sua caixa de entrada.",
+        )
+
+    # 4. Check soft-delete
     if user.deleted_at is not None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -94,7 +108,7 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 4. Create Token
+    # 5. Create Token
     access_token = create_access_token(
         subject=str(user.id),
         extra_claims={
@@ -158,10 +172,22 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         cnpj=data.cnpj or None,
         role="user",
         lgpd_consent_at=datetime.now(timezone.utc),
+        email_verified=False,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # 4. Send verification email
+    verification_token = create_email_verification_token(str(user.id))
+    user.email_verification_token = verification_token  # type: ignore[assignment]
+    db.commit()
+
+    send_verification_email(
+        to_email=data.email,
+        user_name=data.full_name,
+        token=verification_token,
+    )
 
     logger.info(
         "user_registered",
@@ -178,3 +204,75 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         cnpj=cast(str, user.cnpj) if user.cnpj else None,
         lgpd_consent_at=user.lgpd_consent_at,  # type: ignore[arg-type]
     )
+
+
+@router.get("/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    """Verify user email via JWT token link (24h expiry)."""
+    user_id = verify_email_verification_token(token)
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token invalido ou expirado.",
+        )
+
+    user = db.execute(
+        select(User).where(User.id == user_id)
+    ).scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario nao encontrado.",
+        )
+
+    if cast(bool, user.email_verified):
+        return {"status": "already_verified", "message": "Email ja verificado."}
+
+    user.email_verified = True  # type: ignore[assignment]
+    user.email_verification_token = None  # type: ignore[assignment]
+    db.commit()
+
+    logger.info("email_verified", extra={"user_id": str(user.id)})
+    return {"status": "verified", "message": "Email verificado com sucesso!"}
+
+
+@router.post("/resend-verification")
+async def resend_verification(
+    data: UserLogin, request: Request, db: Session = Depends(get_db)
+):
+    """Resend verification email for unverified users."""
+    ip = _client_ip(request)
+    _register_limiter.check_or_raise(f"resend:{ip}")
+
+    # Resolve tenant + user
+    tenant = db.execute(
+        select(Tenant).where(Tenant.slug == data.tenant_slug)
+    ).scalar_one_or_none()
+
+    if not tenant:
+        raise HTTPException(status_code=400, detail="Tenant nao encontrado.")
+
+    user = db.execute(
+        select(User).where(User.email == data.email, User.tenant_id == tenant.id)
+    ).scalar_one_or_none()
+
+    if not user:
+        # Don't reveal whether email exists
+        return {"message": "Se o email estiver cadastrado, um novo link sera enviado."}
+
+    if cast(bool, user.email_verified):
+        return {"message": "Email ja verificado. Faca login normalmente."}
+
+    # Generate new token and send
+    new_token = create_email_verification_token(str(user.id))
+    user.email_verification_token = new_token  # type: ignore[assignment]
+    db.commit()
+
+    send_verification_email(
+        to_email=cast(str, user.email),
+        user_name=cast(str, user.full_name),
+        token=new_token,
+    )
+
+    return {"message": "Se o email estiver cadastrado, um novo link sera enviado."}
