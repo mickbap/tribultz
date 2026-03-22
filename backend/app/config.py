@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     EMAIL_VERIFICATION_ENABLED: bool = False
     FRONTEND_URL: str = "http://localhost:3000"
 
+    # ── Asaas (Payment Gateway) ──────────────────────────────
+    ASAAS_API_KEY: str = ""
+    ASAAS_ENVIRONMENT: str = "sandbox"  # sandbox | production
+    ASAAS_WEBHOOK_TOKEN: str = ""
+
     # ── LLM / OpenRouter ─────────────────────────────────────
     OPENROUTER_API_KEY: str = ""
     LLM_FREE_PRIMARY: str = "openrouter/google/gemini-2.0-flash-exp:free"

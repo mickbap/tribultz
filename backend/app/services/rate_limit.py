@@ -56,7 +56,7 @@ class RateLimiter:
             if current > self.limit:
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="Rate limit exceeded. Try again later."
+                    detail="Limite de requisições excedido. Tente novamente mais tarde."
                 )
         except redis.RedisError as e:
             logger.error(f"Redis error in RateLimiter: {e}")
@@ -79,7 +79,7 @@ class RateLimiter:
         if len(valid_history) >= self.limit:
              raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Rate limit exceeded (local/fallback). Try again later."
+                detail="Limite de requisições excedido (local/fallback). Tente novamente mais tarde."
             )
         
         valid_history.append(now)

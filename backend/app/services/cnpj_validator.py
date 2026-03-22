@@ -39,7 +39,7 @@ async def validate_cnpj(cnpj: str) -> CnpjResult:
     if len(digits) != 14:
         return CnpjResult(
             valid=False, cnpj=digits, company_name="", status="",
-            error="CNPJ deve ter 14 digitos.",
+            error="CNPJ deve ter 14 dígitos.",
         )
 
     # Try BrasilAPI first
@@ -67,7 +67,7 @@ async def _try_brasilapi(digits: str) -> CnpjResult | None:
             if resp.status_code == 404:
                 return CnpjResult(
                     valid=False, cnpj=digits, company_name="", status="NOT_FOUND",
-                    error="CNPJ nao encontrado na base da Receita Federal.",
+                    error="CNPJ não encontrado na base da Receita Federal.",
                 )
             if resp.status_code != 200:
                 return None  # Try fallback
@@ -78,7 +78,7 @@ async def _try_brasilapi(digits: str) -> CnpjResult | None:
                 return CnpjResult(
                     valid=False, cnpj=digits, company_name=company_name,
                     status=situacao,
-                    error=f"CNPJ com situacao cadastral: {situacao}. Apenas CNPJs ativos sao aceitos.",
+                    error=f"CNPJ com situação cadastral: {situacao}. Apenas CNPJs ativos são aceitos.",
                 )
             return CnpjResult(
                 valid=True, cnpj=digits, company_name=company_name,
@@ -96,7 +96,7 @@ async def _try_receitaws(digits: str) -> CnpjResult | None:
             if resp.status_code == 404:
                 return CnpjResult(
                     valid=False, cnpj=digits, company_name="", status="NOT_FOUND",
-                    error="CNPJ nao encontrado na base da Receita Federal.",
+                    error="CNPJ não encontrado na base da Receita Federal.",
                 )
             if resp.status_code == 429:
                 return None  # Rate limited, fail to fallback
@@ -106,7 +106,7 @@ async def _try_receitaws(digits: str) -> CnpjResult | None:
             if data.get("status") == "ERROR":
                 return CnpjResult(
                     valid=False, cnpj=digits, company_name="", status="ERROR",
-                    error=str(data.get("message", "CNPJ invalido.")),
+                    error=str(data.get("message", "CNPJ inválido.")),
                 )
             situacao = str(data.get("situacao", "")).upper()
             company_name = str(data.get("nome", ""))
@@ -114,7 +114,7 @@ async def _try_receitaws(digits: str) -> CnpjResult | None:
                 return CnpjResult(
                     valid=False, cnpj=digits, company_name=company_name,
                     status=situacao,
-                    error=f"CNPJ com situacao: {situacao}. Apenas CNPJs ativos sao aceitos.",
+                    error=f"CNPJ com situação: {situacao}. Apenas CNPJs ativos são aceitos.",
                 )
             return CnpjResult(
                 valid=True, cnpj=digits, company_name=company_name,

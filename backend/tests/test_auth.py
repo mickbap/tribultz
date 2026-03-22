@@ -147,7 +147,7 @@ def test_login_inactive_user(client, session, test_user, test_tenant):
         }
     )
     assert response.status_code == 401
-    assert response.json()["detail"] == "Usuario inativo"
+    assert response.json()["detail"] == "Usuário inativo"
 
 
 def test_login_nonexistent_email(client, test_user):

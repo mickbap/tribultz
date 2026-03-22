@@ -25,9 +25,9 @@ function ResetPasswordForm() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Link invalido</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Link inválido</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Este link de redefinicao de senha e invalido ou esta incompleto.
+            Este link de redefinição de senha é inválido ou está incompleto.
           </p>
           <Link
             href="/forgot-password"
@@ -45,11 +45,11 @@ function ResetPasswordForm() {
     setToast(null);
 
     if (password.length < 8) {
-      setToast({ tone: "error", msg: "Senha deve ter no minimo 8 caracteres." });
+      setToast({ tone: "error", msg: "Senha deve ter no mínimo 8 caracteres." });
       return;
     }
     if (password !== confirmPassword) {
-      setToast({ tone: "error", msg: "Senhas nao conferem." });
+      setToast({ tone: "error", msg: "Senhas não conferem." });
       return;
     }
 

@@ -63,7 +63,10 @@ type RegisterRequest = {
   password: string;
   full_name: string;
   cnpj: string;
+  phone: string;
   account_type: string;
+  plan_slug: string;
+  billing_type: string;
   lgpd_consent: boolean;
   tenant_slug: string;
   captcha_token?: string;
@@ -76,6 +79,11 @@ type RegisterResponse = {
   role: string;
   tenant_id: string;
   is_active: boolean;
+  plan_slug?: string;
+  subscription_status?: string;
+  checkout_url?: string;
+  pix_qr_code?: string;
+  pix_copy_paste?: string;
 };
 
 export type JobEvidenceZipResult = {

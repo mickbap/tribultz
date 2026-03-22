@@ -29,26 +29,26 @@ export default function SettingsPage() {
     setMockMode(mockMode);
     setToken(token.trim() || "demo-token");
     window.dispatchEvent(new Event("tribultz-settings-updated"));
-    setToast({ tone: "success", msg: "Configuracoes salvas." });
+    setToast({ tone: "success", msg: "Configurações salvas." });
   }
 
   function reset(): void {
     resetDemoData();
     window.dispatchEvent(new Event("tribultz-settings-updated"));
-    setToast({ tone: "info", msg: "Dados de demonstracao resetados." });
+    setToast({ tone: "info", msg: "Dados de demonstração resetados." });
   }
 
   return (
     <section className="space-y-4">
       <header>
-        <h1 className="text-2xl font-bold text-slate-900">Configuracoes</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Configurações</h1>
         <p className="text-sm text-slate-500">Controle de Mock Mode e token para API Mode.</p>
       </header>
 
       <section className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-2">
         <label className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
           <span>
-            <span className="block text-sm font-medium text-slate-800">Mock Mode (padrao ON)</span>
+            <span className="block text-sm font-medium text-slate-800">Mock Mode (padrão ON)</span>
             <span className="text-xs text-slate-500">Quando ON, o app roda sem backend.</span>
           </span>
           <input
@@ -68,11 +68,11 @@ export default function SettingsPage() {
         <div className="rounded-lg border border-slate-200 px-3 py-2">
           <p className="text-sm font-medium text-slate-800">Tenant</p>
           <p className="mt-1 text-xs text-slate-500 font-mono">{tenant}</p>
-          <p className="mt-1 text-xs text-slate-400">Definido pelo perfil do usuario (AWS).</p>
+          <p className="mt-1 text-xs text-slate-400">Definido pelo perfil do usuário (AWS).</p>
         </div>
 
         <label className="text-sm">
-          <span className="mb-1 block text-slate-500">Token de autorizacao</span>
+          <span className="mb-1 block text-slate-500">Token de autorização</span>
           <input
             value={token}
             onChange={(e) => setTokenValue(e.target.value)}
@@ -102,14 +102,14 @@ export default function SettingsPage() {
       <section className="rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold text-slate-900">Meus Dados (LGPD)</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Seus direitos conforme a Lei Geral de Protecao de Dados (Lei 13.709/2018).
+          Seus direitos conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018).
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
             onClick={async () => {
               if (mockMode) {
-                setToast({ tone: "info", msg: "Disponivel apenas em API Mode." });
+                setToast({ tone: "info", msg: "Disponível apenas em API Mode." });
                 return;
               }
               try {
@@ -130,7 +130,7 @@ export default function SettingsPage() {
             type="button"
             onClick={async () => {
               if (mockMode) {
-                setToast({ tone: "info", msg: "Disponivel apenas em API Mode." });
+                setToast({ tone: "info", msg: "Disponível apenas em API Mode." });
                 return;
               }
               window.open(`${API_BASE}/api/v1/lgpd/export`, "_blank");
@@ -143,10 +143,10 @@ export default function SettingsPage() {
             type="button"
             onClick={async () => {
               if (mockMode) {
-                setToast({ tone: "info", msg: "Disponivel apenas em API Mode." });
+                setToast({ tone: "info", msg: "Disponível apenas em API Mode." });
                 return;
               }
-              if (!window.confirm("Tem certeza? Esta acao e irreversivel. Seus dados serao anonimizados.")) return;
+              if (!window.confirm("Tem certeza? Esta ação é irreversível. Seus dados serão anonimizados.")) return;
               try {
                 const res = await fetch(`${API_BASE}/api/v1/lgpd/delete-account`, {
                   method: "POST",
@@ -169,7 +169,7 @@ export default function SettingsPage() {
           </button>
         </div>
         <p className="mt-3 text-xs text-slate-400">
-          Dados fiscais sao retidos conforme obrigacao legal. Contato DPO: dpo@tribultz.com.br
+          Dados fiscais são retidos conforme obrigação legal. Contato DPO: dpo@tribultz.com.br
         </p>
       </section>
 

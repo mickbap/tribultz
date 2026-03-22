@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório de Validação — Tribultz</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 2cm;
+      @bottom-center { content: "Tribultz — Relatório de Validação — Página " counter(page) " de " counter(pages); font-size: 8pt; color: #666; }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10pt; color: #1e293b; line-height: 1.5; }
+    .header { border-bottom: 3px solid #2563eb; padding-bottom: 12pt; margin-bottom: 16pt; }
+    .header h1 { font-size: 18pt; color: #2563eb; margin-bottom: 4pt; }
+    .header .subtitle { font-size: 10pt; color: #64748b; }
+    .meta-grid { display: flex; flex-wrap: wrap; gap: 8pt; margin-bottom: 16pt; }
+    .meta-item { flex: 1 1 45%; }
+    .meta-item .label { font-size: 8pt; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5pt; }
+    .meta-item .value { font-size: 11pt; font-weight: 600; }
+    .status-badge { display: inline-block; padding: 4pt 12pt; border-radius: 4pt; font-weight: 700; font-size: 11pt; }
+    .status-pass { background: #dcfce7; color: #166534; }
+    .status-fail { background: #fef2f2; color: #991b1b; }
+    .section { margin-bottom: 16pt; }
+    .section h2 { font-size: 13pt; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 4pt; margin-bottom: 8pt; }
+    .summary-cards { display: flex; gap: 8pt; margin-bottom: 16pt; }
+    .card { flex: 1; border: 1px solid #e2e8f0; border-radius: 4pt; padding: 8pt; text-align: center; }
+    .card .card-label { font-size: 8pt; color: #94a3b8; text-transform: uppercase; }
+    .card .card-value { font-size: 14pt; font-weight: 700; color: #1e293b; }
+    table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 12pt; }
+    th { background: #f1f5f9; color: #475569; font-weight: 600; text-align: left; padding: 6pt 8pt; border-bottom: 2px solid #cbd5e1; }
+    td { padding: 5pt 8pt; border-bottom: 1px solid #e2e8f0; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    .severity-error { color: #dc2626; font-weight: 700; }
+    .severity-warning { color: #d97706; font-weight: 600; }
+    .severity-info { color: #2563eb; }
+    .footer { margin-top: 24pt; padding-top: 8pt; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #94a3b8; text-align: center; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Relatório de Validação Tributária</h1>
+  <div class="subtitle">Plataforma Tribultz — Reforma Tributária (LC 214 / LC 227)</div>
+</div>
+
+<div class="meta-grid">
+  <div class="meta-item">
+    <div class="label">Empresa</div>
+    <div class="value">{{ company_name }}</div>
+  </div>
+  <div class="meta-item">
+    <div class="label">CNPJ</div>
+    <div class="value">{{ cnpj }}</div>
+  </div>
+  <div class="meta-item">
+    <div class="label">Período</div>
+    <div class="value">{{ reference_period }}</div>
+  </div>
+  <div class="meta-item">
+    <div class="label">Gerado em</div>
+    <div class="value">{{ generated_at }}</div>
+  </div>
+  <div class="meta-item">
+    <div class="label">Job ID</div>
+    <div class="value" style="font-size: 8pt;">{{ job_id }}</div>
+  </div>
+  <div class="meta-item">
+    <div class="label">Status Geral</div>
+    <div>
+      <span class="status-badge {% if overall_status == 'CONFORME' %}status-pass{% else %}status-fail{% endif %}">
+        {{ overall_status }}
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="summary-cards">
+  <div class="card">
+    <div class="card-label">Base Total</div>
+    <div class="card-value">{{ total_base|brl }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">CBS ({{ cbs_rate }}%)</div>
+    <div class="card-value">{{ total_cbs|brl }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">IBS ({{ ibs_rate }}%)</div>
+    <div class="card-value">{{ total_ibs|brl }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Total Findings</div>
+    <div class="card-value">{{ total_findings }}</div>
+  </div>
+</div>
+
+{% if findings %}
+<div class="section">
+  <h2>Findings ({{ total_findings }})</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:8%">Sev.</th>
+        <th style="width:12%">Regra</th>
+        <th style="width:30%">Título</th>
+        <th style="width:20%">Local</th>
+        <th style="width:30%">Recomendação</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in findings %}
+      <tr>
+        <td class="severity-{{ f.severity|lower }}">{{ f.severity }}</td>
+        <td>{{ f.rule_id }}</td>
+        <td>{{ f.title }}</td>
+        <td style="font-size:8pt;">{{ f.get('where', '—') }}</td>
+        <td style="font-size:8pt;">{{ f.get('recommendation', '—') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="section">
+  <h2>Findings</h2>
+  <p style="color: #16a34a; font-weight: 600;">Nenhum finding identificado. Documento em conformidade.</p>
+</div>
+{% endif %}
+
+{% if errors %}
+<div class="section">
+  <h2>Erros Críticos ({{ errors|length }})</h2>
+  {% for f in errors %}
+  <div style="border-left: 3px solid #dc2626; padding: 6pt 8pt; margin-bottom: 6pt; background: #fef2f2;">
+    <strong>{{ f.rule_id }}</strong> — {{ f.title }}<br>
+    <span style="font-size: 8pt; color: #64748b;">{{ f.get('recommendation', '') }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="footer">
+  Relatório gerado automaticamente pela plataforma Tribultz.<br>
+  Este documento possui validade como evidência auditável conforme padrão Findings/Evidence v1.1.
+</div>
+
+</body>
+</html>

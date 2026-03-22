@@ -1,6 +1,6 @@
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import cast
 from uuid import UUID
 
@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.auth import Tenant, User, UserTenant
+from app.models.billing import Plan, Subscription, UsageTracking
 from app.schemas.auth import Token, TenantInfo, UserLogin, UserRead, UserRegister
 from app.core.security import (
     get_password_hash,
@@ -126,14 +127,14 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
     if not cast(bool, user.is_active):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuario inativo",
+            detail="Usuário inativo",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not cast(bool, user.email_verified):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Email nao verificado. Verifique sua caixa de entrada.",
+            detail="Email não verificado. Verifique sua caixa de entrada.",
         )
 
     if user.deleted_at is not None:
@@ -150,12 +151,29 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
         default_entry = next((t for t in user_tenant_list if t.is_default), user_tenant_list[0])
         default_tenant_id = str(default_entry.id)
 
+    # Resolve plan_slug from active subscription
+    plan_slug = "trial"
+    sub_row = db.execute(
+        select(Subscription, Plan)
+        .join(Plan, Subscription.plan_id == Plan.id)
+        .where(
+            Subscription.user_id == user.id,
+            Subscription.status.in_(("active", "trial", "pending")),
+        )
+        .order_by(Subscription.created_at.desc())
+        .limit(1)
+    ).first()
+    if sub_row:
+        _, plan_obj = sub_row
+        plan_slug = cast(str, plan_obj.slug)
+
     access_token = create_access_token(
         subject=str(user.id),
         extra_claims={
             "tenant_id": default_tenant_id,
             "role": cast(str, user.role),
             "account_type": cast(str, user.account_type),
+            "plan_slug": plan_slug,
         },
     )
 
@@ -165,6 +183,7 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
         "token_type": "bearer",
         "tenant_id": default_tenant_id,
         "account_type": cast(str, user.account_type),
+        "plan_slug": plan_slug,
         "tenants": [t.model_dump() for t in user_tenant_list],
     }
 
@@ -200,7 +219,7 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Email ja cadastrado.",
+            detail="Email já cadastrado.",
         )
 
     # Auto-create tenant from CNPJ
@@ -216,6 +235,16 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
             db.add(tenant)
             db.flush()
 
+    # Resolve plan
+    plan = db.execute(
+        select(Plan).where(Plan.slug == data.plan_slug, Plan.is_active == True)  # noqa: E712
+    ).scalar_one_or_none()
+    if not plan:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Plano '{data.plan_slug}' não encontrado.",
+        )
+
     # Create user
     user = User(
         tenant_id=tenant.id,
@@ -223,6 +252,7 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         full_name=data.full_name,
         password_hash=get_password_hash(data.password),
         cnpj=data.cnpj or None,
+        phone=data.phone or None,
         account_type=data.account_type,
         role="admin" if data.account_type == "empresa" else "contador",
         lgpd_consent_at=datetime.now(timezone.utc),
@@ -239,19 +269,105 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         is_default=True,
     )
     db.add(user_tenant)
+
+    # Create subscription
+    now = datetime.now(timezone.utc)
+    is_trial = data.plan_slug == "trial"
+
+    subscription = Subscription(
+        tenant_id=tenant.id,
+        user_id=user.id,
+        plan_id=plan.id,
+        status="trial" if is_trial else "pending",
+        trial_ends_at=now + timedelta(days=3) if is_trial else None,
+        current_period_start=now,
+        current_period_end=now + timedelta(days=30),
+    )
+    db.add(subscription)
+
+    # Create usage tracking for current month
+    usage = UsageTracking(
+        tenant_id=tenant.id,
+        user_id=user.id,
+        period=now.strftime("%Y-%m"),
+    )
+    db.add(usage)
+
     db.commit()
     db.refresh(user)
+    db.refresh(subscription)
 
-    # Send verification email
-    verification_token = create_email_verification_token(str(user.id))
-    user.email_verification_token = verification_token  # type: ignore[assignment]
-    db.commit()
+    # Billing: create Asaas customer + payment for paid plans
+    checkout_url = None
+    pix_qr_code = None
+    pix_copy_paste = None
 
-    send_verification_email(
-        to_email=data.email,
-        user_name=data.full_name,
-        token=verification_token,
-    )
+    if not is_trial:
+        try:
+            from app.services.asaas_service import asaas
+
+            # Create Asaas customer
+            customer = await asaas.create_customer(
+                name=data.full_name,
+                email=data.email,
+                cpf_cnpj=data.cnpj or "",
+                phone=data.phone or "",
+            )
+            asaas_customer_id = customer["id"]
+            subscription.asaas_customer_id = asaas_customer_id  # type: ignore[assignment]
+
+            # Create Asaas payment (first charge)
+            price_reais = cast(int, plan.price_cents) / 100
+            payment = await asaas.create_payment(
+                customer_id=asaas_customer_id,
+                value=price_reais,
+                billing_type=data.billing_type,
+                description=f"Assinatura Tribultz — {cast(str, plan.name)}",
+            )
+            asaas_payment_id = payment["id"]
+
+            # Store payment record
+            from app.models.billing import Payment
+
+            db_payment = Payment(
+                tenant_id=tenant.id,
+                subscription_id=subscription.id,
+                asaas_payment_id=asaas_payment_id,
+                amount_cents=cast(int, plan.price_cents),
+                status="pending",
+                payment_method=data.billing_type.lower(),
+            )
+
+            # PIX: get QR code
+            if data.billing_type == "PIX":
+                pix_data = await asaas.get_pix_qr_code(asaas_payment_id)
+                pix_qr_code = pix_data.get("encodedImage")
+                pix_copy_paste = pix_data.get("payload")
+                db_payment.pix_qr_code = pix_qr_code  # type: ignore[assignment]
+                db_payment.pix_copy_paste = pix_copy_paste  # type: ignore[assignment]
+            else:
+                # Credit card: get checkout URL
+                checkout_url = asaas.get_checkout_url(asaas_payment_id)
+
+            db.add(db_payment)
+            db.commit()
+
+        except Exception as e:
+            logger.error("asaas_registration_error", extra={"error": str(e), "user_id": str(user.id)})
+            # Don't fail registration — user can pay later via billing page
+            checkout_url = None
+
+    # Trial: send verification email immediately
+    if is_trial:
+        verification_token = create_email_verification_token(str(user.id))
+        user.email_verification_token = verification_token  # type: ignore[assignment]
+        db.commit()
+
+        send_verification_email(
+            to_email=data.email,
+            user_name=data.full_name,
+            token=verification_token,
+        )
 
     logger.info(
         "user_registered",
@@ -259,6 +375,7 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
             "user_id": str(user.id),
             "tenant_slug": cast(str, tenant.slug),
             "account_type": data.account_type,
+            "plan": data.plan_slug,
             "ip": ip,
         },
     )
@@ -276,6 +393,11 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         account_type=cast(str, user.account_type),
         lgpd_consent_at=user.lgpd_consent_at,  # type: ignore[arg-type]
         tenants=tenants,
+        plan_slug=data.plan_slug,
+        subscription_status=cast(str, subscription.status),
+        checkout_url=checkout_url,
+        pix_qr_code=pix_qr_code,
+        pix_copy_paste=pix_copy_paste,
     )
 
 
@@ -288,7 +410,7 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Token invalido ou expirado.",
+            detail="Token inválido ou expirado.",
         )
 
     user = db.execute(
@@ -298,11 +420,11 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario nao encontrado.",
+            detail="Usuário não encontrado.",
         )
 
     if cast(bool, user.email_verified):
-        return {"status": "already_verified", "message": "Email ja verificado."}
+        return {"status": "already_verified", "message": "Email já verificado."}
 
     user.email_verified = True  # type: ignore[assignment]
     user.email_verification_token = None  # type: ignore[assignment]
@@ -327,10 +449,10 @@ async def resend_verification(
     ).scalar_one_or_none()
 
     if not user:
-        return {"message": "Se o email estiver cadastrado, um novo link sera enviado."}
+        return {"message": "Se o email estiver cadastrado, um novo link será enviado."}
 
     if cast(bool, user.email_verified):
-        return {"message": "Email ja verificado. Faca login normalmente."}
+        return {"message": "Email já verificado. Faça login normalmente."}
 
     new_token = create_email_verification_token(str(user.id))
     user.email_verification_token = new_token  # type: ignore[assignment]
@@ -342,7 +464,7 @@ async def resend_verification(
         token=new_token,
     )
 
-    return {"message": "Se o email estiver cadastrado, um novo link sera enviado."}
+    return {"message": "Se o email estiver cadastrado, um novo link será enviado."}
 
 
 # ── Add CNPJ (for contadores) ────────────────────────────────
@@ -354,7 +476,7 @@ class AddCnpjRequest(BaseModel):
     def validate_cnpj_format(cls, v: str) -> str:
         digits = re.sub(r"\D", "", v)
         if len(digits) != 14:
-            raise ValueError("CNPJ deve ter 14 digitos.")
+            raise ValueError("CNPJ deve ter 14 dígitos.")
         return digits
 
 
@@ -381,7 +503,7 @@ async def add_cnpj(
 
     cnpj_digits = re.sub(r"\D", "", data.cnpj)
     if len(cnpj_digits) != 14:
-        raise HTTPException(status_code=400, detail="CNPJ deve ter 14 digitos.")
+        raise HTTPException(status_code=400, detail="CNPJ deve ter 14 dígitos.")
 
     # Validate CNPJ
     cnpj_result = await validate_cnpj(cnpj_digits)
@@ -401,7 +523,7 @@ async def add_cnpj(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="CNPJ ja associado a sua conta.",
+            detail="CNPJ já associado à sua conta.",
         )
 
     user_tenant = UserTenant(
@@ -454,7 +576,7 @@ async def switch_tenant(
     if not user_tenant:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Voce nao tem acesso a este tenant.",
+            detail="Você não tem acesso a este tenant.",
         )
 
     access_token = create_access_token(
@@ -513,7 +635,7 @@ def forgot_password(
     else:
         logger.info("password_reset_ignored", extra={"email": data.email})
 
-    return {"message": "Se o email estiver cadastrado, voce recebera um link para redefinir sua senha."}
+    return {"message": "Se o email estiver cadastrado, você receberá um link para redefinir sua senha."}
 
 
 class ResetPasswordRequest(BaseModel):
@@ -530,14 +652,14 @@ def reset_password(
     if len(data.new_password) < 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Senha deve ter no minimo 8 caracteres.",
+            detail="Senha deve ter no mínimo 8 caracteres.",
         )
 
     user_id = verify_password_reset_token(data.token)
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Link expirado ou invalido. Solicite um novo link.",
+            detail="Link expirado ou inválido. Solicite um novo link.",
         )
 
     user = db.execute(
@@ -547,11 +669,11 @@ def reset_password(
     if not user or not cast(bool, user.is_active):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Conta nao encontrada ou inativa.",
+            detail="Conta não encontrada ou inativa.",
         )
 
     user.password_hash = get_password_hash(data.new_password)  # type: ignore[assignment]
     db.commit()
 
     logger.info("password_reset_completed", extra={"user_id": user_id})
-    return {"message": "Senha redefinida com sucesso. Faca login com sua nova senha."}
+    return {"message": "Senha redefinida com sucesso. Faça login com sua nova senha."}

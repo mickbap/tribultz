@@ -14,9 +14,9 @@ class FeedbackCreate(BaseModel):
     def validate_message(cls, v: str) -> str:
         v = v.strip()
         if len(v) < 10:
-            raise ValueError("Mensagem deve ter no minimo 10 caracteres.")
+            raise ValueError("Mensagem deve ter no mínimo 10 caracteres.")
         if len(v) > 2000:
-            raise ValueError("Mensagem deve ter no maximo 2000 caracteres.")
+            raise ValueError("Mensagem deve ter no máximo 2000 caracteres.")
         return v
 
 

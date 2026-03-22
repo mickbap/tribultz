@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import TrialBanner from "@/components/common/TrialBanner";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,6 +22,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen md:flex">
       <Sidebar />
       <div className="flex min-h-screen flex-1 flex-col">
+        <TrialBanner />
         <Topbar
           stateVersion={stateVersion}
           onOpenMenu={() => setMobileOpen(true)}

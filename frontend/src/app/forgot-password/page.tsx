@@ -27,7 +27,7 @@ export default function ForgotPasswordPage() {
     } catch (err) {
       setToast({
         tone: "error",
-        msg: err instanceof Error ? err.message : "Falha ao solicitar redefinicao.",
+        msg: err instanceof Error ? err.message : "Falha ao solicitar redefinição.",
       });
     } finally {
       setLoading(false);
@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Verifique seu email</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Se o email <strong>{email}</strong> estiver cadastrado, voce recebera um link para redefinir sua senha.
+            Se o email <strong>{email}</strong> estiver cadastrado, você receberá um link para redefinir sua senha.
           </p>
           <p className="mt-2 text-sm text-slate-500">
             O link expira em 1 hora.
@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
             disabled={loading}
             className="w-full rounded-lg bg-tribultz-600 px-4 py-2.5 font-semibold text-white hover:bg-tribultz-700 disabled:opacity-70"
           >
-            {loading ? "Enviando..." : "Enviar link de redefinicao"}
+            {loading ? "Enviando..." : "Enviar link de redefinição"}
           </button>
         </form>
 

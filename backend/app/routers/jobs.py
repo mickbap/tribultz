@@ -1,22 +1,27 @@
-﻿"""Orchestration / Job Control Agent â€“ manages async job lifecycle."""
+"""Orchestration / Job Control Agent — manages async job lifecycle."""
 
+import logging
 from enum import Enum
 from typing import Any, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.api.deps import get_current_user
+from app.api.plan_gate import require_plan
 from app.models.auth import User
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
 
 
-# â”€â”€ Enums & Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Enums & Schemas ──────────────────────────────────────────────────────────
 class JobStatus(str, Enum):
     QUEUED = "QUEUED"
     RUNNING = "RUNNING"
@@ -51,7 +56,7 @@ class JobResponse(BaseModel):
     updated_at: str
 
 
-# â”€â”€ Bootstrap (ensure jobs table exists) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Bootstrap (ensure jobs table exists) ─────────────────────────────────────
 _JOBS_DDL = """
 CREATE TABLE IF NOT EXISTS jobs (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -91,7 +96,7 @@ def _row_to_response(r) -> JobResponse:
     )
 
 
-# â”€â”€ Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Endpoints ─────────────────────────────────────────────────────────────────
 @router.post("", response_model=JobResponse, status_code=201)
 def create_job(
     req: JobCreateRequest,
@@ -263,4 +268,62 @@ def reprocess_job(
         {"id": job_id, "tid": tenant_id},
     ).fetchone()
     return _row_to_response(row)
+
+
+@router.get("/{job_id}/report.pdf")
+def get_job_report_pdf(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _plan: User = Depends(require_plan("profissional", "contador")),
+):
+    """Generate and return a PDF validation report for a completed job.
+
+    Gated to Profissional and Contador plans.
+    """
+    _ensure_table(db)
+    tenant_id = str(current_user.tenant_id)
+
+    row = db.execute(
+        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"),
+        {"id": job_id, "tid": tenant_id},
+    ).fetchone()
+    if not row:
+        raise HTTPException(404, "Job not found")
+
+    if row.status != "SUCCESS":
+        raise HTTPException(400, f"Job não está completo (status: {row.status})")
+
+    result = row.result if isinstance(row.result, dict) else {}
+    payload = row.payload if isinstance(row.payload, dict) else {}
+    findings = result.get("findings", [])
+
+    from app.services.pdf_service import generate_validation_report_pdf
+
+    pdf_bytes = generate_validation_report_pdf(
+        company_name=payload.get("company_name", ""),
+        cnpj=payload.get("cnpj", ""),
+        reference_period=payload.get("reference_period", ""),
+        job_id=str(row.id),
+        findings=findings,
+        overall_status=result.get("status", "N/A"),
+        total_base=result.get("total_base", "0"),
+        total_cbs=result.get("total_cbs", "0"),
+        total_ibs=result.get("total_ibs", "0"),
+    )
+
+    # Detect if WeasyPrint returned HTML fallback
+    content_type = "application/pdf"
+    filename = f"relatorio_{job_id}.pdf"
+    if pdf_bytes[:15] == b"<!DOCTYPE html>":
+        content_type = "text/html; charset=utf-8"
+        filename = f"relatorio_{job_id}.html"
+
+    return Response(
+        content=pdf_bytes,
+        media_type=content_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+        },
+    )
 
