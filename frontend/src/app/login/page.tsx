@@ -162,6 +162,10 @@ export default function LoginPage() {
         <a href="/register" className="font-medium text-tribultz-700 hover:underline">
           Criar conta
         </a>
+        {" "}&middot;{" "}
+        <a href="/changelog" className="font-medium text-slate-500 hover:text-tribultz-700 hover:underline">
+          Novidades
+        </a>
       </p>
       {error ? <Toast message={error} tone="error" onClose={() => setError(null)} /> : null}
     </main>

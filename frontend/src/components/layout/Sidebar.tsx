@@ -63,6 +63,15 @@ export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNa
         >
           Feedback
         </Link>
+        <Link
+          href="/changelog"
+          onClick={onNavigate}
+          className={`block rounded-lg px-3 py-2 text-sm ${
+            pathname === "/changelog" ? "bg-tribultz-100 text-tribultz-700" : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          Novidades
+        </Link>
         <button
           type="button"
           onClick={handleLogout}
