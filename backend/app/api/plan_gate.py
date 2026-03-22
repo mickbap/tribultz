@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import Callable, cast
+from typing import Any, Callable, cast
 
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import select, update
@@ -137,7 +137,7 @@ def increment_usage(db: Session, user_id: object, tenant_id: object, usage_type:
     db.flush()
 
 
-def _get_active_subscription(db: Session, user: User) -> tuple:
+def _get_active_subscription(db: Session, user: User) -> tuple[Any, Any]:
     """Get the user's most recent subscription + plan. Returns (sub, plan) or (None, None)."""
     result = db.execute(
         select(Subscription, Plan)
@@ -152,4 +152,4 @@ def _get_active_subscription(db: Session, user: User) -> tuple:
 
     if not result:
         return (None, None)
-    return result
+    return (result[0], result[1])

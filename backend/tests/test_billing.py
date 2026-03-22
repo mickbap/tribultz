@@ -293,27 +293,27 @@ class TestBillingRouter:
 
     def test_webhook_route_exists(self):
         from app.routers.billing import router
-        paths = [r.path for r in router.routes]
+        paths = [getattr(r, "path", "") for r in router.routes]
         assert any("webhooks/asaas" in p for p in paths)
 
     def test_billing_me_route_exists(self):
         from app.routers.billing import router
-        paths = [r.path for r in router.routes]
+        paths = [getattr(r, "path", "") for r in router.routes]
         assert any(p.endswith("/me") for p in paths)
 
     def test_payments_route_exists(self):
         from app.routers.billing import router
-        paths = [r.path for r in router.routes]
+        paths = [getattr(r, "path", "") for r in router.routes]
         assert any(p.endswith("/payments") for p in paths)
 
     def test_upgrade_route_exists(self):
         from app.routers.billing import router
-        paths = [r.path for r in router.routes]
+        paths = [getattr(r, "path", "") for r in router.routes]
         assert any(p.endswith("/upgrade") for p in paths)
 
     def test_cancel_route_exists(self):
         from app.routers.billing import router
-        paths = [r.path for r in router.routes]
+        paths = [getattr(r, "path", "") for r in router.routes]
         assert any(p.endswith("/cancel") for p in paths)
 
 
@@ -415,5 +415,5 @@ class TestJobsPdfEndpoint:
 
     def test_report_pdf_route_exists(self):
         from app.routers.jobs import router
-        paths = [r.path for r in router.routes]
+        paths = [getattr(r, "path", "") for r in router.routes]
         assert any("report.pdf" in p for p in paths)

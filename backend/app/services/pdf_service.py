@@ -80,7 +80,7 @@ def generate_validation_report_pdf(
 
     try:
         from weasyprint import HTML
-        pdf_bytes = HTML(string=html).write_pdf()
+        pdf_bytes: bytes = HTML(string=html).write_pdf()  # type: ignore[assignment]
         logger.info("PDF generated for job %s (%d bytes)", job_id, len(pdf_bytes))
         return pdf_bytes
     except ImportError:
@@ -122,7 +122,7 @@ def generate_batch_report_pdf(
 
     try:
         from weasyprint import HTML
-        pdf_bytes = HTML(string=html).write_pdf()
+        pdf_bytes: bytes = HTML(string=html).write_pdf()  # type: ignore[assignment]
         logger.info("Batch PDF generated for job %s (%d bytes)", job_id, len(pdf_bytes))
         return pdf_bytes
     except ImportError:

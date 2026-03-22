@@ -19,11 +19,11 @@ celery.conf.update(
     beat_schedule={
         "expire-trials-hourly": {
             "task": "billing.expire_trials",
-            "schedule": crontab(minute=0),  # every hour at :00
+            "schedule": crontab(minute="0"),  # every hour at :00
         },
         "reset-usage-monthly": {
             "task": "billing.reset_monthly_usage",
-            "schedule": crontab(minute=0, hour=0, day_of_month=1),  # 1st of month at midnight
+            "schedule": crontab(minute="0", hour="0", day_of_month="1"),  # 1st of month at midnight
         },
     },
 )

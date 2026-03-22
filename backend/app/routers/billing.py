@@ -58,7 +58,7 @@ async def asaas_webhook(
             logger.warning("Payment %s not found in DB", asaas_payment_id)
             return {"status": "ignored", "reason": "payment not found"}
 
-        if payment.status == "confirmed":
+        if cast(str, payment.status) == "confirmed":
             logger.info("Payment %s already confirmed, idempotent skip", asaas_payment_id)
             return {"status": "ok", "action": "already_confirmed"}
 
@@ -199,8 +199,8 @@ def list_payments(
             "amount_cents": cast(int, p.amount_cents),
             "status": cast(str, p.status),
             "payment_method": cast(str, p.payment_method),
-            "paid_at": p.paid_at.isoformat() if p.paid_at else None,
-            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "paid_at": cast(datetime, p.paid_at).isoformat() if p.paid_at is not None else None,
+            "created_at": cast(datetime, p.created_at).isoformat() if p.created_at is not None else None,
         }
         for p in rows
     ]
@@ -239,11 +239,12 @@ async def upgrade_plan(
         raise HTTPException(status_code=400, detail="Nenhuma assinatura encontrada.")
 
     # Cancel old Asaas subscription if exists
-    if current_sub.asaas_subscription_id:
+    asaas_sub_id = cast(str, current_sub.asaas_subscription_id) if current_sub.asaas_subscription_id is not None else None
+    if asaas_sub_id:
         try:
-            await asaas.cancel_subscription(cast(str, current_sub.asaas_subscription_id))
+            await asaas.cancel_subscription(asaas_sub_id)
         except Exception:
-            logger.warning("Falha ao cancelar assinatura Asaas anterior: %s", current_sub.asaas_subscription_id)
+            logger.warning("Falha ao cancelar assinatura Asaas anterior: %s", asaas_sub_id)
 
     # Mark old subscription as cancelled
     current_sub.status = "cancelled"  # type: ignore[assignment]
@@ -256,13 +257,13 @@ async def upgrade_plan(
     pix_copy_paste = None
 
     try:
-        customer_id = cast(str, current_sub.asaas_customer_id) if current_sub.asaas_customer_id else None
+        customer_id = cast(str, current_sub.asaas_customer_id) if current_sub.asaas_customer_id is not None else None
         if not customer_id:
             cust = await asaas.create_customer(
                 name=cast(str, current_user.full_name),
                 email=cast(str, current_user.email),
-                cpf_cnpj=cast(str, current_user.cnpj) if current_user.cnpj else "",
-                phone=cast(str, current_user.phone) if current_user.phone else "",
+                cpf_cnpj=cast(str, current_user.cnpj) if current_user.cnpj is not None else "",
+                phone=cast(str, current_user.phone) if current_user.phone is not None else "",
             )
             customer_id = cust["id"]
 
@@ -339,11 +340,12 @@ async def cancel_subscription_endpoint(
         raise HTTPException(status_code=400, detail="Nenhuma assinatura ativa encontrada.")
 
     # Cancel in Asaas if applicable
-    if sub.asaas_subscription_id:
+    cancel_sub_id = cast(str, sub.asaas_subscription_id) if sub.asaas_subscription_id is not None else None
+    if cancel_sub_id:
         try:
-            await asaas.cancel_subscription(cast(str, sub.asaas_subscription_id))
+            await asaas.cancel_subscription(cancel_sub_id)
         except Exception:
-            logger.warning("Falha ao cancelar assinatura Asaas: %s", sub.asaas_subscription_id)
+            logger.warning("Falha ao cancelar assinatura Asaas: %s", cancel_sub_id)
 
     sub.status = "cancelled"  # type: ignore[assignment]
     sub.cancelled_at = datetime.now(timezone.utc)  # type: ignore[assignment]
