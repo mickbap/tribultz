@@ -19,9 +19,9 @@ Plataforma de compliance e simulação CBS/IBS para a reforma tributária brasil
 
 ```
 frontend/            Next.js app (app router)
-  src/app/           Páginas: dashboard, validate-xml, audit, chat, closing, jobs,
-                     report, settings, login, register, exceptions
-  src/lib/           Validação (xmlRules), export (CSV/PDF auditável, zip), closing
+  src/app/           Páginas: dashboard, validate-xml, validate-batch, audit, chat,
+                     closing, jobs, report, settings, login, register, exceptions
+  src/lib/           Validação (xmlRules), export (CSV/PDF auditável, batch, zip), closing
   src/components/    UI: AppShell, Sidebar, EvidenceList, JsonViewer, Toast
 
 backend/             FastAPI
@@ -61,7 +61,7 @@ uvicorn app.main:app --reload   # porta 8000
 cd frontend
 npm ci
 npm run dev    # porta 3000
-npm test       # 23 testes
+npm test       # 41 testes
 npm run build  # produção
 ```
 
@@ -78,12 +78,13 @@ npm run build  # produção
 
 1. **Login** — Demo (mock, sem backend) ou API (autenticação real)
 2. **Registro** — `/register` com auto-login após cadastro
-3. **Dashboard** — KPIs: jobs 24h, validações aprovadas, exceções abertas
+3. **Dashboard** — KPIs: jobs 24h, total validações, taxa conformidade, exceções abertas, total findings, FATAL count, top 3 regras violadas, trend 7 dias
 4. **Validar XML** — Upload NFS-e/NF-e → validação CBS/IBS → download CSV/PDF auditável
-5. **Chat** — Assistente fiscal com CrewAI (3 agentes: triage → operator → narrator)
-6. **Jobs** — Histórico de execuções com export de evidências (.zip)
-7. **Auditoria** — Trilha auditável com SHA-256 checksums
-8. **Exceções** — Workflow OPEN → APPROVED/REJECTED com eventos no audit
+5. **Lote** — Upload múltiplos XMLs → validação sequencial com progress bar → relatório consolidado CSV/PDF
+6. **Chat** — Assistente fiscal com CrewAI (3 agentes: triage → operator → narrator)
+7. **Jobs** — Histórico de execuções com export de evidências (.zip)
+8. **Auditoria** — Trilha auditável com SHA-256 checksums
+9. **Exceções** — Workflow OPEN → APPROVED/REJECTED com eventos no audit
 
 ## Regras de domínio
 
