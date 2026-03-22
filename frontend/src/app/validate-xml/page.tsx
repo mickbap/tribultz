@@ -5,6 +5,7 @@ import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
 import { Toast } from "@/components/common/Toast";
 import { getJob, openExceptionRequest, validateXml } from "@/lib/api";
+import { buildAuditableReportCsv, buildAuditableReportHtml, downloadCsv, downloadPdf } from "@/lib/export/auditableReport";
 import { Finding, Job, ValidateXmlRequest, ValidationEvidence, ValidationResultV11, XmlDocumentType } from "@/lib/types";
 
 function severityClasses(severity: Finding["severity"]): string {
@@ -203,6 +204,20 @@ export default function ValidateXmlPage() {
               >
                 Abrir Audit
               </Link>
+              <button
+                type="button"
+                onClick={() => downloadCsv(buildAuditableReportCsv(result, documentType), result.job.id)}
+                className="rounded border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                CSV
+              </button>
+              <button
+                type="button"
+                onClick={() => downloadPdf(buildAuditableReportHtml(result, documentType), result.job.id)}
+                className="rounded border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                PDF
+              </button>
             </>
           ) : null}
         </div>

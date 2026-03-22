@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     HUBSPOT_PRIVATE_APP_TOKEN: str = ""
     CHATOPS_TIMEOUT_SECONDS: int = 45
 
+    # ── LLM / OpenRouter ─────────────────────────────────────
+    OPENROUTER_API_KEY: str = ""
+    LLM_FREE_PRIMARY: str = "openrouter/google/gemini-2.0-flash-exp:free"
+    LLM_FREE_FALLBACK: str = "openrouter/qwen/qwen3-coder-480b-a35b-instruct:free"
+    LLM_PAID_FALLBACK: str = "openrouter/anthropic/claude-3-5-sonnet"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

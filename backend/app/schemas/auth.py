@@ -21,6 +21,13 @@ class UserLogin(BaseModel):
     tenant_slug: str = "default"
 
 
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: str
+    tenant_slug: str = "default"
+
+
 class UserRead(BaseModel):
     id: UUID
     email: EmailStr

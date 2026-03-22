@@ -12,7 +12,7 @@ from app.database import get_db
 from app.api.deps import get_current_user
 from app.models.auth import User
 
-router = APIRouter(tags=["validate"])
+router = APIRouter(prefix="/api/v1", tags=["validate"])
 
 TWO_PLACES = Decimal("0.01")
 
