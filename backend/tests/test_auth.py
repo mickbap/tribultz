@@ -85,6 +85,20 @@ def test_user(session, test_tenant):
     return user
 
 
+@pytest.fixture(autouse=True)
+def reset_rate_limiters():
+    """Clear rate-limiter state so repeated pytest runs (QA Gates) don't 429."""
+    from app.routers.auth import _login_limiter, _register_limiter, _forgot_limiter
+    for rl in (_login_limiter, _register_limiter, _forgot_limiter):
+        rl._memory_store.clear()
+        if rl.redis:
+            try:
+                for key in rl.redis.keys("ratelimit:*"):
+                    rl.redis.delete(key)
+            except Exception:
+                pass
+
+
 # ── Tests ─────────────────────────────────────────────────────
 
 def test_login_success(client, test_user, test_tenant):
