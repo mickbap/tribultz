@@ -11,6 +11,7 @@
     "test:rules": "tsx --test src/lib/validation/xmlRules.test.ts"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "^1.4.2",
     "fflate": "^0.8.2",
     "next": "16.1.6",
     "react": "19.2.3",

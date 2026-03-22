@@ -1,10 +1,13 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Toast } from "@/components/common/Toast";
 import { loginWithApi, resendVerificationEmail } from "@/lib/api";
 import { DEFAULT_TENANT, setAccountType, setMockMode, setTenantId, setTenants, setToken } from "@/lib/storage";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +17,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [emailUnverified, setEmailUnverified] = useState(false);
   const [resending, setResending] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   function enterDemo(): void {
     setMockMode(true);
@@ -30,6 +35,11 @@ export default function LoginPage() {
       return;
     }
 
+    if (!captchaToken) {
+      setError("Aguarde a verificacao de seguranca (CAPTCHA).");
+      return;
+    }
+
     setLoadingApi(true);
     setError(null);
     try {
@@ -37,6 +47,7 @@ export default function LoginPage() {
         email: email.trim(),
         password,
         tenant_slug: DEFAULT_TENANT,
+        captcha_token: captchaToken,
       });
       if (!login.access_token) {
         throw new Error("Resposta de login sem access_token.");
@@ -54,6 +65,8 @@ export default function LoginPage() {
         setEmailUnverified(true);
       }
       setError(msg);
+      setCaptchaToken("");
+      turnstileRef.current?.reset();
     } finally {
       setLoadingApi(false);
     }
@@ -108,9 +121,16 @@ export default function LoginPage() {
                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
                     autoComplete="current-password"
                   />
+                  <Turnstile
+                    ref={turnstileRef}
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={setCaptchaToken}
+                    onExpire={() => setCaptchaToken("")}
+                    options={{ theme: "light", size: "flexible" }}
+                  />
                   <button
                     type="submit"
-                    disabled={loadingApi}
+                    disabled={loadingApi || !captchaToken}
                     className="w-full rounded-lg border border-tribultz-400 bg-white px-4 py-2 text-sm font-semibold text-tribultz-700 hover:bg-tribultz-50 disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {loadingApi ? "Autenticando..." : "Entrar (API)"}
