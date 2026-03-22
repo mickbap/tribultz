@@ -58,6 +58,7 @@ class User(Base):
     password_hash = Column(Text, nullable=False)
     role = Column(String(50), nullable=False, default="user")
     cnpj = Column(String(18), nullable=True)
+    phone = Column(String(20), nullable=True)
     account_type = Column(String(20), nullable=False, default="empresa")  # empresa | contador
     is_active = Column(Boolean, nullable=False, default=True)
     lgpd_consent_at = Column(DateTime(timezone=True), nullable=True)

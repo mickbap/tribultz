@@ -30,10 +30,31 @@ class UserRegister(BaseModel):
     password: str
     full_name: str
     cnpj: str = ""
+    phone: str = ""
     account_type: str = "empresa"  # empresa | contador
+    plan_slug: str = "trial"  # trial | starter | profissional | contador
+    billing_type: str = "PIX"  # PIX | CREDIT_CARD
     lgpd_consent: bool = False
     tenant_slug: str = "default"
     captcha_token: str = ""
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        if not v:
+            return v
+        digits = re.sub(r"\D", "", v)
+        if len(digits) < 10 or len(digits) > 11:
+            raise ValueError("Telefone deve ter 10 ou 11 dígitos.")
+        return digits
+
+    @field_validator("plan_slug")
+    @classmethod
+    def validate_plan_slug(cls, v: str) -> str:
+        allowed = ("trial", "starter", "profissional", "contador")
+        if v not in allowed:
+            raise ValueError(f"Plano deve ser um de: {', '.join(allowed)}.")
+        return v
 
     @field_validator("full_name")
     @classmethod
@@ -47,7 +68,7 @@ class UserRegister(BaseModel):
     @classmethod
     def validate_password(cls, v: str) -> str:
         if len(v) < 8:
-            raise ValueError("Senha deve ter no minimo 8 caracteres.")
+            raise ValueError("Senha deve ter no mínimo 8 caracteres.")
         return v
 
     @field_validator("cnpj")
@@ -57,7 +78,7 @@ class UserRegister(BaseModel):
             return v
         digits = re.sub(r"\D", "", v)
         if len(digits) != 14:
-            raise ValueError("CNPJ deve ter 14 digitos.")
+            raise ValueError("CNPJ deve ter 14 dígitos.")
         return digits
 
     @field_validator("account_type")
@@ -72,7 +93,7 @@ class UserRegister(BaseModel):
     def validate_lgpd_consent(cls, v: bool) -> bool:
         if not v:
             raise ValueError(
-                "Consentimento LGPD obrigatorio para cadastro."
+                "Consentimento LGPD obrigatório para cadastro."
             )
         return v
 
@@ -95,6 +116,11 @@ class UserRead(BaseModel):
     account_type: str = "empresa"
     lgpd_consent_at: Optional[datetime] = None
     tenants: list[TenantInfo] = []
+    plan_slug: Optional[str] = None
+    subscription_status: Optional[str] = None
+    checkout_url: Optional[str] = None
+    pix_qr_code: Optional[str] = None
+    pix_copy_paste: Optional[str] = None
 
     class Config:
         from_attributes = True

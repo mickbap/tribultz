@@ -5,16 +5,16 @@ import { Toast } from "@/components/common/Toast";
 import { apiFetch } from "@/lib/api";
 import { getMockMode } from "@/lib/storage";
 
-type FeedbackCategory = "bug" | "sugestao" | "elogio";
+type FeedbackCategory = "bug" | "sugestão" | "elogio";
 
 const CATEGORY_LABELS: Record<FeedbackCategory, string> = {
   bug: "Bug / Problema",
-  sugestao: "Sugestao de melhoria",
+  "sugestão": "Sugestão de melhoria",
   elogio: "Elogio",
 };
 
 export default function FeedbackPage() {
-  const [category, setCategory] = useState<FeedbackCategory>("sugestao");
+  const [category, setCategory] = useState<FeedbackCategory>("sugestão");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; msg: string } | null>(null);
@@ -24,7 +24,7 @@ export default function FeedbackPage() {
     setToast(null);
 
     if (message.trim().length < 10) {
-      setToast({ tone: "error", msg: "Mensagem deve ter no minimo 10 caracteres." });
+      setToast({ tone: "error", msg: "Mensagem deve ter no mínimo 10 caracteres." });
       return;
     }
 
@@ -57,7 +57,7 @@ export default function FeedbackPage() {
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Feedback</h1>
         <p className="text-sm text-slate-500">
-          Sua opiniao e importante para melhorar o Tribultz. Envie sugestoes, reporte bugs ou deixe um elogio.
+          Sua opinião é importante para melhorar o Tribultz. Envie sugestões, reporte bugs ou deixe um elogio.
         </p>
       </header>
 
@@ -82,7 +82,7 @@ export default function FeedbackPage() {
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Descreva sua experiencia, sugestao ou problema..."
+            placeholder="Descreva sua experiência, sugestão ou problema..."
             className="min-h-32 w-full rounded-lg border border-slate-300 p-3 text-sm"
             maxLength={2000}
           />

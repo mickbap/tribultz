@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS users (
     full_name   VARCHAR(200)  NOT NULL,
     password_hash TEXT         NOT NULL,
     cnpj        VARCHAR(18),
+    phone       VARCHAR(20),
     account_type VARCHAR(20)  NOT NULL DEFAULT 'empresa',  -- empresa | contador
     role        VARCHAR(50)   NOT NULL DEFAULT 'user',
     is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
@@ -213,12 +214,107 @@ CREATE TABLE IF NOT EXISTS feedback (
 
 CREATE INDEX IF NOT EXISTS idx_feedback_tenant ON feedback(tenant_id);
 
+-- ------------------------------------------------------------
+-- 11. Plans (billing tiers)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS plans (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug            VARCHAR(50)   NOT NULL UNIQUE,
+    name            VARCHAR(100)  NOT NULL,
+    price_cents     INTEGER       NOT NULL DEFAULT 0,
+    max_validations INTEGER,
+    max_ai_messages INTEGER,
+    has_pdf_reports BOOLEAN       NOT NULL DEFAULT FALSE,
+    has_batch       BOOLEAN       NOT NULL DEFAULT FALSE,
+    has_dashboard   BOOLEAN       NOT NULL DEFAULT FALSE,
+    has_api_access  BOOLEAN       NOT NULL DEFAULT FALSE,
+    has_multi_cnpj  BOOLEAN       NOT NULL DEFAULT FALSE,
+    trial_days      INTEGER,
+    is_active       BOOLEAN       NOT NULL DEFAULT TRUE,
+    created_at      TIMESTAMPTZ   NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+-- ------------------------------------------------------------
+-- 12. Subscriptions (user plan assignments)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id               UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id                 UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    plan_id                 UUID          NOT NULL REFERENCES plans(id) ON DELETE RESTRICT,
+    status                  VARCHAR(30)   NOT NULL DEFAULT 'trial',
+    asaas_subscription_id   VARCHAR(100),
+    asaas_customer_id       VARCHAR(100),
+    current_period_start    TIMESTAMPTZ,
+    current_period_end      TIMESTAMPTZ,
+    trial_ends_at           TIMESTAMPTZ,
+    cancelled_at            TIMESTAMPTZ,
+    created_at              TIMESTAMPTZ   NOT NULL DEFAULT now(),
+    updated_at              TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user   ON subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant ON subscriptions(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
+
+-- ------------------------------------------------------------
+-- 13. Payments (payment history)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS payments (
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id         UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    subscription_id   UUID          NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+    asaas_payment_id  VARCHAR(100)  NOT NULL UNIQUE,
+    amount_cents      INTEGER       NOT NULL,
+    status            VARCHAR(30)   NOT NULL DEFAULT 'pending',
+    payment_method    VARCHAR(20)   NOT NULL,
+    pix_qr_code       TEXT,
+    pix_copy_paste    TEXT,
+    paid_at           TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ   NOT NULL DEFAULT now(),
+    updated_at        TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_payments_subscription ON payments(subscription_id);
+CREATE INDEX IF NOT EXISTS idx_payments_tenant       ON payments(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status       ON payments(status);
+
+-- ------------------------------------------------------------
+-- 14. Usage Tracking (monthly counters)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS usage_tracking (
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id         UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id           UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    period            VARCHAR(7)    NOT NULL,
+    validations_used  INTEGER       NOT NULL DEFAULT 0,
+    ai_messages_used  INTEGER       NOT NULL DEFAULT 0,
+    created_at        TIMESTAMPTZ   NOT NULL DEFAULT now(),
+    updated_at        TIMESTAMPTZ   NOT NULL DEFAULT now(),
+    UNIQUE (user_id, period)
+);
+
+CREATE INDEX IF NOT EXISTS idx_usage_tracking_user   ON usage_tracking(user_id);
+CREATE INDEX IF NOT EXISTS idx_usage_tracking_tenant ON usage_tracking(tenant_id);
+
 -- ============================================================
 -- SEED DATA
 -- ============================================================
 
 -- Default tenant
 INSERT INTO tenants (name, slug) VALUES ('Default Tenant', 'default')
+ON CONFLICT (slug) DO NOTHING;
+
+-- Billing plans
+INSERT INTO plans (slug, name, price_cents, max_validations, max_ai_messages,
+                   has_pdf_reports, has_batch, has_dashboard, has_api_access,
+                   has_multi_cnpj, trial_days)
+VALUES
+    ('trial',        'Trial',        0,     5,    25,   FALSE, FALSE, FALSE, FALSE, FALSE, 3),
+    ('starter',      'Starter',      4990,  10,   50,   FALSE, FALSE, TRUE,  FALSE, FALSE, NULL),
+    ('profissional', 'Profissional', 14900, 500,  NULL, TRUE,  TRUE,  TRUE,  FALSE, FALSE, NULL),
+    ('contador',     'Contador',     34900, NULL, NULL, TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  NULL)
 ON CONFLICT (slug) DO NOTHING;
 
 -- Standard CBS rate 2026

@@ -17,7 +17,7 @@ function VerifyEmailContent() {
   useEffect(() => {
     if (!token) {
       setState("error");
-      setErrorMsg("Token de verificacao ausente.");
+      setErrorMsg("Token de verificação ausente.");
       return;
     }
 
@@ -28,12 +28,12 @@ function VerifyEmailContent() {
           setState(data.status === "already_verified" ? "already_verified" : "verified");
         } else {
           setState("error");
-          setErrorMsg(data.detail ?? "Falha na verificacao.");
+          setErrorMsg(data.detail ?? "Falha na verificação.");
         }
       })
       .catch(() => {
         setState("error");
-        setErrorMsg("Erro de conexao. Tente novamente.");
+        setErrorMsg("Erro de conexão. Tente novamente.");
       });
   }, [token]);
 
@@ -56,7 +56,7 @@ function VerifyEmailContent() {
               </svg>
             </div>
             <h1 className="text-xl font-bold text-slate-900">Email verificado!</h1>
-            <p className="mt-2 text-sm text-slate-500">Sua conta esta ativa. Voce ja pode fazer login.</p>
+            <p className="mt-2 text-sm text-slate-500">Sua conta está ativa. Você já pode fazer login.</p>
             <Link
               href="/login"
               className="mt-6 inline-block rounded-lg bg-tribultz-600 px-6 py-2.5 font-semibold text-white hover:bg-tribultz-700"
@@ -68,8 +68,8 @@ function VerifyEmailContent() {
 
         {state === "already_verified" && (
           <>
-            <h1 className="text-xl font-bold text-slate-900">Email ja verificado</h1>
-            <p className="mt-2 text-sm text-slate-500">Seu email ja foi confirmado anteriormente.</p>
+            <h1 className="text-xl font-bold text-slate-900">Email já verificado</h1>
+            <p className="mt-2 text-sm text-slate-500">Seu email já foi confirmado anteriormente.</p>
             <Link
               href="/login"
               className="mt-6 inline-block rounded-lg bg-tribultz-600 px-6 py-2.5 font-semibold text-white hover:bg-tribultz-700"
@@ -86,11 +86,11 @@ function VerifyEmailContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h1 className="text-xl font-bold text-slate-900">Falha na verificacao</h1>
+            <h1 className="text-xl font-bold text-slate-900">Falha na verificação</h1>
             <p className="mt-2 text-sm text-red-600">{errorMsg}</p>
             <p className="mt-3 text-sm text-slate-500">
-              O link pode ter expirado (valido por 24h). Tente fazer login para
-              solicitar um novo email de verificacao.
+              O link pode ter expirado (válido por 24h). Tente fazer login para
+              solicitar um novo email de verificação.
             </p>
             <Link
               href="/login"

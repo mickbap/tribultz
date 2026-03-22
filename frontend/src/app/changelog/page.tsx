@@ -6,7 +6,7 @@ import data from "@/data/changelog.json";
 const typeBadge: Record<string, { label: string; cls: string }> = {
   novo: { label: "Novo", cls: "bg-emerald-100 text-emerald-800" },
   melhoria: { label: "Melhoria", cls: "bg-blue-100 text-blue-800" },
-  correcao: { label: "Correcao", cls: "bg-amber-100 text-amber-800" },
+  correção: { label: "Correção", cls: "bg-amber-100 text-amber-800" },
 };
 
 const scopeBadge: Record<string, string> = {
@@ -24,7 +24,7 @@ export default function ChangelogPage() {
               &larr; Voltar ao login
             </Link>
             <h1 className="mt-1 text-2xl font-bold text-slate-900">Changelog</h1>
-            <p className="text-sm text-slate-500">Acompanhe a evolucao da plataforma Tribultz.</p>
+            <p className="text-sm text-slate-500">Acompanhe a evolução da plataforma Tribultz.</p>
           </div>
           <span className="rounded-full bg-tribultz-100 px-3 py-1 text-xs font-semibold text-tribultz-700">
             v0.{data.sprints.length + 5}.0
@@ -84,7 +84,7 @@ export default function ChangelogPage() {
         </div>
 
         <footer className="mt-16 border-t border-slate-200 pt-6 text-center text-xs text-slate-400">
-          <p>Tribultz &mdash; Conformidade tributaria em tempo de execucao.</p>
+          <p>Tribultz &mdash; Conformidade tributária em tempo de execução.</p>
           <p className="mt-1">Atualizado automaticamente a cada release.</p>
         </footer>
       </div>

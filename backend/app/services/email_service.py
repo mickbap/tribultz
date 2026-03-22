@@ -23,9 +23,9 @@ def send_verification_email(to_email: str, user_name: str, token: str) -> bool:
 <html>
 <body style="font-family: sans-serif; color: #1e293b; max-width: 560px; margin: 0 auto;">
   <h2 style="color: #1d4ed8;">Tribultz</h2>
-  <p>Ola, <strong>{user_name}</strong>!</p>
+  <p>Olá, <strong>{user_name}</strong>!</p>
   <p>Obrigado por se cadastrar no Tribultz Console. Para ativar sua conta,
-     confirme seu email clicando no botao abaixo:</p>
+     confirme seu email clicando no botão abaixo:</p>
   <p style="text-align: center; margin: 24px 0;">
     <a href="{verify_url}"
        style="background: #2563eb; color: white; padding: 12px 28px;
@@ -38,19 +38,19 @@ def send_verification_email(to_email: str, user_name: str, token: str) -> bool:
     <a href="{verify_url}">{verify_url}</a>
   </p>
   <p style="font-size: 13px; color: #64748b;">
-    Este link expira em 24 horas. Se voce nao solicitou este cadastro,
+    Este link expira em 24 horas. Se você não solicitou este cadastro,
     ignore este email.
   </p>
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;"/>
   <p style="font-size: 11px; color: #94a3b8;">
-    Tribultz Tecnologia Ltda. — Conformidade tributaria em tempo de execucao.<br/>
+    Tribultz Tecnologia Ltda. — Conformidade tributária em tempo de execução.<br/>
     DPO: dpo@tribultz.com.br
   </p>
 </body>
 </html>"""
 
     text_body = (
-        f"Ola, {user_name}!\n\n"
+        f"Olá, {user_name}!\n\n"
         f"Confirme seu email acessando: {verify_url}\n\n"
         "Este link expira em 24 horas.\n"
         "Tribultz Tecnologia Ltda."
@@ -68,9 +68,9 @@ def send_password_reset_email(to_email: str, user_name: str, token: str) -> bool
 <html>
 <body style="font-family: sans-serif; color: #1e293b; max-width: 560px; margin: 0 auto;">
   <h2 style="color: #1d4ed8;">Tribultz</h2>
-  <p>Ola, <strong>{user_name}</strong>!</p>
-  <p>Recebemos uma solicitacao para redefinir a senha da sua conta no Tribultz Console.
-     Clique no botao abaixo para criar uma nova senha:</p>
+  <p>Olá, <strong>{user_name}</strong>!</p>
+  <p>Recebemos uma solicitação para redefinir a senha da sua conta no Tribultz Console.
+     Clique no botão abaixo para criar uma nova senha:</p>
   <p style="text-align: center; margin: 24px 0;">
     <a href="{reset_url}"
        style="background: #2563eb; color: white; padding: 12px 28px;
@@ -83,22 +83,22 @@ def send_password_reset_email(to_email: str, user_name: str, token: str) -> bool
     <a href="{reset_url}">{reset_url}</a>
   </p>
   <p style="font-size: 13px; color: #64748b;">
-    Este link expira em 1 hora. Se voce nao solicitou a redefinicao,
+    Este link expira em 1 hora. Se você não solicitou a redefinição,
     ignore este email — sua senha permanece inalterada.
   </p>
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;"/>
   <p style="font-size: 11px; color: #94a3b8;">
-    Tribultz Tecnologia Ltda. — Conformidade tributaria em tempo de execucao.<br/>
+    Tribultz Tecnologia Ltda. — Conformidade tributária em tempo de execução.<br/>
     DPO: dpo@tribultz.com.br
   </p>
 </body>
 </html>"""
 
     text_body = (
-        f"Ola, {user_name}!\n\n"
+        f"Olá, {user_name}!\n\n"
         f"Redefina sua senha acessando: {reset_url}\n\n"
         "Este link expira em 1 hora.\n"
-        "Se voce nao solicitou, ignore este email.\n"
+        "Se você não solicitou, ignore este email.\n"
         "Tribultz Tecnologia Ltda."
     )
 

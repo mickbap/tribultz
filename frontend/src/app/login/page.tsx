@@ -28,7 +28,7 @@ export default function LoginPage() {
     }
 
     if (!captchaToken) {
-      setError("Aguarde a verificacao de seguranca (CAPTCHA).");
+      setError("Aguarde a verificação de segurança (CAPTCHA).");
       return;
     }
 
@@ -52,7 +52,7 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha ao autenticar.";
-      if (msg.includes("nao verificado") || msg.includes("not verified")) {
+      if (msg.includes("não verificado") || msg.includes("not verified")) {
         setEmailUnverified(true);
       }
       setError(msg);
@@ -69,14 +69,14 @@ export default function LoginPage() {
         <div className="grid min-h-[620px] md:grid-cols-[1.1fr_1fr]">
           <div className="bg-gradient-to-br from-tribultz-900 via-tribultz-700 to-tribultz-500 p-10 text-white">
             <p className="mb-2 text-xs uppercase tracking-[0.2em] text-blue-100">TRIBULTZ</p>
-            <h1 className="mb-4 text-4xl font-bold leading-tight">Conformidade tributaria em tempo de execucao.</h1>
+            <h1 className="mb-4 text-4xl font-bold leading-tight">Conformidade tributária em tempo de execução.</h1>
             <p className="max-w-md text-blue-50">Emita certo. Credite certo. Concilie sempre.</p>
           </div>
 
           <div className="flex items-center p-8 md:p-10">
             <div className="w-full">
               <h2 className="text-2xl font-semibold text-slate-900">Entrar</h2>
-              <p className="mt-1 text-sm text-slate-500">Acesse sua conta para gerenciar sua conformidade tributaria.</p>
+              <p className="mt-1 text-sm text-slate-500">Acesse sua conta para gerenciar sua conformidade tributária.</p>
 
               <form className="mt-8 space-y-4" onSubmit={onSubmit}>
                 <label className="block text-sm" htmlFor="login-email">
@@ -119,7 +119,7 @@ export default function LoginPage() {
                 {emailUnverified && (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
                     <p className="text-xs text-amber-800">
-                      Email nao verificado. Verifique sua caixa de entrada.
+                      Email não verificado. Verifique sua caixa de entrada.
                     </p>
                     <button
                       type="button"
@@ -143,7 +143,7 @@ export default function LoginPage() {
                       }}
                       className="mt-2 text-xs font-semibold text-amber-700 underline hover:text-amber-900 disabled:opacity-50"
                     >
-                      {resending ? "Reenviando..." : "Reenviar email de verificacao"}
+                      {resending ? "Reenviando..." : "Reenviar email de verificação"}
                     </button>
                   </div>
                 )}
@@ -158,7 +158,7 @@ export default function LoginPage() {
         </div>
       </section>
       <p className="mt-4 text-center text-sm text-slate-500">
-        Nao tem conta?{" "}
+        Não tem conta?{" "}
         <a href="/register" className="font-medium text-tribultz-700 hover:underline">
           Criar conta
         </a>

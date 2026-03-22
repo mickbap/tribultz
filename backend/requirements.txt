@@ -14,6 +14,8 @@ redis==5.2.1
 httpx==0.28.1
 celery==5.4.0
 gunicorn==23.0.0
+weasyprint==63.1
+jinja2==3.1.6
 pytest>=8.0.0
 crewai==1.10.1
 litellm==1.82.0

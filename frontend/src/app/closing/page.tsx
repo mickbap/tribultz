@@ -33,9 +33,9 @@ export default function ClosingPage() {
     <section className="space-y-5">
       <header className="space-y-1">
         <h1 className="text-2xl font-bold text-slate-900">Painel de Fechamento</h1>
-        <p className="text-sm text-slate-500">Janela de 7 dias com consolidacao de jobs, auditoria e excecoes.</p>
+        <p className="text-sm text-slate-500">Janela de 7 dias com consolidação de jobs, auditoria e exceções.</p>
         <p className="text-xs text-slate-400">
-          Janela ativa: {new Date(snapshot.since).toLocaleString()} ate {new Date(snapshot.until).toLocaleString()}
+          Janela ativa: {new Date(snapshot.since).toLocaleString()} até {new Date(snapshot.until).toLocaleString()}
         </p>
       </header>
 
@@ -45,10 +45,10 @@ export default function ClosingPage() {
           <p className="mt-2 text-3xl font-bold">{loading ? "..." : snapshot.counts.fatalFindings}</p>
         </article>
         <article className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="text-xs uppercase text-slate-500">Excecoes abertas (7d)</p>
+          <p className="text-xs uppercase text-slate-500">Exceções abertas (7d)</p>
           <p className="mt-2 text-3xl font-bold">{loading ? "..." : snapshot.counts.openExceptions}</p>
           <Link href="/exceptions" className="mt-2 inline-block text-xs text-tribultz-700 hover:underline">
-            Abrir fila de excecoes
+            Abrir fila de exceções
           </Link>
         </article>
         <article className="rounded-xl border border-slate-200 bg-white p-4">
@@ -69,7 +69,7 @@ export default function ClosingPage() {
 
       <div className="grid gap-4 xl:grid-cols-3">
         <section className="rounded-xl border border-slate-200 bg-white p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-700">Ultimos jobs (7d)</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-700">Últimos jobs (7d)</h2>
           {loading ? (
             <div className="space-y-2">
               <Skeleton className="h-12 w-full" />
@@ -96,7 +96,7 @@ export default function ClosingPage() {
         </section>
 
         <section className="rounded-xl border border-slate-200 bg-white p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-700">Ultimos audits (7d)</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-700">Últimos audits (7d)</h2>
           {loading ? (
             <div className="space-y-2">
               <Skeleton className="h-12 w-full" />
@@ -128,14 +128,14 @@ export default function ClosingPage() {
         </section>
 
         <section className="rounded-xl border border-slate-200 bg-white p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-700">Excecoes abertas (7d)</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-700">Exceções abertas (7d)</h2>
           {loading ? (
             <div className="space-y-2">
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-12 w-full" />
             </div>
           ) : snapshot.openExceptionRows.length === 0 ? (
-            <p className="text-sm text-slate-500">Nenhuma excecao aberta na janela.</p>
+            <p className="text-sm text-slate-500">Nenhuma exceção aberta na janela.</p>
           ) : (
             <ul className="space-y-2">
               {snapshot.openExceptionRows.map((row) => (
@@ -146,7 +146,7 @@ export default function ClosingPage() {
                   </p>
                   <div className="mt-1 flex flex-wrap gap-3">
                     <Link href="/exceptions" className="text-xs text-tribultz-700 hover:underline">
-                      Ver excecoes
+                      Ver exceções
                     </Link>
                     <Link href={`/jobs/${row.job_id}`} className="text-xs text-tribultz-700 hover:underline">
                       Abrir job
