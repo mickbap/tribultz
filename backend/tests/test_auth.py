@@ -89,14 +89,18 @@ def test_user(session, test_tenant):
 def reset_rate_limiters():
     """Clear rate-limiter state so repeated pytest runs (QA Gates) don't 429."""
     from app.routers.auth import _login_limiter, _register_limiter, _forgot_limiter
+
+    prefixes = ["ratelimit:login:", "ratelimit:register:", "ratelimit:resend:", "ratelimit:forgot:"]
     for rl in (_login_limiter, _register_limiter, _forgot_limiter):
         rl._memory_store.clear()
-        if rl.redis:
-            try:
-                for key in rl.redis.keys("ratelimit:*"):
-                    rl.redis.delete(key)
-            except Exception:
-                pass
+
+    redis_conn = _login_limiter.redis
+    if redis_conn is not None:
+        for prefix in prefixes:
+            # Delete the specific key that testclient uses (IP "testclient")
+            redis_conn.delete(f"{prefix}testclient")
+            redis_conn.delete(f"{prefix}127.0.0.1")
+            redis_conn.delete(f"{prefix}unknown")
 
 
 # ── Tests ─────────────────────────────────────────────────────
