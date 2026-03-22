@@ -1,64 +1,197 @@
 {
   "sprints": [
     {
-      "id": "s9",
-      "title": "Sprint 9 — Governança & Segurança",
+      "id": "s10",
+      "title": "Sprint 10 — Release Candidate",
       "date": "2026-03-22",
-      "summary": "Multi-tenant, LGPD, autenticação robusta e segurança de produção.",
+      "summary": "Polimento final, performance e preparacao para producao.",
       "entries": [
-        { "type": "novo", "text": "Consentimento LGPD no cadastro + página de política de privacidade", "scope": ["frontend", "backend"] },
-        { "type": "novo", "text": "Headers de segurança (HSTS, X-Frame-Options, CSP) e CORS configurável", "scope": ["backend"] },
-        { "type": "novo", "text": "Rate limiting em login, registro e recuperação de senha", "scope": ["backend"] },
-        { "type": "novo", "text": "Campo CNPJ no cadastro com validação via BrasilAPI e ReceitaWS", "scope": ["frontend", "backend"] },
-        { "type": "novo", "text": "Fluxo completo de verificação de email com token de 24h", "scope": ["frontend", "backend"] },
-        { "type": "novo", "text": "Canal de feedback integrado (bug, sugestão, elogio)", "scope": ["frontend", "backend"] },
-        { "type": "novo", "text": "Direitos LGPD: exportar dados pessoais (JSON) e excluir conta com anonimização", "scope": ["frontend", "backend"] },
-        { "type": "melhoria", "text": "Revisão de sanitização de inputs com validators Pydantic", "scope": ["backend"] },
-        { "type": "novo", "text": "CrewAI Security Crews: SOC Analyst, CloudSec Engineer e SRE Lead", "scope": ["backend"] },
-        { "type": "novo", "text": "Fluxo de esqueci/redefinir senha com link por email", "scope": ["frontend", "backend"] },
-        { "type": "melhoria", "text": "Dashboard com contexto do tenant ativo (Empresa vs Contador)", "scope": ["frontend"] },
-        { "type": "melhoria", "text": "Governança multi-tenant: checkbox de responsabilidade para Contadores", "scope": ["frontend"] }
+        {
+          "type": "novo",
+          "text": "Alembic migration: plans, subscriptions, payments, usage_tracking",
+          "scope": [
+            "backend"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s9",
+      "title": "Sprint 9 — Governanca & Seguranca",
+      "date": "2026-03-22",
+      "summary": "Multi-tenant, LGPD, autenticacao robusta e seguranca de producao.",
+      "entries": [
+        {
+          "type": "novo",
+          "text": "CrewAI Security Crews (SOC + CloudSec + SRE)",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Input sanitization review",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "LGPD data rights (export + deletion)",
+          "scope": [
+            "frontend",
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Customer feedback channel",
+          "scope": [
+            "frontend",
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Email verification flow",
+          "scope": [
+            "frontend",
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "CNPJ field in registration + BrasilAPI validation",
+          "scope": [
+            "frontend",
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Wire rate limiting to auth endpoints",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Security headers + tighten CORS",
+          "scope": [
+            "frontend",
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "LGPD consent on registration + privacy policy page",
+          "scope": [
+            "frontend",
+            "backend"
+          ]
+        }
       ]
     },
     {
       "id": "s8",
-      "title": "Sprint 8 — API Mode & Integração",
+      "title": "Sprint 8 — API Mode & Integracao",
       "date": "2026-03-22",
-      "summary": "Backend real conectado, CrewAI robusto e relatórios auditáveis.",
+      "summary": "Backend real conectado, CrewAI robusto e relatorios auditaveis.",
       "entries": [
-        { "type": "novo", "text": "Relatório auditável para contabilidade (CSV + PDF)", "scope": ["frontend", "backend"] },
-        { "type": "melhoria", "text": "Integração Superpowers no workflow de desenvolvimento", "scope": ["backend"] },
-        { "type": "melhoria", "text": "CrewAI hardening: retry, logging estruturado e fallback de LLM", "scope": ["backend"] },
-        { "type": "novo", "text": "Wiring API Mode: validação frontend conectada ao backend real", "scope": ["frontend", "backend"] },
-        { "type": "novo", "text": "Validação em lote (batch upload) de notas fiscais", "scope": ["frontend"] },
-        { "type": "novo", "text": "Dashboard com KPIs reais vindos da API", "scope": ["frontend"] }
+        {
+          "type": "novo",
+          "text": "Dashboard KPIs reais",
+          "scope": [
+            "frontend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Validacao em lote (batch upload)",
+          "scope": [
+            "frontend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Wiring API Mode validacao (frontend <> backend)",
+          "scope": [
+            "frontend",
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "CrewAI hardening (retry + logging + fallback)",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "melhoria",
+          "text": "Integracao Superpowers no workflow de desenvolvimento",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Relatorio auditavel para contabilidade (CSV + PDF)",
+          "scope": [
+            "backend"
+          ]
+        }
       ]
     },
     {
       "id": "s7",
-      "title": "Sprint 7 — Motor Determinístico",
-      "date": "2026-03-21",
-      "summary": "10 regras fiscais determinísticas com evidências auditáveis.",
+      "title": "Sprint 7 — Motor Deterministico",
+      "date": "2026-03-22",
+      "summary": "10 regras fiscais deterministicas com evidencias auditaveis.",
       "entries": [
-        { "type": "novo", "text": "Pacote de 3 XMLs anonimizados com gabarito validado pela contabilidade", "scope": ["backend"] },
-        { "type": "novo", "text": "Top 10 regras fiscais determinísticas (CBS, IBS, CEST, ClassTrib)", "scope": ["frontend", "backend"] },
-        { "type": "melhoria", "text": "Cobertura de variações de paths NFS-e para diferentes municípios", "scope": ["backend"] },
-        { "type": "novo", "text": "Runbook S7 com critérios de aceite QA", "scope": ["backend"] }
+        {
+          "type": "novo",
+          "text": "Pacote de 3 XML anonimizados + gabarito validado",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Cobertura de variacoes de paths NFS-e",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Top 10 rules phase 1 no motor (deterministico + evidencias)",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Runbook S7 + criterios de aceite QA",
+          "scope": [
+            "backend"
+          ]
+        }
       ]
     },
     {
       "id": "s6",
-      "title": "Sprint 6 — Export & Evidências",
-      "date": "2026-02-26",
-      "summary": "Exportação de evidências, pacotes ZIP e discovery com contabilidade.",
+      "title": "Sprint 6 — Export & Evidencias",
+      "date": "2026-03-22",
+      "summary": "Exportacao de evidencias, pacotes ZIP e discovery com contabilidade.",
       "entries": [
-        { "type": "novo", "text": "Export de evidências em ZIP único por Job", "scope": ["frontend"] },
-        { "type": "novo", "text": "Gerador ZIP client-side para JobEvidenceBundle", "scope": ["frontend"] },
-        { "type": "novo", "text": "Adapter API Mode (placeholder) para export do Job", "scope": ["backend"] },
-        { "type": "correção", "text": "Testes unitários do ZIP e naming de arquivos", "scope": ["frontend"] },
-        { "type": "novo", "text": "Export de evidências nas telas Jobs list e Auditoria", "scope": ["frontend"] },
-        { "type": "melhoria", "text": "Ajustes de UX (Toast, loading states) e testes leves", "scope": ["frontend"] },
-        { "type": "novo", "text": "Discovery formal com contabilidade: Top 10 validações + exemplos reais", "scope": ["backend"] }
+        {
+          "type": "melhoria",
+          "text": "Discovery formal com Roberta - Top 10 validacoes + exemplos",
+          "scope": [
+            "backend"
+          ]
+        }
       ]
     }
   ]
