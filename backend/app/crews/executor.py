@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -54,27 +55,41 @@ class TribultzChatOpsExecutor:
 
         crew = TribultzChatOpsCrew(tenant_id=str(tenant_id), user_id=str(user_id))
         timeout_s = max(1, int(settings.CHATOPS_TIMEOUT_SECONDS))
+        t0 = time.monotonic()
+
         try:
             result = await asyncio.wait_for(
                 asyncio.to_thread(crew.run, message),
                 timeout=timeout_s,
             )
         except asyncio.TimeoutError as exc:
+            elapsed = time.monotonic() - t0
             logger.error(
-                "Crew execution timeout (tenant_id=%s user_id=%s timeout_s=%s)",
+                "crew_timeout tenant=%s user=%s timeout_s=%s elapsed=%.2fs",
                 tenant_id,
                 user_id,
                 timeout_s,
+                elapsed,
             )
             raise CrewExecutionTimeoutError(CREW_ERROR_MESSAGE) from exc
         except Exception as exc:
+            elapsed = time.monotonic() - t0
             logger.exception(
-                "Crew execution error (tenant_id=%s user_id=%s): %s",
+                "crew_error tenant=%s user=%s elapsed=%.2fs error=%s",
                 tenant_id,
                 user_id,
-                exc,
+                elapsed,
+                str(exc)[:200],
             )
             raise CrewExecutionError(CREW_ERROR_MESSAGE) from exc
+
+        elapsed = time.monotonic() - t0
+        logger.info(
+            "crew_complete tenant=%s user=%s elapsed=%.2fs",
+            tenant_id,
+            user_id,
+            elapsed,
+        )
 
         response_markdown: str = result.get("response_markdown", "")
         evidence: list[dict[str, Any]] = result.get("evidence", [])
