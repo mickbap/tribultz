@@ -97,7 +97,7 @@
     {
       "id": "s9",
       "title": "Sprint 9 — Governanca & Seguranca",
-      "date": "2026-03-22",
+      "date": "2026-03-23",
       "summary": "Multi-tenant, LGPD, autenticacao robusta e seguranca de producao.",
       "entries": [
         {
@@ -125,6 +125,14 @@
         {
           "type": "novo",
           "text": "Customer feedback channel",
+          "scope": [
+            "frontend",
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "CAPTCHA on login/register (Cloudflare Turnstile)",
           "scope": [
             "frontend",
             "backend"
