@@ -8,6 +8,13 @@
       "entries": [
         {
           "type": "novo",
+          "text": "Backend: plan enforcement dependency + usage tracking",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
           "text": "Celery beat: expiração de trial + reset de uso mensal",
           "scope": [
             "backend"
