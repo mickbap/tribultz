@@ -1,4 +1,4 @@
-﻿export type XmlDocumentType = "NFSE" | "NFE";
+﻿export type XmlDocumentType = "NFSE" | "NFE" | "NFCE";
 
 export type EvidenceType = "xml" | "link" | "print" | "job" | "audit" | "file";
 

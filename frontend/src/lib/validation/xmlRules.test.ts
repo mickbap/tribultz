@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateXmlWithRules } from "./xmlRules";
+import { validateXmlWithRules, detectDocumentType, CST_TABLE } from "./xmlRules";
 
 function fixture(name: string): string {
   return readFileSync(join(process.cwd(), "src/lib/validation/fixtures", name), "utf-8");
@@ -243,4 +243,172 @@ test("LAYOUT_PORTAL: nota completa não gera finding de layout", () => {
     xml: fixture("nfse-ok.xml"),
   });
   assert.equal(result.findings.find((f) => f.rule_id === "LAYOUT_PORTAL"), undefined);
+});
+
+// ── S11: detectDocumentType ─────────────────────────────────────────────────
+
+test("detectDocumentType: NFS-e detected from NFS-e XML", () => {
+  assert.equal(detectDocumentType(fixture("nfse-ok.xml")), "NFSE");
+});
+
+test("detectDocumentType: NFE detected from nfeProc with mod=55", () => {
+  assert.equal(detectDocumentType(fixture("nfe-ok.xml")), "NFE");
+});
+
+test("detectDocumentType: NFCE detected from nfeProc with mod=65", () => {
+  assert.equal(detectDocumentType(fixture("nfce-ok.xml")), "NFCE");
+});
+
+// ── S11: CST_TABLE ──────────────────────────────────────────────────────────
+
+test("CST_TABLE has 14 entries per NT 2025.002-RTC", () => {
+  assert.equal(Object.keys(CST_TABLE).length, 14);
+  assert.ok(CST_TABLE["000"], "CST 000 should exist");
+  assert.ok(CST_TABLE["070"], "CST 070 should exist");
+  assert.ok(CST_TABLE["620"], "CST 620 should exist");
+  assert.ok(CST_TABLE["830"], "CST 830 should exist");
+});
+
+// ── S11: NF-e ok — no FATALs ───────────────────────────────────────────────
+
+test("NF-e ok não gera FATAL", () => {
+  const result = validateXmlWithRules({
+    tenantId: "tenant-a",
+    documentType: "NFE",
+    xml: fixture("nfe-ok.xml"),
+  });
+  const fatals = result.findings.filter((f) => f.severity === "FATAL");
+  assert.equal(fatals.length, 0, `Unexpected FATALs: ${fatals.map((f) => f.rule_id).join(", ")}`);
+  assert.ok(result.findings.some((f) => f.severity === "ALERT"), "Should have ALERT findings");
+});
+
+// ── S11: NFC-e ok — no FATALs ──────────────────────────────────────────────
+
+test("NFC-e ok não gera FATAL", () => {
+  const result = validateXmlWithRules({
+    tenantId: "tenant-a",
+    documentType: "NFCE",
+    xml: fixture("nfce-ok.xml"),
+  });
+  const fatals = result.findings.filter((f) => f.severity === "FATAL");
+  assert.equal(fatals.length, 0, `Unexpected FATALs: ${fatals.map((f) => f.rule_id).join(", ")}`);
+});
+
+// ── S11: IBSCBS_SPLIT — vIBS != vIBSUF + vIBSMun ──────────────────────────
+
+test("IBSCBS_SPLIT: NF-e com split incorreto gera FATAL", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t",
+    documentType: "NFE",
+    xml: fixture("nfe-ibs-split-error.xml"),
+  });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBS_SPLIT");
+  assert.ok(f, "IBSCBS_SPLIT finding expected");
+  assert.equal(f!.severity, "FATAL");
+  assert.ok(f!.title.includes("1.50"), "should show declared vIBS");
+});
+
+// ── S11: IBSCBS_UF_CALC / IBSCBS_MUN_CALC ──────────────────────────────────
+
+test("IBSCBS_UF_CALC: NF-e ok não gera finding de cálculo UF", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t",
+    documentType: "NFE",
+    xml: fixture("nfe-ok.xml"),
+  });
+  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBS_UF_CALC"), undefined);
+  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBS_MUN_CALC"), undefined);
+});
+
+// ── S11: CST_VALID — unknown CST ───────────────────────────────────────────
+
+test("CST_VALID: NF-e com CST 999 gera FATAL (código desconhecido)", () => {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod></ide>
+  <emit><CNPJ>12345678000195</CNPJ></emit>
+  <det nItem="1">
+    <prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>
+    <imposto>
+      <IBSCBS>
+        <CST>999</CST>
+        <cClassTrib>654321</cClassTrib>
+        <gIBSCBS>
+          <vBC>1000.00</vBC>
+          <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+          <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+          <vIBS>1.00</vIBS>
+          <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+        </gIBSCBS>
+      </IBSCBS>
+    </imposto>
+  </det>
+  <total><IBSCBSTot><vIBS>1.00</vIBS><vCBS>9.00</vCBS></IBSCBSTot></total>
+</infNFe></NFe></nfeProc>`;
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "CST_VALID");
+  assert.ok(f, "CST_VALID finding expected");
+  assert.equal(f!.severity, "FATAL");
+});
+
+// ── S11: CST_GROUP_MATCH — CST 000 without gIBSCBS ─────────────────────────
+
+test("CST_GROUP_MATCH: NF-e with CST 000 but no gIBSCBS gera FATAL", () => {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod></ide>
+  <emit><CNPJ>12345678000195</CNPJ></emit>
+  <det nItem="1">
+    <prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>
+    <imposto>
+      <IBSCBS>
+        <CST>000</CST>
+        <cClassTrib>654321</cClassTrib>
+      </IBSCBS>
+    </imposto>
+  </det>
+  <total><IBSCBSTot><vIBS>0</vIBS><vCBS>0</vCBS></IBSCBSTot></total>
+</infNFe></NFe></nfeProc>`;
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "CST_GROUP_MATCH");
+  assert.ok(f, "CST_GROUP_MATCH finding expected — CST 000 requires gIBSCBS");
+});
+
+// ── S11: LAYOUT_NFE — NF-e structure check ──────────────────────────────────
+
+test("LAYOUT_NFE: NF-e sem emit gera FATAL", () => {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod></ide>
+  <det nItem="1">
+    <prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>100</vProd></prod>
+    <imposto><IBSCBS><CST>070</CST><cClassTrib>654321</cClassTrib></IBSCBS></imposto>
+  </det>
+</infNFe></NFe></nfeProc>`;
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "LAYOUT_NFE");
+  assert.ok(f, "LAYOUT_NFE finding expected");
+  assert.ok(f!.title.includes("emit") || f!.title.includes("total"), "should mention missing tag");
+});
+
+// ── S11: NF-e does NOT trigger LAYOUT_PORTAL (NFS-e only) ──────────────────
+
+test("NF-e não aciona regra LAYOUT_PORTAL", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t",
+    documentType: "NFE",
+    xml: fixture("nfe-ok.xml"),
+  });
+  assert.equal(result.findings.find((f) => f.rule_id === "LAYOUT_PORTAL"), undefined);
+});
+
+// ── S11: NF-e does NOT trigger SERVICE_CODE_6_DIGITS ────────────────────────
+
+test("NF-e não valida CodigoServico (usa CFOP)", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t",
+    documentType: "NFE",
+    xml: fixture("nfe-ok.xml"),
+  });
+  assert.equal(result.findings.find((f) => f.rule_id === "SERVICE_CODE_6_DIGITS"), undefined);
 });

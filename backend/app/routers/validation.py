@@ -154,6 +154,20 @@ def validate_cnpj(req: ValidateCNPJRequest):
     )
 
 
+@router.get("/classtrib/{code}")
+async def lookup_classtrib(code: str, current_user: User = Depends(get_current_user)):
+    """Look up a ClassTrib code against the official SVRS Conformidade Fácil API."""
+    from app.services.classtrib_service import classtrib_service
+
+    if not code or len(code) != 6 or not code.isdigit():
+        raise HTTPException(status_code=400, detail="cClassTrib deve ter 6 dígitos.")
+
+    result = await classtrib_service.lookup(code)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"ClassTrib '{code}' não encontrado na base SVRS.")
+    return {"code": code, "data": result}
+
+
 @router.get("/rules", response_model=list[RuleLookupResponse])
 def list_rules(
     tax_type: Optional[TaxType] = None,

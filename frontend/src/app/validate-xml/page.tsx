@@ -7,6 +7,7 @@ import { Toast } from "@/components/common/Toast";
 import { getJob, openExceptionRequest, validateXml } from "@/lib/api";
 import { buildAuditableReportCsv, buildAuditableReportHtml, downloadCsv, downloadPdf } from "@/lib/export/auditableReport";
 import { Finding, Job, ValidateXmlRequest, ValidationEvidence, ValidationResultV11, XmlDocumentType } from "@/lib/types";
+import { CST_TABLE, detectDocumentType } from "@/lib/validation/xmlRules";
 
 function severityClasses(severity: Finding["severity"]): string {
   if (severity === "FATAL") {
@@ -32,6 +33,7 @@ function validateInput(xml: string): string | null {
 
 export default function ValidateXmlPage() {
   const [documentType, setDocumentType] = useState<XmlDocumentType>("NFSE");
+  const [autoDetected, setAutoDetected] = useState(false);
   const [xmlText, setXmlText] = useState("");
   const [source, setSource] = useState<"paste" | "upload">("paste");
   const [result, setResult] = useState<ValidationResultV11 | null>(null);
@@ -55,12 +57,19 @@ export default function ValidateXmlPage() {
     [result],
   );
 
+  function autoDetectType(xml: string): void {
+    const detected = detectDocumentType(xml);
+    setDocumentType(detected);
+    setAutoDetected(true);
+  }
+
   async function onFileChange(event: ChangeEvent<HTMLInputElement>): Promise<void> {
     const file = event.target.files?.[0];
     if (!file) return;
     const text = await file.text();
     setXmlText(text);
     setSource("upload");
+    autoDetectType(text);
   }
 
   async function refreshJob(jobId: string): Promise<void> {
@@ -143,7 +152,7 @@ export default function ValidateXmlPage() {
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Validar XML</h1>
         <p className="text-sm text-slate-500">
-          NFS-e primeiro (NF-e suportado). Toda inconsistência gera finding com evidência rastreável.
+          NFS-e, NF-e e NFC-e. Auto-detecção de tipo. Validação IBSCBS conforme NT 2025.002-RTC.
         </p>
       </header>
 
@@ -153,12 +162,19 @@ export default function ValidateXmlPage() {
             <span className="mb-1 block text-slate-500">Tipo do documento</span>
             <select
               value={documentType}
-              onChange={(e) => setDocumentType(e.target.value as XmlDocumentType)}
+              onChange={(e) => {
+                setDocumentType(e.target.value as XmlDocumentType);
+                setAutoDetected(false);
+              }}
               className="w-full rounded-lg border border-slate-300 px-3 py-2"
             >
               <option value="NFSE">NFS-e</option>
-              <option value="NFE">NF-e</option>
+              <option value="NFE">NF-e (mod 55)</option>
+              <option value="NFCE">NFC-e (mod 65)</option>
             </select>
+            {autoDetected && (
+              <span className="mt-1 block text-xs text-emerald-600">Auto-detectado do XML</span>
+            )}
           </label>
 
           <label className="text-sm">
@@ -180,7 +196,13 @@ export default function ValidateXmlPage() {
               setXmlText(e.target.value);
               setSource("paste");
             }}
-            placeholder="<NFS-e>...</NFS-e>"
+            onPaste={(e) => {
+              const pasted = e.clipboardData.getData("text");
+              if (pasted && pasted.includes("<")) {
+                setTimeout(() => autoDetectType(pasted), 0);
+              }
+            }}
+            placeholder="<NFS-e>...</NFS-e> ou <nfeProc>...</nfeProc>"
             className="min-h-56 w-full rounded-lg border border-slate-300 p-3 font-mono text-xs"
           />
         </label>
@@ -243,6 +265,34 @@ export default function ValidateXmlPage() {
               {job ? ` | Status do job: ${job.status}` : ""}
             </p>
           </div>
+
+          {(documentType === "NFE" || documentType === "NFCE") && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm">
+              <p className="font-semibold text-blue-900">
+                Documento {documentType === "NFE" ? "NF-e (mod 55)" : "NFC-e (mod 65)"} — Validação IBSCBS
+              </p>
+              <p className="mt-1 text-xs text-blue-700">
+                Regras NT 2025.002-RTC: CST, grupo IBSCBS (vBC, IBS UF/Mun, CBS), split IBS, totais.
+              </p>
+              {result.findings.some((f) => f.rule_id === "CST_VALID" || f.rule_id === "CST_GROUP_MATCH") && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {Object.entries(CST_TABLE)
+                    .filter(([code]) =>
+                      result.findings.some(
+                        (f) =>
+                          (f.rule_id === "CST_VALID" || f.rule_id === "CST_GROUP_MATCH") &&
+                          f.where.snippet?.includes(code),
+                      ),
+                    )
+                    .map(([code, info]) => (
+                      <span key={code} className="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-800">
+                        CST {code}: {info.description}
+                      </span>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-3">
             {result.findings.map((finding) => {

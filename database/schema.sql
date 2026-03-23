@@ -317,14 +317,16 @@ VALUES
     ('contador',     'Contador',     34900, NULL, NULL, TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  NULL)
 ON CONFLICT (slug) DO NOTHING;
 
--- Standard CBS rate 2026
+-- Standard CBS rate 2026 (reforma tributária — LC 214, NT 2025.002-RTC)
+-- Alíquota de teste 2026: CBS 0.90% (federal)
 INSERT INTO tax_rules (tenant_id, rule_code, description, tax_type, rate, valid_from)
-SELECT t.id, 'STD_CBS', 'Aliquota padrão CBS 2026', 'CBS', 0.0925, '2026-01-01'
+SELECT t.id, 'STD_CBS', 'Aliquota CBS teste 2026 (0.90%)', 'CBS', 0.0090, '2026-01-01'
 FROM tenants t WHERE t.slug = 'default'
 ON CONFLICT DO NOTHING;
 
--- Standard IBS rate 2026
+-- Standard IBS rate 2026 (reforma tributária — LC 214, NT 2025.002-RTC)
+-- Alíquota de teste 2026: IBS 0.10% (estadual+municipal)
 INSERT INTO tax_rules (tenant_id, rule_code, description, tax_type, rate, valid_from)
-SELECT t.id, 'STD_IBS', 'Aliquota padrão IBS 2026', 'IBS', 0.1200, '2026-01-01'
+SELECT t.id, 'STD_IBS', 'Aliquota IBS teste 2026 (0.10%)', 'IBS', 0.0010, '2026-01-01'
 FROM tenants t WHERE t.slug = 'default'
 ON CONFLICT DO NOTHING;

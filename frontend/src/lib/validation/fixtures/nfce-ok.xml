@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+  <NFe>
+    <infNFe versao="4.00" Id="NFe35260312345678000195650010000004561234567890">
+      <ide>
+        <cUF>35</cUF>
+        <mod>65</mod>
+        <serie>1</serie>
+        <nNF>456</nNF>
+        <dhEmi>2026-03-23T14:30:00-03:00</dhEmi>
+        <tpNF>1</tpNF>
+      </ide>
+      <emit>
+        <CNPJ>12345678000195</CNPJ>
+        <xNome>LOJA VAREJO TESTE LTDA</xNome>
+        <enderEmit>
+          <UF>SP</UF>
+          <cMun>3550308</cMun>
+        </enderEmit>
+      </emit>
+      <det nItem="1">
+        <prod>
+          <cProd>001</cProd>
+          <xProd>Produto Consumidor</xProd>
+          <NCM>22021000</NCM>
+          <CEST>0300100</CEST>
+          <CFOP>5102</CFOP>
+          <uCom>UN</uCom>
+          <qCom>2.0000</qCom>
+          <vUnCom>50.00</vUnCom>
+          <vProd>100.00</vProd>
+        </prod>
+        <imposto>
+          <ICMS>
+            <ICMS00>
+              <orig>0</orig>
+              <CST>00</CST>
+              <modBC>0</modBC>
+              <vBC>100.00</vBC>
+              <pICMS>18.00</pICMS>
+              <vICMS>18.00</vICMS>
+            </ICMS00>
+          </ICMS>
+          <IBSCBS>
+            <CST>000</CST>
+            <cClassTrib>030010</cClassTrib>
+            <gIBSCBS>
+              <vBC>100.00</vBC>
+              <gIBSUF>
+                <pIBSUF>0.0005</pIBSUF>
+                <vIBSUF>0.05</vIBSUF>
+              </gIBSUF>
+              <gIBSMun>
+                <pIBSMun>0.0005</pIBSMun>
+                <vIBSMun>0.05</vIBSMun>
+              </gIBSMun>
+              <vIBS>0.10</vIBS>
+              <gCBS>
+                <pCBS>0.0090</pCBS>
+                <vCBS>0.90</vCBS>
+              </gCBS>
+            </gIBSCBS>
+          </IBSCBS>
+        </imposto>
+      </det>
+      <total>
+        <ICMSTot>
+          <vBC>100.00</vBC>
+          <vICMS>18.00</vICMS>
+          <vProd>100.00</vProd>
+          <vNF>100.00</vNF>
+        </ICMSTot>
+        <IBSCBSTot>
+          <vBCIBSCBS>100.00</vBCIBSCBS>
+          <vIBS>0.10</vIBS>
+          <vCBS>0.90</vCBS>
+          <vIBSCBS>1.00</vIBSCBS>
+        </IBSCBSTot>
+      </total>
+    </infNFe>
+  </NFe>
+</nfeProc>

@@ -54,8 +54,8 @@ def task_c_whatif_simulation(
 
     Each scenario: {
         "name": "CBS + 2pp",
-        "cbs_rate_override": "0.1125",   # optional – if omitted uses DB rate
-        "ibs_rate_override": "0.1200",   # optional
+        "cbs_rate_override": "0.0110",   # optional – if omitted uses DB rate
+        "ibs_rate_override": "0.0012",   # optional
     }
 
     1. Fetch current CBS/IBS rates from Postgres
