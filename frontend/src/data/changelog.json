@@ -8,6 +8,21 @@
       "entries": [
         {
           "type": "novo",
+          "text": "Frontend: página Faturamento + endpoints billing backend",
+          "scope": [
+            "frontend",
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Frontend: plan context + feature gating hooks",
+          "scope": [
+            "frontend"
+          ]
+        },
+        {
+          "type": "novo",
           "text": "Backend: plan enforcement dependency + usage tracking",
           "scope": [
             "backend"
