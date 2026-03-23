@@ -3,13 +3,13 @@
 Previous rates (0.0925 CBS, 0.1200 IBS) were PIS/COFINS-era values.
 Correct rates per NT 2025.002-RTC: CBS 0.90% (0.0090), IBS 0.10% (0.0010).
 
-Revision ID: 0005
-Revises: 0004
+Revision ID: 2026_03_23_0005
+Revises: 2026_03_22_0004
 """
 from alembic import op
 
-revision = "0005"
-down_revision = "0004"
+revision = "2026_03_23_0005"
+down_revision = "2026_03_22_0004"
 branch_labels = None
 depends_on = None
 
