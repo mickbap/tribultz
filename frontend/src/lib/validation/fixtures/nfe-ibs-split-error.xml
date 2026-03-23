@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- NF-e com erro: vIBS != vIBSUF + vIBSMun (split incorreto) -->
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+  <NFe>
+    <infNFe versao="4.00" Id="NFe35260399999999000100550010000009991234567890">
+      <ide><cUF>35</cUF><mod>55</mod><nNF>999</nNF><dhEmi>2026-03-23T10:00:00-03:00</dhEmi></ide>
+      <emit><CNPJ>99999999000100</CNPJ><xNome>EMITENTE ERRO LTDA</xNome><enderEmit><UF>SP</UF><cMun>3550308</cMun></enderEmit></emit>
+      <dest><CNPJ>88888888000100</CNPJ><xNome>DEST TESTE</xNome></dest>
+      <det nItem="1">
+        <prod>
+          <cProd>001</cProd><xProd>Produto Split Erro</xProd>
+          <NCM>84713012</NCM><CEST>2104900</CEST><CFOP>5102</CFOP>
+          <uCom>UN</uCom><qCom>1</qCom><vUnCom>1000.00</vUnCom><vProd>1000.00</vProd>
+        </prod>
+        <imposto>
+          <IBSCBS>
+            <CST>000</CST>
+            <cClassTrib>654321</cClassTrib>
+            <gIBSCBS>
+              <vBC>1000.00</vBC>
+              <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+              <!-- ERRO: vIBS deveria ser 1.00 (0.50+0.50), mas está 1.50 -->
+              <vIBS>1.50</vIBS>
+              <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+            </gIBSCBS>
+          </IBSCBS>
+        </imposto>
+      </det>
+      <total>
+        <IBSCBSTot><vBCIBSCBS>1000.00</vBCIBSCBS><vIBS>1.50</vIBS><vCBS>9.00</vCBS><vIBSCBS>10.50</vIBSCBS></IBSCBSTot>
+      </total>
+    </infNFe>
+  </NFe>
+</nfeProc>

@@ -97,8 +97,8 @@ test("HTML contém titulo e metadados do job", () => {
   assert.ok(html.includes("job_xml_abc123"));
   assert.ok(html.includes("tenant-demo"));
   assert.ok(html.includes("LC 214"));
-  assert.ok(html.includes("CBS 0,10%"));
-  assert.ok(html.includes("IBS 0,90%"));
+  assert.ok(html.includes("CBS 0,90%"));
+  assert.ok(html.includes("IBS 0,10%"));
 });
 
 test("HTML contém tabela de findings com severidade", () => {

@@ -208,7 +208,7 @@ export function buildAuditableReportHtml(
 
 <h1>Tribultz - Relatorio Auditavel</h1>
 <p style="color:#64748b;font-size:13px;margin-top:0">
-  Base legal: LC 214 + LC 227 | CBS 0,10% | IBS 0,90%
+  Base legal: LC 214 + LC 227 | CBS 0,90% | IBS 0,10% | NT 2025.002-RTC
 </p>
 
 <table style="width:auto;font-size:13px;margin-top:12px">
