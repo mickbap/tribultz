@@ -8,6 +8,13 @@
       "entries": [
         {
           "type": "novo",
+          "text": "Frontend: trial banner + UI gating nas páginas existentes",
+          "scope": [
+            "frontend"
+          ]
+        },
+        {
+          "type": "novo",
           "text": "Frontend: página Faturamento + endpoints billing backend",
           "scope": [
             "frontend",
