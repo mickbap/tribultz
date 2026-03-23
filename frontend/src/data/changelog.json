@@ -3,9 +3,44 @@
     {
       "id": "s10",
       "title": "Sprint 10 — Release Candidate",
-      "date": "2026-03-22",
+      "date": "2026-03-23",
       "summary": "Polimento final, performance e preparacao para producao.",
       "entries": [
+        {
+          "type": "novo",
+          "text": "Celery beat: expiração de trial + reset de uso mensal",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Backend: Asaas webhook endpoint",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Frontend: registro com seletor de plano, telefone e pagamento",
+          "scope": [
+            "frontend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Backend: registration com seleção de plano + telefone",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Backend: Asaas service + config",
+          "scope": [
+            "backend"
+          ]
+        },
         {
           "type": "novo",
           "text": "Alembic migration: plans, subscriptions, payments, usage_tracking",
