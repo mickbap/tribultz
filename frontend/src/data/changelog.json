@@ -8,6 +8,21 @@
       "entries": [
         {
           "type": "novo",
+          "text": "Integration testing + JWT plan claims + end-to-end",
+          "scope": [
+            "frontend",
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
+          "text": "Backend: geração de relatórios PDF com WeasyPrint",
+          "scope": [
+            "backend"
+          ]
+        },
+        {
+          "type": "novo",
           "text": "Frontend: trial banner + UI gating nas páginas existentes",
           "scope": [
             "frontend"
