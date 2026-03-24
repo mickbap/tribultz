@@ -11,16 +11,16 @@ from typing import Any
 
 import httpx
 
-logger = logging.getLogger(__name__)
+from app.config import settings
 
-SVRS_BASE_URL = "https://cff.svrs.rs.gov.br/api/v1/consultas/classTrib"
+logger = logging.getLogger(__name__)
 
 
 class ClassTribService:
     """Client for the Conformidade Fácil ClassTrib API."""
 
     def __init__(self) -> None:
-        self.base_url = SVRS_BASE_URL
+        self.base_url = settings.CLASSTRIB_API_URL
         self.timeout = 10.0
 
     async def lookup(self, code: str) -> dict[str, Any] | None:

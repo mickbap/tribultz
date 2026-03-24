@@ -13,10 +13,12 @@ from dataclasses import dataclass
 
 import httpx
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
-BRASILAPI_URL = "https://brasilapi.com.br/api/cnpj/v1/{cnpj}"
-RECEITAWS_URL = "https://receitaws.com.br/v1/cnpj/{cnpj}"
+BRASILAPI_URL = settings.CNPJ_PRIMARY_URL
+RECEITAWS_URL = settings.CNPJ_FALLBACK_URL
 TIMEOUT_SECONDS = 5.0
 
 

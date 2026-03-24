@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { API_BASE } from "@/lib/api";
 
 type VerifyState = "loading" | "verified" | "already_verified" | "error";
 
