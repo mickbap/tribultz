@@ -16,11 +16,14 @@ type DiagnosticResult = {
   document_type: string;
   status: string;
   total_findings: number;
+  findings_shown: number;
+  findings_hidden: number;
   fatals: number;
   alerts: number;
   findings: FindingSummary[];
   rules_checked: number;
   upgrade_cta: string;
+  data_policy: string;
 };
 
 type UploadState = "idle" | "uploading" | "done" | "error";
@@ -261,6 +264,24 @@ export default function DiagnosticoPage() {
               </div>
             )}
 
+            {/* Hidden findings indicator */}
+            {result.findings_hidden > 0 && (
+              <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                <svg className="h-5 w-5 flex-shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                <p className="text-sm text-amber-800">
+                  Exibindo <strong>{result.findings_shown}</strong> de{" "}
+                  <strong>{result.total_findings}</strong> problemas encontrados.{" "}
+                  <strong>{result.findings_hidden}</strong>{" "}
+                  {result.findings_hidden === 1
+                    ? "problema adicional oculto"
+                    : "problemas adicionais ocultos"}{" "}
+                  no diagnóstico gratuito.
+                </p>
+              </div>
+            )}
+
             {/* Blurred CTA section */}
             <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white">
               {/* Blurred fake content */}
@@ -307,6 +328,17 @@ export default function DiagnosticoPage() {
                     Já tenho conta
                   </Link>
                 </div>
+              </div>
+            </div>
+
+            {/* Data governance notice */}
+            <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-emerald-800">Seus dados estão seguros</p>
+                <p className="mt-0.5 text-xs text-emerald-700">{result.data_policy}</p>
               </div>
             </div>
 
