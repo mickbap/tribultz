@@ -114,7 +114,7 @@ export default function DiagnosticoPage() {
           Faça o diagnóstico gratuito agora.
         </p>
         <div className="mx-auto mt-2 flex items-center justify-center gap-4 text-sm text-slate-500">
-          <span>14 regras verificadas</span>
+          <span>18 regras verificadas</span>
           <span>NF-e, NFC-e e NFS-e</span>
           <span>NT 2025.002-RTC</span>
         </div>
@@ -375,7 +375,7 @@ export default function DiagnosticoPage() {
             </p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-extrabold text-tribultz-600">14</p>
+            <p className="text-3xl font-extrabold text-tribultz-600">18</p>
             <p className="mt-1 text-sm text-slate-600">
               regras fiscais verificadas conforme NT 2025.002-RTC
             </p>

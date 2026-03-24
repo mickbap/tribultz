@@ -117,7 +117,7 @@ class TestPublicResultConversion:
         assert public.document_type == "NFE"
         assert public.status == "PASS"
         assert public.fatals == 0
-        assert public.rules_checked == 14
+        assert public.rules_checked == 18
         assert public.data_policy  # governance field present
 
     def test_invalid_nfe_returns_fail_with_findings(self):
@@ -215,7 +215,7 @@ class TestPublicValidateEndpoint:
         assert data["status"] in ("PASS", "FAIL")
         assert "upgrade_cta" in data
         assert "data_policy" in data
-        assert data["rules_checked"] == 14
+        assert data["rules_checked"] == 18
         assert "findings_shown" in data
         assert "findings_hidden" in data
 

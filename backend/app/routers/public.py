@@ -69,8 +69,8 @@ class PublicValidationResult(BaseModel):
     data_policy: str
 
 
-# Total rules the engine checks
-RULES_CHECKED = 14
+# Total rules the engine checks (14 base + 4 cross-validation S13)
+RULES_CHECKED = 18
 
 DATA_POLICY_SUMMARY = (
     "Seu XML é processado em memória e descartado imediatamente após a validação. "
