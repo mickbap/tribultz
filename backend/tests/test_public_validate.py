@@ -1,12 +1,28 @@
 """Tests for public validation endpoint — freemium diagnostic funnel."""
 
+import pytest
 from unittest.mock import patch, MagicMock
 
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.routers.public import _to_public_result, _client_ip
+from app.routers.public import _to_public_result, _client_ip, _rate_limiter
 from app.routers.validate_xml import validate_xml
+
+
+@pytest.fixture(autouse=True)
+def reset_public_rate_limiter():
+    """Clear rate limiter state between tests to avoid 429s in CI (double pytest run)."""
+    _rate_limiter._memory_store.clear()
+    if _rate_limiter.redis is not None:
+        try:
+            _rate_limiter.redis.delete("ratelimit:public:testclient")
+            _rate_limiter.redis.delete("ratelimit:public:127.0.0.1")
+            _rate_limiter.redis.delete("ratelimit:public:unknown")
+        except Exception:
+            pass
+    yield
+    _rate_limiter._memory_store.clear()
 
 # ── Sample XMLs ────────────────────────────────────────────────────────────────
 
