@@ -29,6 +29,7 @@ def reset_public_rate_limiters():
     for rl in (_rate_limiter, _daily_limiter):
         rl._memory_store.clear()
 
+
 # ── Sample XMLs ────────────────────────────────────────────────────────────────
 
 VALID_NFE_XML = """<?xml version="1.0"?>
@@ -278,8 +279,22 @@ class TestPublicValidateEndpoint:
     @patch("app.routers.public._rate_limiter")
     def test_rate_limit_returns_429(self, mock_limiter):
         from fastapi import HTTPException
+
         mock_limiter.check_or_raise.side_effect = HTTPException(
             status_code=429, detail="Limite excedido"
+        )
+        resp = client.post(
+            "/api/v1/public/validate",
+            data={"xml_content": VALID_NFE_XML},
+        )
+        assert resp.status_code == 429
+
+    @patch("app.routers.public._daily_limiter")
+    def test_daily_limit_returns_429(self, mock_daily_limiter):
+        from fastapi import HTTPException
+
+        mock_daily_limiter.check_or_raise.side_effect = HTTPException(
+            status_code=429, detail="Limite diário excedido"
         )
         resp = client.post(
             "/api/v1/public/validate",

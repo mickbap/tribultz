@@ -359,6 +359,17 @@ export default function DiagnosticoPage() {
         )}
       </section>
 
+      {/* Data governance */}
+      <section className="border-t border-slate-200 bg-white px-4 py-10">
+        <div className="mx-auto max-w-4xl rounded-xl border border-tribultz-100 bg-tribultz-50 p-5">
+          <h3 className="text-base font-semibold text-slate-900">Compromisso com governança de dados</h3>
+          <p className="mt-2 text-sm text-slate-700">
+            O XML enviado no freemium é processado apenas para gerar o diagnóstico técnico de conformidade.
+            Não utilizamos os dados fiscais para treino de modelos e o conteúdo é descartado após a análise.
+          </p>
+        </div>
+      </section>
+
       {/* Social proof / urgency */}
       <section className="border-t border-slate-200 bg-slate-50 px-4 py-12">
         <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-3">

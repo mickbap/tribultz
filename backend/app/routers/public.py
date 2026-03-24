@@ -56,6 +56,7 @@ class PublicValidationResult(BaseModel):
     Redacts detailed evidence, xpath, snippets and recommendations.
     Full results available in paid plans.
     """
+
     document_type: str
     status: str  # PASS | FAIL
     total_findings: int
