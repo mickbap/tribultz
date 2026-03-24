@@ -3,11 +3,10 @@
   "configurations": [
     {
       "name": "Frontend (Next.js)",
-      "runtimeExecutable": "C:/Program Files/nodejs/node.exe",
-      "runtimeArgs": ["node_modules/.bin/next", "dev"],
+      "runtimeExecutable": "npm.cmd",
+      "runtimeArgs": ["run", "dev"],
       "cwd": "frontend",
-      "port": 3000,
-      "autoPort": true
+      "port": 3000
     },
     {
       "name": "Infra (Docker Compose)",
