@@ -17,7 +17,7 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+SITEVERIFY_URL = settings.CAPTCHA_VERIFY_URL
 
 
 async def verify_captcha(token: str, remote_ip: str | None = None) -> bool:

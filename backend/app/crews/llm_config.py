@@ -19,9 +19,9 @@ from typing import Any
 
 from crewai import LLM
 
-logger = logging.getLogger(__name__)
+from app.config import settings
 
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+logger = logging.getLogger(__name__)
 
 
 class LLMUnavailableError(RuntimeError):
@@ -73,7 +73,7 @@ def build_llm(tier: ModelTier) -> LLM:
     """Create a CrewAI LLM instance for a given tier."""
     return LLM(
         model=tier.model_id,
-        base_url=OPENROUTER_BASE_URL,
+        base_url=settings.OPENROUTER_BASE_URL,
         api_key=_get_api_key(),
     )
 
@@ -94,7 +94,7 @@ def get_llm_with_fallback(
         try:
             llm = LLM(
                 model=tier.model_id,
-                base_url=OPENROUTER_BASE_URL,
+                base_url=settings.OPENROUTER_BASE_URL,
                 api_key=api_key,
             )
             logger.info("LLM selected: %s (free=%s)", tier.name, tier.is_free)
@@ -125,7 +125,7 @@ def execute_with_fallback(
     for tier in tiers:
         llm = LLM(
             model=tier.model_id,
-            base_url=OPENROUTER_BASE_URL,
+            base_url=settings.OPENROUTER_BASE_URL,
             api_key=api_key,
         )
         for attempt in range(1, tier.max_retries + 1):

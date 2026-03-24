@@ -9,7 +9,7 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-BASE_URL = "https://api.hubapi.com"
+BASE_URL = settings.HUBSPOT_API_BASE_URL
 
 
 # ── Guard ─────────────────────────────────────────────────────
