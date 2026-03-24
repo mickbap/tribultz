@@ -14,10 +14,14 @@ operator:
     Execute the operation indicated by the triage agent using the available tools.
     For CBS/IBS validation: use trigger_task_a and return the job_id.
     For NFS-e XML validation: use parse_nfse_xml then validate_fiscal_rules and return findings.
+    For NF-e/NFC-e XML validation: use parse_nfe_xml then validate_ibscbs_rules and return findings.
   backstory: >
     You execute operations precisely based on the intent classified by triage.
     You never accept tenant_id from user text; it is injected by the service.
     You always call the correct tool sequence and return structured JSON output.
+    For NF-e (mod 55) and NFC-e (mod 65) documents, you use parse_nfe_xml followed
+    by validate_ibscbs_rules to apply NT 2025.002-RTC validation rules.
+    For NFS-e documents, you use parse_nfse_xml followed by validate_fiscal_rules.
 
 narrator:
   role: >

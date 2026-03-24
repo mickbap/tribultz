@@ -15,9 +15,11 @@ from app.crews.llm_config import (
     execute_with_fallback,
 )
 from app.crews.tools.get_job_status_tool import GetJobStatusTool
+from app.crews.tools.parse_nfe_xml_tool import ParseNFeXMLTool
 from app.crews.tools.parse_nfse_xml_tool import ParseNFSeXMLTool
 from app.crews.tools.trigger_task_a_tool import TriggerTaskATool
 from app.crews.tools.validate_fiscal_rules_tool import ValidateFiscalRulesTool
+from app.crews.tools.validate_ibscbs_rules_tool import ValidateIBSCBSRulesTool
 
 load_dotenv()
 
@@ -72,7 +74,9 @@ class TribultzChatOpsCrew:
         )
         status_tool = GetJobStatusTool(tenant_id=self._tenant_id)
         parse_nfse_tool = ParseNFSeXMLTool(tenant_id=self._tenant_id)
+        parse_nfe_tool = ParseNFeXMLTool(tenant_id=self._tenant_id)
         validate_rules_tool = ValidateFiscalRulesTool()
+        validate_ibscbs_tool = ValidateIBSCBSRulesTool()
 
         triage = Agent(
             role=agents_cfg["triage"]["role"],
@@ -85,7 +89,11 @@ class TribultzChatOpsCrew:
             role=agents_cfg["operator"]["role"],
             goal=agents_cfg["operator"]["goal"],
             backstory=agents_cfg["operator"]["backstory"],
-            tools=[trigger_tool, status_tool, parse_nfse_tool, validate_rules_tool],
+            tools=[
+                trigger_tool, status_tool,
+                parse_nfse_tool, validate_rules_tool,
+                parse_nfe_tool, validate_ibscbs_tool,
+            ],
             llm=llm,
             verbose=False,
         )

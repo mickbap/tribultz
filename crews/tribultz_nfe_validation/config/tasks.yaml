@@ -1,0 +1,57 @@
+parse_nfe_xml:
+  description: >
+    Receber o XML fiscal do usuario e executar o parse completo usando a ferramenta
+    parse_nfe_xml. O XML pode ser NF-e (mod 55) ou NFC-e (mod 65).
+    Extrair todos os campos IBSCBS e armazenar o XML original no S3.
+
+    XML recebido:
+    {xml_content}
+  expected_output: >
+    JSON string com: invoice_id, s3_key, doc_type (NFE ou NFCE),
+    parse_error (null se ok), fields (cst, cclasstrib, ncm, cest,
+    vbc, pcbs, vcbs, pibsuf, vibsuf, pibsmun, vibsmun, vibs,
+    tot_vcbs, tot_vibs, layout_tags), items[] (campos por item det).
+
+validate_ibscbs:
+  description: >
+    Aplicar as 14 regras de validacao IBSCBS aos campos extraidos pelo parser.
+    Usar a ferramenta validate_ibscbs_rules com o invoice_id e fields_json
+    retornados pela task anterior.
+
+    Regras a validar:
+    1. XML_PARSE — XML bem formado
+    2. CST_3_DIGITS — CST com 3 digitos
+    3. CCLASSTRIB_6_DIGITS — ClassTrib com 6 digitos
+    4. CST_VALID — CST conhecido (NT 2025.002)
+    5. CST_GROUP_MATCH — CST coerente com grupo XML
+    5b. CST_SEMANTIC — CST 070/410 sem valores > 0
+    6. IBSCBS_MISSING — Grupo IBSCBS presente
+    7. IBSCBS_CALC — vCBS = vBC x pCBS
+    11. IBSCBS_UF_CALC — vIBSUF = vBC x pIBSUF
+    12. IBSCBS_MUN_CALC — vIBSMun = vBC x pIBSMun
+    13. IBSCBS_SPLIT — vIBS = vIBSUF + vIBSMun
+    14. IBSCBS_TOTAL — IBSCBSTot = soma itens
+    8-9. CEST presente e formato 7 digitos
+    10b. LAYOUT_NFE — emit, det, total presentes
+  expected_output: >
+    JSON string com: invoice_id, doc_type, findings[] (cada um com rule_id,
+    severity, field, xpath, snippet, recommendation), summary (total, fatals,
+    alerts, status PASS/FAIL, items_parsed).
+
+compose_nfe_report:
+  description: >
+    Com base nos resultados do parser e do validador, compor um relatorio
+    de conformidade em Markdown. O relatorio deve incluir:
+
+    1. Resumo executivo: tipo documento, status (PASS/FAIL), total findings
+    2. Informacoes do CST encontrado (codigo + descricao da CST_TABLE)
+    3. Tabela de findings ordenados por severidade (FATAL primeiro)
+    4. Recomendacoes priorizadas
+    5. Referencia a base legal: NT 2025.002-RTC, LC 214, LC 227
+
+    Retornar como JSON com response_markdown e evidence[].
+  expected_output: >
+    JSON com campos:
+    - response_markdown: string Markdown do relatorio
+    - evidence: array com objetos {type, label, snippet}
+    - summary: {status, fatals, alerts, doc_type}
