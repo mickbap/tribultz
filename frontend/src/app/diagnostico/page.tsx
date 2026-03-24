@@ -114,7 +114,7 @@ export default function DiagnosticoPage() {
           Faça o diagnóstico gratuito agora.
         </p>
         <div className="mx-auto mt-2 flex items-center justify-center gap-4 text-sm text-slate-500">
-          <span>14 regras verificadas</span>
+          <span>18 regras verificadas</span>
           <span>NF-e, NFC-e e NFS-e</span>
           <span>NT 2025.002-RTC</span>
         </div>
@@ -359,6 +359,17 @@ export default function DiagnosticoPage() {
         )}
       </section>
 
+      {/* Data governance */}
+      <section className="border-t border-slate-200 bg-white px-4 py-10">
+        <div className="mx-auto max-w-4xl rounded-xl border border-tribultz-100 bg-tribultz-50 p-5">
+          <h3 className="text-base font-semibold text-slate-900">Compromisso com governança de dados</h3>
+          <p className="mt-2 text-sm text-slate-700">
+            O XML enviado no freemium é processado apenas para gerar o diagnóstico técnico de conformidade.
+            Não utilizamos os dados fiscais para treino de modelos e o conteúdo é descartado após a análise.
+          </p>
+        </div>
+      </section>
+
       {/* Social proof / urgency */}
       <section className="border-t border-slate-200 bg-slate-50 px-4 py-12">
         <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-3">
@@ -375,7 +386,7 @@ export default function DiagnosticoPage() {
             </p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-extrabold text-tribultz-600">14</p>
+            <p className="text-3xl font-extrabold text-tribultz-600">18</p>
             <p className="mt-1 text-sm text-slate-600">
               regras fiscais verificadas conforme NT 2025.002-RTC
             </p>

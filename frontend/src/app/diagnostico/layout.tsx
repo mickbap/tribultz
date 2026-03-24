@@ -6,7 +6,7 @@ import { PublicFooter } from "@/components/public/PublicFooter";
 export const metadata: Metadata = {
   title: "Diagnóstico Gratuito NF-e — Conformidade IBS/CBS 2026 | Tribultz",
   description:
-    "Valide sua NF-e, NFC-e ou NFS-e gratuitamente contra as 14 regras da NT 2025.002-RTC. " +
+    "Valide sua NF-e, NFC-e ou NFS-e gratuitamente contra as 18 regras da NT 2025.002-RTC. " +
     "Evite multas de 18% por não destacar IBS e CBS. Diagnóstico instantâneo.",
   openGraph: {
     title: "Diagnóstico Gratuito NF-e — Conformidade IBS/CBS 2026",
