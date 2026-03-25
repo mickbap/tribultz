@@ -1,0 +1,16 @@
+export const CST_LIST = [
+  { code: "000", desc: "Tributacao normal (ad valorem)", regime: "normal" },
+  { code: "001", desc: "Tributacao normal com reducao", regime: "reduzido" },
+  { code: "002", desc: "Tributacao ad rem", regime: "ad_rem" },
+  { code: "070", desc: "Imunidade / Isencao", regime: "isento" },
+  { code: "200", desc: "Diferimento", regime: "diferimento" },
+  { code: "410", desc: "Suspensao", regime: "suspenso" },
+  { code: "510", desc: "Credito presumido", regime: "credito_presumido" },
+  { code: "515", desc: "Credito presumido especial", regime: "credito_presumido_especial" },
+  { code: "550", desc: "Regime especifico", regime: "especifico" },
+  { code: "620", desc: "Monofasico", regime: "monofasico" },
+  { code: "800", desc: "Transferencia de credito", regime: "transferencia" },
+  { code: "810", desc: "Ressarcimento", regime: "ressarcimento" },
+  { code: "811", desc: "Ajuste de competencia", regime: "ajuste" },
+  { code: "830", desc: "Estorno de credito", regime: "estorno" },
+] as const;
