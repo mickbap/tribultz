@@ -16,6 +16,12 @@ export function PublicNavbar() {
             Diagnóstico Gratuito
           </Link>
           <Link
+            href="/calculadora"
+            className="font-medium text-slate-700 hover:text-tribultz-600"
+          >
+            Calculadora CBS/IBS
+          </Link>
+          <Link
             href="/login"
             className="font-medium text-slate-500 hover:text-slate-700"
           >
