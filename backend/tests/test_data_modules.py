@@ -88,24 +88,28 @@ class TestCstRegimes:
 
     def test_normal_cst_000(self):
         regime = get_cst_regime("000")
+        assert regime is not None
         assert regime["rate_modifier"] == Decimal("1.0")
         assert regime["generates_tax"] is True
         assert regime["regime"] == "normal"
 
     def test_reduced_cst_001(self):
         regime = get_cst_regime("001")
+        assert regime is not None
         assert regime["rate_modifier"] == Decimal("0.6")
         assert regime["generates_tax"] is True
         assert regime["regime"] == "reduzido"
 
     def test_exempt_cst_070(self):
         regime = get_cst_regime("070")
+        assert regime is not None
         assert regime["rate_modifier"] == Decimal("0.0")
         assert regime["generates_tax"] is False
         assert regime["regime"] == "isento"
 
     def test_suspended_cst_410(self):
         regime = get_cst_regime("410")
+        assert regime is not None
         assert regime["rate_modifier"] == Decimal("0.0")
         assert regime["generates_tax"] is False
 
