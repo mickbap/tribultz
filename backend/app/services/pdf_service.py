@@ -46,6 +46,7 @@ def generate_validation_report_pdf(
     total_ibs: str = "0",
     cbs_rate: str = "0.10",
     ibs_rate: str = "0.90",
+    report_hash: str = "",
 ) -> bytes:
     """Render a validation report as PDF bytes.
 
@@ -76,6 +77,7 @@ def generate_validation_report_pdf(
         warnings=warnings,
         infos=infos,
         total_findings=len(findings),
+        report_hash=report_hash,
     )
 
     try:
@@ -83,8 +85,8 @@ def generate_validation_report_pdf(
         pdf_bytes: bytes = HTML(string=html).write_pdf()  # type: ignore[assignment]
         logger.info("PDF generated for job %s (%d bytes)", job_id, len(pdf_bytes))
         return pdf_bytes
-    except ImportError:
-        logger.warning("WeasyPrint not installed, returning HTML as fallback")
+    except (ImportError, OSError):
+        logger.warning("WeasyPrint unavailable (missing GTK/system libs), returning HTML fallback")
         return html.encode("utf-8")
 
 
@@ -96,6 +98,7 @@ def generate_batch_report_pdf(
     job_id: str,
     invoices: list[dict],
     overall_status: str,
+    report_hash: str = "",
 ) -> bytes:
     """Render a batch validation report as PDF bytes."""
     template = _jinja_env.get_template("report_batch.html")
@@ -118,6 +121,7 @@ def generate_batch_report_pdf(
         passed=passed,
         failed=failed,
         pass_rate=f"{(passed / total * 100):.1f}" if total else "0",
+        report_hash=report_hash,
     )
 
     try:
@@ -125,6 +129,6 @@ def generate_batch_report_pdf(
         pdf_bytes: bytes = HTML(string=html).write_pdf()  # type: ignore[assignment]
         logger.info("Batch PDF generated for job %s (%d bytes)", job_id, len(pdf_bytes))
         return pdf_bytes
-    except ImportError:
-        logger.warning("WeasyPrint not installed, returning HTML as fallback")
+    except (ImportError, OSError):
+        logger.warning("WeasyPrint unavailable (missing GTK/system libs), returning HTML fallback")
         return html.encode("utf-8")
