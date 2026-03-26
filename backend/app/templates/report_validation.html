@@ -140,8 +140,9 @@
 {% endif %}
 
 <div class="footer">
-  Relatório gerado automaticamente pela plataforma Tribultz.<br>
-  Este documento possui validade como evidência auditável conforme padrão Findings/Evidence v1.1.
+  Relatório gerado automaticamente pela plataforma Tribultz — tribultz.com.br<br>
+  Evidência auditável conforme padrão Findings/Evidence v1.1 · Reforma Tributária LC 214 + LC 227<br>
+  {% if report_hash %}<span style="font-family: monospace;">Hash de integridade: {{ report_hash[:32] }}…</span>{% endif %}
 </div>
 
 </body>
