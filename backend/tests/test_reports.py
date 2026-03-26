@@ -41,7 +41,7 @@ class TestPdfServiceValidation:
             total_ibs="90.00",
         )
         defaults.update(kwargs)
-        return generate_validation_report_pdf(**defaults)
+        return generate_validation_report_pdf(**defaults)  # type: ignore[arg-type]
 
     def test_returns_bytes(self):
         result = self._basic_pdf()
