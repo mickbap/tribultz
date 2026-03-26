@@ -22,6 +22,12 @@ export function PublicNavbar() {
             Calculadora CBS/IBS
           </Link>
           <Link
+            href="/pricing"
+            className="font-medium text-slate-700 hover:text-tribultz-600"
+          >
+            Planos
+          </Link>
+          <Link
             href="/login"
             className="font-medium text-slate-500 hover:text-slate-700"
           >
