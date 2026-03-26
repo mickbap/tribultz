@@ -19,7 +19,7 @@ function safeLocalStorage(): Storage | null {
 
 // ── Plan feature matrix ─────────────────────────────────────────
 
-export type PlanSlug = "trial" | "starter" | "profissional" | "contador";
+export type PlanSlug = "trial" | "starter" | "profissional" | "empresarial" | "contador";
 
 export type PlanFeatures = {
   name: string;
@@ -71,6 +71,18 @@ export const PLAN_FEATURES: Record<PlanSlug, PlanFeatures> = {
     hasMultiCnpj: false,
     trialDays: null,
   },
+  empresarial: {
+    name: "Empresarial",
+    priceCents: 24900,
+    maxValidations: 2000,
+    maxAiMessages: null,
+    hasPdfReports: true,
+    hasBatch: true,
+    hasDashboard: true,
+    hasApiAccess: true,
+    hasMultiCnpj: true, // filiais — até 10 CNPJs
+    trialDays: null,
+  },
   contador: {
     name: "Contador",
     priceCents: 34900,
@@ -87,7 +99,7 @@ export const PLAN_FEATURES: Record<PlanSlug, PlanFeatures> = {
 
 // ── Plan hierarchy (for upgrade comparisons) ────────────────────
 
-const PLAN_ORDER: PlanSlug[] = ["trial", "starter", "profissional", "contador"];
+const PLAN_ORDER: PlanSlug[] = ["trial", "starter", "profissional", "empresarial", "contador"];
 
 // ── Storage getters/setters ─────────────────────────────────────
 

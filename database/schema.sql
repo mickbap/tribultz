@@ -313,7 +313,8 @@ INSERT INTO plans (slug, name, price_cents, max_validations, max_ai_messages,
 VALUES
     ('trial',        'Trial',        0,     5,    25,   FALSE, FALSE, FALSE, FALSE, FALSE, 3),
     ('starter',      'Starter',      4990,  10,   50,   FALSE, FALSE, TRUE,  FALSE, FALSE, NULL),
-    ('profissional', 'Profissional', 14900, 500,  NULL, TRUE,  TRUE,  TRUE,  FALSE, FALSE, NULL),
+    ('profissional', 'Profissional', 14900, 500,  NULL, TRUE,  TRUE,  TRUE,  TRUE,  FALSE, NULL),
+    ('empresarial',  'Empresarial',  24900, 2000, NULL, TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  NULL),
     ('contador',     'Contador',     34900, NULL, NULL, TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  NULL)
 ON CONFLICT (slug) DO NOTHING;
 

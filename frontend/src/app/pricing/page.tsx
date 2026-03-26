@@ -69,9 +69,27 @@ const PLANS: Plan[] = [
       "Acesso à API REST",
       "Dashboard completo",
     ],
-    limits: "1 CNPJ • Suporte prioritário",
+    limits: "1 CNPJ • Sem controle de filiais",
     cta: "Assinar Profissional",
     highlighted: true,
+  },
+  {
+    slug: "empresarial",
+    name: "Empresarial",
+    priceCents: 24900,
+    badge: "Filiais",
+    tagline: "Para empresas com filiais",
+    features: [
+      "2.000 validações XML por mês",
+      "IA fiscal ilimitada",
+      "Relatórios PDF auditáveis",
+      "Validação cruzada em lote",
+      "Acesso à API REST",
+      "Controle de até 10 CNPJs de filiais",
+    ],
+    limits: "Até 10 CNPJs (matriz + filiais)",
+    cta: "Assinar Empresarial",
+    highlighted: false,
   },
   {
     slug: "contador",
@@ -82,12 +100,12 @@ const PLANS: Plan[] = [
     features: [
       "Validações ilimitadas",
       "IA fiscal ilimitada",
-      "Relatórios PDF auditáveis",
-      "Validação cruzada em lote",
-      "Acesso à API REST",
-      "Múltiplos CNPJs",
+      "Relatórios PDF e evidências auditáveis",
+      "Validação cruzada em lote ilimitada",
+      "API REST com webhooks",
+      "Gestão de até 50 CNPJs de clientes",
     ],
-    limits: "Até 50 CNPJs • SLA garantido",
+    limits: "Até 50 CNPJs • SLA 99,9% • Suporte prioritário",
     cta: "Assinar Contador",
     highlighted: false,
   },
@@ -363,7 +381,7 @@ export default function PricingPage() {
 
         {/* Plan cards */}
         <section className="mx-auto max-w-6xl px-4 pb-16 md:px-6">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
             {PLANS.map((plan) => (
               <PlanCard
                 key={plan.slug}
@@ -401,35 +419,40 @@ export default function PricingPage() {
                 {[
                   {
                     label: "Validações XML/mês",
-                    values: ["5", "10", "500", "Ilimitadas"],
+                    // Trial | Starter | Profissional | Empresarial | Contador
+                    values: ["5", "10", "500", "2.000", "Ilimitadas"],
                   },
                   {
                     label: "Mensagens IA fiscal",
-                    values: ["25", "50", "Ilimitadas", "Ilimitadas"],
+                    values: ["25", "50", "Ilimitadas", "Ilimitadas", "Ilimitadas"],
                   },
                   {
                     label: "18 regras CBS/IBS",
-                    values: [true, true, true, true],
+                    values: [true, true, true, true, true],
                   },
                   {
                     label: "Dashboard de conformidade",
-                    values: [false, true, true, true],
+                    values: [false, true, true, true, true],
                   },
                   {
                     label: "Relatório PDF auditável",
-                    values: [false, false, true, true],
+                    values: [false, false, true, true, true],
                   },
                   {
                     label: "Validação cruzada em lote",
-                    values: [false, false, true, true],
+                    values: [false, false, true, true, true],
                   },
                   {
                     label: "Acesso à API REST",
-                    values: [false, false, true, true],
+                    values: [false, false, true, true, true],
                   },
                   {
-                    label: "Múltiplos CNPJs",
-                    values: [false, false, false, true],
+                    label: "Controle de filiais (CNPJ)",
+                    values: ["—", "—", "—", "Até 10", "Até 50"],
+                  },
+                  {
+                    label: "Suporte prioritário",
+                    values: [false, false, false, true, true],
                   },
                 ].map((row) => (
                   <tr key={row.label} className="hover:bg-slate-50">
