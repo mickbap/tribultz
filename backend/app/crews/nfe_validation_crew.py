@@ -5,17 +5,17 @@ import logging
 import re
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import yaml
 from crewai import Agent, Crew, LLM, Process, Task
 from dotenv import load_dotenv
 
+from app.crews.tooling import CrewToolFactory, DefaultCrewToolFactory
 from app.crews.llm_config import (
     LLMUnavailableError,
     execute_with_fallback,
 )
-from app.crews.tools.parse_nfe_xml_tool import ParseNFeXMLTool
-from app.crews.tools.validate_ibscbs_rules_tool import ValidateIBSCBSRulesTool
 
 load_dotenv()
 
@@ -58,24 +58,32 @@ class NFeValidationCrew:
     tenant_id is injected at construction and never passed through the LLM.
     """
 
-    def __init__(self, tenant_id: str) -> None:
+    def __init__(
+        self,
+        tenant_id: str,
+        transaction_id: str | None = None,
+        tool_factory: CrewToolFactory | None = None,
+    ) -> None:
         self._tenant_id = tenant_id
+        self._transaction_id = transaction_id or str(uuid4())
+        self._tool_factory = tool_factory or DefaultCrewToolFactory()
 
     def _build_crew(self, llm: LLM, xml_content: str) -> Crew:
         """Build the crew with a specific LLM instance."""
         agents_cfg = _load_yaml("agents.yaml")
         tasks_cfg = _load_yaml("tasks.yaml")
 
-        # Tool instantiation with tenant isolation
-        parse_tool = ParseNFeXMLTool(tenant_id=self._tenant_id)
-        validate_tool = ValidateIBSCBSRulesTool()
+        tools_bundle = self._tool_factory.build_nfe_validation_tools(
+            tenant_id=self._tenant_id,
+            transaction_id=self._transaction_id,
+        )
 
         # Agent 1: NF-e Parser
         parser_agent = Agent(
             role=agents_cfg["nfe_parser"]["role"],
             goal=agents_cfg["nfe_parser"]["goal"],
             backstory=agents_cfg["nfe_parser"]["backstory"],
-            tools=[parse_tool],
+            tools=[tools_bundle.parse_nfe_tool],
             llm=llm,
             verbose=False,
         )
@@ -85,7 +93,7 @@ class NFeValidationCrew:
             role=agents_cfg["ibscbs_validator"]["role"],
             goal=agents_cfg["ibscbs_validator"]["goal"],
             backstory=agents_cfg["ibscbs_validator"]["backstory"],
-            tools=[validate_tool],
+            tools=[tools_bundle.validate_ibscbs_tool],
             llm=llm,
             verbose=False,
         )
@@ -135,8 +143,48 @@ class NFeValidationCrew:
         """Execute the NF-e validation crew with LLM fallback chain."""
 
         def _kickoff(llm: LLM) -> str:
+            logger.info(
+                "agent_handoff",
+                extra={
+                    "agent_id": "nfe_parser",
+                    "task_id": "parse_nfe_xml",
+                    "task_status": "QUEUED",
+                    "tenant_id": self._tenant_id,
+                    "transaction_id": self._transaction_id,
+                },
+            )
+            logger.info(
+                "agent_handoff",
+                extra={
+                    "agent_id": "ibscbs_validator",
+                    "task_id": "validate_ibscbs",
+                    "task_status": "QUEUED",
+                    "tenant_id": self._tenant_id,
+                    "transaction_id": self._transaction_id,
+                },
+            )
+            logger.info(
+                "agent_handoff",
+                extra={
+                    "agent_id": "nfe_reporter",
+                    "task_id": "compose_nfe_report",
+                    "task_status": "QUEUED",
+                    "tenant_id": self._tenant_id,
+                    "transaction_id": self._transaction_id,
+                },
+            )
             crew = self._build_crew(llm, xml_content)
             result = crew.kickoff()
+            logger.info(
+                "agent_handoff",
+                extra={
+                    "agent_id": "nfe_reporter",
+                    "task_id": "compose_nfe_report",
+                    "task_status": "COMPLETED",
+                    "tenant_id": self._tenant_id,
+                    "transaction_id": self._transaction_id,
+                },
+            )
             return str(result)
 
         try:

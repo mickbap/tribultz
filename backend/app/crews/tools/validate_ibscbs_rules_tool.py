@@ -42,6 +42,7 @@ class ValidateIBSCBSRulesTool(BaseTool):
         "Returns JSON with {invoice_id, doc_type, findings[], summary}."
     )
     args_schema: Type[BaseModel] = ValidateIBSCBSInput
+    transaction_id: str | None = None
 
     def _run(self, invoice_id: str, fields_json: str) -> str:
         try:
@@ -337,18 +338,21 @@ class ValidateIBSCBSRulesTool(BaseTool):
         fatals = sum(1 for f in findings if f["severity"] == "FATAL")
         alerts = sum(1 for f in findings if f["severity"] == "ALERT")
 
-        return json.dumps({
-            "invoice_id": invoice_id,
-            "doc_type": doc_type,
-            "findings": findings,
-            "summary": {
-                "total": len(findings),
-                "fatals": fatals,
-                "alerts": alerts,
-                "status": "FAIL" if fatals > 0 else "PASS",
-                "items_parsed": len(items),
-            },
-        })
+        return json.dumps(
+            {
+                "invoice_id": invoice_id,
+                "transaction_id": self.transaction_id,
+                "doc_type": doc_type,
+                "findings": findings,
+                "summary": {
+                    "total": len(findings),
+                    "fatals": fatals,
+                    "alerts": alerts,
+                    "status": "FAIL" if fatals > 0 else "PASS",
+                    "items_parsed": len(items),
+                },
+            }
+        )
 
 
 def _safe_float(value: str) -> float:

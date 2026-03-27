@@ -33,6 +33,7 @@ class ValidateFiscalRulesTool(BaseTool):
         "field, xpath, snippet, recommendation}]}."
     )
     args_schema: Type[BaseModel] = ValidateFiscalInput
+    transaction_id: str | None = None
 
     def _run(self, invoice_id: str, fields_json: str) -> str:
         try:
@@ -200,4 +201,10 @@ class ValidateFiscalRulesTool(BaseTool):
                 "recommendation": "Documento deve seguir layout do Portal Nacional de NFS-e com todas as seções obrigatórias.",
             })
 
-        return json.dumps({"invoice_id": invoice_id, "findings": findings})
+        return json.dumps(
+            {
+                "invoice_id": invoice_id,
+                "transaction_id": self.transaction_id,
+                "findings": findings,
+            }
+        )

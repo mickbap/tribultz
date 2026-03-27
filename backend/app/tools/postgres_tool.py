@@ -47,6 +47,7 @@ def insert_audit_log(
     entity_id: Optional[str] = None,
     user_id: Optional[str] = None,
     payload: Optional[dict] = None,
+    transaction_id: Optional[str] = None,
 ) -> dict:
     """
     Insert an audit-log row and return {id, checksum}.
@@ -55,6 +56,8 @@ def insert_audit_log(
     from hashlib import sha256
 
     payload = payload or {}
+    if transaction_id:
+        payload["transaction_id"] = transaction_id
     checksum = sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
     payload["_checksum"] = checksum
 
@@ -94,6 +97,7 @@ def get_tax_rules(
     tenant_id: str,
     codes: list[str],
     ref_date: Optional[date] = None,
+    transaction_id: Optional[str] = None,
 ) -> list[dict]:
     """
     Return active tax rules for the given tenant and rule_codes.
@@ -145,6 +149,7 @@ def persist_artifact_metadata(
     storage_key: str,
     checksum: str,
     metadata: Optional[dict] = None,
+    transaction_id: Optional[str] = None,
 ) -> dict:
     """
     Persist metadata about a produced artifact (PDF, XML, report)
@@ -162,6 +167,7 @@ def persist_artifact_metadata(
         entity_type=entity_type,
         entity_id=entity_id,
         payload=payload,
+        transaction_id=transaction_id,
     )
 
 
@@ -188,6 +194,7 @@ def job_create(
     job_type: str,
     payload: Optional[dict] = None,
     idempotency_key: Optional[str] = None,
+    transaction_id: Optional[str] = None,
 ) -> dict:
     """Create a QUEUED job row with a deterministic job_id."""
     db = _session()
@@ -212,7 +219,10 @@ def job_create(
                 "tenant_id": tenant_id,
                 "job_type": job_type,
                 "idempotency_key": idempotency_key,
-                "payload": json.dumps(payload or {}, default=str),
+                "payload": json.dumps(
+                    {**(payload or {}), **({"transaction_id": transaction_id} if transaction_id else {})},
+                    default=str,
+                ),
             },
         )
         db.commit()
@@ -226,6 +236,7 @@ def job_status_update(
     status: str,
     result: Optional[dict] = None,
     error_message: Optional[str] = None,
+    transaction_id: Optional[str] = None,
 ) -> dict:
     """
     Transition a job to a new status.
@@ -240,7 +251,10 @@ def job_status_update(
 
     if result is not None:
         updates.append("result = CAST(:result AS jsonb)")
-        params["result"] = json.dumps(result, default=str)
+        payload = result.copy() if isinstance(result, dict) else {"value": result}
+        if transaction_id:
+            payload["transaction_id"] = transaction_id
+        params["result"] = json.dumps(payload, default=str)
     if error_message is not None:
         updates.append("error_message = :err")
         params["err"] = error_message

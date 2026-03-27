@@ -35,7 +35,11 @@ class ImportedInvoice(BaseModel):
 
 
 # ── 1. Import CSV Invoices ────────────────────────────────────
-def import_csv_invoices(csv_bytes: bytes, encoding: str = "utf-8") -> list[dict]:
+def import_csv_invoices(
+    csv_bytes: bytes,
+    encoding: str = "utf-8",
+    transaction_id: Optional[str] = None,
+) -> list[dict]:
     """
     Parse a CSV file with columns:
       invoice_number, issue_date, cnpj_emitter, cnpj_recipient,
@@ -77,6 +81,12 @@ def import_csv_invoices(csv_bytes: bytes, encoding: str = "utf-8") -> list[dict]
         inv.total_amount = sum((it.total_price for it in inv.items), Decimal("0"))
 
     result = [inv.model_dump(mode="json") for inv in invoices.values()]
+    if transaction_id:
+        for invoice in result:
+            raw_metadata = invoice.get("raw_metadata", {})
+            if isinstance(raw_metadata, dict):
+                raw_metadata["transaction_id"] = transaction_id
+                invoice["raw_metadata"] = raw_metadata
     logger.info("import_csv_invoices: parsed %d invoices", len(result))
     return result
 
@@ -85,7 +95,7 @@ def import_csv_invoices(csv_bytes: bytes, encoding: str = "utf-8") -> list[dict]
 NFE_NS = {"nfe": "http://www.portalfiscal.inf.br/nfe"}
 
 
-def import_xml_nfe(xml_bytes: bytes) -> dict:
+def import_xml_nfe(xml_bytes: bytes, transaction_id: Optional[str] = None) -> dict:
     """
     Parse a Brazilian NF-e XML and return an ImportedInvoice dict.
     This is an initial implementation that handles the standard
@@ -95,7 +105,7 @@ def import_xml_nfe(xml_bytes: bytes) -> dict:
         root = ET.fromstring(xml_bytes)
     except ET.ParseError as exc:
         logger.warning("XML parse failed, returning stub: %s", exc)
-        return _nfe_stub(str(exc))
+        return _nfe_stub(str(exc), transaction_id=transaction_id)
 
     # Try with namespace first, then without
     ide = root.find(".//nfe:ide", NFE_NS) or root.find(".//ide")
@@ -129,6 +139,8 @@ def import_xml_nfe(xml_bytes: bytes) -> dict:
             total_price=Decimal(_text(prod, "vProd") or "0"),
         ))
 
+    if transaction_id:
+        inv.raw_metadata["transaction_id"] = transaction_id
     logger.info("import_xml_nfe: parsed invoice %s with %d items", inv.invoice_number, len(inv.items))
     return inv.model_dump(mode="json")
 
@@ -152,10 +164,13 @@ def _parse_date(raw: str) -> Optional[date]:
         return None
 
 
-def _nfe_stub(error: str) -> dict:
+def _nfe_stub(error: str, transaction_id: Optional[str] = None) -> dict:
     """Fallback stub when XML parsing fails."""
     return ImportedInvoice(
         source="xml_nfe",
         invoice_number="PARSE_ERROR",
-        raw_metadata={"parse_error": error},
+        raw_metadata={
+            "parse_error": error,
+            **({"transaction_id": transaction_id} if transaction_id else {}),
+        },
     ).model_dump(mode="json")

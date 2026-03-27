@@ -31,6 +31,7 @@ class TriggerTaskATool(BaseTool):
     # Injected at construction — not exposed to the LLM
     tenant_id: str
     user_id: str
+    transaction_id: str | None = None
 
     def _run(self, invoice_number: str = "INV-UNKNOWN") -> str:
         tenant_slug = get_tenant_slug(self.tenant_id)
@@ -44,7 +45,10 @@ class TriggerTaskATool(BaseTool):
                 "source": "chat",
                 "user_id": self.user_id,
                 "invoice_number": invoice_number,
+                "transaction_id": self.transaction_id,
             },
+            idempotency_key=self.transaction_id,
+            transaction_id=self.transaction_id,
         )
 
         t = cast(CeleryTask, task_a_validate_cbs_ibs)
@@ -58,11 +62,17 @@ class TriggerTaskATool(BaseTool):
                     "declared_cbs": "0",
                     "declared_ibs": "0",
                     "items": [{"sku": "CHAT-ITEM", "base_amount": "100.00"}],
+                    "transaction_id": self.transaction_id,
                 },
                 task_id=job_id,
             )
         except Exception as exc:
-            job_status_update(job_id=job_id, status="FAILED", error_message=f"enqueue failed: {exc}")
+            job_status_update(
+                job_id=job_id,
+                status="FAILED",
+                error_message=f"enqueue failed: {exc}",
+                transaction_id=self.transaction_id,
+            )
             raise
 
         return json.dumps({"job_id": job_id})

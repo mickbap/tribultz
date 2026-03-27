@@ -1,0 +1,13 @@
+{
+  "project_rules": {
+    "coding_standards": {
+      "python": ["PEP8", "Type Hints (strict)"],
+      "principles": ["SOLID", "Clean Architecture"]
+    },
+    "crewai_specifics": {
+      "agent_design": "Single Responsibility Principle per Agent",
+      "task_delegation": "Asynchronous by default",
+      "error_handling": "Fail-fast with descriptive context"
+    }
+  }
+}

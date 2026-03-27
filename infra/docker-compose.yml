@@ -5,6 +5,10 @@
 x-backend-env: &backend-env
   env_file:
     - ../.env
+  environment:
+    DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://tribultz:${POSTGRES_PASSWORD}@db:5432/tribultz}
+    DB_URL: ${DB_URL:-postgresql+psycopg2://tribultz:${POSTGRES_PASSWORD}@db:5432/tribultz}
+    REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
 
 services:
   # ── PostgreSQL ────────────────────────────────────────────
@@ -28,8 +32,11 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -105,4 +112,5 @@ services:
 
 volumes:
   pgdata:
+  redis_data:
   minio_data:

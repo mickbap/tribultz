@@ -1,4 +1,4 @@
-﻿export type XmlDocumentType = "NFSE" | "NFE" | "NFCE";
+export type XmlDocumentType = "NFSE" | "NFE" | "NFCE";
 
 export type EvidenceType = "xml" | "link" | "print" | "job" | "audit" | "file";
 
@@ -45,6 +45,7 @@ export type ValidationJobRef = {
   id: string;
   created_at: string;
   tenant_id: string;
+  transaction_id?: string;
 };
 
 export type ValidationAuditEvent = {
@@ -65,6 +66,7 @@ export type ValidationResultV11 = {
   audit: ValidationAuditRef;
   findings: Finding[];
   evidences: ValidationEvidence[];
+  transaction_id?: string;
 };
 
 export type ExceptionRequestStatus = "OPEN" | "APPROVED" | "REJECTED";
@@ -94,6 +96,7 @@ export type ValidateXmlRequest = {
   document_type: XmlDocumentType;
   xml: string;
   source?: "paste" | "upload";
+  transaction_id?: string;
 };
 
 export type ChatMessage = {

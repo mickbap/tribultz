@@ -1,4 +1,4 @@
-﻿import {
+import {
   ApiAudit,
   ApiExceptionRequest,
   ApiJob,
@@ -35,6 +35,13 @@ import {
 import { getMockMode, getTenantId, getToken } from "./storage";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
+export function createTransactionId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `txn-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
 type LoginRequest = {
   email: string;
@@ -91,21 +98,26 @@ export type JobEvidenceZipResult = {
   bytes: Uint8Array;
 };
 
-function headers(extra?: HeadersInit): HeadersInit {
+function headers(extra?: HeadersInit, transactionId?: string): HeadersInit {
   const token = getToken();
   const tenant = getTenantId();
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
     "X-Tenant-Id": tenant,
+    ...(transactionId ? { "X-Transaction-Id": transactionId } : {}),
     ...(extra ?? {}),
   };
 }
 
-export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  init: RequestInit = {},
+  options?: { transactionId?: string },
+): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: headers(init.headers),
+    headers: headers(init.headers, options?.transactionId),
     cache: "no-store",
   });
   if (!res.ok) {
@@ -211,10 +223,35 @@ export async function validateXml(payload: ValidateXmlRequest): Promise<Validati
   if (getMockMode()) {
     return mockValidateXml(tenantId, payload);
   }
-  return apiFetch<ValidationResultV11>("/api/v1/validate/xml", {
+  const transactionId = payload.transaction_id ?? createTransactionId();
+  const form = new FormData();
+  form.append("xml_content", payload.xml);
+  form.append("document_type", payload.document_type);
+  if (payload.source) form.append("source", payload.source);
+
+  const res = await fetch(`${API_BASE}/api/v1/validate/xml`, {
     method: "POST",
-    body: JSON.stringify(payload),
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+      "X-Tenant-Id": tenantId,
+      "X-Transaction-Id": transactionId,
+    },
+    body: form,
+    cache: "no-store",
   });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "Erro de API");
+    throw new Error(`API ${res.status}: ${detail}`);
+  }
+  const data = (await res.json()) as ValidationResultV11;
+  return {
+    ...data,
+    transaction_id: data.transaction_id ?? transactionId,
+    job: {
+      ...data.job,
+      transaction_id: data.job?.transaction_id ?? data.transaction_id ?? transactionId,
+    },
+  };
 }
 
 export async function listConversations(): Promise<Conversation[]> {

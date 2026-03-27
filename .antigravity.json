@@ -1,0 +1,17 @@
+{
+  "project_name": "tribultz",
+  "version": "advanced-dev",
+  "stack": {
+    "runtime": "Docker",
+    "orchestration": "CrewAI Agents",
+    "target_cloud": "Magalu Cloud"
+  },
+  "pmo_metrics": {
+    "priority_formula": "ROI * Impact / Effort",
+    "tracking": "GitHub Issues/Milestones"
+  },
+  "compliance": {
+    "devsecops_level": "strict",
+    "data_privacy": "tax-reform-brazil-standard"
+  }
+}

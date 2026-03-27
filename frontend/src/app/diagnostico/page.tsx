@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { API_BASE } from "@/lib/api";
+import { API_BASE, createTransactionId } from "@/lib/api";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +24,7 @@ type DiagnosticResult = {
   rules_checked: number;
   upgrade_cta: string;
   data_policy: string;
+  transaction_id?: string;
 };
 
 type UploadState = "idle" | "uploading" | "done" | "error";
@@ -53,11 +54,13 @@ export default function DiagnosticoPage() {
     setResult(null);
 
     try {
+      const transactionId = createTransactionId();
       const formData = new FormData();
       formData.append("file", file);
 
       const res = await fetch(`${API_BASE}/api/v1/public/validate`, {
         method: "POST",
+        headers: { "X-Transaction-Id": transactionId },
         body: formData,
       });
 
@@ -75,7 +78,10 @@ export default function DiagnosticoPage() {
       }
 
       const data: DiagnosticResult = await res.json();
-      setResult(data);
+      setResult({
+        ...data,
+        transaction_id: data.transaction_id ?? transactionId,
+      });
       setState("done");
     } catch {
       setError("Erro de conexão. Verifique se o servidor está acessível.");
@@ -205,6 +211,9 @@ export default function DiagnosticoPage() {
                   Documento: <strong>{result.document_type}</strong> &middot;{" "}
                   {result.rules_checked} regras verificadas
                 </p>
+                {result.transaction_id ? (
+                  <p className="mt-1 text-xs text-slate-500">Tx: {result.transaction_id}</p>
+                ) : null}
               </div>
               <div className="text-right">
                 <div className="text-3xl font-extrabold">

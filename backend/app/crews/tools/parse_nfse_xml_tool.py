@@ -31,6 +31,7 @@ class ParseNFSeXMLTool(BaseTool):
     )
     args_schema: Type[BaseModel] = ParseNFSeInput
     tenant_id: str  # injected at construction — never exposed to LLM
+    transaction_id: str | None = None
 
     def _run(self, xml_content: str) -> str:
         invoice_id = str(uuid.uuid4())
@@ -43,6 +44,7 @@ class ParseNFSeXMLTool(BaseTool):
                 data=xml_content.encode("utf-8"),
                 content_type="application/xml",
                 metadata={"tenant_id": self.tenant_id, "invoice_id": invoice_id},
+                transaction_id=self.transaction_id,
             )
         except Exception as exc:
             s3_key = f"(s3-unavailable: {exc})"

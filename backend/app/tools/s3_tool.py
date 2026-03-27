@@ -9,6 +9,7 @@ from botocore.config import Config as BotoConfig
 from botocore.exceptions import ClientError
 
 from app.config import settings
+from app.services.persistence import get_persistence_service
 
 
 def _client():
@@ -38,35 +39,49 @@ def put_object(
     content_type: str = "application/octet-stream",
     bucket: Optional[str] = None,
     metadata: Optional[dict[str, str]] = None,
+    transaction_id: Optional[str] = None,
 ) -> dict:
     """
     Upload an object to S3/MinIO.
     Returns {bucket, key, checksum, size}.
     """
     bucket = bucket or settings.S3_BUCKET
-    client = _client()
-    _ensure_bucket(client, bucket)
+    service = get_persistence_service()
 
-    sha = hashlib.sha256(data).hexdigest()
+    def _write() -> dict:
+        client = _client()
+        _ensure_bucket(client, bucket)
+        sha = hashlib.sha256(data).hexdigest()
+        extra: dict = {"ContentType": content_type}
+        if metadata:
+            extra["Metadata"] = metadata
+        client.put_object(
+            Bucket=bucket,
+            Key=key,
+            Body=BytesIO(data),
+            ContentLength=len(data),
+            **extra,
+        )
+        return {
+            "bucket": bucket,
+            "key": key,
+            "checksum_sha256": sha,
+            "size_bytes": len(data),
+        }
 
-    extra: dict = {"ContentType": content_type}
-    if metadata:
-        extra["Metadata"] = metadata
-
-    client.put_object(
-        Bucket=bucket,
-        Key=key,
-        Body=BytesIO(data),
-        ContentLength=len(data),
-        **extra,
-    )
-
-    return {
+    payload = {
         "bucket": bucket,
         "key": key,
-        "checksum_sha256": sha,
-        "size_bytes": len(data),
+        "content_type": content_type,
+        "metadata": metadata or {},
+        "sha256": hashlib.sha256(data).hexdigest(),
     }
+    return service.run_idempotent(
+        operation="s3_put_object",
+        transaction_id=transaction_id,
+        payload=payload,
+        runner=_write,
+    )
 
 
 # ── 2. Get Object URL ────────────────────────────────────────

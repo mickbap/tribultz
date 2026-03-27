@@ -35,6 +35,7 @@ def upsert_contact(
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
     properties: Optional[dict[str, Any]] = None,
+    transaction_id: Optional[str] = None,
 ) -> dict:
     """Create or update a HubSpot contact by email."""
     if not _enabled():
@@ -70,7 +71,10 @@ def upsert_contact(
                 timeout=15,
             )
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+        if transaction_id:
+            data["transaction_id"] = transaction_id
+        return data
     except httpx.HTTPError as exc:
         logger.error("HubSpot upsert_contact failed: %s", exc)
         return {"error": str(exc)}
@@ -81,6 +85,7 @@ def upsert_company(
     name: str,
     domain: Optional[str] = None,
     properties: Optional[dict[str, Any]] = None,
+    transaction_id: Optional[str] = None,
 ) -> dict:
     """Create or update a HubSpot company by name."""
     if not _enabled():
@@ -100,7 +105,10 @@ def upsert_company(
             timeout=15,
         )
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+        if transaction_id:
+            data["transaction_id"] = transaction_id
+        return data
     except httpx.HTTPError as exc:
         logger.error("HubSpot upsert_company failed: %s", exc)
         return {"error": str(exc)}
@@ -112,6 +120,7 @@ def upsert_deal(
     stage: str = "appointmentscheduled",
     amount: Optional[float] = None,
     properties: Optional[dict[str, Any]] = None,
+    transaction_id: Optional[str] = None,
 ) -> dict:
     """Create a HubSpot deal."""
     if not _enabled():
@@ -131,7 +140,10 @@ def upsert_deal(
             timeout=15,
         )
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+        if transaction_id:
+            data["transaction_id"] = transaction_id
+        return data
     except httpx.HTTPError as exc:
         logger.error("HubSpot upsert_deal failed: %s", exc)
         return {"error": str(exc)}
@@ -142,6 +154,7 @@ def log_note(
     object_type: str,
     object_id: str,
     body: str,
+    transaction_id: Optional[str] = None,
 ) -> dict:
     """Attach a note (engagement) to a HubSpot object."""
     if not _enabled():
@@ -177,7 +190,10 @@ def log_note(
             timeout=15,
         )
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+        if transaction_id:
+            data["transaction_id"] = transaction_id
+        return data
     except httpx.HTTPError as exc:
         logger.error("HubSpot log_note failed: %s", exc)
         return {"error": str(exc)}
