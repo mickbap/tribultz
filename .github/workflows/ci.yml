@@ -40,8 +40,16 @@ jobs:
           --health-retries 20
 
     env:
+      POSTGRES_PASSWORD: test_pass
       DATABASE_URL: postgresql://tribultz:tribultz@localhost:5432/tribultz
       REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET: static_secret_for_test_purposes_only_32_chars
+      MINIO_ROOT_USER: test_user
+      MINIO_ROOT_PASSWORD: test_password
+      S3_ENDPOINT: http://localhost:9000
+      S3_BUCKET: test-bucket
+      S3_ACCESS_KEY: test_key
+      S3_SECRET_KEY: test_secret
       ENV: ci
       PYTHONUNBUFFERED: "1"
 
@@ -107,6 +115,17 @@ jobs:
 
       - name: Pyright (pin)
         working-directory: backend
+        env:
+          POSTGRES_PASSWORD: test_pass
+          DATABASE_URL: postgresql://u:p@localhost:5432/db
+          REDIS_URL: redis://localhost:6379/0
+          JWT_SECRET: static_secret_for_test_purposes_only_32_chars
+          MINIO_ROOT_USER: test_user
+          MINIO_ROOT_PASSWORD: test_password
+          S3_ENDPOINT: http://localhost:9000
+          S3_BUCKET: test-bucket
+          S3_ACCESS_KEY: test_key
+          S3_SECRET_KEY: test_secret
         run: |
           npx --yes pyright@1.1.386 --version
           npx --yes pyright@1.1.386
