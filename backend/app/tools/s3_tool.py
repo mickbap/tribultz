@@ -6,7 +6,6 @@ from typing import Optional
 
 import boto3
 from botocore.config import Config as BotoConfig
-from botocore.exceptions import ClientError
 
 from app.config import settings
 from app.services.persistence import get_persistence_service
@@ -14,22 +13,18 @@ from app.services.persistence import get_persistence_service
 
 def _client():
     """Create a boto3 S3 client pointing at MinIO or AWS."""
+    boto_config = BotoConfig(
+        signature_version="s3v4",
+        s3={"addressing_style": "path" if settings.S3_FORCE_PATH_STYLE else "virtual"},
+    )
     return boto3.client(
         "s3",
         endpoint_url=settings.S3_ENDPOINT,
         aws_access_key_id=settings.S3_ACCESS_KEY,
         aws_secret_access_key=settings.S3_SECRET_KEY,
-        config=BotoConfig(signature_version="s3v4"),
-        region_name="us-east-1",
+        config=boto_config,
+        region_name=settings.S3_REGION,
     )
-
-
-def _ensure_bucket(client, bucket: str):
-    """Create the bucket if it doesn't already exist."""
-    try:
-        client.head_bucket(Bucket=bucket)
-    except ClientError:
-        client.create_bucket(Bucket=bucket)
 
 
 # ── 1. Put Object ────────────────────────────────────────────
@@ -50,7 +45,6 @@ def put_object(
 
     def _write() -> dict:
         client = _client()
-        _ensure_bucket(client, bucket)
         sha = hashlib.sha256(data).hexdigest()
         extra: dict = {"ContentType": content_type}
         if metadata:
