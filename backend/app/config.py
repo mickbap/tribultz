@@ -69,6 +69,7 @@ class Settings(BaseSettings):
     LLM_FREE_PRIMARY: str = "openrouter/google/gemini-2.0-flash-exp:free"
     LLM_FREE_FALLBACK: str = "openrouter/qwen/qwen3-coder-480b-a35b-instruct:free"
     LLM_PAID_FALLBACK: str = "openrouter/anthropic/claude-3-5-sonnet"
+    CREW_MEMORY_TTL_SECONDS: int = 2_592_000
 
     # ── External APIs ─────────────────────────────────────────
     CLASSTRIB_API_URL: str = "https://cff.svrs.rs.gov.br/api/v1/consultas/classTrib"

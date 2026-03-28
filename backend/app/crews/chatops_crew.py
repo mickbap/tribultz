@@ -8,13 +8,19 @@ from typing import Any
 from uuid import uuid4
 
 import yaml
-from crewai import Agent, Crew, LLM, Process, Task
+from crewai import Agent, Crew, LLM, Memory, Process, Task
 from dotenv import load_dotenv
 
+from app.config import settings
 from app.crews.tooling import CrewToolFactory, DefaultCrewToolFactory
 from app.crews.llm_config import (
     LLMUnavailableError,
     execute_with_fallback,
+)
+from app.crews.memory_system import (
+    RedisMemoryStorage,
+    ScopedCrewMemory,
+    build_openai_compatible_embedder,
 )
 from app.services.persistence import get_persistence_service
 from app.services.persistence.service import CrewPersistenceService
@@ -71,6 +77,35 @@ class TribultzChatOpsCrew:
         self._transaction_id = transaction_id or str(uuid4())
         self._tool_factory = tool_factory or DefaultCrewToolFactory()
         self._persistence_service = persistence_service or get_persistence_service()
+
+    def _memory_paths(self) -> dict[str, str]:
+        base = f"/tenants/{self._tenant_id}"
+        return {
+            "short_term": f"{base}/transactions/{self._transaction_id}",
+            "long_term": f"{base}/long_term/fiscal_classification",
+            "entity": f"{base}/entities/fiscal_classification",
+        }
+
+    def _build_memory(self, llm: LLM) -> tuple[Memory, ScopedCrewMemory]:
+        paths = self._memory_paths()
+        shared_memory = Memory(
+            llm=llm,
+            storage=RedisMemoryStorage(redis_url=settings.REDIS_URL),
+            embedder=build_openai_compatible_embedder(),
+        )
+        scoped_memory = ScopedCrewMemory(
+            memory=shared_memory,
+            recall_scopes=[paths["short_term"], paths["long_term"], paths["entity"]],
+            write_scope=paths["short_term"],
+            default_categories=["chatops", "fiscal_classification"],
+            default_metadata={
+                "tenant_id": self._tenant_id,
+                "transaction_id": self._transaction_id,
+                "crew": "chatops",
+            },
+            source=self._user_id,
+        )
+        return shared_memory, scoped_memory
 
     def _build_crew(self, llm: LLM) -> Crew:
         """Build the crew with a specific LLM instance."""
@@ -135,12 +170,26 @@ class TribultzChatOpsCrew:
             context=[task_classify, task_trigger],
         )
 
-        return Crew(
+        crew = Crew(
             agents=[triage, operator, narrator],
             tasks=[task_classify, task_trigger, task_compose],
             process=Process.sequential,
             verbose=False,
+            memory=True,
         )
+        try:
+            shared_memory, scoped_memory = self._build_memory(llm)
+            crew._memory = shared_memory
+            triage.memory = scoped_memory
+            operator.memory = scoped_memory
+            narrator.memory = scoped_memory
+        except Exception as exc:
+            logger.warning("Crew memory unavailable for chatops; degrading gracefully: %s", exc)
+            crew._memory = None
+            triage.memory = None
+            operator.memory = None
+            narrator.memory = None
+        return crew
 
     def run(self, message: str) -> dict[str, Any]:
         """Execute the crew with LLM fallback chain."""
