@@ -6,8 +6,9 @@ x-backend-env: &backend-env
   env_file:
     - ../.env
   environment:
-    DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://tribultz:${POSTGRES_PASSWORD}@db:5432/tribultz}
-    DB_URL: ${DB_URL:-postgresql+psycopg2://tribultz:${POSTGRES_PASSWORD}@db:5432/tribultz}
+    PYTHONUNBUFFERED: "1"
+    DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://tribultz:tribultz_pw@db:5432/tribultz}
+    DB_URL: ${DB_URL:-postgresql+psycopg2://tribultz:tribultz_pw@db:5432/tribultz}
     REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
 
 services:
@@ -20,7 +21,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ../database/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
@@ -85,13 +86,15 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     <<: *backend-env
-    command: celery -A app.celery_app:celery worker --loglevel=info --concurrency=2
+    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
     volumes:
       - ../backend:/app
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
 
   # ── Celery Beat (scheduler) ──────────────────────────────
@@ -101,7 +104,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     <<: *backend-env
-    command: celery -A app.celery_app:celery beat --loglevel=info
+    command: ["celery", "-A", "app.celery_app", "beat", "--loglevel=info"]
     volumes:
       - ../backend:/app
     depends_on:
@@ -109,8 +112,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      minio:
+        condition: service_healthy
 
 volumes:
-  pgdata:
+  postgres_data:
   redis_data:
   minio_data:
