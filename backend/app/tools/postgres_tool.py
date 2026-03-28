@@ -251,7 +251,7 @@ def job_status_update(
 
     if result is not None:
         updates.append("result = CAST(:result AS jsonb)")
-        payload = result.copy() if isinstance(result, dict) else {"value": result}
+        payload: dict[str, Any] = result.copy() if isinstance(result, dict) else {"value": result}
         if transaction_id:
             payload["transaction_id"] = transaction_id
         params["result"] = json.dumps(payload, default=str)

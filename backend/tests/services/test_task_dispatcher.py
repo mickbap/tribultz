@@ -2,15 +2,18 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
+from celery import Task
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
 
 from app.services.task_dispatcher import TaskDefinition, TaskDispatcher
 
 
 class FakeResult:
-    def __init__(self, row=None):
+    def __init__(self, row: Any = None):
         self._row = row
 
     def fetchone(self):
@@ -23,7 +26,7 @@ class FakeSession:
         self.jobs: dict[str, SimpleNamespace] = {}
         self.trace: list[tuple[str, str | None]] = []
 
-    def execute(self, statement, params=None):
+    def execute(self, statement: Any, params: dict[str, Any] | None = None):
         sql = str(statement)
         normalized = " ".join(sql.split())
 
@@ -32,6 +35,7 @@ class FakeSession:
             return FakeResult()
 
         if "SELECT * FROM jobs WHERE tenant_id = CAST(:tenant_id AS uuid)" in normalized:
+            assert params is not None
             self.trace.append(("find_existing", None))
             for row in self.jobs.values():
                 if (
@@ -42,10 +46,12 @@ class FakeSession:
             return FakeResult()
 
         if "SELECT slug FROM tenants WHERE id = CAST(:id AS uuid)" in normalized:
+            assert params is not None
             self.trace.append(("tenant_lookup", str(params["id"])))
             return FakeResult(SimpleNamespace(slug=self.tenant_slug))
 
         if normalized.startswith("INSERT INTO jobs (id, tenant_id, job_type, status, idempotency_key, payload)"):
+            assert params is not None
             task_id = str(params["id"])
             now = datetime.now(timezone.utc)
             self.jobs[task_id] = SimpleNamespace(
@@ -64,6 +70,7 @@ class FakeSession:
             return FakeResult()
 
         if normalized.startswith("UPDATE jobs SET status = 'FAILED'"):
+            assert params is not None
             task_id = str(params["id"])
             row = self.jobs[task_id]
             row.status = "FAILED"
@@ -73,6 +80,7 @@ class FakeSession:
             return FakeResult()
 
         if "SELECT * FROM jobs WHERE id = CAST(:id AS uuid)" in normalized:
+            assert params is not None
             task_id = str(params["id"])
             row = self.jobs.get(task_id)
             self.trace.append(("fetch_job", task_id))
@@ -90,9 +98,9 @@ class FakeCeleryTask:
     def __init__(self, trace: list[tuple[str, str | None]]):
         self.trace = trace
         self.last_task_id: str | None = None
-        self.last_kwargs: dict | None = None
+        self.last_kwargs: dict[str, Any] | None = None
 
-    def apply_async(self, *, kwargs, task_id):
+    def apply_async(self, *, kwargs: dict[str, Any], task_id: str):
         self.last_task_id = task_id
         self.last_kwargs = kwargs
         self.trace.append(("enqueue", task_id))
@@ -101,10 +109,13 @@ class FakeCeleryTask:
 def test_dispatch_persists_job_before_enqueue():
     db = FakeSession()
     celery_task = FakeCeleryTask(db.trace)
-    dispatcher = TaskDispatcher(db)
+    dispatcher = TaskDispatcher(cast(Session, db))
 
     result = dispatcher.dispatch(
-        definition=TaskDefinition(job_type="task_a_validate_cbs_ibs", celery_task=celery_task),
+        definition=TaskDefinition(
+            job_type="task_a_validate_cbs_ibs",
+            celery_task=cast(Task, celery_task),
+        ),
         tenant_id="tenant-123",
         payload={"invoice_number": "INV-001"},
         task_kwargs={
@@ -142,10 +153,11 @@ def test_get_task_returns_404_for_missing_tenant_scope():
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
     )
-    dispatcher = TaskDispatcher(db)
+    dispatcher = TaskDispatcher(cast(Session, db))
 
     with pytest.raises(HTTPException) as exc_info:
         dispatcher.get_task(task_id="task-1", tenant_id="tenant-b")
 
     assert exc_info.value.status_code == 404
-    assert exc_info.value.detail["code"] == "TASK_NOT_FOUND"
+    detail = cast(dict[str, Any], exc_info.value.detail)
+    assert detail["code"] == "TASK_NOT_FOUND"
