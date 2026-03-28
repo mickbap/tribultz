@@ -1,6 +1,9 @@
 classify_intent:
   description: >
     Classify the user message into one of: validate, validate_nfse, unknown.
+    Before deciding, consult crew memory for similar fiscal messages and prior classifications
+    from the same tenant. If a similar note was previously routed successfully, prefer the
+    same intent unless the current message clearly contradicts that precedent.
     Use only these rules:
     - validate_nfse: message contains XML content (starts with < or contains <?xml or <NFS-e or <nfseMsg)
     - validate: message contains keywords like "validar", "validate", "CBS", "IBS", "invoice"

@@ -8,13 +8,19 @@ from typing import Any
 from uuid import uuid4
 
 import yaml
-from crewai import Agent, Crew, LLM, Process, Task
+from crewai import Agent, Crew, LLM, Memory, Process, Task
 from dotenv import load_dotenv
 
+from app.config import settings
 from app.crews.tooling import CrewToolFactory, DefaultCrewToolFactory
 from app.crews.llm_config import (
     LLMUnavailableError,
     execute_with_fallback,
+)
+from app.crews.memory_system import (
+    RedisMemoryStorage,
+    ScopedCrewMemory,
+    build_openai_compatible_embedder,
 )
 
 load_dotenv()
@@ -67,6 +73,119 @@ class NFeValidationCrew:
         self._tenant_id = tenant_id
         self._transaction_id = transaction_id or str(uuid4())
         self._tool_factory = tool_factory or DefaultCrewToolFactory()
+
+    def _memory_paths(self) -> dict[str, str]:
+        base = f"/tenants/{self._tenant_id}"
+        return {
+            "short_term": f"{base}/transactions/{self._transaction_id}/nfe_validation",
+            "long_term": f"{base}/long_term/fiscal_classification",
+            "entity": f"{base}/entities/fiscal_classification",
+        }
+
+    def _build_memory(self, llm: LLM) -> tuple[Memory, ScopedCrewMemory]:
+        paths = self._memory_paths()
+        shared_memory = Memory(
+            llm=llm,
+            storage=RedisMemoryStorage(redis_url=settings.REDIS_URL),
+            embedder=build_openai_compatible_embedder(),
+        )
+        fiscal_memory = ScopedCrewMemory(
+            memory=shared_memory,
+            recall_scopes=[paths["short_term"], paths["long_term"], paths["entity"]],
+            write_scope=paths["short_term"],
+            default_categories=["nfe_validation", "fiscal_classification"],
+            default_metadata={
+                "tenant_id": self._tenant_id,
+                "transaction_id": self._transaction_id,
+                "crew": "nfe_validation",
+            },
+            source=self._tenant_id,
+        )
+        return shared_memory, fiscal_memory
+
+    @staticmethod
+    def _task_output_json(task: Task) -> dict[str, Any]:
+        output = getattr(task, "output", None)
+        raw = getattr(output, "raw", "") if output is not None else ""
+        if not raw:
+            return {}
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.DOTALL)
+            if match:
+                try:
+                    return json.loads(match.group(1))
+                except json.JSONDecodeError:
+                    return {}
+        return {}
+
+    def _remember_validation_precedent(self, *, crew: Crew, memory: Memory) -> None:
+        paths = self._memory_paths()
+        parse_payload = self._task_output_json(crew.tasks[0])
+        validation_payload = self._task_output_json(crew.tasks[1])
+        fields = parse_payload.get("fields", {}) if isinstance(parse_payload.get("fields"), dict) else {}
+        summary = validation_payload.get("summary", {}) if isinstance(validation_payload.get("summary"), dict) else {}
+        findings = validation_payload.get("findings", []) if isinstance(validation_payload.get("findings"), list) else []
+
+        doc_type = parse_payload.get("doc_type", "NFE")
+        invoice_id = parse_payload.get("invoice_id", "unknown")
+        cst = fields.get("cst", "unknown")
+        cclasstrib = fields.get("cclasstrib", "unknown")
+        ncm = fields.get("ncm", "unknown")
+        status = summary.get("status", "UNKNOWN")
+
+        long_term_memory = ScopedCrewMemory(
+            memory=memory,
+            recall_scopes=[paths["long_term"], paths["entity"]],
+            write_scope=paths["long_term"],
+            default_categories=["precedent", "fiscal_classification"],
+            default_metadata={
+                "tenant_id": self._tenant_id,
+                "transaction_id": self._transaction_id,
+                "doc_type": doc_type,
+                "invoice_id": invoice_id,
+                "cst": cst,
+                "cclasstrib": cclasstrib,
+                "ncm": ncm,
+            },
+            source=self._tenant_id,
+        )
+        entity_memory = ScopedCrewMemory(
+            memory=memory,
+            recall_scopes=[paths["entity"]],
+            write_scope=f"{paths['entity']}/ncm/{ncm}",
+            default_categories=["entity", "ncm", "fiscal_classification"],
+            default_metadata={
+                "tenant_id": self._tenant_id,
+                "ncm": ncm,
+                "cst": cst,
+                "cclasstrib": cclasstrib,
+                "doc_type": doc_type,
+            },
+            source=self._tenant_id,
+        )
+
+        learned_memories = [
+            (
+                f"Precedente fiscal {doc_type}: NCM {ncm}, CST {cst}, cClassTrib {cclasstrib} "
+                f"resultou em status {status} para invoice {invoice_id}."
+            )
+        ]
+        for finding in findings[:5]:
+            if not isinstance(finding, dict):
+                continue
+            learned_memories.append(
+                (
+                    f"Quando doc_type={doc_type}, NCM={ncm}, CST={cst} e cClassTrib={cclasstrib}, "
+                    f"a regra {finding.get('rule_id', 'UNKNOWN')} apareceu com severidade "
+                    f"{finding.get('severity', 'UNKNOWN')}. Recomendar: "
+                    f"{finding.get('recommendation', 'revisar classificacao fiscal')}."
+                )
+            )
+
+        long_term_memory.remember_many(learned_memories, importance=0.9)
+        entity_memory.remember_many(learned_memories[:3], importance=0.95)
 
     def _build_crew(self, llm: LLM, xml_content: str) -> Crew:
         """Build the crew with a specific LLM instance."""
@@ -132,12 +251,26 @@ class NFeValidationCrew:
             context=[task_parse, task_validate],
         )
 
-        return Crew(
+        crew = Crew(
             agents=[parser_agent, validator_agent, reporter_agent],
             tasks=[task_parse, task_validate, task_report],
             process=Process.sequential,
             verbose=False,
+            memory=True,
         )
+        try:
+            shared_memory, fiscal_memory = self._build_memory(llm)
+            crew._memory = shared_memory
+            parser_agent.memory = fiscal_memory
+            validator_agent.memory = fiscal_memory
+            reporter_agent.memory = fiscal_memory
+        except Exception as exc:
+            logger.warning("Crew memory unavailable for nfe_validation; degrading gracefully: %s", exc)
+            crew._memory = None
+            parser_agent.memory = None
+            validator_agent.memory = None
+            reporter_agent.memory = None
+        return crew
 
     def run(self, xml_content: str) -> dict[str, Any]:
         """Execute the NF-e validation crew with LLM fallback chain."""
@@ -175,6 +308,11 @@ class NFeValidationCrew:
             )
             crew = self._build_crew(llm, xml_content)
             result = crew.kickoff()
+            if crew._memory is not None:
+                try:
+                    self._remember_validation_precedent(crew=crew, memory=crew._memory)
+                except Exception as exc:
+                    logger.warning("Unable to persist fiscal precedent memory: %s", exc)
             logger.info(
                 "agent_handoff",
                 extra={

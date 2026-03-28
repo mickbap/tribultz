@@ -17,6 +17,10 @@ validate_ibscbs:
     Aplicar as 14 regras de validacao IBSCBS aos campos extraidos pelo parser.
     Usar a ferramenta validate_ibscbs_rules com o invoice_id e fields_json
     retornados pela task anterior.
+    Antes de concluir, consultar a memoria da crew para recuperar precedentes
+    fiscais semelhantes por NCM, CST, cClassTrib e tipo de documento. Se houver
+    casos similares no mesmo tenant, usar esses aprendizados como contexto para
+    priorizar recomendacoes e manter consistencia entre validacoes anteriores.
 
     Regras a validar:
     1. XML_PARSE — XML bem formado
