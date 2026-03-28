@@ -208,9 +208,17 @@ class TribultzChatOpsCrew:
                 payload=payload,
             )
         except Exception as exc:
-            logger.warning(
-                "handoff_persistence_failed tenant=%s transaction_id=%s error=%s",
-                self._tenant_id,
-                self._transaction_id,
-                exc,
+            logger.error(
+                "Handoff persistence failed, degrading to volatile mode",
+                extra={
+                    "event": "persistence_failure",
+                    "agent_id": agent_id,
+                    "task_id": task_id,
+                    "task_status": "VOLATILE_ONLY",
+                    "layer": "P1",
+                    "error": str(exc),
+                    "persistence_mode": "VOLATILE_ONLY",
+                    "tenant_id": self._tenant_id,
+                    "transaction_id": self._transaction_id,
+                },
             )

@@ -1,0 +1,52 @@
+{
+  "milestone": "M01-CORE",
+  "architecture": "Event-Driven & Stateful Agents (CrewAI)",
+  "status": "planned_before_code_changes",
+  "objectives": [
+    {
+      "id": "PERSISTENCE_LAYER",
+      "scope": "app/services/persistence",
+      "deliverables": [
+        "Abstrações para estado de curto prazo e contexto fiscal de longo prazo",
+        "Provider Redis para task states de agentes",
+        "Provider PostgreSQL para histórico transacional fiscal",
+        "Façade de persistência para handoff e checkpoint"
+      ]
+    },
+    {
+      "id": "IDEMPOTENT_TOOLS",
+      "scope": "app/tools",
+      "deliverables": [
+        "Suporte a transaction_id em ferramentas de cálculo tributário",
+        "Bloqueio de reexecução por transaction_id + operação + hash de entrada",
+        "Retorno de resultado cacheado para chamadas repetidas idênticas"
+      ]
+    },
+    {
+      "id": "DEPENDENCY_INVERSION",
+      "scope": "app/crews",
+      "deliverables": [
+        "Fábrica de tools desacoplada da crew",
+        "Injeção de dependências no construtor para facilitar mocks em testes"
+      ]
+    },
+    {
+      "id": "OBSERVABILITY",
+      "scope": "app/core + app/crews",
+      "deliverables": [
+        "Logging estruturado em JSON",
+        "Campos obrigatórios de handoff: agent_id e task_status",
+        "Correlação opcional com transaction_id e tenant_id"
+      ]
+    }
+  ],
+  "non_functional_requirements": [
+    "SOLID",
+    "Clean Code",
+    "High Performance"
+  ],
+  "validation_plan": {
+    "backend_tests": "python -m pytest tests/ -q",
+    "lint": "ruff check app/ tests/"
+  }
+}
