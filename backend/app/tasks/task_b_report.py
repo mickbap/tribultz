@@ -1,12 +1,19 @@
-"""Task B – Generate compliance report (Markdown) and save to MinIO."""
+"""Task B - Generate compliance report (Markdown) and save to MinIO."""
+
+from __future__ import annotations
 
 import logging
 from datetime import date, datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 
 from app.celery_app import celery
-from app.tools.postgres_tool import get_tax_rules, insert_audit_log, persist_artifact_metadata
-from app.tools.s3_tool import put_object, get_object_url
+from app.tools.postgres_tool import (
+    get_tax_rules,
+    insert_audit_log,
+    job_status_update,
+    persist_artifact_metadata,
+)
+from app.tools.s3_tool import get_object_url, put_object
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +27,9 @@ def task_b_compliance_report(
     tenant_slug: str,
     company_name: str,
     cnpj: str,
-    reference_period: str,          # "YYYY-MM"
-    invoices: list[dict],           # [{invoice_number, items: [{base, cbs, ibs}]}]
+    reference_period: str,
+    invoices: list[dict],
+    transaction_id: str | None = None,
 ) -> dict:
     """
     1. Iterate invoices and validate each against active rules
@@ -30,130 +38,159 @@ def task_b_compliance_report(
     4. Persist artifact metadata + audit_log
     5. Return {report_url, checksum, summary}
     """
-    ref_date = date.fromisoformat(f"{reference_period}-01")
-    now_str = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    task_id = str(self.request.id) if self.request and self.request.id else ""
+    if task_id:
+        job_status_update(job_id=task_id, status="RUNNING", transaction_id=transaction_id)
 
-    # Fetch all active rules once
-    rules = get_tax_rules(tenant_id, ["STD_CBS", "STD_IBS"], ref_date)
-    rate_map = {r["tax_type"]: Decimal(str(r["rate"])) for r in rules}
-    cbs_rate = rate_map.get("CBS", Decimal("0"))
-    ibs_rate = rate_map.get("IBS", Decimal("0"))
+    try:
+        ref_date = date.fromisoformat(f"{reference_period}-01")
+        now_str = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
-    # ── Build report ──────────────────────────────────────────
-    lines: list[str] = []
-    lines.append("# Relatório de Conformidade Tributária")
-    lines.append("")
-    lines.append(f"**Empresa:** {company_name}  ")
-    lines.append(f"**CNPJ:** {cnpj}  ")
-    lines.append(f"**Período:** {reference_period}  ")
-    lines.append(f"**Gerado em:** {now_str}  ")
-    lines.append(f"**Alíquota CBS:** {cbs_rate}  ")
-    lines.append(f"**Alíquota IBS:** {ibs_rate}  ")
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-    lines.append("## Resumo por Nota Fiscal")
-    lines.append("")
-    lines.append("| NF | Base Total | CBS Esperado | IBS Esperado | Status |")
-    lines.append("|---|---|---|---|---|")
+        rules = get_tax_rules(tenant_id, ["STD_CBS", "STD_IBS"], ref_date)
+        rate_map = {rule["tax_type"]: Decimal(str(rule["rate"])) for rule in rules}
+        cbs_rate = rate_map.get("CBS", Decimal("0"))
+        ibs_rate = rate_map.get("IBS", Decimal("0"))
 
-    total_base = Decimal("0")
-    total_cbs = Decimal("0")
-    total_ibs = Decimal("0")
-    all_pass = True
-    invoice_details: list[dict] = []
+        lines: list[str] = [
+            "# Relatorio de Conformidade Tributaria",
+            "",
+            f"**Empresa:** {company_name}  ",
+            f"**CNPJ:** {cnpj}  ",
+            f"**Periodo:** {reference_period}  ",
+            f"**Gerado em:** {now_str}  ",
+            f"**Aliquota CBS:** {cbs_rate}  ",
+            f"**Aliquota IBS:** {ibs_rate}  ",
+            "",
+            "---",
+            "",
+            "## Resumo por Nota Fiscal",
+            "",
+            "| NF | Base Total | CBS Esperado | IBS Esperado | Status |",
+            "|---|---|---|---|---|",
+        ]
 
-    for inv in invoices:
-        inv_num = inv.get("invoice_number", "?")
-        inv_base = Decimal("0")
-        inv_cbs_calc = Decimal("0")
-        inv_ibs_calc = Decimal("0")
-        inv_cbs_decl = Decimal(str(inv.get("declared_cbs", "0")))
-        inv_ibs_decl = Decimal(str(inv.get("declared_ibs", "0")))
+        total_base = Decimal("0")
+        total_cbs = Decimal("0")
+        total_ibs = Decimal("0")
+        all_pass = True
+        invoice_details: list[dict[str, str]] = []
 
-        for it in inv.get("items", []):
-            base = Decimal(str(it.get("base_amount", "0")))
-            inv_base += base
-            inv_cbs_calc += (base * cbs_rate).quantize(TWO_PLACES, ROUND_HALF_UP)
-            inv_ibs_calc += (base * ibs_rate).quantize(TWO_PLACES, ROUND_HALF_UP)
+        for invoice in invoices:
+            invoice_number = str(invoice.get("invoice_number", "?"))
+            invoice_base = Decimal("0")
+            invoice_cbs_calc = Decimal("0")
+            invoice_ibs_calc = Decimal("0")
+            invoice_cbs_decl = Decimal(str(invoice.get("declared_cbs", "0")))
+            invoice_ibs_decl = Decimal(str(invoice.get("declared_ibs", "0")))
 
-        inv_cbs_calc = inv_cbs_calc.quantize(TWO_PLACES, ROUND_HALF_UP)
-        inv_ibs_calc = inv_ibs_calc.quantize(TWO_PLACES, ROUND_HALF_UP)
+            for item in invoice.get("items", []):
+                base = Decimal(str(item.get("base_amount", "0")))
+                invoice_base += base
+                invoice_cbs_calc += (base * cbs_rate).quantize(TWO_PLACES, ROUND_HALF_UP)
+                invoice_ibs_calc += (base * ibs_rate).quantize(TWO_PLACES, ROUND_HALF_UP)
 
-        cbs_ok = abs(inv_cbs_calc - inv_cbs_decl.quantize(TWO_PLACES)) <= TWO_PLACES
-        ibs_ok = abs(inv_ibs_calc - inv_ibs_decl.quantize(TWO_PLACES)) <= TWO_PLACES
-        status = "✅ PASS" if (cbs_ok and ibs_ok) else "❌ FAIL"
-        if not (cbs_ok and ibs_ok):
-            all_pass = False
+            invoice_cbs_calc = invoice_cbs_calc.quantize(TWO_PLACES, ROUND_HALF_UP)
+            invoice_ibs_calc = invoice_ibs_calc.quantize(TWO_PLACES, ROUND_HALF_UP)
 
-        lines.append(f"| {inv_num} | {inv_base} | {inv_cbs_calc} | {inv_ibs_calc} | {status} |")
+            cbs_ok = abs(invoice_cbs_calc - invoice_cbs_decl.quantize(TWO_PLACES)) <= TWO_PLACES
+            ibs_ok = abs(invoice_ibs_calc - invoice_ibs_decl.quantize(TWO_PLACES)) <= TWO_PLACES
+            invoice_status = "PASS" if (cbs_ok and ibs_ok) else "FAIL"
+            if invoice_status == "FAIL":
+                all_pass = False
 
-        total_base += inv_base
-        total_cbs += inv_cbs_calc
-        total_ibs += inv_ibs_calc
+            lines.append(
+                f"| {invoice_number} | {invoice_base} | {invoice_cbs_calc} | "
+                f"{invoice_ibs_calc} | {invoice_status} |"
+            )
 
-        invoice_details.append({
-            "invoice_number": inv_num,
-            "base": str(inv_base),
-            "cbs_calculated": str(inv_cbs_calc),
-            "ibs_calculated": str(inv_ibs_calc),
-            "status": "PASS" if (cbs_ok and ibs_ok) else "FAIL",
-        })
+            total_base += invoice_base
+            total_cbs += invoice_cbs_calc
+            total_ibs += invoice_ibs_calc
+            invoice_details.append(
+                {
+                    "invoice_number": invoice_number,
+                    "base": str(invoice_base),
+                    "cbs_calculated": str(invoice_cbs_calc),
+                    "ibs_calculated": str(invoice_ibs_calc),
+                    "status": invoice_status,
+                }
+            )
 
-    lines.append("")
-    lines.append("## Totais")
-    lines.append("")
-    lines.append(f"- **Base total:** R$ {total_base}")
-    lines.append(f"- **CBS total:** R$ {total_cbs}")
-    lines.append(f"- **IBS total:** R$ {total_ibs}")
-    lines.append(f"- **Resultado geral:** {'✅ CONFORME' if all_pass else '❌ NÃO CONFORME'}")
-    lines.append("")
+        lines.extend(
+            [
+                "",
+                "## Totais",
+                "",
+                f"- **Base total:** R$ {total_base}",
+                f"- **CBS total:** R$ {total_cbs}",
+                f"- **IBS total:** R$ {total_ibs}",
+                f"- **Resultado geral:** {'CONFORME' if all_pass else 'NAO_CONFORME'}",
+                "",
+            ]
+        )
 
-    report_md = "\n".join(lines)
-    report_bytes = report_md.encode("utf-8")
+        report_md = "\n".join(lines)
+        report_bytes = report_md.encode("utf-8")
 
-    # ── Upload to MinIO ──────────────────────────────────────
-    s3_key = f"reports/{tenant_slug}/{reference_period}/compliance_{now_str}.md"
-    upload = put_object(
-        key=s3_key,
-        data=report_bytes,
-        content_type="text/markdown; charset=utf-8",
-        metadata={"tenant": tenant_slug, "period": reference_period},
-    )
+        s3_key = f"reports/{tenant_slug}/{reference_period}/compliance_{now_str}.md"
+        upload = put_object(
+            key=s3_key,
+            data=report_bytes,
+            content_type="text/markdown; charset=utf-8",
+            metadata={"tenant": tenant_slug, "period": reference_period},
+        )
+        report_url = get_object_url(s3_key, expires_in=86400)
 
-    report_url = get_object_url(s3_key, expires_in=86400)
+        persist_artifact_metadata(
+            tenant_id=tenant_id,
+            entity_type="compliance_report",
+            entity_id=f"{tenant_slug}/{reference_period}",
+            artifact_type="markdown_report",
+            storage_key=s3_key,
+            checksum=upload["checksum_sha256"],
+            metadata={
+                "invoices_checked": len(invoices),
+                "overall": "CONFORME" if all_pass else "NAO_CONFORME",
+            },
+        )
 
-    # ── Artifact metadata + audit ────────────────────────────
-    persist_artifact_metadata(
-        tenant_id=tenant_id,
-        entity_type="compliance_report",
-        entity_id=f"{tenant_slug}/{reference_period}",
-        artifact_type="markdown_report",
-        storage_key=s3_key,
-        checksum=upload["checksum_sha256"],
-        metadata={"invoices_checked": len(invoices), "overall": "CONFORME" if all_pass else "NAO_CONFORME"},
-    )
+        audit = insert_audit_log(
+            tenant_id=tenant_id,
+            action="compliance_report_generated",
+            entity_type="compliance_report",
+            entity_id=f"{tenant_slug}/{reference_period}",
+            payload={"s3_key": s3_key, "overall": "CONFORME" if all_pass else "NAO_CONFORME"},
+        )
 
-    audit = insert_audit_log(
-        tenant_id=tenant_id,
-        action="compliance_report_generated",
-        entity_type="compliance_report",
-        entity_id=f"{tenant_slug}/{reference_period}",
-        payload={"s3_key": s3_key, "overall": "CONFORME" if all_pass else "NAO_CONFORME"},
-    )
+        result = {
+            "status": "CONFORME" if all_pass else "NAO_CONFORME",
+            "report_url": report_url,
+            "s3_key": s3_key,
+            "checksum": upload["checksum_sha256"],
+            "invoices_checked": len(invoices),
+            "total_base": str(total_base),
+            "total_cbs": str(total_cbs),
+            "total_ibs": str(total_ibs),
+            "audit_id": audit["id"],
+            "details": invoice_details,
+        }
 
-    result = {
-        "status": "CONFORME" if all_pass else "NAO_CONFORME",
-        "report_url": report_url,
-        "s3_key": s3_key,
-        "checksum": upload["checksum_sha256"],
-        "invoices_checked": len(invoices),
-        "total_base": str(total_base),
-        "total_cbs": str(total_cbs),
-        "total_ibs": str(total_ibs),
-        "audit_id": audit["id"],
-        "details": invoice_details,
-    }
+        if task_id:
+            job_status_update(
+                job_id=task_id,
+                status="SUCCESS",
+                result=result,
+                transaction_id=transaction_id,
+            )
 
-    logger.info("Task B [%s] report=%s status=%s", tenant_slug, s3_key, result["status"])
-    return result
+        logger.info("Task B [%s] report=%s status=%s", tenant_slug, s3_key, result["status"])
+        return result
+    except Exception as exc:
+        if task_id:
+            job_status_update(
+                job_id=task_id,
+                status="FAILED",
+                error_message=str(exc),
+                transaction_id=transaction_id,
+            )
+        raise

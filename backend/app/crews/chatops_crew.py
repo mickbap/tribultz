@@ -5,21 +5,19 @@ import logging
 import re
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import yaml
 from crewai import Agent, Crew, LLM, Process, Task
 from dotenv import load_dotenv
 
+from app.crews.tooling import CrewToolFactory, DefaultCrewToolFactory
 from app.crews.llm_config import (
     LLMUnavailableError,
     execute_with_fallback,
 )
-from app.crews.tools.get_job_status_tool import GetJobStatusTool
-from app.crews.tools.parse_nfe_xml_tool import ParseNFeXMLTool
-from app.crews.tools.parse_nfse_xml_tool import ParseNFSeXMLTool
-from app.crews.tools.trigger_task_a_tool import TriggerTaskATool
-from app.crews.tools.validate_fiscal_rules_tool import ValidateFiscalRulesTool
-from app.crews.tools.validate_ibscbs_rules_tool import ValidateIBSCBSRulesTool
+from app.services.persistence import get_persistence_service
+from app.services.persistence.service import CrewPersistenceService
 
 load_dotenv()
 
@@ -60,23 +58,30 @@ class TribultzChatOpsCrew:
     through the LLM, ensuring tenant isolation.
     """
 
-    def __init__(self, tenant_id: str, user_id: str) -> None:
+    def __init__(
+        self,
+        tenant_id: str,
+        user_id: str,
+        transaction_id: str | None = None,
+        tool_factory: CrewToolFactory | None = None,
+        persistence_service: CrewPersistenceService | None = None,
+    ) -> None:
         self._tenant_id = tenant_id
         self._user_id = user_id
+        self._transaction_id = transaction_id or str(uuid4())
+        self._tool_factory = tool_factory or DefaultCrewToolFactory()
+        self._persistence_service = persistence_service or get_persistence_service()
 
     def _build_crew(self, llm: LLM) -> Crew:
         """Build the crew with a specific LLM instance."""
         agents_cfg = _load_yaml("agents.yaml")
         tasks_cfg = _load_yaml("tasks.yaml")
 
-        trigger_tool = TriggerTaskATool(
-            tenant_id=self._tenant_id, user_id=self._user_id
+        tools_bundle = self._tool_factory.build_chatops_tools(
+            tenant_id=self._tenant_id,
+            user_id=self._user_id,
+            transaction_id=self._transaction_id,
         )
-        status_tool = GetJobStatusTool(tenant_id=self._tenant_id)
-        parse_nfse_tool = ParseNFSeXMLTool(tenant_id=self._tenant_id)
-        parse_nfe_tool = ParseNFeXMLTool(tenant_id=self._tenant_id)
-        validate_rules_tool = ValidateFiscalRulesTool()
-        validate_ibscbs_tool = ValidateIBSCBSRulesTool()
 
         triage = Agent(
             role=agents_cfg["triage"]["role"],
@@ -90,9 +95,12 @@ class TribultzChatOpsCrew:
             goal=agents_cfg["operator"]["goal"],
             backstory=agents_cfg["operator"]["backstory"],
             tools=[
-                trigger_tool, status_tool,
-                parse_nfse_tool, validate_rules_tool,
-                parse_nfe_tool, validate_ibscbs_tool,
+                tools_bundle.trigger_tool,
+                tools_bundle.status_tool,
+                tools_bundle.parse_nfse_tool,
+                tools_bundle.validate_rules_tool,
+                tools_bundle.parse_nfe_tool,
+                tools_bundle.validate_ibscbs_tool,
             ],
             llm=llm,
             verbose=False,
@@ -138,12 +146,17 @@ class TribultzChatOpsCrew:
         """Execute the crew with LLM fallback chain."""
 
         def _kickoff(llm: LLM) -> str:
+            self._record_handoff(agent_id="triage", task_id="classify_intent", task_status="QUEUED")
+            self._record_handoff(agent_id="operator", task_id="execute_operation", task_status="QUEUED")
+            self._record_handoff(agent_id="narrator", task_id="compose_response", task_status="QUEUED")
             crew = self._build_crew(llm)
-            # Inject message into the first task's description
             crew.tasks[0].description = crew.tasks[0].description.replace(
                 "{message}", message
             )
             result = crew.kickoff()
+            self._record_handoff(agent_id="triage", task_id="classify_intent", task_status="COMPLETED")
+            self._record_handoff(agent_id="operator", task_id="execute_operation", task_status="COMPLETED")
+            self._record_handoff(agent_id="narrator", task_id="compose_response", task_status="COMPLETED")
             return str(result)
 
         try:
@@ -154,6 +167,7 @@ class TribultzChatOpsCrew:
                 self._tenant_id,
                 self._user_id,
             )
+            self._record_handoff(agent_id="chatops", task_id="crew_execution", task_status="FAILED")
             return {
                 "response_markdown": (
                     "Todos os modelos de IA estao temporariamente indisponiveis. "
@@ -171,3 +185,40 @@ class TribultzChatOpsCrew:
         )
 
         return _parse_crew_output(raw_output)
+
+    def _record_handoff(self, *, agent_id: str, task_id: str, task_status: str) -> None:
+        payload = {"agent_id": agent_id, "task_id": task_id, "task_status": task_status}
+        logger.info(
+            "agent_handoff",
+            extra={
+                "agent_id": agent_id,
+                "task_id": task_id,
+                "task_status": task_status,
+                "tenant_id": self._tenant_id,
+                "transaction_id": self._transaction_id,
+            },
+        )
+        try:
+            self._persistence_service.record_handoff(
+                transaction_id=self._transaction_id,
+                tenant_id=self._tenant_id,
+                agent_id=agent_id,
+                task_id=task_id,
+                task_status=task_status,
+                payload=payload,
+            )
+        except Exception as exc:
+            logger.error(
+                "Handoff persistence failed, degrading to volatile mode",
+                extra={
+                    "event": "persistence_failure",
+                    "agent_id": agent_id,
+                    "task_id": task_id,
+                    "task_status": "VOLATILE_ONLY",
+                    "layer": "P1",
+                    "error": str(exc),
+                    "persistence_mode": "VOLATILE_ONLY",
+                    "tenant_id": self._tenant_id,
+                    "transaction_id": self._transaction_id,
+                },
+            )

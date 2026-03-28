@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { API_BASE } from "@/lib/api";
+import { API_BASE, createTransactionId } from "@/lib/api";
 import { UF_LIST } from "@/lib/data/ufList";
 import { CST_LIST } from "@/lib/data/cstList";
 
@@ -26,6 +26,7 @@ type CalculadoraResult = {
   xml_snippet: string;
   data_policy: string;
   upgrade_cta: string;
+  transaction_id?: string;
 };
 
 type CalcState = "idle" | "loading" | "done" | "error";
@@ -53,6 +54,7 @@ function CalculadoraInner() {
     setResult(null);
 
     try {
+      const transactionId = createTransactionId();
       const body: Record<string, string> = {
         uf_destino: uf,
         base_value: baseValue,
@@ -63,7 +65,10 @@ function CalculadoraInner() {
 
       const res = await fetch(`${API_BASE}/api/v1/public/calculadora/regime-geral`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Transaction-Id": transactionId,
+        },
         body: JSON.stringify(body),
       });
 
@@ -90,7 +95,10 @@ function CalculadoraInner() {
       }
 
       const data: CalculadoraResult = await res.json();
-      setResult(data);
+      setResult({
+        ...data,
+        transaction_id: data.transaction_id ?? transactionId,
+      });
       setState("done");
 
       // Update URL params for sharing
@@ -265,6 +273,7 @@ function CalculadoraInner() {
               <h2 className="text-base font-semibold text-slate-900">Resultado do Cálculo</h2>
               <p className="mt-1 text-xs text-slate-500">
                 CST {result.cst} — {result.cst_desc} | Fonte: {result.rate_source}
+                {result.transaction_id ? ` | Tx: ${result.transaction_id}` : ""}
               </p>
 
               <div className="mt-4 space-y-2">

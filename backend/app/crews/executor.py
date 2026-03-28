@@ -53,7 +53,12 @@ class TribultzChatOpsExecutor:
 
         from app.crews.chatops_crew import TribultzChatOpsCrew
 
-        crew = TribultzChatOpsCrew(tenant_id=str(tenant_id), user_id=str(user_id))
+        transaction_id = str(uuid4())
+        crew = TribultzChatOpsCrew(
+            tenant_id=str(tenant_id),
+            user_id=str(user_id),
+            transaction_id=transaction_id,
+        )
         timeout_s = max(1, int(settings.CHATOPS_TIMEOUT_SECONDS))
         t0 = time.monotonic()
 
@@ -70,6 +75,7 @@ class TribultzChatOpsExecutor:
                 user_id,
                 timeout_s,
                 elapsed,
+                extra={"transaction_id": transaction_id},
             )
             raise CrewExecutionTimeoutError(CREW_ERROR_MESSAGE) from exc
         except Exception as exc:
@@ -80,6 +86,7 @@ class TribultzChatOpsExecutor:
                 user_id,
                 elapsed,
                 str(exc)[:200],
+                extra={"transaction_id": transaction_id},
             )
             raise CrewExecutionError(CREW_ERROR_MESSAGE) from exc
 
@@ -89,6 +96,7 @@ class TribultzChatOpsExecutor:
             tenant_id,
             user_id,
             elapsed,
+            extra={"transaction_id": transaction_id},
         )
 
         response_markdown: str = result.get("response_markdown", "")

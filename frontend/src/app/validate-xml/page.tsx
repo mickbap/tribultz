@@ -262,6 +262,7 @@ export default function ValidateXmlPage() {
             </p>
             <p className="text-xs text-slate-600">
               Job: <span className="font-mono">{result.job.id}</span> | Audit: <span className="font-mono">{result.audit.id}</span>
+              {result.transaction_id ? ` | Tx: ${result.transaction_id}` : ""}
               {job ? ` | Status do job: ${job.status}` : ""}
             </p>
           </div>

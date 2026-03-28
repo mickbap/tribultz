@@ -6,29 +6,25 @@ from typing import Optional
 
 import boto3
 from botocore.config import Config as BotoConfig
-from botocore.exceptions import ClientError
 
 from app.config import settings
+from app.services.persistence import get_persistence_service
 
 
 def _client():
     """Create a boto3 S3 client pointing at MinIO or AWS."""
+    boto_config = BotoConfig(
+        signature_version="s3v4",
+        s3={"addressing_style": "path" if settings.S3_FORCE_PATH_STYLE else "virtual"},
+    )
     return boto3.client(
         "s3",
         endpoint_url=settings.S3_ENDPOINT,
         aws_access_key_id=settings.S3_ACCESS_KEY,
         aws_secret_access_key=settings.S3_SECRET_KEY,
-        config=BotoConfig(signature_version="s3v4"),
-        region_name="us-east-1",
+        config=boto_config,
+        region_name=settings.S3_REGION,
     )
-
-
-def _ensure_bucket(client, bucket: str):
-    """Create the bucket if it doesn't already exist."""
-    try:
-        client.head_bucket(Bucket=bucket)
-    except ClientError:
-        client.create_bucket(Bucket=bucket)
 
 
 # ── 1. Put Object ────────────────────────────────────────────
@@ -38,35 +34,48 @@ def put_object(
     content_type: str = "application/octet-stream",
     bucket: Optional[str] = None,
     metadata: Optional[dict[str, str]] = None,
+    transaction_id: Optional[str] = None,
 ) -> dict:
     """
     Upload an object to S3/MinIO.
     Returns {bucket, key, checksum, size}.
     """
     bucket = bucket or settings.S3_BUCKET
-    client = _client()
-    _ensure_bucket(client, bucket)
+    service = get_persistence_service()
 
-    sha = hashlib.sha256(data).hexdigest()
+    def _write() -> dict:
+        client = _client()
+        sha = hashlib.sha256(data).hexdigest()
+        extra: dict = {"ContentType": content_type}
+        if metadata:
+            extra["Metadata"] = metadata
+        client.put_object(
+            Bucket=bucket,
+            Key=key,
+            Body=BytesIO(data),
+            ContentLength=len(data),
+            **extra,
+        )
+        return {
+            "bucket": bucket,
+            "key": key,
+            "checksum_sha256": sha,
+            "size_bytes": len(data),
+        }
 
-    extra: dict = {"ContentType": content_type}
-    if metadata:
-        extra["Metadata"] = metadata
-
-    client.put_object(
-        Bucket=bucket,
-        Key=key,
-        Body=BytesIO(data),
-        ContentLength=len(data),
-        **extra,
-    )
-
-    return {
+    payload = {
         "bucket": bucket,
         "key": key,
-        "checksum_sha256": sha,
-        "size_bytes": len(data),
+        "content_type": content_type,
+        "metadata": metadata or {},
+        "sha256": hashlib.sha256(data).hexdigest(),
     }
+    return service.run_idempotent(
+        operation="s3_put_object",
+        transaction_id=transaction_id,
+        payload=payload,
+        runner=_write,
+    )
 
 
 # ── 2. Get Object URL ────────────────────────────────────────

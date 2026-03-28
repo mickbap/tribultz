@@ -11,24 +11,26 @@ class Settings(BaseSettings):
     # ── Postgres ──────────────────────────────────────────────
     POSTGRES_DB: str = "tribultz"
     POSTGRES_USER: str = "tribultz"
-    POSTGRES_PASSWORD: str = ""  # REQUIRED: set via env or .env
-    DATABASE_URL: str = "postgresql+psycopg2://tribultz:changeme@localhost:5432/tribultz"  # Override via env or .env
+    POSTGRES_PASSWORD: str
+    DATABASE_URL: str
 
     # ── Redis ─────────────────────────────────────────────────
-    REDIS_URL: str = "redis://redis:6379/0"
+    REDIS_URL: str
 
     # ── JWT ───────────────────────────────────────────────────
-    JWT_SECRET: str = ""  # REQUIRED: set via env or .env (min 32 chars)
+    JWT_SECRET: str
     JWT_ALG: str = "HS256"
     JWT_EXPIRES_MIN: int = 480
 
     # ── MinIO / S3 ────────────────────────────────────────────
-    MINIO_ROOT_USER: str = ""  # REQUIRED: set via env or .env
-    MINIO_ROOT_PASSWORD: str = ""  # REQUIRED: set via env or .env
-    S3_ENDPOINT: str = "http://minio:9000"
-    S3_BUCKET: str = "tribultz"
-    S3_ACCESS_KEY: str = ""  # REQUIRED: set via env or .env
-    S3_SECRET_KEY: str = ""  # REQUIRED: set via env or .env
+    MINIO_ROOT_USER: str
+    MINIO_ROOT_PASSWORD: str
+    S3_ENDPOINT: str
+    S3_REGION: str = "us-east-1"
+    S3_FORCE_PATH_STYLE: bool = True
+    S3_BUCKET: str
+    S3_ACCESS_KEY: str
+    S3_SECRET_KEY: str
 
     # ── HubSpot ───────────────────────────────────────────────
     HUBSPOT_ENABLED: bool = False
@@ -78,4 +80,4 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
 
 
-settings = Settings()
+settings = Settings()  # type: ignore

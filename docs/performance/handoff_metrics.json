@@ -1,0 +1,16 @@
+{
+  "handoff_optimization_strategy": {
+    "problem": "Handoff síncrono entre agentes CrewAI é oneroso devido às inferências de LLM, podendo gerar latência inaceitável em picos de cálculos complexos.",
+    "solution": [
+      "Task Delegation Assíncrono: O Orquestrador designa as tarefas para filas (ex: Celery/RabbitMQ) para cada agente processar em background.",
+      "Event-Driven Architecture: Implementação do padrão Publish/Subscribe. Quando um agente finaliza sua parte do cálculo, ele publica um evento, e os agentes dependentes são acordados (via worker), liberando a requisição principal do usuário o mais rápido possível.",
+      "WebSockets/Server-Sent Events: O cliente final (Frontend) recebe updates visuais conforme os agentes concluem suas etapas, criando responsividade sem prender a thread HTTP principal."
+    ],
+    "target_metrics": {
+      "avg_handoff_latency_ms": 150,
+      "max_acceptable_latency_ms": 1000,
+      "concurrency_limit_per_container": 50,
+      "timeout_tolerance": "30s"
+    }
+  }
+}

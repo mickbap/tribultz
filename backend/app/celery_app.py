@@ -16,6 +16,7 @@ celery.conf.update(
     result_serializer="json",
     timezone="America/Sao_Paulo",
     enable_utc=True,
+    worker_prefetch_multiplier=1,
     beat_schedule={
         "expire-trials-hourly": {
             "task": "billing.expire_trials",

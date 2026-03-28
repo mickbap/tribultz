@@ -1,0 +1,125 @@
+{
+  "report_id": "M03_cloud_gap_analysis",
+  "generated_at": "2026-03-28",
+  "milestone": "M03",
+  "objective": "Auditar o backend para readiness de deploy em ambiente cloud S3-compatible seguindo principios 12-Factor App.",
+  "scope": {
+    "analyzed_paths": [
+      "backend/app/config.py",
+      "backend/app/tools/s3_tool.py",
+      "backend/app/services/asaas_service.py",
+      "backend/app/services/pdf_service.py",
+      "backend/app/services/chat_service.py",
+      "backend/app/routers/reports.py",
+      "backend/app/crews/*.py"
+    ],
+    "focus_areas": [
+      "uso de filesystem local em runtime",
+      "externalizacao de credenciais e URLs",
+      "compatibilidade S3 custom endpoint"
+    ]
+  },
+  "summary": {
+    "principal_offenders": [
+      "Defaults concretos em config.py para DATABASE_URL, S3_ENDPOINT, FRONTEND_URL e outras URLs, o que aumenta risco de deploy com configuracao incorreta ou comportamento acoplado a ambiente local.",
+      "s3_tool.py suporta endpoint customizado, mas ainda assume region fixa us-east-1 e faz create_bucket em runtime, o que pode falhar em providers S3-compatible com IAM restritivo ou regras diferentes de bucket provisioning.",
+      "asaas_service.py mantém URLs base e URL de checkout hardcoded em codigo, em vez de externalizar completamente a configuracao do provedor."
+    ],
+    "filesystem_runtime_write_assessment": "Nenhuma escrita local de runtime foi encontrada em backend/app; o uso de filesystem identificado no backend e predominantemente leitura de templates e arquivos de configuracao empacotados."
+  },
+  "findings": [
+    {
+      "id": "CFG-001",
+      "severity": "MEDIUM",
+      "category": "12factor_config",
+      "title": "Defaults de ambiente concretos ainda acoplam o backend a ambiente local/dev",
+      "status": "open",
+      "evidence": [
+        {
+          "file": "backend/app/config.py",
+          "lines": [15, 28, 40, 57, 66, 72, 73, 74],
+          "details": [
+            "DATABASE_URL default aponta para localhost com credencial changeme",
+            "S3_ENDPOINT default aponta para http://minio:9000",
+            "ALLOWED_ORIGINS e FRONTEND_URL apontam para http://localhost:3000",
+            "URLs de integracoes externas possuem defaults de codigo"
+          ]
+        }
+      ],
+      "risk": "Se variaveis nao forem injetadas corretamente no deploy cloud, a aplicacao pode subir com endpoints errados, comportamento de development ou credenciais placeholders.",
+      "cloud_impact": "Magalu Cloud exige configuracao previsivel por ambiente e secrets externos; defaults concretos elevam o risco operacional e dificultam fail-fast.",
+      "recommendation": [
+        "Remover defaults sensiveis ou environment-specific de conexoes criticas e falhar no startup quando ausentes.",
+        "Manter apenas defaults genuinamente seguros e neutros para desenvolvimento local.",
+        "Documentar matriz obrigatoria de env vars para cloud runtime."
+      ]
+    },
+    {
+      "id": "S3-001",
+      "severity": "HIGH",
+      "category": "s3_compatibility",
+      "title": "Cliente S3 e parcialmente compativel com endpoint customizado, mas ainda assume comportamento AWS/MinIO",
+      "status": "open",
+      "evidence": [
+        {
+          "file": "backend/app/tools/s3_tool.py",
+          "lines": [19, 22, 23, 30, 32],
+          "details": [
+            "endpoint_url ja e configuravel via settings.S3_ENDPOINT",
+            "signature_version esta fixa em s3v4",
+            "region_name esta hardcoded como us-east-1",
+            "bucket e criado automaticamente em runtime via head_bucket/create_bucket"
+          ]
+        }
+      ],
+      "risk": "Provedores S3-compatible podem exigir region configuravel, addressing style especifico ou proibir create_bucket pela role da aplicacao.",
+      "cloud_impact": "No deploy Magalu Cloud, a app pode falhar ao assinar requests, provisionar bucket ou operar com credenciais restritas mesmo com endpoint customizado presente.",
+      "recommendation": [
+        "Externalizar S3 region, addressing style e flags de compatibilidade em settings.",
+        "Remover create_bucket do path de requisicao e tratar provisioning de bucket como concern de infraestrutura/bootstrap.",
+        "Adicionar smoke tests contra endpoint S3-compatible nao AWS com credenciais restritas."
+      ]
+    },
+    {
+      "id": "PAY-001",
+      "severity": "MEDIUM",
+      "category": "provider_configuration",
+      "title": "AsaasService mantem URLs do provedor hardcoded no codigo",
+      "status": "open",
+      "evidence": [
+        {
+          "file": "backend/app/services/asaas_service.py",
+          "lines": [12, 13, 14, 32, 145],
+          "details": [
+            "URLs base de sandbox e production estao definidas em constante interna",
+            "get_checkout_url monta host final por convencao de codigo"
+          ]
+        }
+      ],
+      "risk": "Mudancas de endpoint, proxy corporativo, ambiente privado ou homologacao alternativa exigem alteracao de codigo em vez de simples troca de env var.",
+      "cloud_impact": "Deploy cloud multi-ambiente fica menos flexivel e dificulta alinhamento com networking, egress policies ou ambientes enterprise.",
+      "recommendation": [
+        "Mover base URL e checkout base URL para settings/environment.",
+        "Preservar apenas validacao de allowed values no codigo.",
+        "Documentar explicitamente variaveis de ambiente do gateway de pagamento para staging e production."
+      ]
+    }
+  ],
+  "validated_checks": [
+    {
+      "id": "FS-001",
+      "status": "no_violation_found",
+      "details": "Busca por operacoes de escrita/remocao local em backend/app nao encontrou write_text, write_bytes, mkdir, makedirs, tempfile, unlink, remove ou rmtree."
+    },
+    {
+      "id": "FS-002",
+      "status": "read_only_usage_detected",
+      "details": "Uso de filesystem no backend atual e majoritariamente leitura de templates/configs empacotados, como em chat_service.py, pdf_service.py e crews/*."
+    }
+  ],
+  "recommended_next_steps": [
+    "Transformar o gap analysis em checklist de remediation M03 com owners e prioridade.",
+    "Adicionar validacao de startup para env vars obrigatorias em cloud.",
+    "Executar smoke test de upload/download contra bucket S3-compatible da Magalu Cloud antes do deploy piloto."
+  ]
+}

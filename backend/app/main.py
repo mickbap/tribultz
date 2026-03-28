@@ -5,7 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
+from app.core.logging import configure_logging
 from app.routers import auth, audit, billing, calculadora, chat, feedback, health, jobs, lgpd, public, reports, tasks, validate, validate_xml, validation
+
+configure_logging()
 
 
 app = FastAPI(
