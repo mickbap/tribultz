@@ -1,5 +1,7 @@
 """Tribultz – FastAPI application entry-point."""
 
+import re
+
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -38,11 +40,19 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app.add_middleware(SecurityHeadersMiddleware)
 
 # ── CORS ────────────────────────────────────────────────────
-origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
+origin_patterns = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
+origins = [origin for origin in origin_patterns if "*" not in origin]
+origin_regexes = [
+    f"^{re.escape(origin).replace(r'\*', '[^.]+')}$"
+    for origin in origin_patterns
+    if "*" in origin
+]
+origin_regex = "|".join(origin_regexes) or None
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=origin_regex,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Tenant-Id"],
