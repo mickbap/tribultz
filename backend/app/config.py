@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     CHATOPS_TIMEOUT_SECONDS: int = 45
 
     # ── Security ────────────────────────────────────────────
-    ALLOWED_ORIGINS: str = "http://localhost:3000"
+    ALLOWED_ORIGINS: str = "http://localhost:3000,https://tribultz.com.br,https://*.vercel.app"
     ENVIRONMENT: str = "development"  # development | staging | production
 
     # ── Turnstile (CAPTCHA) ─────────────────────────────────
