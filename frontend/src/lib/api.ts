@@ -34,7 +34,10 @@ import {
 } from "./mock";
 import { getMockMode, getTenantId, getToken } from "./storage";
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+// Use || (not ??) so empty-string env vars also fall back to localhost.
+// If NEXT_PUBLIC_API_BASE_URL="" the fetch URL becomes relative ("/api/...")
+// which hits the Next.js server itself and returns 404.
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 export function createTransactionId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {

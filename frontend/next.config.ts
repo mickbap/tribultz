@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
-const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+// Use || so empty-string env var (common misconfiguration) also falls back.
+const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
