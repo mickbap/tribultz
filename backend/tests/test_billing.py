@@ -56,14 +56,14 @@ class TestAsaasService:
             result = await self.svc.create_customer(
                 name="Empresa X",
                 email="test@example.com",
-                cpf_cnpj="12345678000199",
+                cpf_cnpj="11.222.333/0001-81",  # valid CNPJ with check digits
                 phone="11999998888",
             )
             assert result["id"] == "cus_123"
             call_args = mock_client.request.call_args
             assert call_args[0][0] == "POST"
             body = call_args[1]["json"]
-            assert body["cpfCnpj"] == "12345678000199"
+            assert body["cpfCnpj"] == "11222333000181"  # cleaned digits sent to API
             assert body["mobilePhone"] == "11999998888"
 
     @pytest.mark.asyncio

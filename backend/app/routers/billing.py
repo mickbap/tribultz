@@ -13,6 +13,7 @@ from app.database import get_db
 from app.models.auth import User
 from app.models.billing import Payment, Plan, Subscription, UsageTracking
 from app.services.asaas_service import asaas
+from app.services.email_service import send_payment_confirmation_email
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,20 @@ async def asaas_webhook(
     event = body.get("event", "")
     payment_data = body.get("payment", {})
     asaas_payment_id = payment_data.get("id", "")
+
+    # ── SUBSCRIPTION_DELETED (no payment id in payload) ──────────
+    if event == "SUBSCRIPTION_DELETED":
+        sub_data = body.get("subscription", {})
+        sub_id = sub_data.get("id", "") if isinstance(sub_data, dict) else ""
+        if sub_id:
+            db.execute(
+                update(Subscription)
+                .where(Subscription.asaas_subscription_id == sub_id)
+                .values(status="cancelled", cancelled_at=datetime.now(timezone.utc))
+            )
+            db.commit()
+            logger.info("Subscription %s cancelled via webhook", sub_id)
+        return {"status": "ok", "action": "subscription_cancelled"}
 
     if not asaas_payment_id:
         logger.info("Webhook %s without payment id, skipping", event)
@@ -84,6 +99,31 @@ async def asaas_webhook(
 
         db.commit()
         logger.info("Payment %s confirmed, subscription activated", asaas_payment_id)
+
+        # ── Payment confirmation e-mail ───────────────────────
+        if sub:
+            logger.info(
+                "PAYMENT_CONFIRMED audit | asaas_payment_id=%s user_id=%s subscription_id=%s",
+                asaas_payment_id,
+                sub.user_id,
+                sub.id,
+            )
+            # Fetch user + plan for the email
+            confirmed_user = db.execute(
+                select(User).where(User.id == sub.user_id)
+            ).scalar_one_or_none()
+            confirmed_plan = db.execute(
+                select(Plan).where(Plan.id == sub.plan_id)
+            ).scalar_one_or_none()
+            if confirmed_user and confirmed_plan:
+                send_payment_confirmation_email(
+                    to_email=str(confirmed_user.email),
+                    user_name=str(confirmed_user.full_name),
+                    plan_name=str(confirmed_plan.name),
+                    amount_cents=int(confirmed_plan.price_cents),  # type: ignore[arg-type]
+                    payment_method=str(payment.payment_method),
+                )
+
         return {"status": "ok", "action": "payment_confirmed"}
 
     # ── PAYMENT_OVERDUE ──
@@ -103,20 +143,6 @@ async def asaas_webhook(
             logger.info("Payment %s overdue, subscription past_due", asaas_payment_id)
 
         return {"status": "ok", "action": "payment_overdue"}
-
-    # ── SUBSCRIPTION_DELETED ──
-    if event == "SUBSCRIPTION_DELETED":
-        sub_data = body.get("subscription", {})
-        sub_id = sub_data.get("id", "") if isinstance(sub_data, dict) else ""
-        if sub_id:
-            db.execute(
-                update(Subscription)
-                .where(Subscription.asaas_subscription_id == sub_id)
-                .values(status="cancelled", cancelled_at=datetime.now(timezone.utc))
-            )
-            db.commit()
-            logger.info("Subscription %s cancelled via webhook", sub_id)
-        return {"status": "ok", "action": "subscription_cancelled"}
 
     logger.info("Webhook event %s not handled, ignoring", event)
     return {"status": "ignored", "reason": "unhandled event"}
