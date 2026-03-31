@@ -63,7 +63,10 @@ function CalculadoraInner() {
       };
       if (ncm.trim()) body.ncm_code = ncm.trim();
 
-      const res = await fetch(`${API_BASE}/api/v1/public/calculadora/regime-geral`, {
+      const endpoint = `${API_BASE}/api/v1/public/calculadora/regime-geral`;
+      console.log("Endpoint da calculadora:", endpoint);
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -58,10 +58,10 @@ function Row({
 export function ResultCard({ result }: ResultCardProps) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      {/* Header: Base de calculo */}
+      {/* Header: Base de cálculo */}
       <div className="border-b border-slate-200 px-5 py-4">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-slate-500">Base de Calculo (vBC)</span>
+          <span className="text-sm font-medium text-slate-500">Base de Cálculo (vBC)</span>
           <span className="text-base font-semibold text-slate-800">
             {formatBRL(result.vBC)}
           </span>
@@ -96,7 +96,7 @@ export function ResultCard({ result }: ResultCardProps) {
           <div>
             <span className="text-sm font-semibold text-slate-700">Total CBS + IBS</span>
             <span className="ml-3 text-xs text-slate-400">
-              Aliquota efetiva: {formatPct(result.effectiveRate)}
+              Alíquota efetiva: {formatPct(result.effectiveRate)}
             </span>
           </div>
           <span className="text-lg font-bold text-slate-900">{formatBRL(result.total)}</span>
