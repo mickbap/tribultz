@@ -1,0 +1,110 @@
+# ============================================================
+# Tribultz – Production Stack (Magalu Cloud / Solo Soberano)
+# ============================================================
+# Differences from docker-compose.yml:
+#   - MinIO removed: uses Magalu Cloud Object Storage (S3-compatible)
+#   - api volume mount removed: runs from built image only
+#   - api uses 2 workers, no --reload
+#   - VIRTUAL_HOST / LETSENCRYPT vars for nginx-proxy (optional)
+#
+# Usage:
+#   cp ../.env.prod ../.env          # fill all REQUIRED fields
+#   docker compose -f docker-compose.prod.yml up -d
+# ============================================================
+
+x-backend-env: &backend-env
+  env_file:
+    - ../.env
+  environment:
+    PYTHONUNBUFFERED: "1"
+    DATABASE_URL: ${DATABASE_URL}
+    DB_URL: ${DB_URL:-${DATABASE_URL}}
+    REDIS_URL: ${REDIS_URL}
+
+services:
+  # ── PostgreSQL ────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    ports:
+      - "127.0.0.1:5432:5432"      # localhost-only in production
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../database/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Redis ─────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-}"]
+    ports:
+      - "127.0.0.1:6379:6379"      # localhost-only in production
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── FastAPI (API) ─────────────────────────────────────────
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    <<: *backend-env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # ── Celery Worker ─────────────────────────────────────────
+  worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    <<: *backend-env
+    command: ["celery", "-A", "app.celery_app", "worker",
+              "--loglevel=info", "--concurrency=2", "--max-tasks-per-child=500"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Celery Beat (scheduler) ───────────────────────────────
+  beat:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    <<: *backend-env
+    command: ["celery", "-A", "app.celery_app", "beat", "--loglevel=info"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  # NOTE: No minio_data — storage handled by Magalu Cloud Object Storage
