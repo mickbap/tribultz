@@ -1,116 +1,157 @@
-"""Email service — SMTP sending with graceful degradation.
+"""Email service — Jinja2 templates + SMTP with graceful degradation.
 
-When EMAIL_VERIFICATION_ENABLED=False (default for dev), emails are
-logged to stdout instead of sent via SMTP.
+Templates live in app/templates/emails/*.html.
+When EMAIL_VERIFICATION_ENABLED=False (default dev) or SMTP_HOST is empty,
+every send call logs the intent and returns True without touching any SMTP server.
 """
+
+from __future__ import annotations
 
 import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# ── Jinja2 environment ────────────────────────────────────────────
+
+_TEMPLATE_DIR = Path(__file__).parent.parent / "templates" / "emails"
+
+_jinja_env = Environment(
+    loader=FileSystemLoader(str(_TEMPLATE_DIR)),
+    autoescape=select_autoescape(["html"]),
+)
+
+
+def _render(template_name: str, **ctx) -> str:
+    return _jinja_env.get_template(template_name).render(**ctx)
+
+
+# ── Public send functions ─────────────────────────────────────────
+
 
 def send_verification_email(to_email: str, user_name: str, token: str) -> bool:
-    """Send email verification link. Returns True on success."""
+    """Send the 'Confirm your email' link. Token expires in 24 h."""
     verify_url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
 
-    subject = "Tribultz — Confirme seu email"
-    html_body = f"""\
-<html>
-<body style="font-family: sans-serif; color: #1e293b; max-width: 560px; margin: 0 auto;">
-  <h2 style="color: #1d4ed8;">Tribultz</h2>
-  <p>Olá, <strong>{user_name}</strong>!</p>
-  <p>Obrigado por se cadastrar no Tribultz Console. Para ativar sua conta,
-     confirme seu email clicando no botão abaixo:</p>
-  <p style="text-align: center; margin: 24px 0;">
-    <a href="{verify_url}"
-       style="background: #2563eb; color: white; padding: 12px 28px;
-              border-radius: 8px; text-decoration: none; font-weight: 600;">
-      Confirmar email
-    </a>
-  </p>
-  <p style="font-size: 13px; color: #64748b;">
-    Ou copie e cole este link no navegador:<br/>
-    <a href="{verify_url}">{verify_url}</a>
-  </p>
-  <p style="font-size: 13px; color: #64748b;">
-    Este link expira em 24 horas. Se você não solicitou este cadastro,
-    ignore este email.
-  </p>
-  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;"/>
-  <p style="font-size: 11px; color: #94a3b8;">
-    Tribultz Tecnologia Ltda. — Conformidade tributária em tempo de execução.<br/>
-    DPO: dpo@tribultz.com.br
-  </p>
-</body>
-</html>"""
-
+    html_body = _render(
+        "verify_email.html",
+        user_name=user_name,
+        verify_url=verify_url,
+        frontend_url=settings.FRONTEND_URL,
+    )
     text_body = (
         f"Olá, {user_name}!\n\n"
-        f"Confirme seu email acessando: {verify_url}\n\n"
+        f"Confirme seu email acessando:\n{verify_url}\n\n"
         "Este link expira em 24 horas.\n"
         "Tribultz Tecnologia Ltda."
     )
-
-    return _send_email(to_email, subject, html_body, text_body, verify_url)
+    return _send_email(
+        to_email=to_email,
+        subject="Tribultz — Confirme seu email",
+        html_body=html_body,
+        text_body=text_body,
+        log_url=verify_url,
+    )
 
 
 def send_password_reset_email(to_email: str, user_name: str, token: str) -> bool:
-    """Send password reset link. Returns True on success."""
+    """Send the 'Reset your password' link. Token expires in 30 min."""
     reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
 
-    subject = "Tribultz — Redefinir senha"
-    html_body = f"""\
-<html>
-<body style="font-family: sans-serif; color: #1e293b; max-width: 560px; margin: 0 auto;">
-  <h2 style="color: #1d4ed8;">Tribultz</h2>
-  <p>Olá, <strong>{user_name}</strong>!</p>
-  <p>Recebemos uma solicitação para redefinir a senha da sua conta no Tribultz Console.
-     Clique no botão abaixo para criar uma nova senha:</p>
-  <p style="text-align: center; margin: 24px 0;">
-    <a href="{reset_url}"
-       style="background: #2563eb; color: white; padding: 12px 28px;
-              border-radius: 8px; text-decoration: none; font-weight: 600;">
-      Redefinir senha
-    </a>
-  </p>
-  <p style="font-size: 13px; color: #64748b;">
-    Ou copie e cole este link no navegador:<br/>
-    <a href="{reset_url}">{reset_url}</a>
-  </p>
-  <p style="font-size: 13px; color: #64748b;">
-    Este link expira em 1 hora. Se você não solicitou a redefinição,
-    ignore este email — sua senha permanece inalterada.
-  </p>
-  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;"/>
-  <p style="font-size: 11px; color: #94a3b8;">
-    Tribultz Tecnologia Ltda. — Conformidade tributária em tempo de execução.<br/>
-    DPO: dpo@tribultz.com.br
-  </p>
-</body>
-</html>"""
-
+    html_body = _render(
+        "password_reset.html",
+        user_name=user_name,
+        reset_url=reset_url,
+        frontend_url=settings.FRONTEND_URL,
+    )
     text_body = (
         f"Olá, {user_name}!\n\n"
-        f"Redefina sua senha acessando: {reset_url}\n\n"
-        "Este link expira em 1 hora.\n"
+        f"Redefina sua senha acessando:\n{reset_url}\n\n"
+        "Este link expira em 30 minutos.\n"
         "Se você não solicitou, ignore este email.\n"
         "Tribultz Tecnologia Ltda."
     )
+    return _send_email(
+        to_email=to_email,
+        subject="Tribultz — Redefinir senha",
+        html_body=html_body,
+        text_body=text_body,
+        log_url=reset_url,
+    )
 
-    return _send_email(to_email, subject, html_body, text_body, reset_url)
+
+def send_payment_confirmation_email(
+    to_email: str,
+    user_name: str,
+    plan_name: str,
+    amount_cents: int,
+    payment_method: str,
+) -> bool:
+    """Send the 'Payment confirmed / Premium activated' receipt email."""
+    method_labels = {"pix": "PIX", "credit_card": "Cartão de Crédito", "boleto": "Boleto"}
+    method_display = method_labels.get(payment_method.lower(), payment_method.upper())
+    amount_display = f"R$ {amount_cents / 100:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+    # Feature list shown in the email body — generic for all paid plans
+    features = [
+        "Motor determinístico de validação (CBS/IBS · LC 214 + LC 227)",
+        "Memória de Precedentes e contexto fiscal acumulado",
+        "Relatórios auditáveis em CSV e PDF",
+        "Dashboard de conformidade multi-CNPJ",
+        "Validação em lote de documentos XML",
+    ]
+
+    html_body = _render(
+        "payment_confirmed.html",
+        user_name=user_name,
+        plan_name=plan_name,
+        amount=amount_display,
+        payment_method=method_display,
+        features=features,
+        console_url=f"{settings.FRONTEND_URL}/dashboard",
+        frontend_url=settings.FRONTEND_URL,
+    )
+    text_body = (
+        f"Olá, {user_name}!\n\n"
+        f"Pagamento confirmado — Plano {plan_name} ativado.\n"
+        f"Valor: {amount_display} via {method_display}.\n\n"
+        "Acesse o console em: "
+        f"{settings.FRONTEND_URL}/dashboard\n\n"
+        "Tribultz Tecnologia Ltda."
+    )
+    return _send_email(
+        to_email=to_email,
+        subject=f"Tribultz — Plano {plan_name} ativado 🎉",
+        html_body=html_body,
+        text_body=text_body,
+        log_url=f"{settings.FRONTEND_URL}/dashboard",
+    )
 
 
-def _send_email(to_email: str, subject: str, html_body: str, text_body: str, log_url: str) -> bool:
-    """Internal: send or log an email."""
+# ── Internal SMTP sender ──────────────────────────────────────────
+
+
+def _send_email(
+    to_email: str,
+    subject: str,
+    html_body: str,
+    text_body: str,
+    log_url: str,
+) -> bool:
+    """Build and dispatch MIMEMultipart email. Logs instead of sending in dev."""
     if not settings.EMAIL_VERIFICATION_ENABLED or not settings.SMTP_HOST:
         logger.info(
-            "email_logged (SMTP disabled)",
-            extra={"to": to_email, "url": log_url},
+            "email_dev_log subject=%r to=%r url=%s",
+            subject,
+            to_email,
+            log_url,
         )
         return True
 
@@ -123,20 +164,18 @@ def _send_email(to_email: str, subject: str, html_body: str, text_body: str, log
         msg.attach(MIMEText(text_body, "plain", "utf-8"))
         msg.attach(MIMEText(html_body, "html", "utf-8"))
 
+        server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
         if settings.SMTP_TLS:
-            server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
             server.starttls()
-        else:
-            server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
-
         if settings.SMTP_USER:
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
 
         server.sendmail(settings.SMTP_FROM_EMAIL, to_email, msg.as_string())
         server.quit()
 
-        logger.info("email_sent", extra={"to": to_email, "subject": subject})
+        logger.info("email_sent subject=%r to=%r", subject, to_email)
         return True
+
     except Exception:
-        logger.exception("email_send_failed", extra={"to": to_email, "subject": subject})
+        logger.exception("email_send_failed subject=%r to=%r", subject, to_email)
         return False

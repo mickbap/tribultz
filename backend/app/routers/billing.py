@@ -9,11 +9,11 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
-from app.config import settings
 from app.database import get_db
 from app.models.auth import User
 from app.models.billing import Payment, Plan, Subscription, UsageTracking
 from app.services.asaas_service import asaas
+from app.services.email_service import send_payment_confirmation_email
 
 logger = logging.getLogger(__name__)
 
@@ -100,20 +100,29 @@ async def asaas_webhook(
         db.commit()
         logger.info("Payment %s confirmed, subscription activated", asaas_payment_id)
 
-        # ── Welcome e-mail hook ────────────────────────────────
-        # TODO(s-email): send transactional welcome/receipt email via SMTP.
-        # When SMTP is configured (settings.SMTP_HOST is set), dispatch here:
-        #   send_payment_confirmation_email(user_id=sub.user_id, payment_id=payment.id)
-        # For now we emit a structured audit log so the event is traceable.
+        # ── Payment confirmation e-mail ───────────────────────
         if sub:
             logger.info(
-                "PAYMENT_CONFIRMED audit | asaas_payment_id=%s user_id=%s subscription_id=%s"
-                " — welcome email pending SMTP configuration (EMAIL_VERIFICATION_ENABLED=%s)",
+                "PAYMENT_CONFIRMED audit | asaas_payment_id=%s user_id=%s subscription_id=%s",
                 asaas_payment_id,
                 sub.user_id,
                 sub.id,
-                "true" if settings.EMAIL_VERIFICATION_ENABLED else "false",
             )
+            # Fetch user + plan for the email
+            confirmed_user = db.execute(
+                select(User).where(User.id == sub.user_id)
+            ).scalar_one_or_none()
+            confirmed_plan = db.execute(
+                select(Plan).where(Plan.id == sub.plan_id)
+            ).scalar_one_or_none()
+            if confirmed_user and confirmed_plan:
+                send_payment_confirmation_email(
+                    to_email=str(confirmed_user.email),
+                    user_name=str(confirmed_user.full_name),
+                    plan_name=str(confirmed_plan.name),
+                    amount_cents=int(confirmed_plan.price_cents),  # type: ignore[arg-type]
+                    payment_method=str(payment.payment_method),
+                )
 
         return {"status": "ok", "action": "payment_confirmed"}
 

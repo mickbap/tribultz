@@ -42,9 +42,9 @@ def verify_email_verification_token(token: str) -> Optional[str]:
 
 
 def create_password_reset_token(user_id: str) -> str:
-    """Create a JWT token for password reset (1h expiry)."""
+    """Create a JWT token for password reset (30 min expiry)."""
     now = datetime.now(timezone.utc)
-    expire = now + timedelta(hours=1)
+    expire = now + timedelta(minutes=30)
     to_encode = {
         "exp": expire,
         "iat": now,

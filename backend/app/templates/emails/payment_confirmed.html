@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pagamento confirmado — Tribultz</title>
+</head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;max-width:560px;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#0f172a;padding:28px 40px;">
+            <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.3px;">Tribultz</span>
+            <span style="color:#64748b;font-size:12px;margin-left:10px;letter-spacing:0.08em;text-transform:uppercase;">Console</span>
+          </td>
+        </tr>
+
+        <!-- Confirmation badge -->
+        <tr>
+          <td style="background:#f0fdf4;border-bottom:1px solid #bbf7d0;padding:20px 40px;">
+            <p style="margin:0;font-size:14px;color:#166534;font-weight:700;">
+              ✅ Pagamento confirmado — Acesso Premium ativado
+            </p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:40px 40px 32px;">
+            <p style="margin:0 0 8px;font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;">Bem-vindo ao plano {{ plan_name }}</p>
+            <h1 style="margin:0 0 20px;font-size:24px;font-weight:800;color:#0f172a;line-height:1.2;">
+              Memória Fiscal ativada
+            </h1>
+            <p style="margin:0 0 24px;font-size:15px;color:#334155;line-height:1.7;">
+              Olá, <strong>{{ user_name }}</strong>! Seu pagamento foi processado com sucesso.
+              A partir de agora você tem acesso completo ao motor determinístico de
+              conformidade tributária com Memória de Precedentes.
+            </p>
+
+            <!-- Receipt card -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:28px;">
+              <tr><td style="padding:24px;">
+                <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:0.08em;">Recibo</p>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="font-size:13px;color:#64748b;padding:6px 0;">Plano</td>
+                    <td align="right" style="font-size:13px;font-weight:600;color:#0f172a;padding:6px 0;">{{ plan_name }}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px;color:#64748b;padding:6px 0;border-top:1px solid #e2e8f0;">Valor</td>
+                    <td align="right" style="font-size:13px;font-weight:600;color:#0f172a;padding:6px 0;border-top:1px solid #e2e8f0;">{{ amount }}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px;color:#64748b;padding:6px 0;border-top:1px solid #e2e8f0;">Forma de pagamento</td>
+                    <td align="right" style="font-size:13px;font-weight:600;color:#0f172a;padding:6px 0;border-top:1px solid #e2e8f0;">{{ payment_method }}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px;color:#64748b;padding:6px 0;border-top:1px solid #e2e8f0;">Status</td>
+                    <td align="right" style="padding:6px 0;border-top:1px solid #e2e8f0;">
+                      <span style="background:#dcfce7;color:#166534;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">Confirmado</span>
+                    </td>
+                  </tr>
+                </table>
+              </td></tr>
+            </table>
+
+            <!-- Feature highlights -->
+            <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#0f172a;">O que você acessa agora:</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              {% for feature in features %}
+              <tr>
+                <td style="padding:5px 0;font-size:14px;color:#334155;">
+                  <span style="color:#2563eb;font-weight:700;margin-right:8px;">→</span>{{ feature }}
+                </td>
+              </tr>
+              {% endfor %}
+            </table>
+
+            <table cellpadding="0" cellspacing="0" style="margin:0 auto 12px;">
+              <tr>
+                <td style="background:#2563eb;border-radius:10px;">
+                  <a href="{{ console_url }}"
+                     style="display:block;padding:14px 32px;color:#ffffff;font-weight:700;font-size:15px;text-decoration:none;">
+                    Acessar o Console
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="border-top:1px solid #e2e8f0;padding:20px 40px;">
+            <p style="margin:0;font-size:11px;color:#94a3b8;line-height:1.6;">
+              Tribultz Tecnologia Ltda. — Motor determinístico de conformidade tributária (CBS/IBS · LC 214).<br/>
+              Dúvidas: <a href="mailto:suporte@tribultz.com.br" style="color:#64748b;">suporte@tribultz.com.br</a>
+              &nbsp;·&nbsp; DPO: <a href="mailto:dpo@tribultz.com.br" style="color:#64748b;">dpo@tribultz.com.br</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
