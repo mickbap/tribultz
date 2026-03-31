@@ -9,6 +9,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.config import settings
 from app.database import get_db
 from app.models.auth import User
 from app.models.billing import Payment, Plan, Subscription, UsageTracking
@@ -41,6 +42,20 @@ async def asaas_webhook(
     event = body.get("event", "")
     payment_data = body.get("payment", {})
     asaas_payment_id = payment_data.get("id", "")
+
+    # ── SUBSCRIPTION_DELETED (no payment id in payload) ──────────
+    if event == "SUBSCRIPTION_DELETED":
+        sub_data = body.get("subscription", {})
+        sub_id = sub_data.get("id", "") if isinstance(sub_data, dict) else ""
+        if sub_id:
+            db.execute(
+                update(Subscription)
+                .where(Subscription.asaas_subscription_id == sub_id)
+                .values(status="cancelled", cancelled_at=datetime.now(timezone.utc))
+            )
+            db.commit()
+            logger.info("Subscription %s cancelled via webhook", sub_id)
+        return {"status": "ok", "action": "subscription_cancelled"}
 
     if not asaas_payment_id:
         logger.info("Webhook %s without payment id, skipping", event)
@@ -84,6 +99,22 @@ async def asaas_webhook(
 
         db.commit()
         logger.info("Payment %s confirmed, subscription activated", asaas_payment_id)
+
+        # ── Welcome e-mail hook ────────────────────────────────
+        # TODO(s-email): send transactional welcome/receipt email via SMTP.
+        # When SMTP is configured (settings.SMTP_HOST is set), dispatch here:
+        #   send_payment_confirmation_email(user_id=sub.user_id, payment_id=payment.id)
+        # For now we emit a structured audit log so the event is traceable.
+        if sub:
+            logger.info(
+                "PAYMENT_CONFIRMED audit | asaas_payment_id=%s user_id=%s subscription_id=%s"
+                " — welcome email pending SMTP configuration (EMAIL_VERIFICATION_ENABLED=%s)",
+                asaas_payment_id,
+                sub.user_id,
+                sub.id,
+                "true" if settings.EMAIL_VERIFICATION_ENABLED else "false",
+            )
+
         return {"status": "ok", "action": "payment_confirmed"}
 
     # ── PAYMENT_OVERDUE ──
@@ -103,20 +134,6 @@ async def asaas_webhook(
             logger.info("Payment %s overdue, subscription past_due", asaas_payment_id)
 
         return {"status": "ok", "action": "payment_overdue"}
-
-    # ── SUBSCRIPTION_DELETED ──
-    if event == "SUBSCRIPTION_DELETED":
-        sub_data = body.get("subscription", {})
-        sub_id = sub_data.get("id", "") if isinstance(sub_data, dict) else ""
-        if sub_id:
-            db.execute(
-                update(Subscription)
-                .where(Subscription.asaas_subscription_id == sub_id)
-                .values(status="cancelled", cancelled_at=datetime.now(timezone.utc))
-            )
-            db.commit()
-            logger.info("Subscription %s cancelled via webhook", sub_id)
-        return {"status": "ok", "action": "subscription_cancelled"}
 
     logger.info("Webhook event %s not handled, ignoring", event)
     return {"status": "ignored", "reason": "unhandled event"}
