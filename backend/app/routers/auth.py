@@ -677,3 +677,14 @@ def reset_password(
 
     logger.info("password_reset_completed", extra={"user_id": user_id})
     return {"message": "Senha redefinida com sucesso. Faça login com sua nova senha."}
+
+
+@router.get("/health")
+def auth_health(db: Session = Depends(get_db)):
+    """Auth subsystem health check — validates DB connectivity."""
+    try:
+        db.execute(select(User).limit(1))
+        return {"status": "ok", "subsystem": "auth", "db": "connected"}
+    except Exception as exc:
+        logger.error("auth_health_db_error: %s", exc)
+        raise HTTPException(status_code=503, detail="Auth DB unavailable")
