@@ -54,7 +54,7 @@ export function buildBatchReportCsv(
   const fail = entries.length - pass;
   const totalFindings = entries.reduce((s, e) => s + e.result.findings.length, 0);
 
-  lines.push(`# Tribultz – Relatorio de Lote`);
+  lines.push(`# Tribultz – Relatório de Lote`);
   lines.push(`# generated_at: ${now.toISOString()}`);
   lines.push(`# document_type: ${documentType}`);
   lines.push(`# total_files: ${entries.length}`);
@@ -152,7 +152,7 @@ export function buildBatchReportHtml(
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Tribultz - Relatorio de Lote</title>
+<title>Tribultz - Relatório de Lote</title>
 <style>
   @media print {
     body { font-size: 11px; }
@@ -165,7 +165,7 @@ export function buildBatchReportHtml(
 </head>
 <body>
 
-<h1>Tribultz - Relatorio de Lote</h1>
+<h1>Tribultz - Relatório de Lote</h1>
 <p style="color:#64748b;font-size:13px;margin-top:0">
   Base legal: LC 214 + LC 227 | CBS 0,10% | IBS 0,90%
 </p>

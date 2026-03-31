@@ -93,7 +93,7 @@ test("CSV escapa campos com aspas duplas", () => {
 
 test("HTML contém titulo e metadados do job", () => {
   const html = buildAuditableReportHtml(makeResult(), "NFSE", FIXED_DATE);
-  assert.ok(html.includes("Tribultz - Relatorio Auditavel"));
+  assert.ok(html.includes("Tribultz - Relatório Auditável"));
   assert.ok(html.includes("job_xml_abc123"));
   assert.ok(html.includes("tenant-demo"));
   assert.ok(html.includes("LC 214"));
@@ -109,7 +109,7 @@ test("HTML contém tabela de findings com severidade", () => {
   assert.ok(html.includes("NCM_PLACEHOLDER"));
 });
 
-test("HTML contém tabela de evidencias", () => {
+test("HTML contém tabela de evidências", () => {
   const html = buildAuditableReportHtml(makeResult(), "NFSE", FIXED_DATE);
   assert.ok(html.includes("E_XML_CST_LEN"));
   assert.ok(html.includes("E_XML_NCM_INFO"));

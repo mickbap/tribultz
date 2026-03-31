@@ -107,7 +107,7 @@ export function buildAuditableReportCsv(
   const lines: string[] = [];
 
   // Meta header as comments
-  lines.push(`# Tribultz – Relatorio Auditavel`);
+  lines.push(`# Tribultz – Relatório Auditável`);
   lines.push(`# job_id: ${meta.job_id}`);
   lines.push(`# tenant_id: ${meta.tenant_id}`);
   lines.push(`# generated_at: ${meta.generated_at}`);
@@ -151,7 +151,7 @@ function evidenceTableHtml(evidences: ValidationEvidence[]): string {
     .join("\n");
 
   return `
-  <h2 style="margin-top:24px;font-size:16px;color:#1e293b">Evidencias</h2>
+  <h2 style="margin-top:24px;font-size:16px;color:#1e293b">Evidências</h2>
   <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px">
     <thead>
       <tr style="background:#f1f5f9">
@@ -193,7 +193,7 @@ export function buildAuditableReportHtml(
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Tribultz - Relatorio Auditavel - ${escapeHtml(meta.job_id)}</title>
+<title>Tribultz - Relatório Auditável - ${escapeHtml(meta.job_id)}</title>
 <style>
   @media print {
     body { font-size: 11px; }
@@ -206,7 +206,7 @@ export function buildAuditableReportHtml(
 </head>
 <body>
 
-<h1>Tribultz - Relatorio Auditavel</h1>
+<h1>Tribultz - Relatório Auditável</h1>
 <p style="color:#64748b;font-size:13px;margin-top:0">
   Base legal: LC 214 + LC 227 | CBS 0,90% | IBS 0,10% | NT 2025.002-RTC
 </p>
@@ -229,7 +229,7 @@ export function buildAuditableReportHtml(
       <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left">Titulo</th>
       <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left">Campo</th>
       <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left">Recomendacao</th>
-      <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left">Evidencias</th>
+      <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left">Evidências</th>
     </tr>
   </thead>
   <tbody>

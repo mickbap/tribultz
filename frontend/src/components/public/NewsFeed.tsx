@@ -141,7 +141,7 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
   if (!items.length) {
     return (
       <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-        Nenhuma atualizacao publicada ainda.
+        Nenhuma atualização publicada ainda.
       </div>
     );
   }
