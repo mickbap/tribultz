@@ -1,6 +1,7 @@
 """Tribultz – FastAPI application entry-point."""
 
 import re
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,10 +15,17 @@ from app.services.news_seed import ensure_default_news_entry
 configure_logging()
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):  # noqa: ARG001
+    ensure_default_news_entry()
+    yield
+
+
 app = FastAPI(
     title="Tribultz API",
     version="0.2.0",
     description="Plataforma de conformidade tributária – Reforma Tributária BR",
+    lifespan=lifespan,
 )
 
 
@@ -75,11 +83,6 @@ app.include_router(public.router)
 app.include_router(calculadora.router)
 app.include_router(reports.router)
 app.include_router(news.router)
-
-
-@app.on_event("startup")
-def seed_default_news() -> None:
-    ensure_default_news_entry()
 
 
 @app.get("/", tags=["root"])
