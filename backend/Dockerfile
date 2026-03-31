@@ -42,6 +42,15 @@ USER appuser
 
 EXPOSE 8000
 
+# Docker daemon health check — uses the fast liveness probe (no deps, instant)
+# interval: 30s, timeout: 5s, retries: 3 → container marked unhealthy after 90s
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD python -c \
+        "import urllib.request, sys; \
+         r = urllib.request.urlopen('http://localhost:8000/health', timeout=4); \
+         sys.exit(0 if r.status == 200 else 1)" \
+    || exit 1
+
 # Production: no --reload, workers scaled via env
 CMD ["uvicorn", "app.main:app", \
      "--host", "0.0.0.0", \

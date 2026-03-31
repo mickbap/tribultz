@@ -1,0 +1,27 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Tribultz — Cloudflare Terraform Variables
+# Copie este arquivo para terraform.tfvars e preencha os valores reais.
+# NUNCA commite terraform.tfvars (contém secrets).
+# ══════════════════════════════════════════════════════════════════════════════
+
+# 1. Cloudflare API Token
+#    Criar em: https://dash.cloudflare.com/profile/api-tokens
+#    Permissões necessárias:
+#      - Zone → Zone → Edit
+#      - Zone → DNS → Edit
+#      - Zone → Firewall Services → Edit
+#      - Zone → Page Rules → Edit
+#    Restringir ao Zone: tribultz.com.br
+cloudflare_api_token = "seu_api_token_aqui"
+
+# 2. Zone ID
+#    Localizar em: Cloudflare Dashboard → tribultz.com.br → Overview → Zone ID (lado direito)
+zone_id = "seu_zone_id_aqui"
+
+# 3. IP da VM Magalu Cloud
+#    Preencher após provisionar a VM no painel Magalu Cloud.
+#    Ex: 177.93.10.42
+api_origin_ip = "0.0.0.0"
+
+# 4. URL do frontend Vercel (opcional — apenas para outputs)
+frontend_url = "https://tribultz.vercel.app"
