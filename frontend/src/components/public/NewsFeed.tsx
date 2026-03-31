@@ -15,7 +15,34 @@ type NewsFeedProps = {
   compact?: boolean;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+
+const MOCK_NEWS: NewsItem[] = [
+  {
+    id: "mock-1",
+    title: "Motor CBS/IBS com 18 regras determinísticas",
+    description:
+      "Validação completa de notas fiscais contra as regras da LC 214 com evidências auditáveis por finding.",
+    category: "Feature",
+    created_at: "2026-03-28T00:00:00Z",
+  },
+  {
+    id: "mock-2",
+    title: "Calculadora CBS/IBS local para regime geral",
+    description:
+      "Calcule CBS e IBS por NCM, UF e CST sem autenticação. Gera snippet XML pronto para ERP.",
+    category: "Feature",
+    created_at: "2026-03-22T00:00:00Z",
+  },
+  {
+    id: "mock-3",
+    title: "Diagnóstico gratuito de XML fiscal",
+    description:
+      "Envie sua NF-e e receba um relatório completo de conformidade com a reforma tributária 2026.",
+    category: "Feature",
+    created_at: "2026-03-15T00:00:00Z",
+  },
+];
 
 const categoryStyles: Record<NewsItem["category"], string> = {
   Feature: "bg-emerald-100 text-emerald-800",
@@ -32,13 +59,29 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
     let active = true;
 
     async function loadNews() {
+      const apiUrl = API_BASE || "(não configurado — usando fallback)";
+      console.log("API URL em uso:", apiUrl);
+
+      if (!API_BASE) {
+        console.warn(
+          "[NewsFeed] NEXT_PUBLIC_API_BASE_URL não está definido. " +
+            "Configure a variável de ambiente no painel da Vercel. " +
+            "Carregando mock de resiliência.",
+        );
+        if (active) {
+          setItems(limit ? MOCK_NEWS.slice(0, limit) : MOCK_NEWS);
+          setLoading(false);
+        }
+        return;
+      }
+
       try {
         const res = await fetch(`${API_BASE}/api/v1/news`, {
           cache: "no-store",
         });
 
         if (!res.ok) {
-          throw new Error(`News ${res.status}`);
+          throw new Error(`News endpoint retornou HTTP ${res.status} (${res.statusText})`);
         }
 
         const data = (await res.json()) as NewsItem[];
@@ -46,10 +89,16 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
 
         setItems(limit ? data.slice(0, limit) : data);
         setError("");
-      } catch {
+      } catch (err) {
         if (!active) return;
-        setItems([]);
-        setError("Nao foi possivel carregar as atualizacoes agora.");
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("[NewsFeed] Falha ao buscar notícias:", message, {
+          url: `${API_BASE}/api/v1/news`,
+          hint: message.includes("fetch") ? "Connection Refused / CORS" : "HTTP error",
+        });
+        // Resiliência: exibe mock enquanto a API não está disponível
+        setItems(limit ? MOCK_NEWS.slice(0, limit) : MOCK_NEWS);
+        setError("");
       } finally {
         if (active) {
           setLoading(false);
@@ -92,7 +141,7 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
   if (!items.length) {
     return (
       <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-        Nenhuma atualizacao publicada ainda.
+        Nenhuma atualização publicada ainda.
       </div>
     );
   }

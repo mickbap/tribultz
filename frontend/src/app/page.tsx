@@ -5,19 +5,19 @@ import { NewsFeed } from "@/components/public/NewsFeed";
 
 const highlights = [
   {
-    title: "Memoria de precedentes",
+    title: "Memória de precedentes",
     description:
-      "Cada validacao acumula contexto operacional para acelerar decisoes fiscais com consistencia.",
+      "Cada validação acumula contexto operacional para acelerar decisões fiscais com consistência.",
   },
   {
     title: "Cloud soberana",
     description:
-      "Arquitetura preparada para operacao no Brasil, com governanca, trilha de auditoria e isolamento por tenant.",
+      "Arquitetura preparada para operação no Brasil, com governança, trilha de auditoria e isolamento por tenant.",
   },
   {
     title: "Determinismo operacional",
     description:
-      "Regras explicaveis, evidencias auditaveis e menos dependencia de interpretacao manual na rotina tributaria.",
+      "Regras explicáveis, evidências auditáveis e menos dependência de interpretação manual na rotina tributária.",
   },
 ];
 
@@ -35,12 +35,12 @@ export default function HomePage() {
                 Marketing Phase M04
               </span>
               <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-slate-950 md:text-6xl">
-                Inteligencia Fiscal Deterministica com Memoria de Precedentes
+                Inteligência Fiscal Determinística com Memória de Precedentes
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 md:text-xl">
-                A Tribultz transforma a reforma tributaria em operacao confiavel:
-                regras explicaveis, contexto historico e execucao preparada para
-                times que precisam responder rapido sem abrir mao de governanca.
+                A Tribultz transforma a reforma tributária em operação confiável:
+                regras explicáveis, contexto histórico e execução preparada para
+                times que precisam responder rápido sem abrir mão de governança.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -58,8 +58,8 @@ export default function HomePage() {
               </div>
               <div className="mt-10 flex flex-wrap gap-6 text-sm text-slate-500">
                 <span>IA fiscal com trilha auditavel</span>
-                <span>Memoria aplicada a precedentes</span>
-                <span>Pronto para CBS, IBS e operacao multi-CNPJ</span>
+                <span>Memória aplicada a precedentes</span>
+                <span>Pronto para CBS, IBS e operação multi-CNPJ</span>
               </div>
             </div>
 
@@ -74,16 +74,16 @@ export default function HomePage() {
                 <div className="mt-6 grid gap-3">
                   <div className="rounded-2xl bg-white/10 p-4">
                     <p className="text-xs text-slate-300">Camada 1</p>
-                    <p className="mt-1 font-semibold">Motor deterministico de validacao</p>
+                    <p className="mt-1 font-semibold">Motor determinístico de validação</p>
                   </div>
                   <div className="rounded-2xl bg-white/10 p-4">
                     <p className="text-xs text-slate-300">Camada 2</p>
-                    <p className="mt-1 font-semibold">Memoria de precedentes e evidencias</p>
+                    <p className="mt-1 font-semibold">Memória de precedentes e evidências</p>
                   </div>
                   <div className="rounded-2xl bg-emerald-400/15 p-4 ring-1 ring-emerald-300/30">
                     <p className="text-xs text-emerald-100">Camada 3</p>
                     <p className="mt-1 font-semibold text-emerald-50">
-                      Decisao fiscal pronta para auditoria e execucao
+                      Decisão fiscal pronta para auditoria e execução
                     </p>
                   </div>
                 </div>
@@ -124,7 +124,7 @@ export default function HomePage() {
                   News
                 </p>
                 <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                  Ultimas atualizacoes do produto
+                  Últimas atualizações do produto
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
                   Este bloco consome o endpoint publico de novidades do backend para

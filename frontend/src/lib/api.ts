@@ -322,7 +322,7 @@ function contentDispositionFilename(raw: string | null): string | null {
 
 export async function exportJobEvidenceZip(jobId: string): Promise<JobEvidenceZipResult> {
   if (!jobId) {
-    throw new Error("jobId obrigatorio para exportar evidencias.");
+    throw new Error("jobId obrigatório para exportar evidências.");
   }
 
   if (getMockMode()) {

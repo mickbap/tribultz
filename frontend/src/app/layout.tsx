@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tribultz | Inteligencia Fiscal para a Reforma Tributaria",
-  description: "Plataforma de inteligencia fiscal para a reforma tributaria com validacao deterministica, memoria de precedentes e trilha auditavel.",
+  title: "Tribultz | Inteligência Fiscal para a Reforma Tributária",
+  description: "Plataforma de inteligência fiscal para a reforma tributária com validação determinística, memória de precedentes e trilha auditável.",
 };
 
 export default function RootLayout({
