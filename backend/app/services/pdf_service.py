@@ -33,6 +33,15 @@ def _format_brl(value: Any) -> str:
 _jinja_env.filters["brl"] = _format_brl
 
 
+def _persist_to_s3(key: str, data: bytes, content_type: str) -> None:
+    """Upload bytes to S3/MinIO. Silently logs on failure."""
+    try:
+        from app.tools import s3_tool
+        s3_tool.put_object(key=key, data=data, content_type=content_type)
+    except Exception:
+        logger.warning("S3 persist failed for key=%s", key, exc_info=True)
+
+
 def generate_validation_report_pdf(
     *,
     company_name: str,
@@ -47,9 +56,11 @@ def generate_validation_report_pdf(
     cbs_rate: str = "0.10",
     ibs_rate: str = "0.90",
     report_hash: str = "",
-) -> bytes:
-    """Render a validation report as PDF bytes.
+    storage_key: str = "",
+) -> dict:
+    """Render a validation report as PDF bytes and optionally persist to S3.
 
+    Returns a dict with keys: bytes, storage_key, file_size.
     Falls back to HTML-only if WeasyPrint is not installed.
     """
     template = _jinja_env.get_template("report_validation.html")
@@ -84,10 +95,21 @@ def generate_validation_report_pdf(
         from weasyprint import HTML
         pdf_bytes: bytes = HTML(string=html).write_pdf()  # type: ignore[assignment]
         logger.info("PDF generated for job %s (%d bytes)", job_id, len(pdf_bytes))
-        return pdf_bytes
+        if storage_key:
+            _persist_to_s3(storage_key, pdf_bytes, "application/pdf")
     except (ImportError, OSError):
         logger.warning("WeasyPrint unavailable (missing GTK/system libs), returning HTML fallback")
-        return html.encode("utf-8")
+        pdf_bytes = html.encode("utf-8")
+        if storage_key:
+            # Use .html extension for fallback
+            html_key = storage_key.replace(".pdf", ".html") if storage_key.endswith(".pdf") else storage_key + ".html"
+            _persist_to_s3(html_key, pdf_bytes, "text/html")
+
+    return {
+        "bytes": pdf_bytes,
+        "storage_key": storage_key,
+        "file_size": len(pdf_bytes),
+    }
 
 
 def generate_batch_report_pdf(
@@ -99,8 +121,12 @@ def generate_batch_report_pdf(
     invoices: list[dict],
     overall_status: str,
     report_hash: str = "",
-) -> bytes:
-    """Render a batch validation report as PDF bytes."""
+    storage_key: str = "",
+) -> dict:
+    """Render a batch validation report as PDF bytes and optionally persist to S3.
+
+    Returns a dict with keys: bytes, storage_key, file_size.
+    """
     template = _jinja_env.get_template("report_batch.html")
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
 
@@ -128,7 +154,17 @@ def generate_batch_report_pdf(
         from weasyprint import HTML
         pdf_bytes: bytes = HTML(string=html).write_pdf()  # type: ignore[assignment]
         logger.info("Batch PDF generated for job %s (%d bytes)", job_id, len(pdf_bytes))
-        return pdf_bytes
+        if storage_key:
+            _persist_to_s3(storage_key, pdf_bytes, "application/pdf")
     except (ImportError, OSError):
         logger.warning("WeasyPrint unavailable (missing GTK/system libs), returning HTML fallback")
-        return html.encode("utf-8")
+        pdf_bytes = html.encode("utf-8")
+        if storage_key:
+            html_key = storage_key.replace(".pdf", ".html") if storage_key.endswith(".pdf") else storage_key + ".html"
+            _persist_to_s3(html_key, pdf_bytes, "text/html")
+
+    return {
+        "bytes": pdf_bytes,
+        "storage_key": storage_key,
+        "file_size": len(pdf_bytes),
+    }

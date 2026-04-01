@@ -40,8 +40,12 @@
 <body>
 
 <div class="header">
+  <div style="display:flex; align-items:center; gap:10pt; margin-bottom:4pt;">
+    <span style="font-size:20pt; font-weight:900; color:#2563eb; letter-spacing:-1pt;">Tribultz</span>
+    <span style="font-size:9pt; color:#94a3b8; border-left:1px solid #cbd5e1; padding-left:10pt;">Plataforma de Conformidade Fiscal</span>
+  </div>
   <h1>Relatório de Validação Tributária</h1>
-  <div class="subtitle">Plataforma Tribultz — Reforma Tributária (LC 214 / LC 227)</div>
+  <div class="subtitle">Reforma Tributária Brasileira · LC 214/2025 · NT 2025.002-RTC</div>
 </div>
 
 <div class="meta-grid">
@@ -139,10 +143,39 @@
 </div>
 {% endif %}
 
+<div class="section">
+  <h2>Memória de Cálculo CBS/IBS</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Base de Cálculo (vBC)</th>
+        <th>Alíq. CBS (pCBS)</th>
+        <th>Valor CBS (vCBS)</th>
+        <th>Alíq. IBS-UF (pIBSUF)</th>
+        <th>Valor IBS-UF (vIBSUF)</th>
+        <th>Alíq. IBS-Mun (pIBSMun)</th>
+        <th>Valor IBS-Mun (vIBSMun)</th>
+        <th>Alíquota Efetiva</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ total_base|brl }}</td>
+        <td>{{ cbs_rate }}%</td>
+        <td>{{ total_cbs|brl }}</td>
+        <td>{{ ibs_rate }}%</td>
+        <td>{{ total_ibs|brl }}</td>
+        <td>0,00%</td>
+        <td>R$ 0,00</td>
+        <td>{{ (cbs_rate|float + ibs_rate|float)|round(2) }}%</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
 <div class="footer">
   Relatório gerado automaticamente pela plataforma Tribultz — tribultz.com.br<br>
-  Evidência auditável conforme padrão Findings/Evidence v1.1 · Reforma Tributária LC 214 + LC 227<br>
-  {% if report_hash %}<span style="font-family: monospace;">Hash de integridade: {{ report_hash[:32] }}…</span>{% endif %}
+  LC 214/2025 · NT 2025.002-RTC · {% if report_hash %}hash: <span style="font-family: monospace;">{{ report_hash[:16] }}…</span>{% endif %}
 </div>
 
 </body>

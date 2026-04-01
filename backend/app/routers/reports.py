@@ -1,20 +1,24 @@
-"""Reports router — PDF generation with audit hash, plan-gated."""
+"""Reports router — PDF generation with S3 persistence, audit hash, and presigned download."""
 
 import hashlib
 import json
 import logging
-from typing import cast
+from datetime import datetime, timedelta, timezone
+from typing import Optional, cast
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.api.plan_gate import require_plan
 from app.database import get_db
 from app.models.auth import User
+from app.models.reports import Report
 from app.services.pdf_service import generate_validation_report_pdf, generate_batch_report_pdf
+from app.tools import s3_tool
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +26,10 @@ router = APIRouter(prefix="/api/v1/reports", tags=["reports"])
 
 PDF_PLANS = ("profissional", "empresarial", "contador")
 
+_PRESIGNED_TTL = 900  # 15 minutes
 
-# ── Schemas ──────────────────────────────────────────────────────
+
+# ── Request Schemas ────────────────────────────────────────────────
 
 
 class FindingSchema(BaseModel):
@@ -65,6 +71,34 @@ class BatchReportRequest(BaseModel):
     overall_status: str = "EM ANÁLISE"
 
 
+# ── Response Schemas ───────────────────────────────────────────────
+
+
+class ReportCreatedResponse(BaseModel):
+    report_id: UUID
+    download_url: str
+    expires_at: datetime
+    report_hash: str
+    file_size: int
+
+
+class ReportListItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    report_type: str
+    job_id: Optional[str]
+    report_hash: str
+    file_size: Optional[int]
+    status: str
+    created_at: datetime
+
+
+class DownloadResponse(BaseModel):
+    download_url: str
+    expires_at: datetime
+
+
 # ── Helpers ───────────────────────────────────────────────────────
 
 
@@ -101,16 +135,20 @@ def _pdf_streaming_response(pdf_bytes: bytes, filename: str, report_hash: str) -
         "Disponível nos planos Profissional, Empresarial e Contador."
     ),
     dependencies=[Depends(require_plan(*PDF_PLANS))],
+    response_model=None,
 )
 async def generate_validation_pdf(
     body: ValidationReportRequest,
+    stream: bool = Query(default=False, description="Se true, retorna StreamingResponse (legado)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> StreamingResponse:
-    """Generate a validation PDF report (plan-gated)."""
+) -> ReportCreatedResponse | StreamingResponse:
+    """Generate a validation PDF report (plan-gated).
+
+    When stream=true falls back to the legacy StreamingResponse (no persistence).
+    """
     findings_dicts = [f.model_dump() for f in body.findings]
 
-    # Deterministic fingerprint of the validated content
     report_hash = _compute_report_hash({
         "job_id": body.job_id,
         "cnpj": body.cnpj,
@@ -121,8 +159,34 @@ async def generate_validation_pdf(
         "findings": findings_dicts,
     })
 
+    if stream:
+        # Legacy streaming path — no S3 persistence
+        try:
+            result = generate_validation_report_pdf(
+                company_name=body.company_name,
+                cnpj=body.cnpj,
+                reference_period=body.reference_period,
+                job_id=body.job_id,
+                findings=findings_dicts,
+                overall_status=body.overall_status,
+                total_base=body.total_base,
+                total_cbs=body.total_cbs,
+                total_ibs=body.total_ibs,
+                cbs_rate=body.cbs_rate,
+                ibs_rate=body.ibs_rate,
+                report_hash=report_hash,
+            )
+        except Exception:
+            logger.exception("Erro ao gerar PDF de validação (stream) para job %s", body.job_id)
+            raise HTTPException(status_code=500, detail="Erro ao gerar relatório PDF.")
+        filename = f"tribultz_validacao_{body.job_id[:8]}.pdf"
+        return _pdf_streaming_response(result["bytes"], filename, report_hash)
+
+    # S3-persisted path
+    storage_key = f"reports/{current_user.tenant_id}/validation/{uuid4()}.pdf"
+
     try:
-        pdf_bytes = generate_validation_report_pdf(
+        result = generate_validation_report_pdf(
             company_name=body.company_name,
             cnpj=body.cnpj,
             reference_period=body.reference_period,
@@ -135,17 +199,46 @@ async def generate_validation_pdf(
             cbs_rate=body.cbs_rate,
             ibs_rate=body.ibs_rate,
             report_hash=report_hash,
+            storage_key=storage_key,
         )
     except Exception:
         logger.exception("Erro ao gerar PDF de validação para job %s", body.job_id)
         raise HTTPException(status_code=500, detail="Erro ao gerar relatório PDF.")
 
-    filename = f"tribultz_validacao_{body.job_id[:8]}.pdf"
-    logger.info(
-        "PDF validação gerado: job=%s user=%s bytes=%d hash=%s",
-        body.job_id, cast(str, current_user.email), len(pdf_bytes), report_hash[:8],
+    # Persist Report record
+    report = Report(
+        tenant_id=current_user.tenant_id,
+        user_id=current_user.id,
+        job_id=body.job_id,
+        report_type="validation",
+        storage_key=result["storage_key"],
+        file_size=result["file_size"],
+        report_hash=report_hash,
+        status="ready",
     )
-    return _pdf_streaming_response(pdf_bytes, filename, report_hash)
+    db.add(report)
+    db.commit()
+    db.refresh(report)
+
+    # Generate presigned download URL
+    try:
+        download_url = s3_tool.get_object_url(key=result["storage_key"], expires_in=_PRESIGNED_TTL)
+    except Exception:
+        logger.exception("Erro ao gerar URL presigned para storage_key=%s", result["storage_key"])
+        raise HTTPException(status_code=503, detail="Erro ao gerar URL de download.")
+
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=_PRESIGNED_TTL)
+    logger.info(
+        "PDF validação persistido: job=%s user=%s bytes=%d hash=%s",
+        body.job_id, cast(str, current_user.email), result["file_size"], report_hash[:8],
+    )
+    return ReportCreatedResponse(
+        report_id=report.id,
+        download_url=download_url,
+        expires_at=expires_at,
+        report_hash=report_hash,
+        file_size=result["file_size"],
+    )
 
 
 @router.post(
@@ -156,13 +249,18 @@ async def generate_validation_pdf(
         "Disponível nos planos Profissional, Empresarial e Contador."
     ),
     dependencies=[Depends(require_plan(*PDF_PLANS))],
+    response_model=None,
 )
 async def generate_batch_pdf(
     body: BatchReportRequest,
+    stream: bool = Query(default=False, description="Se true, retorna StreamingResponse (legado)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> StreamingResponse:
-    """Generate a batch validation PDF report (plan-gated)."""
+) -> ReportCreatedResponse | StreamingResponse:
+    """Generate a batch validation PDF report (plan-gated).
+
+    When stream=true falls back to the legacy StreamingResponse (no persistence).
+    """
     invoices_dicts = [i.model_dump() for i in body.invoices]
 
     report_hash = _compute_report_hash({
@@ -173,8 +271,27 @@ async def generate_batch_pdf(
         "invoices_count": len(invoices_dicts),
     })
 
+    if stream:
+        try:
+            result = generate_batch_report_pdf(
+                company_name=body.company_name,
+                cnpj=body.cnpj,
+                reference_period=body.reference_period,
+                job_id=body.job_id,
+                invoices=invoices_dicts,
+                overall_status=body.overall_status,
+                report_hash=report_hash,
+            )
+        except Exception:
+            logger.exception("Erro ao gerar PDF em lote (stream) para job %s", body.job_id)
+            raise HTTPException(status_code=500, detail="Erro ao gerar relatório PDF em lote.")
+        filename = f"tribultz_lote_{body.job_id[:8]}.pdf"
+        return _pdf_streaming_response(result["bytes"], filename, report_hash)
+
+    storage_key = f"reports/{current_user.tenant_id}/batch/{uuid4()}.pdf"
+
     try:
-        pdf_bytes = generate_batch_report_pdf(
+        result = generate_batch_report_pdf(
             company_name=body.company_name,
             cnpj=body.cnpj,
             reference_period=body.reference_period,
@@ -182,14 +299,110 @@ async def generate_batch_pdf(
             invoices=invoices_dicts,
             overall_status=body.overall_status,
             report_hash=report_hash,
+            storage_key=storage_key,
         )
     except Exception:
         logger.exception("Erro ao gerar PDF em lote para job %s", body.job_id)
         raise HTTPException(status_code=500, detail="Erro ao gerar relatório PDF em lote.")
 
-    filename = f"tribultz_lote_{body.job_id[:8]}.pdf"
-    logger.info(
-        "PDF lote gerado: job=%s user=%s docs=%d bytes=%d",
-        body.job_id, cast(str, current_user.email), len(body.invoices), len(pdf_bytes),
+    report = Report(
+        tenant_id=current_user.tenant_id,
+        user_id=current_user.id,
+        job_id=body.job_id,
+        report_type="batch",
+        storage_key=result["storage_key"],
+        file_size=result["file_size"],
+        report_hash=report_hash,
+        status="ready",
     )
-    return _pdf_streaming_response(pdf_bytes, filename, report_hash)
+    db.add(report)
+    db.commit()
+    db.refresh(report)
+
+    try:
+        download_url = s3_tool.get_object_url(key=result["storage_key"], expires_in=_PRESIGNED_TTL)
+    except Exception:
+        logger.exception("Erro ao gerar URL presigned para storage_key=%s", result["storage_key"])
+        raise HTTPException(status_code=503, detail="Erro ao gerar URL de download.")
+
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=_PRESIGNED_TTL)
+    logger.info(
+        "PDF lote persistido: job=%s user=%s docs=%d bytes=%d",
+        body.job_id, cast(str, current_user.email), len(body.invoices), result["file_size"],
+    )
+    return ReportCreatedResponse(
+        report_id=report.id,
+        download_url=download_url,
+        expires_at=expires_at,
+        report_hash=report_hash,
+        file_size=result["file_size"],
+    )
+
+
+@router.get(
+    "",
+    summary="Listar relatórios do tenant",
+    response_model=list[ReportListItem],
+)
+def list_reports(
+    report_type: Optional[str] = Query(default=None, description="'validation' ou 'batch'"),
+    job_id: Optional[str] = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[Report]:
+    """List PDF reports for the authenticated tenant, newest first."""
+    from sqlalchemy import select
+
+    stmt = (
+        select(Report)
+        .where(Report.tenant_id == current_user.tenant_id)
+        .order_by(Report.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    if report_type:
+        stmt = stmt.where(Report.report_type == report_type)
+    if job_id:
+        stmt = stmt.where(Report.job_id == job_id)
+
+    return list(db.scalars(stmt).all())
+
+
+@router.get(
+    "/{report_id}/download",
+    summary="Obter URL de download presigned para um relatório",
+    response_model=DownloadResponse,
+)
+def download_report(
+    report_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DownloadResponse:
+    """Generate a presigned GET URL (15 min TTL) for a stored PDF report."""
+    from sqlalchemy import select
+
+    stmt = select(Report).where(
+        Report.id == report_id,
+        Report.tenant_id == current_user.tenant_id,
+    )
+    report = db.scalars(stmt).first()
+
+    if report is None:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado.")
+
+    if report.status != "ready":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Relatório ainda não está disponível (status={report.status}).",
+        )
+
+    try:
+        download_url = s3_tool.get_object_url(key=report.storage_key, expires_in=_PRESIGNED_TTL)
+    except Exception:
+        logger.exception("Erro ao gerar URL presigned para report_id=%s", report_id)
+        raise HTTPException(status_code=503, detail="Erro ao gerar URL de download.")
+
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=_PRESIGNED_TTL)
+    return DownloadResponse(download_url=download_url, expires_at=expires_at)

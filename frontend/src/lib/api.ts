@@ -408,3 +408,31 @@ export async function decideExceptionRequest(exceptionId: string, decision: Exce
 export function resetDemoData(): void {
   resetMockData(getTenantId());
 }
+
+export type ReportListItem = {
+  id: string;
+  report_type: "validation" | "batch";
+  job_id: string | null;
+  report_hash: string;
+  file_size: number | null;
+  status: "generating" | "ready" | "error";
+  created_at: string;
+};
+
+export async function listReports(params?: { report_type?: string; job_id?: string; limit?: number }): Promise<ReportListItem[]> {
+  const q = new URLSearchParams();
+  if (params?.report_type) q.set("report_type", params.report_type);
+  if (params?.job_id) q.set("job_id", params.job_id);
+  if (params?.limit) q.set("limit", String(params.limit));
+  const qs = q.toString();
+  try {
+    const payload = await apiFetch<ReportListItem[]>(`/api/v1/reports${qs ? `?${qs}` : ""}`);
+    return Array.isArray(payload) ? payload : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getReportDownloadUrl(reportId: string): Promise<{ download_url: string; expires_at: string }> {
+  return apiFetch(`/api/v1/reports/${encodeURIComponent(reportId)}/download`);
+}

@@ -41,8 +41,12 @@
 <body>
 
 <div class="header">
+  <div style="display:flex; align-items:center; gap:10pt; margin-bottom:4pt;">
+    <span style="font-size:20pt; font-weight:900; color:#2563eb; letter-spacing:-1pt;">Tribultz</span>
+    <span style="font-size:9pt; color:#94a3b8; border-left:1px solid #cbd5e1; padding-left:10pt;">Plataforma de Conformidade Fiscal</span>
+  </div>
   <h1>Relatório de Validação em Lote</h1>
-  <div class="subtitle">Plataforma Tribultz — Reforma Tributária (LC 214 / LC 227)</div>
+  <div class="subtitle">Reforma Tributária Brasileira · LC 214/2025 · NT 2025.002-RTC</div>
 </div>
 
 <div class="meta-grid">
@@ -126,8 +130,8 @@
 </div>
 
 <div class="footer">
-  Relatório gerado automaticamente pela plataforma Tribultz.<br>
-  Este documento possui validade como evidência auditável conforme padrão Findings/Evidence v1.1.
+  Relatório gerado automaticamente pela plataforma Tribultz — tribultz.com.br<br>
+  LC 214/2025 · NT 2025.002-RTC · {% if report_hash %}hash: <span style="font-family: monospace;">{{ report_hash[:16] }}…</span>{% endif %}
 </div>
 
 </body>
