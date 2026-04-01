@@ -17,6 +17,7 @@ gunicorn==23.0.0
 weasyprint==63.1
 jinja2==3.1.6
 pytest>=8.0.0
+pytest-asyncio>=0.24.0
 crewai==1.10.1
 litellm==1.82.0
 fakeredis==2.26.2

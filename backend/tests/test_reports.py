@@ -20,7 +20,7 @@ CNPJ = "11.222.333/0001-81"
 
 
 class TestPdfServiceValidation:
-    def _basic_pdf(self, **kwargs) -> bytes:
+    def _basic_pdf(self, **kwargs) -> dict:
         defaults = dict(
             company_name="Empresa Teste LTDA",
             cnpj=CNPJ,
@@ -45,23 +45,24 @@ class TestPdfServiceValidation:
 
     def test_returns_bytes(self):
         result = self._basic_pdf()
-        assert isinstance(result, bytes)
-        assert len(result) > 0
+        assert isinstance(result["bytes"], bytes)
+        assert len(result["bytes"]) > 0
 
     def test_pdf_not_empty(self):
         result = self._basic_pdf()
+        data = result["bytes"]
         # PDF magic bytes or HTML fallback
-        assert result.startswith(b"%PDF") or result.startswith(b"<!DOCTYPE")
+        assert data.startswith(b"%PDF") or data.startswith(b"<!DOCTYPE")
 
     def test_with_report_hash(self):
         result = self._basic_pdf(report_hash="abc123deadbeef")
-        assert isinstance(result, bytes)
-        assert len(result) > 100
+        assert isinstance(result["bytes"], bytes)
+        assert len(result["bytes"]) > 100
 
     def test_no_findings(self):
         result = self._basic_pdf(findings=[], overall_status="CONFORME")
-        assert isinstance(result, bytes)
-        assert len(result) > 0
+        assert isinstance(result["bytes"], bytes)
+        assert len(result["bytes"]) > 0
 
     def test_hash_is_deterministic(self):
         """Same inputs → same hash."""
@@ -107,8 +108,8 @@ class TestPdfServiceBatch:
             overall_status="PARCIAL",
             report_hash="deadbeef1234",
         )
-        assert isinstance(result, bytes)
-        assert len(result) > 0
+        assert isinstance(result["bytes"], bytes)
+        assert len(result["bytes"]) > 0
 
     def test_empty_invoices(self):
         result = generate_batch_report_pdf(
@@ -119,7 +120,7 @@ class TestPdfServiceBatch:
             invoices=[],
             overall_status="CONFORME",
         )
-        assert isinstance(result, bytes)
+        assert isinstance(result["bytes"], bytes)
 
 
 # ── Router registration (no-DB check) ──────────────────────────
