@@ -9,7 +9,7 @@ import { DEFAULT_TENANT } from "@/lib/storage";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA";
 
-type PlanSlug = "trial" | "starter" | "profissional" | "contador";
+type PlanSlug = "trial" | "starter" | "profissional" | "empresarial" | "contador";
 
 const PLANS: { slug: PlanSlug; name: string; price: string; features: string[]; highlight?: boolean }[] = [
   {
@@ -30,6 +30,12 @@ const PLANS: { slug: PlanSlug; name: string; price: string; features: string[]; 
     price: "R$ 149,00/mês",
     features: ["500 validações/mês", "IA ilimitada", "Relatório PDF", "Validação em lote", "Suporte prioritário"],
     highlight: true,
+  },
+  {
+    slug: "empresarial",
+    name: "Empresarial",
+    price: "R$ 249,00/mês",
+    features: ["2.000 validações/mês", "IA ilimitada", "Relatório PDF", "Validação em lote", "Até 10 CNPJs (filiais)"],
   },
   {
     slug: "contador",
@@ -272,7 +278,7 @@ export default function RegisterPage() {
         {/* Plan picker */}
         <fieldset className="mt-6 space-y-3">
           <legend className="text-sm font-medium text-slate-700">Escolha seu plano</legend>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
             {PLANS.map((plan) => (
               <label
                 key={plan.slug}
@@ -290,6 +296,7 @@ export default function RegisterPage() {
                   onChange={() => {
                     setPlanSlug(plan.slug);
                     if (plan.slug === "contador") setAccountType("contador");
+                    else if (plan.slug !== "empresarial") setAccountType("empresa");
                   }}
                   className="sr-only"
                 />
