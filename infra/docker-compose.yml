@@ -7,9 +7,6 @@ x-backend-env: &backend-env
     - ../.env
   environment:
     PYTHONUNBUFFERED: "1"
-    DATABASE_URL: ${DATABASE_URL}
-    DB_URL: ${DB_URL:-${DATABASE_URL}}
-    REDIS_URL: ${REDIS_URL}
 
 services:
   # ── PostgreSQL ────────────────────────────────────────────

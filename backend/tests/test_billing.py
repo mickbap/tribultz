@@ -360,12 +360,13 @@ class TestPdfService:
             total_cbs="10.00",
             total_ibs="90.00",
         )
-        assert len(result) > 0
-        if result[:5] == b"%PDF-":
+        data = result["bytes"]
+        assert len(data) > 0
+        if data[:5] == b"%PDF-":
             # WeasyPrint installed — just verify it produced a valid PDF
-            assert len(result) > 100
+            assert len(data) > 100
         else:
-            text = result.decode("utf-8")
+            text = data.decode("utf-8")
             assert "Empresa Teste" in text
             assert "12345678000199" in text
             assert "CBS_RATE" in text
@@ -383,11 +384,12 @@ class TestPdfService:
             ],
             overall_status="NÃO CONFORME",
         )
-        assert len(result) > 0
-        if result[:5] == b"%PDF-":
-            assert len(result) > 100
+        data = result["bytes"]
+        assert len(data) > 0
+        if data[:5] == b"%PDF-":
+            assert len(data) > 100
         else:
-            text = result.decode("utf-8")
+            text = data.decode("utf-8")
             assert "Empresa Lote" in text
             assert "NF001" in text
             assert "NF002" in text
@@ -408,10 +410,11 @@ class TestPdfService:
             findings=[],
             overall_status="CONFORME",
         )
-        if result[:5] == b"%PDF-":
-            assert len(result) > 100
+        data = result["bytes"]
+        if data[:5] == b"%PDF-":
+            assert len(data) > 100
         else:
-            text = result.decode("utf-8")
+            text = data.decode("utf-8")
             assert "CONFORME" in text
             assert "Nenhum finding" in text
 

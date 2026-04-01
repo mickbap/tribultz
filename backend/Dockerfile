@@ -32,7 +32,7 @@ RUN apt-get update && \
 COPY --from=builder /install /usr/local
 
 # Non-root user for security
-RUN useradd --no-create-home --shell /bin/false appuser
+RUN useradd --create-home --shell /bin/false appuser
 
 # App code — exclude dev artifacts via .dockerignore
 COPY . .
