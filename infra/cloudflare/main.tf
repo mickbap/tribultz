@@ -53,7 +53,20 @@ resource "cloudflare_record" "api_a" {
   comment = "Tribultz API — Magalu Cloud VM"
 }
 
-# www.tribultz.com.br → Vercel
+# tribultz.com.br (apex) → Vercel
+# Cloudflare CNAME Flattening resolve o apex automaticamente
+resource "cloudflare_record" "apex_cname" {
+  zone_id = var.zone_id
+  name    = "@"
+  value   = "cname.vercel-dns.com"
+  type    = "CNAME"
+  proxied = true
+  ttl     = 1
+  comment = "Frontend Vercel — apex domain (CNAME Flattening)"
+}
+
+# www.tribultz.com.br → redireciona para tribultz.com.br (canônico)
+# Redirect 308 configurado no painel Vercel (permanente, preserva método)
 resource "cloudflare_record" "www_cname" {
   zone_id = var.zone_id
   name    = "www"
@@ -61,7 +74,7 @@ resource "cloudflare_record" "www_cname" {
   type    = "CNAME"
   proxied = true
   ttl     = 1
-  comment = "Frontend Vercel"
+  comment = "Frontend Vercel — www redireciona para apex via Vercel (308)"
 }
 
 # ── SSL/TLS + Segurança ───────────────────────────────────────────────────────
