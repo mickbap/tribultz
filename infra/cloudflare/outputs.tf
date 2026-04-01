@@ -4,7 +4,7 @@ output "api_dns_name" {
 }
 
 output "api_record_proxied" {
-  description = "Se o registro DNS está sendo roteado via Cloudflare (WAF ativo)"
+  description = "Se o registro DNS está sendo roteado via Cloudflare (CDN + DDoS ativo)"
   value       = cloudflare_record.api_a.proxied
 }
 
@@ -18,13 +18,14 @@ output "deep_health_url" {
   value       = "https://api.tribultz.com.br/health/deep"
 }
 
-output "waf_status" {
-  description = "Resumo das proteções Cloudflare ativas"
+output "protection_status" {
+  description = "Resumo das proteções Cloudflare ativas (Free Tier)"
   value = {
-    managed_rules  = "OWASP + Cloudflare Managed Ruleset → block"
-    rate_limiting  = "calculadora:20/min, login:5/min, register:3/min, global:200/min"
-    ssl_mode       = "Full (Strict) — TLS 1.2+ obrigatório"
-    hsts           = "max-age=15768000 (6 meses) + subdomínios + preload"
-    bot_protection = "Aggressive bots bloqueados, verified bots permitidos"
+    ddos_protection = "Automático L3/L4/L7 — sempre ativo no Free"
+    ssl_mode        = "Full (Strict) — TLS 1.2+ obrigatório"
+    hsts            = "max-age=15768000 (6 meses) + subdomínios + preload"
+    cache           = "Bypass em /health* e /api/* — dados fiscais sempre frescos"
+    rate_limiting   = "App-level: FastAPI (_rate_limiter, _forgot_limiter, _daily_limiter)"
+    waf             = "Desabilitado — requer Pro ($20/mês). Ver PRO_UPGRADE.md"
   }
 }
