@@ -15,8 +15,8 @@ const PLANS: { slug: PlanSlug; name: string; price: string; features: string[]; 
   {
     slug: "trial",
     name: "Trial",
-    price: "Grátis por 3 dias",
-    features: ["5 validações", "25 mensagens IA", "Download CSV", "Sem dashboard"],
+    price: "Grátis por 2 dias",
+    features: ["3 validações", "20 mensagens IA", "Download TXT", "Sem dashboard", "Sem suporte"],
   },
   {
     slug: "starter",
@@ -41,7 +41,7 @@ const PLANS: { slug: PlanSlug; name: string; price: string; features: string[]; 
     slug: "contador",
     name: "Contador",
     price: "R$ 349,00/mês",
-    features: ["Validações ilimitadas", "IA ilimitada", "Relatório PDF", "Multi-CNPJ", "API access", "Suporte dedicado"],
+    features: ["Validações ilimitadas", "IA ilimitada", "Relatório PDF", "Multi-CNPJ", "API access", "Suporte via chat"],
   },
 ];
 
@@ -109,7 +109,7 @@ export default function RegisterPage() {
       setToast({ tone: "error", msg: "Você deve aceitar a Política de Privacidade para prosseguir." });
       return false;
     }
-    if (accountType === "contador" && !multiTenantConsent) {
+    if ((planSlug === "empresarial" || planSlug === "contador") && !multiTenantConsent) {
       setToast({ tone: "error", msg: "Você deve aceitar o termo de Responsabilidade Multi-Tenant para prosseguir." });
       return false;
     }
@@ -273,7 +273,7 @@ export default function RegisterPage() {
     <main className="grid min-h-screen place-items-center p-6">
       <section className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-2xl">
         <h1 className="text-2xl font-bold text-slate-900">Criar conta</h1>
-        <p className="mt-1 text-sm text-slate-500">Cadastre-se para acessar o Tribultz.</p>
+        <p className="mt-1 text-sm font-medium text-tribultz-700">Garanta sua conformidade fiscal antes que a reforma tributária te pegue de surpresa.</p>
 
         {/* Plan picker */}
         <fieldset className="mt-6 space-y-3">
@@ -295,8 +295,7 @@ export default function RegisterPage() {
                   checked={planSlug === plan.slug}
                   onChange={() => {
                     setPlanSlug(plan.slug);
-                    if (plan.slug === "contador") setAccountType("contador");
-                    else if (plan.slug !== "empresarial") setAccountType("empresa");
+                    setAccountType(plan.slug === "contador" ? "contador" : "empresa");
                   }}
                   className="sr-only"
                 />
@@ -318,36 +317,6 @@ export default function RegisterPage() {
         </fieldset>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          {/* Account type (auto-set for contador plan) */}
-          {planSlug !== "contador" && (
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-slate-700">Tipo de conta</legend>
-              <div className="grid grid-cols-2 gap-2">
-                <label
-                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition ${
-                    accountType === "empresa"
-                      ? "border-tribultz-500 bg-tribultz-50 text-tribultz-700"
-                      : "border-slate-200 text-slate-600 hover:border-slate-300"
-                  }`}
-                >
-                  <input type="radio" name="account_type" value="empresa" checked={accountType === "empresa"} onChange={() => setAccountType("empresa")} className="sr-only" />
-                  <span className="font-semibold">Empresa</span>
-                  <span className="text-xs text-slate-400">1 CNPJ</span>
-                </label>
-                <label
-                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition ${
-                    accountType === "contador"
-                      ? "border-tribultz-500 bg-tribultz-50 text-tribultz-700"
-                      : "border-slate-200 text-slate-600 hover:border-slate-300"
-                  }`}
-                >
-                  <input type="radio" name="account_type" value="contador" checked={accountType === "contador"} onChange={() => setAccountType("contador")} className="sr-only" />
-                  <span className="font-semibold">Contador</span>
-                  <span className="text-xs text-slate-400">Multi-CNPJ</span>
-                </label>
-              </div>
-            </fieldset>
-          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm">
@@ -363,7 +332,7 @@ export default function RegisterPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm">
               <span className="mb-1 block text-slate-600">
-                {accountType === "contador" ? "CNPJ do escritório contábil" : "CNPJ da empresa"}
+                {planSlug === "contador" ? "CNPJ do escritório" : "CNPJ da empresa"}
               </span>
               <input type="text" value={cnpj} onChange={(e) => setCnpj(formatCnpj(e.target.value))} placeholder="00.000.000/0000-00" className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono" inputMode="numeric" />
             </label>
@@ -373,7 +342,7 @@ export default function RegisterPage() {
             </label>
           </div>
 
-          {accountType === "contador" && (
+          {planSlug === "contador" && (
             <p className="text-xs text-amber-700">
               Informe o CNPJ do seu escritório, não de um cliente. CNPJs de clientes serão adicionados após o cadastro.
             </p>
@@ -429,14 +398,14 @@ export default function RegisterPage() {
             </span>
           </label>
 
-          {accountType === "contador" && (
+          {(planSlug === "empresarial" || planSlug === "contador") && (
             <label className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
               <input type="checkbox" checked={multiTenantConsent} onChange={(e) => setMultiTenantConsent(e.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300" />
               <span className="text-amber-900">
-                <strong>Responsabilidade Multi-Tenant:</strong> Declaro estar ciente de que, como
-                contador, terei acesso aos dados fiscais de múltiplos CNPJs (tenants) dentro da
-                plataforma. Comprometo-me a operar sempre no tenant correto, evitando
-                contaminação cruzada de dados entre clientes.
+                <strong>Responsabilidade Multi-Tenant:</strong> Declaro estar ciente de que terei
+                acesso aos dados fiscais de múltiplos CNPJs (tenants) dentro da plataforma.
+                Comprometo-me a operar sempre no tenant correto, evitando contaminação cruzada
+                de dados entre CNPJ&apos;s.
               </span>
             </label>
           )}
