@@ -209,6 +209,14 @@ __marimo__/
 
 .secrets/
 
+# Terraform — state e variáveis contêm secrets (tokens, IPs de origem)
+infra/cloudflare/terraform.tfvars
+infra/cloudflare/.terraform/
+infra/cloudflare/.terraform.lock.hcl
+infra/cloudflare/terraform.tfstate
+infra/cloudflare/terraform.tfstate.backup
+infra/cloudflare/*.tfplan
+
 
 backend/pyright_output.txt
 
