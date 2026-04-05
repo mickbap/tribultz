@@ -1,11 +1,49 @@
+# ── Ambientes virtuais e cache Python ────────────────────────
 .venv
 __pycache__
 .pytest_cache
 .ruff_cache
 .mypy_cache
 .pyre
-pyright_log.txt
-celerybeat-schedule
 *.pyc
 *.pyo
 *.pyd
+
+# ── Secrets e configuração local ────────────────────────────
+# NUNCA incluir secrets na imagem Docker
+.env
+.env.*
+!.env.example
+*.env
+
+# ── Controle de versão ───────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+
+# ── Testes ───────────────────────────────────────────────────
+# Testes não são necessários no runtime de produção
+tests/
+conftest.py
+pytest.ini
+pyproject.toml
+
+# ── Documentação e relatórios ────────────────────────────────
+*.md
+docs/
+reports/
+
+# ── Artefatos de build e dev ─────────────────────────────────
+celerybeat-schedule
+celerybeat.pid
+pyright_output.txt
+pyright_log.txt
+htmlcov/
+.coverage
+coverage.xml
+
+# ── Editor e IDE ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo

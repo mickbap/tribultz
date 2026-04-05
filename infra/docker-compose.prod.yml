@@ -26,6 +26,12 @@ x-common: &common
   restart: unless-stopped
   networks:
     - internal
+  # CIS Docker Benchmark 5.25 — previne escalada de privilégios via setuid/setgid
+  security_opt:
+    - no-new-privileges:true
+  # CIS Docker Benchmark 5.3 — remove todas as Linux capabilities desnecessárias
+  cap_drop:
+    - ALL
   logging:
     driver: json-file
     options:

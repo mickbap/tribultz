@@ -77,6 +77,10 @@ if [ ! -f "$DEPLOY_DIR/.env" ]; then
     exit 1
 fi
 log "    .env found"
+# Permissão restrita — apenas root lê o arquivo com credentials
+chmod 600 "$DEPLOY_DIR/.env"
+chown root:root "$DEPLOY_DIR/.env"
+log "    .env: chmod 600 aplicado (leitura apenas pelo root)"
 
 # ── 5. Build images ───────────────────────────────────────
 log "==> Building Docker images (this may take a few minutes)"
