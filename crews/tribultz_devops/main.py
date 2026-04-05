@@ -3,16 +3,18 @@ import os
 from crewai import Agent, Task, Crew, Process
 import yaml
 
+
 def load_config(file_path):
     with open(file_path, 'r') as f:
         return yaml.safe_load(f)
 
+
 def main():
     # Load configurations
     agents_config = load_config('config/agents.yaml')
-    tasks_config = load_config('config/tasks.yaml')
+    tasks_config  = load_config('config/tasks.yaml')
 
-    # Create Agents
+    # ── Agents ────────────────────────────────────────────────
     security_engineer = Agent(
         role=agents_config['security_engineer']['role'],
         goal=agents_config['security_engineer']['goal'],
@@ -34,7 +36,14 @@ def main():
         verbose=True
     )
 
-    # Create Tasks
+    secdevops_engineer = Agent(
+        role=agents_config['secdevops_engineer']['role'],
+        goal=agents_config['secdevops_engineer']['goal'],
+        backstory=agents_config['secdevops_engineer']['backstory'],
+        verbose=True
+    )
+
+    # ── Tasks originais ───────────────────────────────────────
     task_scoping = Task(
         description=tasks_config['enforce_tenant_scoping_all_routes']['description'],
         expected_output=tasks_config['enforce_tenant_scoping_all_routes']['expected_output'],
@@ -59,10 +68,56 @@ def main():
         agent=qa_engineer
     )
 
-    # Instantiate Crew
+    # ── Tasks SecDevOps ───────────────────────────────────────
+    task_vm_hardening = Task(
+        description=tasks_config['audit_vm_hardening']['description'],
+        expected_output=tasks_config['audit_vm_hardening']['expected_output'],
+        agent=secdevops_engineer
+    )
+
+    task_container_security = Task(
+        description=tasks_config['audit_container_security']['description'],
+        expected_output=tasks_config['audit_container_security']['expected_output'],
+        agent=secdevops_engineer
+    )
+
+    task_nginx_headers = Task(
+        description=tasks_config['audit_nginx_security_headers']['description'],
+        expected_output=tasks_config['audit_nginx_security_headers']['expected_output'],
+        agent=secdevops_engineer
+    )
+
+    task_secrets_hygiene = Task(
+        description=tasks_config['audit_secrets_hygiene']['description'],
+        expected_output=tasks_config['audit_secrets_hygiene']['expected_output'],
+        agent=secdevops_engineer
+    )
+
+    task_deploy_rollback = Task(
+        description=tasks_config['verify_deploy_rollback']['description'],
+        expected_output=tasks_config['verify_deploy_rollback']['expected_output'],
+        agent=devops_engineer
+    )
+
+    # ── Crew ─────────────────────────────────────────────────
+    # Ordem de execução:
+    # 1. SecDevOps: VM hardening → container security → nginx headers → secrets
+    # 2. Security: tenant scoping
+    # 3. QA: isolation tests → smoke
+    # 4. DevOps: migrations → deploy rollback verification
     tribultz_crew = Crew(
-        agents=[security_engineer, qa_engineer, devops_engineer],
-        tasks=[task_scoping, task_isolation, task_migration, task_smoke],
+        agents=[security_engineer, qa_engineer, devops_engineer, secdevops_engineer],
+        tasks=[
+            task_vm_hardening,
+            task_container_security,
+            task_nginx_headers,
+            task_secrets_hygiene,
+            task_scoping,
+            task_isolation,
+            task_smoke,
+            task_migration,
+            task_deploy_rollback,
+        ],
         verbose=True,
         process=Process.sequential
     )
@@ -71,13 +126,14 @@ def main():
     if '--dry-run' in sys.argv:
         print("Dry run mode: Crew configuration loaded successfully.")
         print("Agents:", [agent.role for agent in tribultz_crew.agents])
-        print("Tasks:", [task.description[:50] + "..." for task in tribultz_crew.tasks])
+        print("Tasks:",  [task.description[:60] + "..." for task in tribultz_crew.tasks])
         return
 
     # Execute
     result = tribultz_crew.kickoff()
     print("Crew Execution Completed")
     print(result)
+
 
 if __name__ == "__main__":
     main()

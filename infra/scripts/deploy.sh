@@ -21,6 +21,9 @@ LOG_FILE="/var/log/tribultz-deploy.log"
 SKIP_PULL=false
 RUN_MIGRATE=false
 
+# Nome do projeto docker compose (= basename do DEPLOY_DIR)
+PROJECT_NAME=$(basename "$DEPLOY_DIR")   # "tribultz"
+
 # ── Flags ────────────────────────────────────────────────────
 for arg in "$@"; do
     case $arg in
@@ -50,6 +53,18 @@ if [ "$SKIP_PULL" = false ]; then
 else
     log "==> [1/6] Pulando git pull (--skip-pull)"
 fi
+
+# ── 1b. Snapshot de rollback (antes do build) ────────────────
+# Salva as imagens atuais como :rollback antes de substituí-las.
+# Em caso de falha, rollback() restaura estas tags como :latest.
+log "==> [1b] Salvando snapshots de rollback"
+for svc in api worker beat; do
+    img="${PROJECT_NAME}-${svc}:latest"
+    if docker image inspect "$img" &>/dev/null; then
+        docker tag "$img" "${PROJECT_NAME}-${svc}:rollback" 2>/dev/null && \
+            log "    Snapshot salvo: ${PROJECT_NAME}-${svc}:rollback" || true
+    fi
+done
 
 # ── 2. Build imagens ─────────────────────────────────────────
 log "==> [2/6] Buildando imagens Docker"
@@ -84,10 +99,25 @@ wait_healthy() {
 }
 
 # ── Função: rollback ─────────────────────────────────────────
+# Restaura o snapshot :rollback (salvo antes do build) como :latest
+# e reinicia o serviço com a imagem anterior.
 rollback() {
-    log "!!! ROLLBACK: $1 — revertendo para imagem anterior"
-    docker compose -f "$COMPOSE_FILE" up -d --no-deps "$1" 2>&1 | tee -a "$LOG_FILE" || true
-    log "!!! Rollback concluído. Verifique os logs: docker compose logs $1"
+    local svc=$1
+    local snapshot="${PROJECT_NAME}-${svc}:rollback"
+    log "!!! ROLLBACK: $svc"
+    if docker image inspect "$snapshot" &>/dev/null; then
+        log "!!! Restaurando snapshot $snapshot → ${PROJECT_NAME}-${svc}:latest"
+        docker tag "$snapshot" "${PROJECT_NAME}-${svc}:latest"
+        docker compose -f "$COMPOSE_FILE" up -d --no-deps --no-build "$svc" \
+            2>&1 | tee -a "$LOG_FILE" || true
+        log "!!! Rollback de $svc concluído com imagem anterior ✓"
+    else
+        log "!!! Sem snapshot de rollback (primeiro deploy?) — reiniciando estado atual"
+        docker compose -f "$COMPOSE_FILE" up -d --no-deps "$svc" \
+            2>&1 | tee -a "$LOG_FILE" || true
+    fi
+    log "!!! Para rollback de código: git -C $DEPLOY_DIR revert HEAD && bash $0 --skip-pull"
+    log "!!! Verifique os logs: docker compose -f $COMPOSE_FILE logs $svc"
     exit 1
 }
 
