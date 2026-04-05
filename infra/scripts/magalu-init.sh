@@ -26,7 +26,8 @@ log() { echo "[$(date '+%H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
 log "==> Installing system dependencies"
 apt-get update -qq
 apt-get install -y --no-install-recommends \
-    ca-certificates curl gnupg git ufw nginx certbot python3-certbot-nginx
+    ca-certificates curl gnupg git ufw nginx certbot python3-certbot-nginx \
+    postgresql-client
 
 # ── 2. Docker Engine ──────────────────────────────────────
 if ! command -v docker &>/dev/null; then
@@ -60,20 +61,18 @@ fi
 if [ ! -f "$DEPLOY_DIR/.env" ]; then
     log ""
     log "  !! .env NOT FOUND at $DEPLOY_DIR/.env"
-    log "  !! Copy backend/.env.example → $DEPLOY_DIR/.env and fill in ALL REQUIRED fields:"
+    log "  !! Copy the template and fill ALL fields marked REQUIRED_CHANGE_ME:"
     log "  !!"
-    log "  !!   POSTGRES_PASSWORD=<strong_password>"
-    log "  !!   DATABASE_URL=postgresql+psycopg2://tribultz:<password>@db:5432/tribultz"
-    log "  !!   REDIS_URL=redis://redis:6379/0"
+    log "  !!   cp $DEPLOY_DIR/.env.prod.template $DEPLOY_DIR/.env"
+    log "  !!   nano $DEPLOY_DIR/.env"
+    log "  !!"
+    log "  !! Required fields (minimum):"
+    log "  !!   DATABASE_URL=postgresql+psycopg2://tribultz:<pw>@<magalu-host>:5432/tribultz"
+    log "  !!   REDIS_PASSWORD=<openssl rand -hex 24>"
+    log "  !!   REDIS_URL=redis://:<REDIS_PASSWORD>@redis:6379/0"
     log "  !!   JWT_SECRET=<openssl rand -hex 32>"
-    log "  !!   MINIO_ROOT_USER=<user>  MINIO_ROOT_PASSWORD=<pass>"
-    log "  !!   S3_ENDPOINT=https://s3.magalu.cloud  S3_REGION=br-se1"
-    log "  !!   S3_BUCKET=tribultz-documents"
-    log "  !!   S3_ACCESS_KEY=<MAGALU_ACCESS_KEY_ID>"
-    log "  !!   S3_SECRET_KEY=<MAGALU_SECRET_ACCESS_KEY>"
-    log "  !!   ENVIRONMENT=production"
-    log "  !!   ALLOWED_ORIGINS=https://tribultz.com.br,https://app.tribultz.com.br"
-    log ""
+    log "  !!   S3_ACCESS_KEY=<MAGALU_ACCESS_KEY>  S3_SECRET_KEY=<MAGALU_SECRET_KEY>"
+    log "  !!"
     log "  After filling .env, rerun: bash $0"
     exit 1
 fi
@@ -83,18 +82,32 @@ log "    .env found"
 log "==> Building Docker images (this may take a few minutes)"
 docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" build --pull 2>&1 | tee -a "$LOG_FILE"
 
-# ── 6. Start infra (db + redis first) ────────────────────
-log "==> Starting PostgreSQL and Redis"
-docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" up -d db redis
-log "    Waiting for DB to be healthy..."
-for i in $(seq 1 30); do
-    docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" exec -T db \
-        pg_isready -U "${POSTGRES_USER:-tribultz}" -d "${POSTGRES_DB:-tribultz}" \
-        &>/dev/null && break
-    sleep 2
-    [ "$i" -eq 30 ] && { log "ERROR: DB did not become healthy in 60s"; exit 1; }
+# ── 6. Start Redis ────────────────────────────────────────
+# PostgreSQL runs on Magalu DBaaS — no local db container needed
+log "==> Starting Redis (broker + cache)"
+docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" up -d redis
+log "    Waiting for Redis to be healthy..."
+for i in $(seq 1 20); do
+    docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" ps --format json redis 2>/dev/null \
+        | grep -q '"Health":"healthy"' && break
+    sleep 3
+    [ "$i" -eq 20 ] && { log "ERROR: Redis did not become healthy in 60s"; exit 1; }
 done
-log "    DB healthy"
+log "    Redis healthy"
+
+# ── 6b. Verify DBaaS connectivity ────────────────────────
+log "==> Verifying Magalu DBaaS connectivity"
+# Source .env to get POSTGRES_HOST/USER/DB
+set -a; source "$DEPLOY_DIR/.env"; set +a
+if pg_isready -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT:-5432}" \
+              -U "${POSTGRES_USER:-tribultz}" -d "${POSTGRES_DB:-tribultz}" \
+              -t 10 &>/dev/null; then
+    log "    DBaaS reachable at ${POSTGRES_HOST}:${POSTGRES_PORT:-5432}"
+else
+    log "ERROR: Cannot reach DBaaS at ${POSTGRES_HOST}:${POSTGRES_PORT:-5432}"
+    log "       Check POSTGRES_HOST in .env and Magalu VPC firewall rules"
+    exit 1
+fi
 
 # ── 7. Run Alembic migrations ─────────────────────────────
 log "==> Running database migrations (alembic upgrade head)"

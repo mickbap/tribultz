@@ -136,6 +136,7 @@ celerybeat.pid
 
 # Environments
 .env
+.env.prod
 .envrc
 .venv
 env/
@@ -221,3 +222,4 @@ reports/
 
 .tmp_*.py
 
+.vercel
