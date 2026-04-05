@@ -1,37 +1,164 @@
+# ============================================================
+# Tribultz DevOps Crew — Tasks
+# ============================================================
+# Tasks originais (tenant isolation + QA + migrations)
+# + Tasks SecDevOps (VM hardening, container security, secrets)
+# ============================================================
+
+# ── Tasks originais ──────────────────────────────────────────
+
 enforce_tenant_scoping_all_routes:
   description: >
-    Scan all authenticated backend routes (in `backend/app/routers`) to ensure that `tenant_slug` is NOT used as a parameter or variable.
-    Instead, verify that `current_user.tenant_id` is used for tenant scoping.
-    Fail the task if any usage of `tenant_slug` is found in active logic (excluding comments).
+    Scan all authenticated backend routes (in `backend/app/routers`) to ensure
+    that `tenant_slug` is NOT used as a parameter or variable for data access.
+    Verify that `current_user.tenant_id` is used for tenant scoping in every
+    query, every ORM filter, and every S3 path construction.
+    Fail the task if any usage of `tenant_slug` is found in active query logic
+    (excluding comments and URL path declarations).
+    Also check that no route returns objects without filtering by tenant_id.
   expected_output: >
-    A report listing any violations found, or a success message if all routes are properly scoped.
+    A report listing any violations found (file, line, snippet), or a success
+    message confirming all routes are properly scoped to current_user.tenant_id.
   agent: security_engineer
 
 add_tenant_isolation_tests:
   description: >
-    Create integration tests in `backend/tests/integration/test_isolation.py` to verify tenant isolation.
-    1. Test that a user from Tenant A cannot access/trigger jobs for Tenant B.
+    Create integration tests in `backend/tests/integration/test_isolation.py`
+    to verify tenant isolation at the API level.
+    1. Test that a user from Tenant A cannot access or trigger jobs for Tenant B.
     2. Test that a user from Tenant A cannot view audit logs of Tenant B.
+    3. Test that cross-tenant S3 path access is rejected.
     Use `pytest` to run these tests and confirm they pass.
   expected_output: >
-    The content of `test_isolation.py` and the result of the `pytest` run.
+    The content of `test_isolation.py` and the result of the `pytest` run,
+    showing all isolation tests passing (no cross-tenant data leaks).
   agent: qa_engineer
 
 alembic_baseline_migration:
   description: >
-    Verify that the current database schema matches the `2026_02_16_0001_baseline.py` migration.
+    Verify that the current database schema matches the latest Alembic migration.
     Run `alembic upgrade head` to ensure the database is up to date.
-    Update `backend/README.md` to document the migration process.
+    Confirm that `db-migrate.sh --prod` creates a pre-migration backup before
+    applying changes and provides rollback instructions on failure.
   expected_output: >
-    Confirmation that migrations are applied and documentation is updated.
+    Confirmation that migrations are applied, backup was created, and the
+    rollback procedure is documented and testable.
   agent: devops_engineer
 
 console_validate_report_smoke:
   description: >
     Perform a smoke test of the frontend console.
     1. Run `npm run build` in `frontend/`.
-    2. Simulate a user logging in and accessing the `/validate` and `/report` pages.
-    3. Verify that the API endpoints `/api/v1/tasks/validate` and `/api/v1/tasks/report` are called correctly with the Authorization header.
+    2. Simulate a user logging in and accessing the `/validate` and `/report`
+       pages.
+    3. Verify that the API endpoints `/api/v1/tasks/validate` and
+       `/api/v1/tasks/report` are called correctly with the Authorization header.
+    4. Confirm no console errors in the browser devtools output.
   expected_output: >
-    A report of the build status and smoke test results.
+    A report of the build status and smoke test results, confirming the
+    Authorization header is present and no console errors occurred.
   agent: qa_engineer
+
+# ── Tasks SecDevOps ──────────────────────────────────────────
+
+audit_vm_hardening:
+  description: >
+    Audit the VM security configuration defined in
+    `infra/scripts/magalu-init.sh` against the CIS Ubuntu 22.04/24.04 Benchmark
+    and STIG requirements. Verify:
+    1. SSH: PasswordAuthentication no, PermitRootLogin no, MaxAuthTries 3,
+       ClientAliveInterval 300 — all present in the script.
+    2. fail2ban: installed, enabled, jail config covers [sshd] and
+       [nginx-http-auth] with maxretry=5, bantime=3600.
+    3. UFW: default deny incoming, only ports 22/80/443 open permanently;
+       port 8000 opened only temporarily and auto-closed after certbot.
+    4. unattended-upgrades: verify it is installed or flag as missing.
+    Report any missing controls with the specific line/section to add.
+  expected_output: >
+    A checklist report: PASS/FAIL for each control, with exact remediation
+    commands for any FAIL items. Zero FAILs required before production go-live.
+  agent: secdevops_engineer
+
+audit_container_security:
+  description: >
+    Audit `infra/docker-compose.prod.yml` against the CIS Docker Benchmark
+    (v1.6) and NIST SP 800-190. Verify:
+    1. All services declare `security_opt: [no-new-privileges:true]`
+       (CIS 5.25 — prevent privilege escalation via setuid/setgid).
+    2. All services declare `cap_drop: [ALL]` (CIS 5.3 — drop all Linux
+       capabilities; add back only what is explicitly needed).
+    3. API port is bound to 127.0.0.1 only (not 0.0.0.0).
+    4. No service mounts the Docker socket (/var/run/docker.sock).
+    5. All services have memory limits defined.
+    6. Log rotation is configured (json-file driver with max-size and max-file).
+    7. All services run on an internal bridge network, not the default bridge.
+    If items 1 or 2 are missing, add them directly to the compose file.
+  expected_output: >
+    Updated `infra/docker-compose.prod.yml` with security_opt and cap_drop
+    added, plus a report confirming all 7 controls pass.
+  agent: secdevops_engineer
+
+audit_nginx_security_headers:
+  description: >
+    Audit the nginx configuration in `infra/scripts/magalu-init.sh` against
+    the OWASP Secure Headers Project recommendations. Verify the following
+    headers are present in the server block:
+    1. server_tokens off (suppress nginx version in responses).
+    2. X-Frame-Options: DENY (clickjacking protection).
+    3. X-Content-Type-Options: nosniff (MIME sniffing prevention).
+    4. Referrer-Policy: strict-origin-when-cross-origin.
+    5. Permissions-Policy: camera=(), microphone=(), geolocation=().
+    6. Rate limiting: limit_req_zone defined and limit_req applied in location.
+    7. HSTS will be added by certbot --redirect (verify the comment is present).
+    Also verify client_max_body_size is set (DoS mitigation for large uploads).
+    If any header is missing, add it to the nginx heredoc in the script.
+  expected_output: >
+    Updated nginx config section (inside the heredoc) with all headers present,
+    plus a PASS/FAIL checklist for each of the 7+1 controls.
+  agent: secdevops_engineer
+
+audit_secrets_hygiene:
+  description: >
+    Audit secrets management practices across the entire repository:
+    1. Confirm `.env` and `.env.prod` are listed in `.gitignore`.
+    2. Scan git history for accidental secret commits using:
+       `git log --all --full-diff -p -- '*.env' '*.env.*' | grep -i "password\|secret\|key\|token"`
+       Flag any hits as P0 incidents requiring `git filter-repo` cleanup.
+    3. Verify `.env.prod.template` contains no real secrets (only
+       REQUIRED_CHANGE_ME placeholders).
+    4. Check that `infra/scripts/magalu-init.sh` sets `chmod 600` on the .env
+       file after creation — flag if missing.
+    5. Verify that `db-migrate.sh` backup files are stored outside /tmp or
+       have restricted permissions (not world-readable).
+    6. Confirm no S3 credentials, JWT secrets, or API keys appear in any
+       tracked file under `backend/`, `frontend/`, or `infra/`.
+  expected_output: >
+    A secrets hygiene report: PASS/FAIL per control, git history scan output,
+    and remediation steps for any FAIL. A clean report is required before
+    any production deployment.
+  agent: secdevops_engineer
+
+verify_deploy_rollback:
+  description: >
+    Verify that the rolling deploy and rollback procedures in
+    `infra/scripts/deploy.sh` are correct and production-safe:
+    1. Confirm a rollback snapshot is saved before the build step
+       (docker tag :latest → :rollback for api, worker, beat).
+    2. Verify rollback() restores the :rollback snapshot as :latest and
+       uses --no-build to avoid re-pulling the broken image.
+    3. Confirm the API health check loop (curl /health) will trigger rollback
+       after 10 failed attempts (30s timeout).
+    4. Verify deploy order: api → worker → beat (api must be healthy before
+       worker restarts).
+    5. Check that a deploy lock is NOT present (concurrent deploy risk) and
+       recommend adding `flock /tmp/tribultz-deploy.lock` if missing.
+    6. Verify the deploy log file (/var/log/tribultz-deploy.log) is written
+       at every step for auditability.
+    Run a dry-run simulation by reviewing the script logic and confirm each
+    step matches the expected behaviour.
+  expected_output: >
+    A deploy pipeline audit report: PASS/FAIL for each of the 6 controls,
+    with the specific line numbers that satisfy or fail each requirement.
+    Include a recommendation on whether the deploy script is safe for
+    production use.
+  agent: devops_engineer

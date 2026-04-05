@@ -26,7 +26,8 @@ log() { echo "[$(date '+%H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
 log "==> Installing system dependencies"
 apt-get update -qq
 apt-get install -y --no-install-recommends \
-    ca-certificates curl gnupg git ufw nginx certbot python3-certbot-nginx
+    ca-certificates curl gnupg git ufw nginx certbot python3-certbot-nginx \
+    postgresql-client fail2ban
 
 # ── 2. Docker Engine ──────────────────────────────────────
 if ! command -v docker &>/dev/null; then
@@ -60,20 +61,18 @@ fi
 if [ ! -f "$DEPLOY_DIR/.env" ]; then
     log ""
     log "  !! .env NOT FOUND at $DEPLOY_DIR/.env"
-    log "  !! Copy backend/.env.example → $DEPLOY_DIR/.env and fill in ALL REQUIRED fields:"
+    log "  !! Copy the template and fill ALL fields marked REQUIRED_CHANGE_ME:"
     log "  !!"
-    log "  !!   POSTGRES_PASSWORD=<strong_password>"
-    log "  !!   DATABASE_URL=postgresql+psycopg2://tribultz:<password>@db:5432/tribultz"
-    log "  !!   REDIS_URL=redis://redis:6379/0"
+    log "  !!   cp $DEPLOY_DIR/.env.prod.template $DEPLOY_DIR/.env"
+    log "  !!   nano $DEPLOY_DIR/.env"
+    log "  !!"
+    log "  !! Required fields (minimum):"
+    log "  !!   DATABASE_URL=postgresql+psycopg2://tribultz:<pw>@<magalu-host>:5432/tribultz"
+    log "  !!   REDIS_PASSWORD=<openssl rand -hex 24>"
+    log "  !!   REDIS_URL=redis://:<REDIS_PASSWORD>@redis:6379/0"
     log "  !!   JWT_SECRET=<openssl rand -hex 32>"
-    log "  !!   MINIO_ROOT_USER=<user>  MINIO_ROOT_PASSWORD=<pass>"
-    log "  !!   S3_ENDPOINT=https://s3.magalu.cloud  S3_REGION=br-se1"
-    log "  !!   S3_BUCKET=tribultz-documents"
-    log "  !!   S3_ACCESS_KEY=<MAGALU_ACCESS_KEY_ID>"
-    log "  !!   S3_SECRET_KEY=<MAGALU_SECRET_ACCESS_KEY>"
-    log "  !!   ENVIRONMENT=production"
-    log "  !!   ALLOWED_ORIGINS=https://tribultz.com.br,https://app.tribultz.com.br"
-    log ""
+    log "  !!   S3_ACCESS_KEY=<MAGALU_ACCESS_KEY>  S3_SECRET_KEY=<MAGALU_SECRET_KEY>"
+    log "  !!"
     log "  After filling .env, rerun: bash $0"
     exit 1
 fi
@@ -83,18 +82,32 @@ log "    .env found"
 log "==> Building Docker images (this may take a few minutes)"
 docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" build --pull 2>&1 | tee -a "$LOG_FILE"
 
-# ── 6. Start infra (db + redis first) ────────────────────
-log "==> Starting PostgreSQL and Redis"
-docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" up -d db redis
-log "    Waiting for DB to be healthy..."
-for i in $(seq 1 30); do
-    docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" exec -T db \
-        pg_isready -U "${POSTGRES_USER:-tribultz}" -d "${POSTGRES_DB:-tribultz}" \
-        &>/dev/null && break
-    sleep 2
-    [ "$i" -eq 30 ] && { log "ERROR: DB did not become healthy in 60s"; exit 1; }
+# ── 6. Start Redis ────────────────────────────────────────
+# PostgreSQL runs on Magalu DBaaS — no local db container needed
+log "==> Starting Redis (broker + cache)"
+docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" up -d redis
+log "    Waiting for Redis to be healthy..."
+for i in $(seq 1 20); do
+    docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" ps --format json redis 2>/dev/null \
+        | grep -q '"Health":"healthy"' && break
+    sleep 3
+    [ "$i" -eq 20 ] && { log "ERROR: Redis did not become healthy in 60s"; exit 1; }
 done
-log "    DB healthy"
+log "    Redis healthy"
+
+# ── 6b. Verify DBaaS connectivity ────────────────────────
+log "==> Verifying Magalu DBaaS connectivity"
+# Source .env to get POSTGRES_HOST/USER/DB
+set -a; source "$DEPLOY_DIR/.env"; set +a
+if pg_isready -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT:-5432}" \
+              -U "${POSTGRES_USER:-tribultz}" -d "${POSTGRES_DB:-tribultz}" \
+              -t 10 &>/dev/null; then
+    log "    DBaaS reachable at ${POSTGRES_HOST}:${POSTGRES_PORT:-5432}"
+else
+    log "ERROR: Cannot reach DBaaS at ${POSTGRES_HOST}:${POSTGRES_PORT:-5432}"
+    log "       Check POSTGRES_HOST in .env and Magalu VPC firewall rules"
+    exit 1
+fi
 
 # ── 7. Run Alembic migrations ─────────────────────────────
 log "==> Running database migrations (alembic upgrade head)"
@@ -118,18 +131,72 @@ ufw allow 8000/tcp     # direct API access (remove after nginx/HTTPS configured)
 ufw --force enable
 log "    UFW active. Ports: 22, 80, 443, 8000"
 
+# ── 9b. SSH hardening (CIS Ubuntu 5.2 / STIG) ────────────
+log "==> Hardening SSH"
+# Apenas desabilita password auth se houver ao menos uma chave autorizada
+# — evita lockout acidental na primeira execução
+if find /root/.ssh /home -name authorized_keys -readable 2>/dev/null | grep -q .; then
+    sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/'   /etc/ssh/sshd_config
+    sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/'                 /etc/ssh/sshd_config
+    sed -i 's/^#\?MaxAuthTries.*/MaxAuthTries 3/'                        /etc/ssh/sshd_config
+    sed -i 's/^#\?ClientAliveInterval.*/ClientAliveInterval 300/'        /etc/ssh/sshd_config
+    sed -i 's/^#\?ClientAliveCountMax.*/ClientAliveCountMax 2/'          /etc/ssh/sshd_config
+    systemctl reload sshd
+    log "    SSH: password auth OFF, root login OFF, idle timeout 10 min, max 3 tentativas"
+else
+    log "    AVISO: authorized_keys não encontrado — SSH hardening pulado para evitar lockout"
+    log "    Configure sua chave SSH e execute manualmente:"
+    log "      sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && systemctl reload sshd"
+fi
+
+# ── 9c. fail2ban (proteção contra brute force SSH/nginx) ──
+log "==> Configurando fail2ban"
+# Proteção SSH: bane IP após 5 tentativas em 10 min por 1 hora
+cat > /etc/fail2ban/jail.d/tribultz.conf <<'F2B'
+[sshd]
+enabled  = true
+port     = ssh
+maxretry = 5
+findtime = 600
+bantime  = 3600
+logpath  = %(sshd_log)s
+backend  = %(sshd_backend)s
+
+[nginx-http-auth]
+enabled  = true
+port     = http,https
+maxretry = 5
+findtime = 600
+bantime  = 3600
+F2B
+systemctl enable --now fail2ban
+log "    fail2ban ativo: bane IPs após 5 tentativas SSH ou auth nginx em 10 min"
+
 # ── 10. Nginx reverse proxy ───────────────────────────────
 log "==> Configuring Nginx reverse proxy for api.tribultz.com.br"
 cat > /etc/nginx/sites-available/tribultz-api <<'NGINX'
+# ── Rate limiting (defesa em profundidade sobre o rate limit da API) ──
+limit_req_zone $binary_remote_addr zone=api_limit:10m rate=30r/m;
+
 server {
     listen 80;
     server_name api.tribultz.com.br;
 
+    # ── Security headers (OWASP Secure Headers Project) ──────────
+    server_tokens off;                                   # não expõe versão nginx
+    add_header X-Frame-Options            "DENY"                            always;
+    add_header X-Content-Type-Options     "nosniff"                         always;
+    add_header Referrer-Policy            "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy         "camera=(), microphone=(), geolocation=()" always;
+    # HSTS será adicionado pelo certbot --redirect após TLS
+
     location / {
+        limit_req zone=api_limit burst=20 nodelay;
+
         proxy_pass         http://127.0.0.1:8000;
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header   X-Forwarded-Proto $scheme;
         proxy_read_timeout 120s;
         client_max_body_size 50M;
@@ -154,15 +221,55 @@ for i in $(seq 1 20); do
     [ "$i" -eq 20 ] && log "WARNING: API did not respond healthy in 60s — check logs with: docker compose logs api"
 done
 
-# ── 12. Summary ───────────────────────────────────────────
+# ── 12. TLS automático via certbot + fechamento da porta 8000 ──
+log "==> Tentando emitir certificado TLS (api.tribultz.com.br)"
+log "    (Requer que o DNS A já aponte para este IP)"
+if certbot --nginx -d api.tribultz.com.br \
+           --non-interactive --agree-tos \
+           -m infra@tribultz.com.br \
+           --redirect 2>&1 | tee -a "$LOG_FILE"; then
+    log "    TLS emitido com sucesso ✓"
+    # Com TLS ativo, porta 8000 direta não é mais necessária
+    ufw delete allow 8000/tcp 2>/dev/null || true
+    log "    Porta 8000 fechada — acesso exclusivamente via HTTPS/nginx ✓"
+    # Renovação automática
+    if command -v snap &>/dev/null && snap list certbot &>/dev/null 2>&1; then
+        systemctl enable --now snap.certbot.renew.timer 2>/dev/null || true
+    else
+        (crontab -l 2>/dev/null; \
+         echo "0 3 * * * certbot renew --quiet --post-hook 'systemctl reload nginx'") \
+        | sort -u | crontab -
+    fi
+    log "    Renovação automática de certificado configurada ✓"
+else
+    log ""
+    log "  !! certbot falhou — DNS ainda não aponta para este IP, ou domínio não acessível"
+    log "  !! Porta 8000 permanece ABERTA como fallback temporário"
+    log "  !!"
+    log "  !! Após apontar o DNS, execute:"
+    log "  !!   certbot --nginx -d api.tribultz.com.br --non-interactive --agree-tos -m infra@tribultz.com.br"
+    log "  !!   ufw delete allow 8000/tcp    # fechar porta após TLS confirmado"
+    log ""
+fi
+
+# ── 14. Summary ───────────────────────────────────────────
+CURRENT_IP=$(curl -sf ifconfig.me 2>/dev/null || echo '<MAGALU_IP>')
 log ""
 log "=== TRIBULTZ DEPLOY COMPLETE ==================================="
-log "  API direct:     http://$(curl -sf ifconfig.me 2>/dev/null || echo '<MAGALU_IP>'):8000/health"
-log "  API via nginx:  http://api.tribultz.com.br/health"
+log "  IP:             $CURRENT_IP"
+log "  API (direto):   http://$CURRENT_IP:8000/health   (fecha após TLS)"
+log "  API (nginx):    http://api.tribultz.com.br/health"
 log ""
-log "  NEXT STEPS:"
-log "  1. Point api.tribultz.com.br DNS A record → $(curl -sf ifconfig.me 2>/dev/null || echo '<MAGALU_IP>')"
-log "  2. Issue TLS cert: certbot --nginx -d api.tribultz.com.br --non-interactive --agree-tos -m infra@tribultz.com.br"
-log "  3. Remove ufw allow 8000/tcp after HTTPS is confirmed"
-log "  4. docker compose -f $DEPLOY_DIR/$COMPOSE_FILE ps  ← all containers Running"
+log "  CHECKLIST PÓS-DEPLOY:"
+log "  [ ] DNS A: api.tribultz.com.br → $CURRENT_IP"
+log "  [ ] TLS:   certbot (auto-executado acima, verificar logs)"
+log "  [ ] Porta 8000 UFW fechada (auto após TLS, verificar: ufw status)"
+log "  [ ] Chave SSH configurada + PasswordAuthentication no"
+log "  [ ] fail2ban ativo: systemctl status fail2ban"
+log ""
+log "  OPERAÇÕES:"
+log "  Deploy:    bash $DEPLOY_DIR/infra/scripts/deploy.sh"
+log "  Migração:  bash $DEPLOY_DIR/infra/scripts/db-migrate.sh --prod"
+log "  Status:    docker compose -f $DEPLOY_DIR/$COMPOSE_FILE ps"
+log "  Logs API:  docker compose -f $DEPLOY_DIR/$COMPOSE_FILE logs -f api"
 log "================================================================="
