@@ -138,6 +138,9 @@ celerybeat.pid
 .env
 .env.prod
 .envrc
+
+# Secrets locais — NUNCA commitar
+secrets/
 .venv
 env/
 venv/

@@ -46,7 +46,7 @@ provider "cloudflare" {
 resource "cloudflare_record" "api_a" {
   zone_id = var.zone_id
   name    = "api"
-  value   = var.api_origin_ip
+  content = var.api_origin_ip
   type    = "A"
   proxied = true
   ttl     = 1  # Auto (gerenciado pela Cloudflare quando proxied=true)
@@ -56,74 +56,44 @@ resource "cloudflare_record" "api_a" {
 # tribultz.com.br (apex) → Vercel
 # Cloudflare CNAME Flattening resolve o apex automaticamente
 resource "cloudflare_record" "apex_cname" {
-  zone_id = var.zone_id
-  name    = "@"
-  value   = "cname.vercel-dns.com"
-  type    = "CNAME"
-  proxied = true
-  ttl     = 1
-  comment = "Frontend Vercel — apex domain (CNAME Flattening)"
+  zone_id         = var.zone_id
+  name            = "@"
+  content         = "cname.vercel-dns.com"
+  type            = "CNAME"
+  proxied         = true
+  ttl             = 1
+  allow_overwrite = true
+  comment         = "Frontend Vercel — apex domain (CNAME Flattening)"
 }
 
 # www.tribultz.com.br → redireciona para tribultz.com.br (canônico)
 # Redirect 308 configurado no painel Vercel (permanente, preserva método)
 resource "cloudflare_record" "www_cname" {
-  zone_id = var.zone_id
-  name    = "www"
-  value   = "cname.vercel-dns.com"
-  type    = "CNAME"
-  proxied = true
-  ttl     = 1
-  comment = "Frontend Vercel — www redireciona para apex via Vercel (308)"
+  zone_id         = var.zone_id
+  name            = "www"
+  content         = "cname.vercel-dns.com"
+  type            = "CNAME"
+  proxied         = true
+  ttl             = 1
+  allow_overwrite = true
+  comment         = "Frontend Vercel — www redireciona para apex via Vercel (308)"
 }
 
 # ── SSL/TLS + Segurança ───────────────────────────────────────────────────────
-
-resource "cloudflare_zone_settings_override" "tribultz" {
-  zone_id = var.zone_id
-
-  settings {
-    # Full (Strict) — Cloudflare valida o cert do origin
-    ssl = "strict"
-
-    # Força HTTPS para todo o tráfego
-    always_use_https = "on"
-
-    # HSTS 6 meses, incluindo subdomínios
-    security_header {
-      enabled            = true
-      include_subdomains = true
-      max_age            = 15768000
-      nosniff            = true
-      preload            = true
-    }
-
-    # TLS 1.2 mínimo
-    min_tls_version = "1.2"
-
-    # TLS 1.3 com 0-RTT
-    tls_1_3 = "zrt"
-
-    # Nível de segurança padrão (sem WAF, usa heurísticas básicas CF)
-    security_level = "medium"
-
-    # Browser cache: 4 horas
-    browser_cache_ttl = 14400
-
-    # Brotli compression
-    brotli = "on"
-
-    # HTTP/2 e HTTP/3
-    http2 = "on"
-    http3 = "on"
-
-    # Ocultar informações do servidor
-    server_side_exclude = "on"
-
-    # Email obfuscation
-    email_obfuscation = "on"
-  }
-}
+# NOTA: zone_settings_override requer permissão "Zone Settings: Edit" no API Token.
+# O token atual usa template "Edit zone DNS" que não inclui essa permissão.
+#
+# Configurar MANUALMENTE no painel Cloudflare → tribultz.com.br → SSL/TLS:
+#   ✅ SSL/TLS: Full (strict)
+#   ✅ Always Use HTTPS: On
+#   ✅ HSTS: max-age=15768000, includeSubDomains, preload
+#   ✅ Minimum TLS: 1.2
+#   ✅ TLS 1.3: On
+#   ✅ HTTP/2: On | HTTP/3: On | Brotli: On
+#   ✅ Security Level: Medium
+#
+# Para gerenciar via Terraform no futuro: adicionar permissão "Zone Settings: Edit"
+# ao token em: dash.cloudflare.com/profile/api-tokens → editar token atual
 
 # ── Page Rules — Cache bypass ─────────────────────────────────────────────────
 # Free tier: até 3 page rules. Usamos 2.
@@ -148,4 +118,132 @@ resource "cloudflare_page_rule" "no_cache_api" {
   actions {
     cache_level = "bypass"
   }
+}
+
+# ── Email Routing ──────────────────────────────────────────────────────────────
+# Cloudflare Email Routing — 8 aliases @tribultz.com.br + catch-all
+#
+# AÇÃO MANUAL OBRIGATÓRIA antes de aplicar as regras:
+#   Cloudflare Dashboard → tribultz.com.br → Email → Email Routing → Enable
+#   (cloudflare_email_routing_settings requer permissão especial não disponível
+#    no template "Edit zone DNS". Habilitado manualmente uma única vez.)
+#
+# Pós-apply:
+#   1. mickel.tribultz@gmail.com e roberta.tribultz@gmail.com receberão
+#      e-mail de verificação da Cloudflare — clicar no link
+#   2. Para responder como @tribultz.com.br: Gmail → Configurações →
+#      Contas → Enviar como → SMTP smtp.resend.com:587, user=resend,
+#      senha=re_391k65v8_QFQ4w3SS2UcjcfnLmjzjGJHS
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Endereços de destino verificados ─────────────────────────────────────────
+# NOTA: mickel e shared usam o mesmo Gmail → apenas um recurso (shared)
+# Cloudflare não permite dois registros com o mesmo e-mail de destino.
+
+resource "cloudflare_email_routing_address" "roberta" {
+  account_id = var.account_id
+  email      = var.email_roberta_dest
+}
+
+resource "cloudflare_email_routing_address" "shared" {
+  account_id = var.account_id
+  email      = var.email_shared_dest
+}
+
+# ── Regras de roteamento — gerenciadas via Cloudflare Dashboard ───────────────
+# As regras abaixo são configuradas manualmente em:
+#   tribultz.com.br → Email → Email Routing → Regras de roteamento
+#
+# Razão: cloudflare_email_routing_rule requer permissões de API não disponíveis
+# em tokens de zona padrão (Authentication error 10000).
+#
+# Regras configuradas no dashboard:
+#   mickel@      → mickel.tribultz@gmail.com
+#   roberta@     → roberta.tribultz@gmail.com
+#   suporte@     → mickel.tribultz@gmail.com
+#   contato@     → mickel.tribultz@gmail.com
+#   financeiro@  → mickel.tribultz@gmail.com
+#   marketing@   → mickel.tribultz@gmail.com
+#   dpo@         → mickel.tribultz@gmail.com
+#   infra@       → mickel.tribultz@gmail.com
+#   catch-all    → mickel.tribultz@gmail.com
+
+# ── MX + DKIM Email Routing — gerenciados pela Cloudflare ────────────────────
+# Os registros MX (route1/2/3.mx.cloudflare.net) e o DKIM (cf2024-1._domainkey)
+# são adicionados automaticamente pela Cloudflare ao habilitar Email Routing via
+# Dashboard → Email → Email Routing → "Adicionar Registros e Habilitar".
+# NÃO gerenciar via Terraform — são infraestrutura interna da Cloudflare.
+
+# ── SPF — Receber (Cloudflare Routing) + Enviar (Resend) ─────────────────────
+# SPF único no apex: inclui ambos os provedores.
+# Cloudflare CNAME Flattening permite TXT no @ mesmo com CNAME para Vercel.
+
+resource "cloudflare_record" "spf" {
+  zone_id = var.zone_id
+  name    = "@"
+  content = "v=spf1 include:_spf.mx.cloudflare.net ~all"
+  type    = "TXT"
+  proxied = false
+  ttl     = 3600
+  comment = "SPF root: apenas Cloudflare Email Routing (inbound). Resend usa send.tribultz.com.br"
+}
+
+# ── DKIM — Resend ─────────────────────────────────────────────────────────────
+# Tipo TXT (não CNAME) — valor gerado pelo Resend em Domains → tribultz.com.br
+# Colar o valor completo p=MIGfMA...wIDAQAB no terraform.tfvars
+
+resource "cloudflare_record" "resend_dkim" {
+  zone_id = var.zone_id
+  name    = "resend._domainkey"
+  content = var.resend_dkim_value
+  type    = "TXT"
+  proxied = false
+  ttl     = 3600
+  comment = "DKIM Resend — assina e-mails do noreply@tribultz.com.br"
+}
+
+# ── SPF + MX do subdomínio send.tribultz.com.br (Resend envelope sender) ──────
+# Resend usa send.tribultz.com.br como Return-Path (envelope sender).
+# O SPF é verificado neste subdomínio, não no root.
+# DMARC passa com aspf=r (relaxed) pois o domínio organizacional coincide.
+
+resource "cloudflare_record" "resend_send_mx" {
+  zone_id  = var.zone_id
+  name     = "send"
+  content  = var.resend_send_mx_value
+  type     = "MX"
+  proxied  = false
+  ttl      = 3600
+  priority = 10
+  comment  = "MX Resend — bounce handling para send.tribultz.com.br"
+}
+
+resource "cloudflare_record" "resend_send_spf" {
+  zone_id = var.zone_id
+  name    = "send"
+  content = var.resend_send_spf_value
+  type    = "TXT"
+  proxied = false
+  ttl     = 3600
+  comment = "SPF Resend — autoriza envio via send.tribultz.com.br"
+}
+
+# ── DMARC ─────────────────────────────────────────────────────────────────────
+# Fase 1 — p=none: monitorar sem bloquear (primeiras 2-4 semanas)
+#   → Acompanhar relatórios em dpo@ para confirmar que SPF + DKIM estão OK
+# Fase 2 — mudar para p=quarantine após confirmar zero falsos positivos
+# Fase 3 — mudar para p=reject quando 100% dos envios forem autenticados
+#
+# aspf=r (relaxed): Return-Path send.tribultz.com.br ≈ From tribultz.com.br ✅
+# rua: relatórios agregados diários → dpo@
+# ruf: relatórios forenses (por e-mail falho) → infra@
+
+resource "cloudflare_record" "dmarc" {
+  zone_id = var.zone_id
+  name    = "_dmarc"
+  content = "v=DMARC1; p=none; rua=mailto:dpo@tribultz.com.br; ruf=mailto:infra@tribultz.com.br; fo=1; adkim=s; aspf=r; pct=100"
+  type    = "TXT"
+  proxied = false
+  ttl     = 3600
+  comment = "DMARC fase 1 — p=none (monitorar). Evoluir: none → quarantine → reject"
 }
