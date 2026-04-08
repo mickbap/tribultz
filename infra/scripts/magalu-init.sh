@@ -82,17 +82,31 @@ chmod 600 "$DEPLOY_DIR/.env"
 chown root:root "$DEPLOY_DIR/.env"
 log "    .env: chmod 600 aplicado (leitura apenas pelo root)"
 
+# ── 4b. Switch to project root so Docker Compose finds .env ──
+# With -f /absolute/path, Docker Compose's default project dir is the
+# compose file's directory (/opt/tribultz/infra), which has no .env.
+# cd to DEPLOY_DIR instead: .env is here, and build context "../backend"
+# resolves correctly from the compose file location (../backend from infra/).
+cd "$DEPLOY_DIR"
+COMPOSE_CMD="docker compose -f $DEPLOY_DIR/$COMPOSE_FILE"
+
+# Symlink infra/.env → .env so that ${REDIS_PASSWORD} and other variables
+# are resolved when Docker Compose is invoked directly from the infra/ dir
+# (e.g., manual `docker compose -f infra/docker-compose.prod.yml` calls).
+ln -sf "$DEPLOY_DIR/.env" "$DEPLOY_DIR/infra/.env"
+log "    Symlink infra/.env → .env criado (idempotente)"
+
 # ── 5. Build images ───────────────────────────────────────
 log "==> Building Docker images (this may take a few minutes)"
-docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" build --pull 2>&1 | tee -a "$LOG_FILE"
+$COMPOSE_CMD build --pull 2>&1 | tee -a "$LOG_FILE"
 
 # ── 6. Start Redis ────────────────────────────────────────
 # PostgreSQL runs on Magalu DBaaS — no local db container needed
 log "==> Starting Redis (broker + cache)"
-docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" up -d redis
+$COMPOSE_CMD up -d redis
 log "    Waiting for Redis to be healthy..."
 for i in $(seq 1 20); do
-    docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" ps --format json redis 2>/dev/null \
+    $COMPOSE_CMD ps --format json redis 2>/dev/null \
         | grep -q '"Health":"healthy"' && break
     sleep 3
     [ "$i" -eq 20 ] && { log "ERROR: Redis did not become healthy in 60s"; exit 1; }
@@ -115,13 +129,13 @@ fi
 
 # ── 7. Run Alembic migrations ─────────────────────────────
 log "==> Running database migrations (alembic upgrade head)"
-docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" run --rm api \
+$COMPOSE_CMD run --rm api \
     python -m alembic upgrade head 2>&1 | tee -a "$LOG_FILE"
 log "    Migrations complete"
 
 # ── 8. Start full stack ───────────────────────────────────
 log "==> Starting full stack (api, worker, beat)"
-docker compose -f "$DEPLOY_DIR/$COMPOSE_FILE" up -d 2>&1 | tee -a "$LOG_FILE"
+$COMPOSE_CMD up -d 2>&1 | tee -a "$LOG_FILE"
 
 # ── 9. UFW firewall ───────────────────────────────────────
 log "==> Configuring UFW firewall"
@@ -145,7 +159,8 @@ if find /root/.ssh /home -name authorized_keys -readable 2>/dev/null | grep -q .
     sed -i 's/^#\?MaxAuthTries.*/MaxAuthTries 3/'                        /etc/ssh/sshd_config
     sed -i 's/^#\?ClientAliveInterval.*/ClientAliveInterval 300/'        /etc/ssh/sshd_config
     sed -i 's/^#\?ClientAliveCountMax.*/ClientAliveCountMax 2/'          /etc/ssh/sshd_config
-    systemctl reload sshd
+    # Ubuntu 22.04+ usa "ssh" (não "sshd") como nome do serviço
+    systemctl reload ssh 2>/dev/null || systemctl reload sshd 2>/dev/null || true
     log "    SSH: password auth OFF, root login OFF, idle timeout 10 min, max 3 tentativas"
 else
     log "    AVISO: authorized_keys não encontrado — SSH hardening pulado para evitar lockout"

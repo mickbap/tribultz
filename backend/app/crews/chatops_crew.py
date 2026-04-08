@@ -210,20 +210,29 @@ class TribultzChatOpsCrew:
 
         try:
             raw_output, tier_used, elapsed = execute_with_fallback(_kickoff)
-        except LLMUnavailableError:
+        except LLMUnavailableError as exc:
+            # Distinguish overload (transient) from config/key errors (actionable)
+            from app.crews.llm_config import _is_overloaded_or_rate_limited
+            is_transient = _is_overloaded_or_rate_limited(exc.__cause__) if exc.__cause__ else False
             logger.error(
-                "All LLM tiers exhausted for tenant=%s user=%s",
+                "All LLM tiers exhausted for tenant=%s user=%s transient=%s error=%s",
                 self._tenant_id,
                 self._user_id,
+                is_transient,
+                str(exc)[:300],
             )
             self._record_handoff(agent_id="chatops", task_id="crew_execution", task_status="FAILED")
-            return {
-                "response_markdown": (
-                    "Todos os modelos de IA estao temporariamente indisponiveis. "
-                    "Tente novamente em alguns minutos."
-                ),
-                "evidence": [],
-            }
+            if is_transient:
+                msg = (
+                    "⚠️ Os serviços de IA estão temporariamente sobrecarregados (erro 429/529). "
+                    "Aguarde 1-2 minutos e tente novamente."
+                )
+            else:
+                msg = (
+                    "⚠️ Não foi possível processar sua solicitação no momento. "
+                    "Se o problema persistir, entre em contato com o suporte."
+                )
+            return {"response_markdown": msg, "evidence": []}
 
         logger.info(
             "crew_execution_complete tenant=%s tier=%s model=%s elapsed=%.2fs",

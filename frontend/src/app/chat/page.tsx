@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ChatThinkingBubble } from "@/components/chat/ChatThinkingBubble";
 import { EvidenceList } from "@/components/chat/EvidenceList";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { Skeleton } from "@/components/common/Skeleton";
@@ -36,6 +37,14 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Refs para auto-scroll ao fim das mensagens
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAnchorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [activeConversationId, sending]);
 
   useEffect(() => {
     async function load(): Promise<void> {
@@ -188,7 +197,7 @@ export default function ChatPage() {
           </div>
         </header>
 
-        <div className="scroll-thin flex-1 space-y-4 overflow-auto p-4">
+        <div className="scroll-thin flex-1 space-y-4 overflow-auto p-4" ref={messagesEndRef as React.RefObject<HTMLDivElement>}>
           {loading ? (
             <div className="space-y-4">
               <Skeleton className="h-24 w-2/3" />
@@ -199,20 +208,26 @@ export default function ChatPage() {
               Sem mensagens. Envie uma mensagem para iniciar.
             </div>
           ) : (
-            activeConversation.messages.map((message) => (
-              <article
-                key={message.id}
-                className={`max-w-3xl rounded-xl border p-3 ${
-                  message.role === "user"
-                    ? "ml-auto border-tribultz-200 bg-tribultz-50"
-                    : "border-slate-200 bg-white"
-                }`}
-              >
-                <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-500">{message.role}</p>
-                <MarkdownRenderer markdown={message.markdown} />
-                {message.evidence?.length ? <EvidenceList evidence={message.evidence} /> : null}
-              </article>
-            ))
+            <>
+              {activeConversation.messages.map((message) => (
+                <article
+                  key={message.id}
+                  className={`max-w-3xl rounded-xl border p-3 ${
+                    message.role === "user"
+                      ? "ml-auto border-tribultz-200 bg-tribultz-50"
+                      : "border-slate-200 bg-white"
+                  }`}
+                >
+                  <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-500">{message.role}</p>
+                  <MarkdownRenderer markdown={message.markdown} />
+                  {message.evidence?.length ? <EvidenceList evidence={message.evidence} /> : null}
+                </article>
+              ))}
+              {/* Exibe enquanto o backend processa — curiosidades + progresso */}
+              {sending ? <ChatThinkingBubble /> : null}
+              {/* Ancora para auto-scroll */}
+              <div ref={scrollAnchorRef} />
+            </>
           )}
         </div>
 
@@ -240,7 +255,7 @@ export default function ChatPage() {
               disabled={sending || !draft.trim()}
               className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {sending ? "Enviando..." : "Enviar"}
+              {sending ? "Analisando..." : "Enviar"}
             </button>
           </div>
         </div>

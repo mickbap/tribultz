@@ -66,9 +66,11 @@ class Settings(BaseSettings):
     # ── LLM / OpenRouter ─────────────────────────────────────
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    LLM_FREE_PRIMARY: str = "openrouter/google/gemini-2.0-flash-exp:free"
-    LLM_FREE_FALLBACK: str = "openrouter/qwen/qwen3-coder-480b-a35b-instruct:free"
-    LLM_PAID_FALLBACK: str = "openrouter/anthropic/claude-3-5-sonnet"
+    # Benchmark 08/04/2026 — cadeia de 6 tiers 100% free (ver llm_config.py)
+    LLM_FREE_PRIMARY: str = "openrouter/openai/gpt-oss-20b:free"
+    LLM_FREE_FALLBACK: str = "openrouter/openai/gpt-oss-120b:free"
+    # Timeout aumentado para acomodar 6 tiers com backoff (pior caso ~90s)
+    CHATOPS_TIMEOUT_SECONDS: int = 120
     CREW_MEMORY_TTL_SECONDS: int = 2_592_000
 
     # ── External APIs ─────────────────────────────────────────
