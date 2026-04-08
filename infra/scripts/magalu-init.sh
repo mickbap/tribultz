@@ -90,6 +90,12 @@ log "    .env: chmod 600 aplicado (leitura apenas pelo root)"
 cd "$DEPLOY_DIR"
 COMPOSE_CMD="docker compose -f $DEPLOY_DIR/$COMPOSE_FILE"
 
+# Symlink infra/.env → .env so that ${REDIS_PASSWORD} and other variables
+# are resolved when Docker Compose is invoked directly from the infra/ dir
+# (e.g., manual `docker compose -f infra/docker-compose.prod.yml` calls).
+ln -sf "$DEPLOY_DIR/.env" "$DEPLOY_DIR/infra/.env"
+log "    Symlink infra/.env → .env criado (idempotente)"
+
 # ── 5. Build images ───────────────────────────────────────
 log "==> Building Docker images (this may take a few minutes)"
 $COMPOSE_CMD build --pull 2>&1 | tee -a "$LOG_FILE"
