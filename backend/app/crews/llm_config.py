@@ -28,12 +28,23 @@ class LLMUnavailableError(RuntimeError):
     """All LLM tiers exhausted — no model available."""
 
 
+def _is_overloaded_or_rate_limited(exc: Exception) -> bool:
+    """Detect transient 429/529 errors that warrant a retry with backoff."""
+    status = getattr(exc, "status_code", None) or getattr(exc, "status", None)
+    if status in (429, 529):
+        return True
+    msg = str(exc).lower()
+    return "overloaded" in msg or "rate limit" in msg or "too many requests" in msg
+
+
 @dataclass(frozen=True)
 class ModelTier:
     name: str
     model_id: str
     is_free: bool
     max_retries: int = 2
+    # seconds to wait between retries on transient errors (doubles each retry)
+    backoff_base: float = 2.0
 
 
 # ── Model registry ─────────────────────────────────────────────
@@ -42,21 +53,24 @@ FREE_PRIMARY = ModelTier(
     name="gemini-2.0-flash-free",
     model_id="openrouter/google/gemini-2.0-flash-exp:free",
     is_free=True,
-    max_retries=2,
+    max_retries=3,       # extra retry: free model overloads are common
+    backoff_base=2.0,
 )
 
 FREE_FALLBACK = ModelTier(
     name="qwen3-coder-free",
     model_id="openrouter/qwen/qwen3-coder-480b-a35b-instruct:free",
     is_free=True,
-    max_retries=1,
+    max_retries=2,
+    backoff_base=2.0,
 )
 
 PAID_FALLBACK = ModelTier(
     name="claude-3.5-sonnet",
     model_id="openrouter/anthropic/claude-3-5-sonnet",
     is_free=False,
-    max_retries=1,
+    max_retries=2,       # 529 Overloaded: retry once with backoff before giving up
+    backoff_base=3.0,    # slightly longer backoff for paid tier (Anthropic 529 recovers slower)
 )
 
 DEFAULT_FALLBACK_CHAIN: list[ModelTier] = [FREE_PRIMARY, FREE_FALLBACK, PAID_FALLBACK]
@@ -144,15 +158,28 @@ def execute_with_fallback(
             except Exception as exc:
                 elapsed = time.monotonic() - t0
                 last_error = exc
+                transient = _is_overloaded_or_rate_limited(exc)
+                status = getattr(exc, "status_code", None) or getattr(exc, "status", "?")
                 logger.warning(
-                    "LLM call failed: tier=%s model=%s attempt=%d/%d elapsed=%.2fs error=%s",
+                    "LLM call failed: tier=%s model=%s attempt=%d/%d "
+                    "elapsed=%.2fs status=%s transient=%s error=%s",
                     tier.name,
                     tier.model_id,
                     attempt,
                     tier.max_retries,
                     elapsed,
-                    str(exc)[:200],
+                    status,
+                    transient,
+                    str(exc)[:300],
                 )
+                # Exponential backoff for 429/529 — give the model time to recover
+                if transient and attempt < tier.max_retries:
+                    backoff = tier.backoff_base ** attempt  # 2s → 4s → 8s
+                    logger.info(
+                        "Backing off %.0fs before retry (tier=%s attempt=%d status=%s)",
+                        backoff, tier.name, attempt, status,
+                    )
+                    time.sleep(backoff)
 
     raise LLMUnavailableError(
         f"All LLM tiers exhausted. Last error: {last_error}"

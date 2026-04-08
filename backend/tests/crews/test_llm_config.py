@@ -8,6 +8,7 @@ from app.crews.llm_config import (
     PAID_FALLBACK,
     LLMUnavailableError,
     ModelTier,
+    _is_overloaded_or_rate_limited,
     build_llm,
     execute_with_fallback,
     get_llm_with_fallback,
@@ -108,8 +109,9 @@ class TestExecuteWithFallback:
         result, tier, elapsed = execute_with_fallback(fn)
         assert result == "fallback_ok"
         assert tier == FREE_FALLBACK
-        # PRIMARY has max_retries=2, so 2 attempts + 1 on fallback = 3
-        assert call_count == 3
+        # PRIMARY has max_retries=3 (free model overloads are common),
+        # so 3 attempts + 1 on fallback = 4
+        assert call_count == FREE_PRIMARY.max_retries + 1
 
     def test_fallback_to_paid_when_all_free_fail(self):
         def fn(llm):
@@ -149,3 +151,86 @@ class TestExecuteWithFallback:
 
         _, _, elapsed = execute_with_fallback(fn)
         assert elapsed >= 0
+
+    def test_backoff_not_applied_for_non_transient_error(self, monkeypatch):
+        """Non-transient errors should NOT sleep between retries."""
+        slept: list[float] = []
+        monkeypatch.setattr("time.sleep", lambda s: slept.append(s))
+
+        single_tier = [ModelTier("t", "openrouter/x:free", True, max_retries=2, backoff_base=5.0)]
+
+        def fn(llm):
+            raise RuntimeError("generic crash")  # non-transient
+
+        with pytest.raises(LLMUnavailableError):
+            execute_with_fallback(fn, chain=single_tier)
+
+        assert slept == [], "No sleep expected for non-transient errors"
+
+    def test_backoff_applied_for_429_status(self, monkeypatch):
+        """429 Rate Limited should trigger exponential backoff between retries."""
+        slept: list[float] = []
+        monkeypatch.setattr("time.sleep", lambda s: slept.append(s))
+
+        single_tier = [ModelTier("t", "openrouter/x:free", True, max_retries=3, backoff_base=2.0)]
+
+        def fn(llm):
+            exc = RuntimeError("rate limited")
+            exc.status_code = 429  # type: ignore[attr-defined]
+            raise exc
+
+        with pytest.raises(LLMUnavailableError):
+            execute_with_fallback(fn, chain=single_tier)
+
+        # 3 attempts: sleep after attempt 1 (2^1=2s) and attempt 2 (2^2=4s); no sleep after last
+        assert slept == [2.0, 4.0]
+
+    def test_backoff_applied_for_529_overloaded(self, monkeypatch):
+        """529 Overloaded (Anthropic) should trigger backoff — not exhaust retries instantly."""
+        slept: list[float] = []
+        monkeypatch.setattr("time.sleep", lambda s: slept.append(s))
+
+        single_tier = [ModelTier("t", "openrouter/anthropic/claude:paid", False, max_retries=2, backoff_base=3.0)]
+
+        def fn(llm):
+            exc = RuntimeError("API Error: 529 Overloaded")
+            exc.status_code = 529  # type: ignore[attr-defined]
+            raise exc
+
+        with pytest.raises(LLMUnavailableError):
+            execute_with_fallback(fn, chain=single_tier)
+
+        # 2 attempts: sleep after attempt 1 (3^1=3s); no sleep after last
+        assert slept == [3.0]
+
+
+# ── _is_overloaded_or_rate_limited ────────────────────────────
+
+
+class TestIsOverloadedOrRateLimited:
+    def test_429_status_code(self):
+        exc = RuntimeError("rate limited")
+        exc.status_code = 429  # type: ignore[attr-defined]
+        assert _is_overloaded_or_rate_limited(exc) is True
+
+    def test_529_status_code(self):
+        exc = RuntimeError("overloaded")
+        exc.status_code = 529  # type: ignore[attr-defined]
+        assert _is_overloaded_or_rate_limited(exc) is True
+
+    def test_overloaded_in_message(self):
+        assert _is_overloaded_or_rate_limited(RuntimeError("API Error: 529 Overloaded")) is True
+
+    def test_rate_limit_in_message(self):
+        assert _is_overloaded_or_rate_limited(RuntimeError("Rate limit exceeded")) is True
+
+    def test_too_many_requests_in_message(self):
+        assert _is_overloaded_or_rate_limited(RuntimeError("Too Many Requests")) is True
+
+    def test_generic_error_is_not_transient(self):
+        assert _is_overloaded_or_rate_limited(RuntimeError("connection refused")) is False
+
+    def test_500_status_is_not_transient(self):
+        exc = RuntimeError("server error")
+        exc.status_code = 500  # type: ignore[attr-defined]
+        assert _is_overloaded_or_rate_limited(exc) is False
