@@ -35,7 +35,7 @@ class LLMUnavailableError(RuntimeError):
     """All LLM tiers exhausted — no model available."""
 
 
-def _is_overloaded_or_rate_limited(exc: Exception) -> bool:
+def _is_overloaded_or_rate_limited(exc: BaseException) -> bool:
     """Detect transient 429/529 errors that warrant a retry with backoff."""
     status = getattr(exc, "status_code", None) or getattr(exc, "status", None)
     if status in (429, 529):
