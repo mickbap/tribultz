@@ -38,6 +38,10 @@ class TestLiveness:
         r = client.get("/health")
         assert r.json() == {"status": "ok"}
 
+    def test_head_returns_200(self):
+        r = client.head("/health")
+        assert r.status_code == 200
+
 
 # ── Readiness (/health/ready) ─────────────────────────────────────────────────
 
@@ -194,6 +198,20 @@ class TestAsaasProbe:
             from app.routers.health import _probe_asaas
             result = _probe_asaas()
         assert result == "ok"
+
+    def test_uses_production_v3_base(self):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        with (
+            patch("app.routers.health.settings") as mock_cfg,
+            patch("app.routers.health.httpx.get", return_value=mock_resp) as mock_get,
+        ):
+            mock_cfg.ASAAS_API_KEY = "test-key"
+            mock_cfg.ASAAS_ENVIRONMENT = "production"
+            from app.routers.health import _probe_asaas
+            result = _probe_asaas()
+        assert result == "ok"
+        assert mock_get.call_args.args[0] == "https://api.asaas.com/v3/finance/balance"
 
     def test_ok_on_401(self):
         """401 = wrong key but API is reachable → 'ok' for health purposes."""

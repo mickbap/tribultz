@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from app.data.uf_rates import UF_RATES
 from app.main import app
 from app.routers.calculadora import _rate_limiter, _daily_limiter
 
@@ -174,6 +175,39 @@ class TestPublicCalculadora:
         )
         assert resp.status_code == 429
 
+    @pytest.mark.parametrize(
+        ("uf", "expected"),
+        sorted(UF_RATES.items()),
+        ids=sorted(UF_RATES.keys()),
+    )
+    def test_all_states_regression_matrix(self, uf, expected):
+        expected_total_rate = (
+            expected["cbs_rate"]
+            + expected["ibs_uf_rate"]
+            + expected["ibs_mun_rate"]
+        )
+
+        resp = client.post(
+            "/api/v1/public/calculadora/regime-geral",
+            json={
+                "uf_destino": uf,
+                "base_value": "1000.00",
+                "quantity": "1",
+                "cst": "000",
+            },
+        )
+
+        assert resp.status_code == 200
+
+        data = resp.json()
+        assert data["pCBS"] == str(expected["cbs_rate"])
+        assert data["pIBSUF"] == str(expected["ibs_uf_rate"])
+        assert data["pIBSMun"] == str(expected["ibs_mun_rate"])
+        assert data["aliquota_efetiva"] == str(expected_total_rate)
+        assert data["rate_source"] == "uf_default"
+        assert "<IBSCBS>" in data["xml_snippet"]
+        assert "<CST>000</CST>" in data["xml_snippet"]
+
 
 # ── UF rates endpoint ────────────────────────────────────────────────────────
 
@@ -187,6 +221,22 @@ class TestUfRatesEndpoint:
         assert "uf_name" in data["SP"]
         assert "cbs_rate" in data["SP"]
         assert "ibs_total" in data["SP"]
+
+    def test_matches_reference_rate_table(self):
+        resp = client.get("/api/v1/public/calculadora/uf-rates")
+        assert resp.status_code == 200
+
+        data = resp.json()
+        assert set(data) == set(UF_RATES)
+
+        for uf, expected in UF_RATES.items():
+            assert data[uf]["uf_name"] == expected["uf_name"]
+            assert data[uf]["cbs_rate"] == str(expected["cbs_rate"])
+            assert data[uf]["ibs_uf_rate"] == str(expected["ibs_uf_rate"])
+            assert data[uf]["ibs_mun_rate"] == str(expected["ibs_mun_rate"])
+            assert data[uf]["ibs_total"] == str(
+                expected["ibs_uf_rate"] + expected["ibs_mun_rate"]
+            )
 
 
 # ── CST list endpoint ────────────────────────────────────────────────────────

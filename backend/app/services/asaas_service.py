@@ -16,6 +16,16 @@ _BASE_URLS = {
 }
 
 
+def resolve_asaas_base_url(environment: str) -> str:
+    """Return the canonical Asaas API origin for the given environment."""
+    return _BASE_URLS.get(environment, _BASE_URLS["sandbox"])
+
+
+def resolve_asaas_v3_base_url(environment: str) -> str:
+    """Return the canonical v3 base URL used by health checks and probes."""
+    return f"{resolve_asaas_base_url(environment)}/v3"
+
+
 class AsaasError(Exception):
     """Raised when the Asaas API returns a non-2xx response."""
 
@@ -91,7 +101,7 @@ class AsaasService:
 
     def __init__(self) -> None:
         env = settings.ASAAS_ENVIRONMENT
-        self.base_url = _BASE_URLS.get(env, _BASE_URLS["sandbox"])
+        self.base_url = resolve_asaas_base_url(env)
         self.api_key = settings.ASAAS_API_KEY
         self.webhook_token = settings.ASAAS_WEBHOOK_TOKEN
 

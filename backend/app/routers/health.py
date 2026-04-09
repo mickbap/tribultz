@@ -19,6 +19,7 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import SessionLocal
+from app.services.asaas_service import resolve_asaas_v3_base_url
 
 logger = logging.getLogger(__name__)
 
@@ -73,11 +74,7 @@ def _probe_asaas() -> ServiceStatus:
     """
     if not settings.ASAAS_API_KEY:
         return "unconfigured"
-    base = (
-        "https://sandbox.asaas.com/api/v3"
-        if settings.ASAAS_ENVIRONMENT == "sandbox"
-        else "https://api.asaas.com/api/v3"
-    )
+    base = resolve_asaas_v3_base_url(settings.ASAAS_ENVIRONMENT)
     try:
         resp = httpx.get(
             f"{base}/finance/balance",
@@ -118,7 +115,7 @@ def _probe_ai_engine() -> ServiceStatus:
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
-@router.get("", summary="Liveness probe")
+@router.api_route("", methods=["GET", "HEAD"], summary="Liveness probe")
 def healthcheck():
     """Fast liveness probe — no dependency checks.
 
