@@ -300,13 +300,13 @@ class TestReportModel:
         assert required.issubset(cols)
 
     def test_model_has_check_constraints(self):
-        constraint_names = {c.name for c in Report.__table__.constraints}
+        constraint_names = {c.name for c in Report.__table__.constraints}  # type: ignore[attr-defined]
         assert "reports_report_type_check" in constraint_names
         assert "reports_status_check" in constraint_names
 
     def test_storage_key_is_unique(self):
         unique_constraints = [
-            c for c in Report.__table__.constraints
+            c for c in Report.__table__.constraints  # type: ignore[attr-defined]
             if hasattr(c, "columns") and "storage_key" in [col.key for col in c.columns]
             and c.__class__.__name__ == "UniqueConstraint"
         ]

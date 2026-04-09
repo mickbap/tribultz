@@ -221,7 +221,7 @@ def get_upload_url(
     current_user: User = Depends(get_current_user),
 ) -> UploadUrlResponse:
     storage_key = _generate_storage_key(
-        current_user.tenant_id,
+        current_user.tenant_id,  # type: ignore[arg-type]
         payload.doc_type,
         payload.original_filename,
     )
@@ -251,7 +251,7 @@ def get_upload_url(
     db.refresh(doc)
 
     return UploadUrlResponse(
-        document_id=doc.id,
+        document_id=doc.id,  # type: ignore[arg-type]
         upload_url=upload_url,
         storage_key=storage_key,
         expires_at=expires_at,
@@ -282,24 +282,24 @@ def confirm_upload(
     if doc is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado.")
 
-    if doc.status == "confirmed":
+    if doc.status == "confirmed":  # type: ignore[truthy-function]
         return doc  # idempotent
 
-    if doc.status == "error":
+    if doc.status == "error":  # type: ignore[truthy-function]
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Documento em estado de erro — abra um novo upload.",
         )
 
     # Extract XML metadata (best-effort)
-    extracted = _extract_xml_metadata(doc.storage_key)
+    extracted = _extract_xml_metadata(doc.storage_key)  # type: ignore[arg-type]
 
     file_size = payload.file_size or extracted.pop("file_size_bytes", None)
 
-    doc.status = "confirmed"
-    doc.uploaded_at = datetime.now(timezone.utc)
-    doc.file_size = file_size
-    doc.fiscal_metadata = extracted
+    doc.status = "confirmed"  # type: ignore[assignment]
+    doc.uploaded_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+    doc.file_size = file_size  # type: ignore[assignment]
+    doc.fiscal_metadata = extracted  # type: ignore[assignment]
     db.commit()
     db.refresh(doc)
     return doc
@@ -368,7 +368,7 @@ def get_download_url(
 
     try:
         download_url = s3_tool.get_object_url(
-            key=doc.storage_key,
+            key=doc.storage_key,  # type: ignore[arg-type]
             bucket=settings.S3_BUCKET,
             expires_in=DOWNLOAD_TTL_SECONDS,
         )
