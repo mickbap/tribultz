@@ -233,7 +233,7 @@ async def generate_validation_pdf(
         body.job_id, cast(str, current_user.email), result["file_size"], report_hash[:8],
     )
     return ReportCreatedResponse(
-        report_id=report.id,
+        report_id=report.id,  # type: ignore[arg-type]
         download_url=download_url,
         expires_at=expires_at,
         report_hash=report_hash,
@@ -331,7 +331,7 @@ async def generate_batch_pdf(
         body.job_id, cast(str, current_user.email), len(body.invoices), result["file_size"],
     )
     return ReportCreatedResponse(
-        report_id=report.id,
+        report_id=report.id,  # type: ignore[arg-type]
         download_url=download_url,
         expires_at=expires_at,
         report_hash=report_hash,
@@ -392,14 +392,14 @@ def download_report(
     if report is None:
         raise HTTPException(status_code=404, detail="Relatório não encontrado.")
 
-    if report.status != "ready":
+    if report.status != "ready":  # type: ignore[truthy-function]
         raise HTTPException(
             status_code=409,
             detail=f"Relatório ainda não está disponível (status={report.status}).",
         )
 
     try:
-        download_url = s3_tool.get_object_url(key=report.storage_key, expires_in=_PRESIGNED_TTL)
+        download_url = s3_tool.get_object_url(key=report.storage_key, expires_in=_PRESIGNED_TTL)  # type: ignore[arg-type]
     except Exception:
         logger.exception("Erro ao gerar URL presigned para report_id=%s", report_id)
         raise HTTPException(status_code=503, detail="Erro ao gerar URL de download.")

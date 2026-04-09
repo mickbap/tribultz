@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test src/lib/validation/xmlRules.test.ts src/lib/closing/aggregate.test.ts src/lib/export/jobEvidenceBundle.test.ts src/lib/export/jobEvidenceZip.test.ts src/lib/export/evidenceExportUi.test.ts src/lib/export/auditableReport.test.ts src/lib/export/batchReport.test.ts",
-    "test:rules": "tsx --test src/lib/validation/xmlRules.test.ts"
+    "test:rules": "tsx --test src/lib/validation/xmlRules.test.ts",
+    "test:e2e": "tsx --test tests/calculadora.e2e.test.ts"
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.4.2",
@@ -26,6 +27,7 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "playwright": "^1.59.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.20.6",

@@ -179,3 +179,37 @@ jobs:
           if [ -f package-lock.json ]; then npm ci && npm run build; exit 0; fi
           if [ -f frontend/package-lock.json ]; then cd frontend && npm ci && npm run build; exit 0; fi
           echo "No frontend detected (package-lock.json not found). Skipping build." && exit 0
+
+      - name: Install Playwright browser
+        working-directory: frontend
+        run: |
+          npx playwright install --with-deps chromium
+
+      - name: Start frontend server
+        working-directory: frontend
+        run: |
+          nohup npm run start -- --hostname 127.0.0.1 --port 3100 > /tmp/tribultz-next.log 2>&1 &
+
+      - name: Wait for frontend server
+        run: |
+          python - << 'PY'
+          import time
+          import urllib.request
+          url = "http://127.0.0.1:3100/calculadora"
+          for _ in range(60):
+            try:
+              with urllib.request.urlopen(url, timeout=2) as response:
+                if response.status == 200:
+                  print("frontend OK")
+                  raise SystemExit(0)
+            except Exception:
+              time.sleep(1)
+          raise SystemExit("timeout waiting frontend")
+          PY
+
+      - name: Frontend calculator smoke
+        working-directory: frontend
+        env:
+          CALCULADORA_E2E_BASE_URL: http://127.0.0.1:3100
+        run: |
+          npm run test:e2e

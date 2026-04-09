@@ -183,8 +183,8 @@ class TestConfirmUpload:
             )
 
         assert resp.status_code == 200
-        assert doc.status == "confirmed"
-        assert doc.file_size == 4096
+        assert doc.status == "confirmed"  # type: ignore[truthy-function]
+        assert doc.file_size == 4096  # type: ignore[truthy-function]
         assert doc.uploaded_at is not None
 
     def test_confirm_already_confirmed_is_idempotent(self, client_with_auth, mock_db):
@@ -233,7 +233,7 @@ class TestConfirmUpload:
                 json={"document_id": str(DOC_ID)},
             )
 
-        assert doc.fiscal_metadata == extracted
+        assert doc.fiscal_metadata == extracted  # type: ignore[truthy-function]
 
     def test_unauthenticated_returns_401(self):
         c = TestClient(app)
