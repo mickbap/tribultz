@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Toast } from "@/components/common/Toast";
 import { resetDemoData } from "@/lib/api";
@@ -170,6 +171,34 @@ export default function SettingsPage() {
         <p className="mt-3 text-xs text-slate-400">
           Dados fiscais são retidos conforme obrigação legal. Contato DPO: dpo@tribultz.com.br
         </p>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 className="text-lg font-semibold text-slate-900">Privacidade e Cookies</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          O console usa armazenamento local do navegador para sessão e preferências, além de
+          controles técnicos de segurança quando necessário.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href="/privacy"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            Política de Privacidade
+          </Link>
+          <Link
+            href="/cookies"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            Política de Cookies
+          </Link>
+          <Link
+            href="/terms"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            Termos de Uso
+          </Link>
+        </div>
       </section>
 
       {toast ? <Toast message={toast.msg} tone={toast.tone} onClose={() => setToast(null)} /> : null}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { AppLegalFooter } from "./AppLegalFooter";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import TrialBanner from "@/components/common/TrialBanner";
@@ -19,8 +20,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     "/",
     "/calculadora",
     "/changelog",
+    "/cookies",
     "/diagnostico",
     "/forgot-password",
+    "/lgpd",
     "/login",
     "/pricing",
     "/privacy",
@@ -41,6 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           onOpenMenu={() => setMobileOpen(true)}
         />
         <main className="flex-1 p-4 md:p-6">{children}</main>
+        <AppLegalFooter />
       </div>
 
       {mobileOpen ? (
