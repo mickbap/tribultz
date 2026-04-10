@@ -54,29 +54,25 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState<string>("");
 
   useEffect(() => {
     let active = true;
+    let intervalId: number | undefined;
 
     async function loadNews() {
-      const apiUrl = API_BASE || "(não configurado — usando fallback)";
-      console.log("API URL em uso:", apiUrl);
+      const newsUrl = API_BASE ? `${API_BASE}/api/v1/news` : "/api/v1/news";
 
       if (!API_BASE) {
         console.warn(
           "[NewsFeed] NEXT_PUBLIC_API_BASE_URL não está definido. " +
-            "Configure a variável de ambiente no painel da Vercel. " +
-            "Carregando mock de resiliência.",
+            "Tentando carregar news por rota relativa /api/v1/news. " +
+            "Se o frontend e a API estiverem em domínios diferentes, configure a variável de ambiente.",
         );
-        if (active) {
-          setItems(limit ? MOCK_NEWS.slice(0, limit) : MOCK_NEWS);
-          setLoading(false);
-        }
-        return;
       }
 
       try {
-        const res = await fetch(`${API_BASE}/api/v1/news`, {
+        const res = await fetch(newsUrl, {
           cache: "no-store",
         });
 
@@ -88,6 +84,10 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
         if (!active) return;
 
         setItems(limit ? data.slice(0, limit) : data);
+        setLastUpdated(new Date().toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }));
         setError("");
       } catch (err) {
         if (!active) return;
@@ -98,6 +98,10 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
         });
         // Resiliência: exibe mock enquanto a API não está disponível
         setItems(limit ? MOCK_NEWS.slice(0, limit) : MOCK_NEWS);
+        setLastUpdated(new Date().toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }));
         setError("");
       } finally {
         if (active) {
@@ -107,8 +111,13 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
     }
 
     loadNews();
+    intervalId = window.setInterval(loadNews, 60_000);
+
     return () => {
       active = false;
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
     };
   }, [limit]);
 
@@ -147,30 +156,37 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
   }
 
   return (
-    <div className={compact ? "grid gap-4 md:grid-cols-3" : "space-y-4"}>
-      {items.map((item) => (
-        <article
-          key={item.id}
-          className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${categoryStyles[item.category]}`}
-            >
-              {item.category}
-            </span>
-            <time className="text-xs text-slate-500">
-              {new Intl.DateTimeFormat("pt-BR", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              }).format(new Date(item.created_at))}
-            </time>
-          </div>
-          <h3 className="mt-4 text-lg font-semibold text-slate-900">{item.title}</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-        </article>
-      ))}
-    </div>
+    <>
+      {lastUpdated ? (
+        <div className="mb-4 text-right text-xs text-slate-500">
+          Atualizado automaticamente às {lastUpdated}
+        </div>
+      ) : null}
+      <div className={compact ? "grid gap-4 md:grid-cols-3" : "space-y-4"}>
+        {items.map((item) => (
+          <article
+            key={item.id}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${categoryStyles[item.category]}`}
+              >
+                {item.category}
+              </span>
+              <time className="text-xs text-slate-500">
+                {new Intl.DateTimeFormat("pt-BR", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                }).format(new Date(item.created_at))}
+              </time>
+            </div>
+            <h3 className="mt-4 text-lg font-semibold text-slate-900">{item.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+          </article>
+        ))}
+      </div>
+    </>
   );
 }
