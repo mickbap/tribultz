@@ -468,3 +468,41 @@ export async function generateCorrectedXml(payload: { document_type?: string; xm
   }
   return (await res.json()) as any;
 }
+
+// ── Documents API ───────────────────────────────────────────────────────────
+export type DocumentResponse = {
+  id: string;
+  doc_type: string;
+  original_filename: string | null;
+  storage_key: string;
+  file_size: number | null;
+  content_type: string | null;
+  status: string;
+  uploaded_at: string | null;
+  created_at: string;
+  fiscal_metadata: Record<string, unknown>;
+};
+
+export async function listDocuments(params?: {
+  doc_type?: string;
+  status?: string;
+  limit?: number;
+}): Promise<DocumentResponse[]> {
+  const q = new URLSearchParams();
+  if (params?.doc_type) q.set("doc_type", params.doc_type);
+  if (params?.status) q.set("status", params.status);
+  if (params?.limit) q.set("limit", String(params.limit));
+  const qs = q.toString();
+  try {
+    const payload = await apiFetch<DocumentResponse[]>(`/api/v1/documents${qs ? `?${qs}` : ""}`);
+    return Array.isArray(payload) ? payload : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getDocumentDownloadUrl(
+  documentId: string,
+): Promise<{ download_url: string; expires_at: string }> {
+  return apiFetch(`/api/v1/documents/${encodeURIComponent(documentId)}/download`);
+}

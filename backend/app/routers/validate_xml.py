@@ -526,10 +526,11 @@ async def correct_xml_endpoint(
         uploaded_at=datetime.now(timezone.utc),
         fiscal_metadata={
             "artifact_kind": "corrected_xml",
-            "original_checksum": s3_tool.checksum(key)["checksum_sha256"],
+            "corrected_checksum": put.get("checksum_sha256", ""),
             "applied_corrections": summary.applied_corrections,
             "unresolved_findings": summary.unresolved_findings,
             "document_type": doc_type or validation.document_type,
+            "source_job_id": validation.job_id,
         },
     )
     db.add(doc)
@@ -550,12 +551,19 @@ async def correct_xml_endpoint(
     # Presigned download URL
     url = s3_tool.get_object_url(key=key)
 
+    # Sanitize unresolved findings for response (id, rule_id, severity only)
+    safe_unresolved = [
+        {k: v for k, v in f.items() if k in ("id", "rule_id", "severity")}
+        for f in (summary.unresolved_findings or [])
+        if isinstance(f, dict)
+    ]
+
     return CorrectionResponse(
         document_id=str(doc.id),
         storage_key=key,
         download_url=url,
         applied_corrections=summary.applied_corrections,
-        unresolved_findings=summary.unresolved_findings,
+        unresolved_findings=safe_unresolved,
         created_at=datetime.now(timezone.utc).isoformat(),
     )
 
