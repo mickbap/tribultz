@@ -436,3 +436,35 @@ export async function listReports(params?: { report_type?: string; job_id?: stri
 export async function getReportDownloadUrl(reportId: string): Promise<{ download_url: string; expires_at: string }> {
   return apiFetch(`/api/v1/reports/${encodeURIComponent(reportId)}/download`);
 }
+
+// ── XML Correction (MVP) ───────────────────────────────────────────────────
+
+export async function generateCorrectedXml(payload: { document_type?: string; xml: string }): Promise<{
+  document_id: string;
+  storage_key: string;
+  download_url: string;
+  applied_corrections: string[];
+  unresolved_findings: unknown[];
+  created_at: string;
+}> {
+  const form = new FormData();
+  form.append("xml_content", payload.xml);
+  if (payload.document_type) form.append("document_type", payload.document_type);
+
+  const token = getToken();
+  const tenantId = getTenantId();
+  const res = await fetch(`${API_BASE}/api/v1/validate/xml/correct`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "X-Tenant-Id": tenantId,
+    },
+    body: form,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "Erro ao gerar XML corrigido");
+    throw new Error(`Correção ${res.status}: ${detail}`);
+  }
+  return (await res.json()) as any;
+}

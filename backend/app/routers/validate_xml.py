@@ -14,13 +14,19 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, UploadFile, File, Form
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.database import get_db
+from app.models.auth import User
+from app.models.documents import Document
+from app.tools import s3_tool, postgres_tool
+from app.services.xml_correction_service import correct_xml
 from app.api.plan_gate import require_plan
 from app.data.ncm_codes import VALID_NCM_CODES
-from app.models.auth import User
+from uuid import uuid4
 
 router = APIRouter(prefix="/api/v1", tags=["validate-xml"])
 
@@ -435,6 +441,122 @@ async def validate_xml_endpoint(
         xml, doc_type,
         classtrib_results=classtrib_data,
         cnpj_result=cnpj_data,
+    )
+
+
+# ── XML Correction (MVP) ───────────────────────────────────────────────────
+
+class CorrectionResponse(BaseModel):
+    document_id: str
+    storage_key: str
+    download_url: str
+    applied_corrections: list[str]
+    unresolved_findings: list[dict]
+    created_at: str
+
+
+@router.post(
+    "/validate/xml/correct",
+    response_model=CorrectionResponse,
+    dependencies=[Depends(require_plan("starter", "profissional", "contador"))],
+)
+async def correct_xml_endpoint(
+    file: UploadFile = File(None),
+    xml_content: str = Form(None),
+    document_type: str | None = Form(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> CorrectionResponse:
+    """Generate and persist a corrected XML (MVP normalization only).
+
+    - Normalizes XML (whitespace) deterministically
+    - Reuses validator to collect findings and mark them unresolved
+    - Persists corrected XML as a Document (doc_type='other', artifact_kind='corrected_xml')
+    - Returns presigned download URL
+    """
+    if file:
+        raw = await file.read()
+        xml = raw.decode("utf-8")
+    elif xml_content:
+        xml = xml_content
+    else:
+        raise HTTPException(status_code=400, detail="Envie um arquivo XML ou xml_content.")
+
+    # Determine document type similar to validation endpoint
+    doc_type = document_type if document_type in ("NFSE", "NFE", "NFCE") else None
+
+    # Re-run validator to capture findings to feed correction summary
+    validation = validate_xml(xml, doc_type)
+
+    # Apply correction (MVP)
+    corrected_xml, summary = correct_xml(
+        xml=xml,
+        document_type=doc_type,
+        findings=[
+            {
+                "id": f.id,
+                "rule_id": f.rule_id,
+                "severity": f.severity,
+                "title": f.title,
+            }
+            for f in validation.findings
+        ],
+    )
+
+    # Persist corrected file as Document (doc_type='other' with artifact_kind)
+    key = f"documents/{current_user.tenant_id}/corrected_xml/{uuid4()}.xml"
+    put = s3_tool.put_object(
+        key=key,
+        data=corrected_xml.encode("utf-8"),
+        content_type="application/xml",
+        metadata={
+            "artifact_kind": "corrected_xml",
+            "source": "validate_xml.correct",
+        },
+    )
+
+    doc = Document(
+        tenant_id=current_user.tenant_id,
+        user_id=current_user.id,
+        doc_type="other",
+        original_filename=None,
+        storage_key=key,
+        content_type="application/xml",
+        status="confirmed",
+        uploaded_at=datetime.now(timezone.utc),
+        fiscal_metadata={
+            "artifact_kind": "corrected_xml",
+            "original_checksum": s3_tool.checksum(key)["checksum_sha256"],
+            "applied_corrections": summary.applied_corrections,
+            "unresolved_findings": summary.unresolved_findings,
+            "document_type": doc_type or validation.document_type,
+        },
+    )
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
+
+    # Audit artifact
+    postgres_tool.persist_artifact_metadata(
+        tenant_id=str(current_user.tenant_id),
+        entity_type="document",
+        entity_id=str(doc.id),
+        artifact_type="corrected_xml",
+        storage_key=key,
+        checksum=put.get("checksum_sha256", ""),
+        metadata={"source": "validate_xml.correct"},
+    )
+
+    # Presigned download URL
+    url = s3_tool.get_object_url(key=key)
+
+    return CorrectionResponse(
+        document_id=str(doc.id),
+        storage_key=key,
+        download_url=url,
+        applied_corrections=summary.applied_corrections,
+        unresolved_findings=summary.unresolved_findings,
+        created_at=datetime.now(timezone.utc).isoformat(),
     )
 
 
