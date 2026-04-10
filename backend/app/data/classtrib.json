@@ -1,0 +1,1017 @@
+{
+  "meta": {
+    "source": "NT 2025.002-RTC",
+    "date": "2026-04-10",
+    "total_codes": 74,
+    "total_cst_groups": 9
+  },
+  "by_code": {
+    "1": {
+      "cst": "0",
+      "cst_description": "Tributação integral",
+      "description": "Situações tributadas integralmente pelo IBS e CBS.",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "BPE",
+        "BPETA",
+        "BPETM",
+        "CTE",
+        "CTEOS",
+        "NF3E",
+        "NFAG",
+        "NFCE",
+        "NFCOM",
+        "NFE",
+        "NFSE",
+        "NFGAS"
+      ]
+    },
+    "2": {
+      "cst": "0",
+      "cst_description": "Tributação integral",
+      "description": "Exploração de via",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSVIA"
+      ]
+    },
+    "3": {
+      "cst": "0",
+      "cst_description": "Tributação integral",
+      "description": "Regime automotivo - projetos incentivados (art. 311)",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFE"
+      ]
+    },
+    "4": {
+      "cst": "0",
+      "cst_description": "Tributação integral",
+      "description": "Regime automotivo - projetos incentivados (art. 312)",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFE"
+      ]
+    },
+    "10001": {
+      "cst": "10",
+      "cst_description": "Tributação com alíquotas uniformes",
+      "description": "Operações do FGTS não realizadas pela Caixa Econômica Federal",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "5 - Uniforme Setorial",
+      "dfe_allowed": [
+        "NFSE",
+        "DERE"
+      ]
+    },
+    "10002": {
+      "cst": "10",
+      "cst_description": "Tributação com alíquotas uniformes",
+      "description": "Operações do serviço financeiro",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "5 - Uniforme Setorial",
+      "dfe_allowed": [
+        "NFSE",
+        "DERE"
+      ]
+    },
+    "11001": {
+      "cst": "11",
+      "cst_description": "Tributação com alíquotas uniformes reduzidas",
+      "description": "Planos de assistência funerária.",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "4 - Uniforme Nacional",
+      "dfe_allowed": [
+        "DERE"
+      ]
+    },
+    "11002": {
+      "cst": "11",
+      "cst_description": "Tributação com alíquotas uniformes reduzidas",
+      "description": "Planos de assistência à saúde",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "4 - Uniforme Nacional",
+      "dfe_allowed": [
+        "DERE"
+      ]
+    },
+    "11003": {
+      "cst": "11",
+      "cst_description": "Tributação com alíquotas uniformes reduzidas",
+      "description": "Intermediação de planos de assistência à saúde",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "4 - Uniforme Nacional",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "11004": {
+      "cst": "11",
+      "cst_description": "Tributação com alíquotas uniformes reduzidas",
+      "description": "Concursos e prognósticos",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "4 - Uniforme Nacional",
+      "dfe_allowed": [
+        "DERE"
+      ]
+    },
+    "11005": {
+      "cst": "11",
+      "cst_description": "Tributação com alíquotas uniformes reduzidas",
+      "description": "Planos de assistência à saúde de animais domésticos",
+      "reduction_ibs_pct": 30.0,
+      "reduction_cbs_pct": 30.0,
+      "tipo_aliquota": "4 - Uniforme Nacional",
+      "dfe_allowed": [
+        "DERE"
+      ]
+    },
+    "200001": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Serviços de transporte de bens até as zonas de processamento de exportação e bens exportados a partir das zonas de processamento de exportação",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "CTE",
+        "CTEOS",
+        "NFSE"
+      ]
+    },
+    "200002": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento ou importação para produtor rural não contribuinte ou TAC",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200003": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Vendas de produtos destinados à alimentação humana (Anexo I)",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200004": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento de dispositivos médicos (Anexo XII)",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE",
+        "NFSE"
+      ]
+    },
+    "200005": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento de dispositivos médicos para órgãos da administração pública e entidades de saúde imunes (Anexo IV)",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFE",
+        "NFSE"
+      ]
+    },
+    "200006": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Situação de emergência de saúde pública reconhecida pelo Poder público (Anexo XII)",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE",
+        "NFSE"
+      ]
+    },
+    "200007": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos dispositivos de acessibilidade próprios para pessoas com deficiência (Anexo XIII)",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE",
+        "NFSE"
+      ]
+    },
+    "200008": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos dispositivos de acessibilidade próprios para pessoas com deficiência adquiridos por órgãos da administração pública (Anexo V)",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFE",
+        "NFSE"
+      ]
+    },
+    "200009": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos medicamentos registrados na Anvisa",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200010": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos medicamentos registrados na Anvisa, adquiridos por órgãos da administração pública",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200011": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento das composições para nutrição enteral e parenteral quando adquiridas por órgãos da administração pública (Anexo VI)",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFE"
+      ]
+    },
+    "200012": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Situação de emergência de saúde pública reconhecida pelo Poder público",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200013": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento de tampões higiênicos, absorventes higiênicos internos ou externos",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200014": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos produtos hortícolas, frutas e ovos (Anexo XV)",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200015": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Venda de automóveis de passageiros de fabricação nacional adquiridos por motoristas profissionais ou pessoas com deficiência",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200016": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Prestação de serviços de pesquisa e desenvolvimento por Instituição Científica, Tecnológica e de Inovação (ICT)",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "200017": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Operações relacionadas ao FGTS",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE",
+        "DERE"
+      ]
+    },
+    "200018": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Operações de resseguro e retrocessão",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "DERE"
+      ]
+    },
+    "200019": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Importador dos serviços financeiros contribuinte",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE",
+        "DERE"
+      ]
+    },
+    "200020": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Operação praticada por sociedades cooperativas optantes por regime específico do IBS e CBS",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE",
+        "NFSE"
+      ]
+    },
+    "200021": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Serviços de transporte público coletivo de passageiros ferroviário e hidroviário",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "BPETM",
+        "NFSE"
+      ]
+    },
+    "200022": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Operação originada fora da ZFM que destine bem material industrializado a contribuinte estabelecido na ZFM",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFE"
+      ]
+    },
+    "200023": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Operação realizada por indústria incentivada que destine bem material intermediário para outra indústria incentivada na ZFM",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFE"
+      ]
+    },
+    "200024": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Operação originada fora das Áreas de Livre Comércio destinadas a contribuinte estabelecido nas Áreas de Livre Comércio",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFE"
+      ]
+    },
+    "200025": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos serviços de educação relacionados ao Programa Universidade para Todos (Prouni)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "200026": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Locação de imóveis localizados nas zonas reabilitadas",
+      "reduction_ibs_pct": 80.0,
+      "reduction_cbs_pct": 80.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "200027": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Operações de locação, cessão onerosa e arrendamento de bens imóveis",
+      "reduction_ibs_pct": 70.0,
+      "reduction_cbs_pct": 70.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFABI",
+        "NFSE"
+      ]
+    },
+    "200028": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos serviços de educação (Anexo II)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "200029": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos serviços de saúde humana (Anexo III)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "200030": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Venda dos dispositivos médicos (Anexo IV)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE",
+        "NFSE"
+      ]
+    },
+    "200031": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos dispositivos de acessibilidade próprios para pessoas com deficiência (Anexo V)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE",
+        "NFSE"
+      ]
+    },
+    "200032": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos medicamentos registrados na Anvisa ou produzidos por farmácias de manipulação, ressalvados os medicamentos sujeitos à alíquota zero",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200033": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento das composições para nutrição enteral e parenteral (Anexo VI)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200034": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos alimentos destinados ao consumo humano (Anexo VII)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200035": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos produtos de higiene pessoal e limpeza (Anexo VIII)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200036": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento de produtos agropecuários, aquícolas, pesqueiros, florestais e extrativistas vegetais in natura",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200037": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento de serviços ambientais de conservação ou recuperação da vegetação nativa",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "200038": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos insumos agropecuários e aquícolas (Anexo IX)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE",
+        "NFSE"
+      ]
+    },
+    "200039": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento dos bens e serviços relacionados com produções nacionais artísticas, culturais, de eventos, jornalísticas e audiovisuais (Anexo X)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFE",
+        "NFSE"
+      ]
+    },
+    "200040": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento de serviços de comunicação institucional à administração pública",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "200041": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento de serviço de educação desportiva (art. 141. I)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "200042": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento de serviço de gestão e exploração do desporto (art. 141. II)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "200043": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento à administração pública dos serviços e dos bens relativos à soberania (Anexo XI)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCOM",
+        "NFE",
+        "NFSE"
+      ]
+    },
+    "200044": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Operações e prestações de serviços de segurança da informação e segurança cibernética desenv por sociedade que tenha sócio brasileiro (Anexo XI)",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCOM",
+        "NFSE"
+      ]
+    },
+    "200045": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Operações relacionadas a projetos de reabilitação urbana de zonas históricas e de áreas críticas de recuperação e reconversão urbanística",
+      "reduction_ibs_pct": 60.0,
+      "reduction_cbs_pct": 60.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFABI",
+        "NFSE"
+      ]
+    },
+    "200046": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Operações com bens imóveis",
+      "reduction_ibs_pct": 50.0,
+      "reduction_cbs_pct": 50.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFABI",
+        "NFSE"
+      ]
+    },
+    "200047": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Bares e Restaurantes",
+      "reduction_ibs_pct": 40.0,
+      "reduction_cbs_pct": 40.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "200048": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Hotelaria, Parques de Diversão e Parques Temáticos",
+      "reduction_ibs_pct": 40.0,
+      "reduction_cbs_pct": 40.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "200049": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Transporte coletivo de passageiros rodoviário, ferroviário e hidroviário",
+      "reduction_ibs_pct": 40.0,
+      "reduction_cbs_pct": 40.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "BPE"
+      ]
+    },
+    "200050": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Serviços de transporte aéreo regional coletivo de passageiros ou de carga",
+      "reduction_ibs_pct": 40.0,
+      "reduction_cbs_pct": 40.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "BPETA",
+        "CTE",
+        "CTEOS"
+      ]
+    },
+    "200051": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Agências de Turismo",
+      "reduction_ibs_pct": 40.0,
+      "reduction_cbs_pct": 40.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "200052": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Prestação de serviços de profissões intelectuais",
+      "reduction_ibs_pct": 30.0,
+      "reduction_cbs_pct": 30.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "200053": {
+      "cst": "200",
+      "cst_description": "Alíquota reduzida",
+      "description": "Fornecimento de medicamentos registrados na Anvisa, quando classificados como soros ou vacinas",
+      "reduction_ibs_pct": 100.0,
+      "reduction_cbs_pct": 100.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "NFCE",
+        "NFE"
+      ]
+    },
+    "220001": {
+      "cst": "220",
+      "cst_description": "Alíquota fixa",
+      "description": "Incorporação imobiliária submetida ao regime especial de tributação",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "1 - Fixa",
+      "dfe_allowed": [
+        "NFABI"
+      ]
+    },
+    "220002": {
+      "cst": "220",
+      "cst_description": "Alíquota fixa",
+      "description": "Incorporação imobiliária submetida ao regime especial de tributação",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "1 - Fixa",
+      "dfe_allowed": [
+        "NFABI"
+      ]
+    },
+    "220003": {
+      "cst": "220",
+      "cst_description": "Alíquota fixa",
+      "description": "Alienação de imóvel decorrente de parcelamento do solo",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "1 - Fixa",
+      "dfe_allowed": [
+        "NFABI"
+      ]
+    },
+    "221001": {
+      "cst": "221",
+      "cst_description": "Alíquota fixa proporcional",
+      "description": "Locação, cessão onerosa ou arrendamento de bem imóvel com alíquota sobre a receita bruta",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "1 - Fixa",
+      "dfe_allowed": [
+        "NFSE"
+      ]
+    },
+    "222001": {
+      "cst": "222",
+      "cst_description": "Redução de Base de Cálculo",
+      "description": "Transporte internacional de passageiros, caso os trechos de ida e volta sejam vendidos em conjunto",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "BPE",
+        "BPETA",
+        "CTEOS"
+      ]
+    },
+    "400001": {
+      "cst": "400",
+      "cst_description": "Isenção",
+      "description": "Fornecimento de serviços de transporte público coletivo de passageiros rodoviário e metroviário",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "2 - Padrão",
+      "dfe_allowed": [
+        "BPE",
+        "BPETM",
+        "NFSE"
+      ]
+    },
+    "400002": {
+      "cst": "400",
+      "cst_description": "Isenção",
+      "description": "Fornecimento de serviços de transporte público coletivo de passageiros rodoviário e metroviário com medição por quilômetro rodado",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "3 - Sem aliquota",
+      "dfe_allowed": [
+        "CTEOS"
+      ]
+    },
+    "410001": {
+      "cst": "410",
+      "cst_description": "Imunidade e não incidência",
+      "description": "Fornecimento de bonificações quando constem no documento fiscal e que não dependam de evento posterior",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "3 - Sem aliquota",
+      "dfe_allowed": [
+        "BPE",
+        "BPETA",
+        "BPETM",
+        "CTE",
+        "CTEOS",
+        "NF3E",
+        "NFABI",
+        "NFAG",
+        "NFCE",
+        "NFCOM",
+        "NFE",
+        "NFSE",
+        "NFGAS"
+      ]
+    },
+    "410002": {
+      "cst": "410",
+      "cst_description": "Imunidade e não incidência",
+      "description": "Transferências entre estabelecimentos pertencentes ao mesmo contribuinte",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "3 - Sem aliquota",
+      "dfe_allowed": [
+        "NFE"
+      ]
+    },
+    "410003": {
+      "cst": "410",
+      "cst_description": "Imunidade e não incidência",
+      "description": "Doações sem contraprestação em benefício do doador",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": "3 - Sem aliquota",
+      "dfe_allowed": [
+        "BPE",
+        "BPETA",
+        "BPETM",
+        "CTE",
+        "CTEOS",
+        "NF3E",
+        "NFABI",
+        "NFAG",
+        "NFCE",
+        "NFCOM",
+        "NFE",
+        "NFSE",
+        "NFSVIA",
+        "NFGAS",
+        "DERE"
+      ]
+    }
+  },
+  "by_cst": {
+    "0": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "10": [
+      "10001",
+      "10002"
+    ],
+    "11": [
+      "11001",
+      "11002",
+      "11003",
+      "11004",
+      "11005"
+    ],
+    "200": [
+      "200001",
+      "200002",
+      "200003",
+      "200004",
+      "200005",
+      "200006",
+      "200007",
+      "200008",
+      "200009",
+      "200010",
+      "200011",
+      "200012",
+      "200013",
+      "200014",
+      "200015",
+      "200016",
+      "200017",
+      "200018",
+      "200019",
+      "200020",
+      "200021",
+      "200022",
+      "200023",
+      "200024",
+      "200025",
+      "200026",
+      "200027",
+      "200028",
+      "200029",
+      "200030",
+      "200031",
+      "200032",
+      "200033",
+      "200034",
+      "200035",
+      "200036",
+      "200037",
+      "200038",
+      "200039",
+      "200040",
+      "200041",
+      "200042",
+      "200043",
+      "200044",
+      "200045",
+      "200046",
+      "200047",
+      "200048",
+      "200049",
+      "200050",
+      "200051",
+      "200052",
+      "200053"
+    ],
+    "220": [
+      "220001",
+      "220002",
+      "220003"
+    ],
+    "221": [
+      "221001"
+    ],
+    "222": [
+      "222001"
+    ],
+    "400": [
+      "400001",
+      "400002"
+    ],
+    "410": [
+      "410001",
+      "410002",
+      "410003"
+    ]
+  },
+  "cst_descriptions": {
+    "0": "Tributação integral",
+    "10": "Tributação com alíquotas uniformes",
+    "11": "Tributação com alíquotas uniformes reduzidas",
+    "200": "Alíquota reduzida",
+    "220": "Alíquota fixa",
+    "221": "Alíquota fixa proporcional",
+    "222": "Redução de Base de Cálculo",
+    "400": "Isenção",
+    "410": "Imunidade e não incidência"
+  }
+}
