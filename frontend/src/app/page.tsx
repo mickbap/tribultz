@@ -465,6 +465,58 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* LGPD Declaration */}
+        <section className="border-t border-slate-200 bg-slate-50">
+          <div className="mx-auto max-w-4xl px-4 py-8 md:px-6">
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                    <span className="text-lg">🔒</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                    Lei Geral de Proteção de Dados (LGPD)
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    Tratamos dados pessoais e operacionais com segurança, transparência e escopo mínimo
+                    necessário para executar o serviço. A homepage, a calculadora, o diagnóstico e o
+                    console seguem políticas consistentes de privacidade, cookies e LGPD, com trilha de
+                    auditoria, isolamento por tenant e canal direto para exercício de direitos.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      href="/lgpd"
+                      className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    >
+                      Saiba mais sobre LGPD →
+                    </Link>
+                    <Link
+                      href="/privacy"
+                      className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      Política de Privacidade
+                    </Link>
+                    <Link
+                      href="/cookies"
+                      className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      Política de Cookies
+                    </Link>
+                    <Link
+                      href="/terms"
+                      className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      Termos de Uso
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
 
       <PublicFooter />

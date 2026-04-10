@@ -1,132 +1,117 @@
+import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
-      <h1 className="text-3xl font-bold text-slate-900">Política de Privacidade</h1>
-      <p className="mt-2 text-sm text-slate-500">Última atualização: 22 de março de 2026</p>
+    <LegalPageLayout
+      title="Política de Privacidade"
+      updatedAt="10 de abril de 2026"
+      summary="Esta política descreve quais dados a Tribultz trata, por que tratamos, com quem compartilhamos e como o usuário pode exercer seus direitos em toda a stack pública e autenticada."
+    >
+      <section>
+        <h2 className="text-lg font-semibold text-slate-900">1. Quem trata os dados</h2>
+        <p>
+          A Tribultz trata dados pessoais e operacionais para viabilizar cadastro, autenticação,
+          cobrança, suporte, auditoria, relatórios e execução das ferramentas fiscais. Dependendo
+          do contexto, atuamos como controladora de dados cadastrais e de conta, e como operadora
+          ou co-controladora no processamento necessário para os fluxos fiscais contratados.
+        </p>
+      </section>
 
-      <div className="mt-8 space-y-6 text-sm leading-relaxed text-slate-700">
-        <section>
-          <h2 className="text-lg font-semibold text-slate-900">1. Controlador dos Dados</h2>
-          <p>
-            Tribultz Tecnologia Ltda. (&quot;Tribultz&quot;, &quot;nós&quot;) é a controladora dos dados pessoais
-            coletados por meio desta plataforma, nos termos da Lei Geral de Proteção de Dados
-            Pessoais (Lei n. 13.709/2018 — LGPD).
-          </p>
-        </section>
+      <section>
+        <h2 className="text-lg font-semibold text-slate-900">2. Categorias de dados tratados</h2>
+        <ul className="mt-3 list-disc space-y-2 pl-6">
+          <li>
+            <strong>Cadastro e acesso:</strong> nome, e-mail, telefone, CNPJ, tenant, credenciais
+            protegidas por hash e dados necessários para autenticação.
+          </li>
+          <li>
+            <strong>Operação fiscal:</strong> XMLs, resultados de validação, findings, evidências,
+            jobs, relatórios e trilhas auditáveis geradas nas ferramentas.
+          </li>
+          <li>
+            <strong>Cobrança:</strong> metadados de cliente, assinatura, PIX e pagamentos processados
+            por provedores externos especializados, como o Asaas.
+          </li>
+          <li>
+            <strong>Segurança e suporte:</strong> IP, user-agent, logs técnicos, eventos de auditoria,
+            indicadores de abuso e interações de suporte.
+          </li>
+        </ul>
+      </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-slate-900">2. Dados Coletados</h2>
-          <p>Coletamos os seguintes dados para prestação do serviço:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-6">
-            <li><strong>Dados cadastrais:</strong> nome completo, e-mail, CNPJ da empresa, senha (armazenada com hash criptográfico).</li>
-            <li><strong>Dados fiscais:</strong> notas fiscais (XML NFS-e / NF-e) enviadas para validação, resultados de validação, findings e evidências.</li>
-            <li><strong>Dados de uso:</strong> logs de auditoria, histórico de jobs, mensagens de chat com assistente fiscal.</li>
-            <li><strong>Dados técnicos:</strong> endereço IP, user-agent, timestamps de acesso.</li>
-          </ul>
-        </section>
+      <section>
+        <h2 className="text-lg font-semibold text-slate-900">3. Finalidades e bases legais</h2>
+        <ul className="mt-3 list-disc space-y-2 pl-6">
+          <li>
+            <strong>Execução contratual:</strong> liberar acesso, processar validações, relatórios,
+            diagnósticos, memórias e evidências.
+          </li>
+          <li>
+            <strong>Obrigação legal e regulatória:</strong> preservar registros exigidos por normas
+            fiscais, contábeis, de segurança e de prevenção a fraude.
+          </li>
+          <li>
+            <strong>Legítimo interesse:</strong> monitorar estabilidade, proteger a plataforma,
+            prevenir abuso e melhorar a operação do produto.
+          </li>
+          <li>
+            <strong>Consentimento, quando aplicável:</strong> comunicações opt-in e fluxos que
+            exijam autorização específica do titular.
+          </li>
+        </ul>
+      </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-slate-900">3. Finalidade do Tratamento</h2>
-          <p>Seus dados são tratados para as seguintes finalidades:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-6">
-            <li>Prestação do serviço de validação fiscal CBS/IBS conforme reforma tributária (LC 214 + LC 227).</li>
-            <li>Geração de relatórios auditáveis e trilha de evidências.</li>
-            <li>Autenticação e controle de acesso multi-tenant.</li>
-            <li>Comunicação sobre o serviço e suporte técnico.</li>
-            <li>Cumprimento de obrigações legais e regulatórias.</li>
-          </ul>
-        </section>
+      <section>
+        <h2 className="text-lg font-semibold text-slate-900">4. Compartilhamento e operadores</h2>
+        <p>
+          A Tribultz compartilha dados apenas com operadores estritamente necessários para operar
+          o serviço, sempre sob obrigações contratuais e técnicas de confidencialidade.
+        </p>
+        <ul className="mt-3 list-disc space-y-2 pl-6">
+          <li>Infraestrutura e borda: Cloudflare e Vercel.</li>
+          <li>Backend, banco e armazenamento soberano: Magalu Cloud e serviços compatíveis.</li>
+          <li>Fila, cache e memória operacional: Redis.</li>
+          <li>Cobrança e pagamentos: Asaas.</li>
+          <li>Comunicação transacional: provedores SMTP e serviços de e-mail configurados pela operação.</li>
+        </ul>
+        <p className="mt-2">
+          Não comercializamos dados pessoais nem compartilhamos documentos fiscais para publicidade
+          comportamental.
+        </p>
+      </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-slate-900">4. Base Legal (Art. 7, LGPD)</h2>
-          <p>O tratamento de dados é realizado com base em:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-6">
-            <li><strong>Consentimento (Art. 7, I):</strong> fornecido no momento do cadastro.</li>
-            <li><strong>Execução de contrato (Art. 7, V):</strong> necessário para prestação do serviço contratado.</li>
-            <li><strong>Obrigação legal (Art. 7, II):</strong> retenção de registros fiscais conforme legislação tributária.</li>
-            <li><strong>Interesse legítimo (Art. 7, IX):</strong> segurança da plataforma e prevenção a fraudes.</li>
-          </ul>
-        </section>
+      <section>
+        <h2 className="text-lg font-semibold text-slate-900">5. Segurança e retenção</h2>
+        <ul className="mt-3 list-disc space-y-2 pl-6">
+          <li>Criptografia em trânsito, isolamento por tenant e controles de acesso.</li>
+          <li>Logs de auditoria e rastreabilidade para operações críticas.</li>
+          <li>Retenção de dados fiscais e operacionais conforme exigência legal e contratual.</li>
+          <li>
+            Anonimização ou exclusão de dados pessoais quando a retenção não for mais necessária
+            ou quando houver obrigação legal compatível com o pedido do titular.
+          </li>
+        </ul>
+      </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-slate-900">5. Custódia de Dados Financeiros</h2>
-          <p>
-            Ao utilizar a plataforma Tribultz, você nos confia dados financeiros e fiscais de sua
-            empresa. Atuamos como <strong>custodiantes</strong> desses dados, aplicando:
-          </p>
-          <ul className="mt-2 list-disc space-y-1 pl-6">
-            <li>Criptografia em trânsito (TLS/SSL) e em repouso.</li>
-            <li>Isolamento multi-tenant — dados de cada empresa são segregados logicamente.</li>
-            <li>Checksums SHA-256 na trilha de auditoria para garantir integridade.</li>
-            <li>Controle de acesso baseado em funções (RBAC).</li>
-            <li>Backups regulares com retenção conforme política de retenção fiscal.</li>
-          </ul>
-        </section>
+      <section>
+        <h2 className="text-lg font-semibold text-slate-900">6. Direitos do titular</h2>
+        <p>
+          Você pode solicitar confirmação de tratamento, acesso, correção, portabilidade, revisão,
+          anonimização, exclusão quando cabível e informações sobre compartilhamento.
+        </p>
+        <p className="mt-2">
+          Dentro do console, os fluxos de exportação e solicitação relacionados à LGPD ficam em
+          <strong> Configurações &gt; Meus Dados (LGPD)</strong>.
+        </p>
+      </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-slate-900">6. Compartilhamento de Dados</h2>
-          <p>
-            Não compartilhamos seus dados pessoais ou fiscais com terceiros, exceto:
-          </p>
-          <ul className="mt-2 list-disc space-y-1 pl-6">
-            <li>Provedores de infraestrutura (hospedagem em nuvem) sob acordo de confidencialidade.</li>
-            <li>Determinação judicial ou requisição de autoridade competente.</li>
-            <li>Com seu consentimento expresso para fins específicos.</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold text-slate-900">7. Seus Direitos (Art. 18, LGPD)</h2>
-          <p>Você tem direito a:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-6">
-            <li><strong>Acesso:</strong> solicitar cópia de todos os seus dados pessoais.</li>
-            <li><strong>Correção:</strong> corrigir dados incompletos, inexatos ou desatualizados.</li>
-            <li><strong>Anonimização/Eliminação:</strong> solicitar exclusão de dados desnecessários ou tratados em desconformidade.</li>
-            <li><strong>Portabilidade:</strong> exportar seus dados em formato estruturado.</li>
-            <li><strong>Revogação do consentimento:</strong> retirar o consentimento a qualquer momento.</li>
-            <li><strong>Informação:</strong> saber com quem seus dados foram compartilhados.</li>
-          </ul>
-          <p className="mt-2">
-            Para exercer seus direitos, acesse <strong>Configurações &gt; Meus Dados (LGPD)</strong> na
-            plataforma ou entre em contato pelo e-mail: <strong>dpo@tribultz.com.br</strong>.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold text-slate-900">8. Retenção de Dados</h2>
-          <p>
-            Dados fiscais são retidos pelo período exigido pela legislação tributária brasileira
-            (mínimo 5 anos após o exercício fiscal). Dados cadastrais são mantidos enquanto a conta
-            estiver ativa. Após solicitação de exclusão, dados pessoais são anonimizados, preservando
-            registros fiscais conforme obrigação legal.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold text-slate-900">9. Segurança</h2>
-          <p>
-            Adotamos medidas técnicas e organizacionais para proteger seus dados, incluindo:
-            criptografia, controle de acesso, monitoramento de segurança (SOC), auditorias
-            periódicas e treinamento da equipe.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold text-slate-900">10. Encarregado de Dados (DPO)</h2>
-          <p>
-            Para questões relacionadas à proteção de dados pessoais, entre em contato com nosso
-            Encarregado de Dados (DPO): <strong>dpo@tribultz.com.br</strong>.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold text-slate-900">11. Alterações</h2>
-          <p>
-            Esta política pode ser atualizada periodicamente. Alterações significativas serão
-            comunicadas por e-mail ou notificação na plataforma.
-          </p>
-        </section>
-      </div>
-    </main>
+      <section>
+        <h2 className="text-lg font-semibold text-slate-900">7. Contato</h2>
+        <p>
+          Para dúvidas sobre privacidade ou exercício de direitos, fale com o Encarregado de Dados
+          em <strong>dpo@tribultz.com.br</strong>.
+        </p>
+      </section>
+    </LegalPageLayout>
   );
 }
