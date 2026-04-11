@@ -68,40 +68,32 @@ def http_contract_security_gates(backend_root: Path, strict: bool) -> tuple[bool
         subs.append(SubGate("bootstrap TestClient(app)", False, str(e)))
         return (False if strict else False), subs
 
-    # 2) 401 without token (chat)
+    # 2) Chat endpoint removido — deve retornar 404 (não 401 nem 200)
     try:
         r = client.post("/api/v1/chat/message", json={"message": "hello"})
-        g_ok = (r.status_code == 401)
-        subs.append(SubGate("401 sem token em POST /api/v1/chat/message", g_ok, f"status={r.status_code} body={r.text[:400]}"))
+        g_ok = (r.status_code == 404)
+        subs.append(SubGate("POST /api/v1/chat/message removido (esperado 404)", g_ok, f"status={r.status_code}"))
         ok_all &= g_ok
     except Exception as e:
-        subs.append(SubGate("401 sem token em POST /api/v1/chat/message", False, str(e)))
+        subs.append(SubGate("POST /api/v1/chat/message removido (esperado 404)", False, str(e)))
         ok_all = False
 
-    # 3) 422 message > 4000
-    # NOTE: Without auth, this endpoint returns 401 before body validation in this app.
-    # Use the existing deterministic test that overrides auth and asserts 422.
+    # 3) Validate XML endpoint disponível (autenticação requerida → 401 ou 422)
     try:
-        node = "tests/api/test_chat.py::test_chat_payload_validation_max_length"
-        code, out = sh(["pytest", "-q", node], cwd=backend_root)
-        g_ok = (code == 0)
-        subs.append(SubGate(f"422 message > 4000 (via pytest {node})", g_ok, out[:800]))
+        r = client.post("/api/v1/validate/xml")
+        g_ok = r.status_code in (401, 422)
+        subs.append(SubGate("POST /api/v1/validate/xml acessível (401 ou 422 sem auth)", g_ok, f"status={r.status_code}"))
         ok_all &= g_ok
     except Exception as e:
-        subs.append(SubGate("422 message > 4000 (via pytest test_chat_payload_validation_max_length)", False, str(e)))
+        subs.append(SubGate("POST /api/v1/validate/xml acessível (401 ou 422 sem auth)", False, str(e)))
         ok_all = False
 
-    # 4) Contract/evidence validated by existing deterministic test module
+    # 4) test_chat.py removido (chat desativado — presença seria erro de regressão)
     chat_tests = backend_root / "tests" / "api" / "test_chat.py"
-    if chat_tests.exists():
-        code, out = sh(["pytest", "-q", str(chat_tests.relative_to(backend_root))], cwd=backend_root)
-        g_ok = (code == 0)
-        subs.append(SubGate("Contrato/evidence via backend/tests/api/test_chat.py", g_ok, out[:800]))
-        ok_all &= g_ok
-    else:
-        msg = "Missing backend/tests/api/test_chat.py (expected contract tests here)."
-        subs.append(SubGate("Contrato/evidence via backend/tests/api/test_chat.py", False, msg))
-        ok_all = False
+    g_ok = not chat_tests.exists()
+    detail = "OK — test_chat.py ausente conforme esperado" if g_ok else "REGRESSÃO: test_chat.py reapareceu após remoção"
+    subs.append(SubGate("test_chat.py removido (chat desativado)", g_ok, detail))
+    ok_all &= g_ok
 
     # 5) Jobs tenant-scope (anti-IDOR) — deterministic static check on query guards
     try:
