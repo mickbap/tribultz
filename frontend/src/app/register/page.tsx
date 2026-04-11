@@ -5,7 +5,6 @@ import { FormEvent, useRef, useState } from "react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Toast } from "@/components/common/Toast";
 import { registerWithApi } from "@/lib/api";
-import { DEFAULT_TENANT } from "@/lib/storage";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -143,7 +142,7 @@ export default function RegisterPage() {
         plan_slug: planSlug,
         billing_type: billingType,
         lgpd_consent: true,
-        tenant_slug: DEFAULT_TENANT,
+        tenant_slug: "",
         captcha_token: captchaToken,
       });
 

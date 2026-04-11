@@ -1,34 +1,17 @@
-const KEY_MOCK_MODE = "tribultz.mock_mode";
 const KEY_TENANT = "tribultz.tenant";
 const KEY_TOKEN = "tribultz.token";
 const KEY_ACCOUNT_TYPE = "tribultz.account_type";
 const KEY_TENANTS = "tribultz.tenants";
-
-export const DEFAULT_TENANT = "tenant-a";
 
 function safeLocalStorage(): Storage | null {
   if (typeof window === "undefined") return null;
   return window.localStorage;
 }
 
-export function getMockMode(): boolean {
-  const store = safeLocalStorage();
-  if (!store) return true;
-  const raw = store.getItem(KEY_MOCK_MODE);
-  if (raw === null) return true;
-  return raw === "true";
-}
-
-export function setMockMode(value: boolean): void {
-  const store = safeLocalStorage();
-  if (!store) return;
-  store.setItem(KEY_MOCK_MODE, String(value));
-}
-
 export function getTenantId(): string {
   const store = safeLocalStorage();
-  if (!store) return DEFAULT_TENANT;
-  return store.getItem(KEY_TENANT) ?? DEFAULT_TENANT;
+  if (!store) return "";
+  return store.getItem(KEY_TENANT) ?? "";
 }
 
 export function setTenantId(tenantId: string): void {
@@ -39,8 +22,8 @@ export function setTenantId(tenantId: string): void {
 
 export function getToken(): string {
   const store = safeLocalStorage();
-  if (!store) return "demo-token";
-  return store.getItem(KEY_TOKEN) ?? "demo-token";
+  if (!store) return "";
+  return store.getItem(KEY_TOKEN) ?? "";
 }
 
 export function setToken(token: string): void {
@@ -85,4 +68,5 @@ export function clearSession(): void {
   store.removeItem(KEY_TOKEN);
   store.removeItem(KEY_ACCOUNT_TYPE);
   store.removeItem(KEY_TENANTS);
+  store.removeItem(KEY_TENANT);
 }

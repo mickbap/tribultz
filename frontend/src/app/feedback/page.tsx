@@ -3,18 +3,17 @@
 import { FormEvent, useState } from "react";
 import { Toast } from "@/components/common/Toast";
 import { apiFetch } from "@/lib/api";
-import { getMockMode } from "@/lib/storage";
 
-type FeedbackCategory = "bug" | "sugestão" | "elogio";
+type FeedbackCategory = "bug" | "sugestao" | "elogio";
 
 const CATEGORY_LABELS: Record<FeedbackCategory, string> = {
   bug: "Bug / Problema",
-  "sugestão": "Sugestão de melhoria",
+  sugestao: "Sugestão de melhoria",
   elogio: "Elogio",
 };
 
 export default function FeedbackPage() {
-  const [category, setCategory] = useState<FeedbackCategory>("sugestão");
+  const [category, setCategory] = useState<FeedbackCategory>("sugestao");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; msg: string } | null>(null);
@@ -25,12 +24,6 @@ export default function FeedbackPage() {
 
     if (message.trim().length < 10) {
       setToast({ tone: "error", msg: "Mensagem deve ter no mínimo 10 caracteres." });
-      return;
-    }
-
-    if (getMockMode()) {
-      setToast({ tone: "success", msg: "Feedback registrado (modo demo). Obrigado!" });
-      setMessage("");
       return;
     }
 

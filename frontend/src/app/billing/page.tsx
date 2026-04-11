@@ -11,7 +11,6 @@ import {
   PLAN_FEATURES,
   type PlanSlug,
 } from "@/lib/plan";
-import { getMockMode } from "@/lib/storage";
 
 type BillingInfo = {
   plan_slug: PlanSlug | null;
@@ -78,32 +77,7 @@ export default function BillingPage() {
   const [upgradeResult, setUpgradeResult] = useState<UpgradeResponse | null>(null);
   const [pixCopied, setPixCopied] = useState(false);
 
-  const isMock = getMockMode();
-
   const fetchBilling = useCallback(async () => {
-    if (isMock) {
-      // In mock mode, use local plan data
-      const slug = getPlanSlug();
-      const plan = PLAN_FEATURES[slug];
-      setInfo({
-        plan_slug: slug,
-        plan_name: plan.name,
-        price_cents: plan.priceCents,
-        status: "trial",
-        trial_ends_at: null,
-        current_period_start: null,
-        current_period_end: null,
-        max_validations: plan.maxValidations,
-        max_ai_messages: plan.maxAiMessages,
-        has_pdf_reports: plan.hasPdfReports,
-        has_batch: plan.hasBatch,
-        has_dashboard: plan.hasDashboard,
-        usage: { validations_used: 0, ai_messages_used: 0, period: "" },
-      });
-      setLoading(false);
-      return;
-    }
-
     try {
       const [billingData, paymentData] = await Promise.all([
         apiFetch<BillingInfo>("/api/v1/billing/me"),
@@ -128,7 +102,7 @@ export default function BillingPage() {
     } finally {
       setLoading(false);
     }
-  }, [isMock]);
+  }, []);
 
   useEffect(() => {
     fetchBilling();
@@ -300,7 +274,7 @@ export default function BillingPage() {
                       <span className="inline-block text-xs font-medium text-blue-700">
                         Plano atual
                       </span>
-                      {info?.status === "active" && !isMock && (
+                      {info?.status === "active" && (
                         <button
                           type="button"
                           onClick={handleCancel}
@@ -318,7 +292,7 @@ export default function BillingPage() {
                   ) : (
                     <button
                       type="button"
-                      disabled={upgrading || isMock}
+                      disabled={upgrading}
                       onClick={() => handleUpgrade(slug)}
                       className="mt-3 w-full rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                     >

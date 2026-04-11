@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Toast } from "@/components/common/Toast";
 import { apiFetch } from "@/lib/api";
-import { getMockMode } from "@/lib/storage";
 
 type Tab = "ticket" | "feedback" | "errors";
 type Priority = "low" | "medium" | "high" | "critical";
@@ -58,33 +57,6 @@ const SEVERITY_COLORS: Record<string, string> = {
   critical: "bg-red-100 text-red-700",
 };
 
-// ── Mock data ──────────────────────────────────────────────────────────────────
-
-const MOCK_TICKETS: Ticket[] = [
-  {
-    id: "mock-1",
-    title: "Erro ao validar NF-e com NCM 10063000",
-    description: "A validação retorna erro inesperado.",
-    status: "in_progress",
-    priority: "high",
-    created_at: new Date().toISOString(),
-  },
-];
-
-const MOCK_ERRORS: KnownError[] = [
-  {
-    id: "mock-e1",
-    code: "ERR-001",
-    title: "Timeout em XMLs acima de 5MB",
-    description: "Documentos XML maiores que 5MB podem causar timeout no parser.",
-    severity: "medium",
-    workaround: "Divida o arquivo em lotes menores antes de enviar.",
-    github_issue_url: "https://github.com/mickbap/tribultz/issues/170",
-    resolved_at: null,
-    created_at: new Date().toISOString(),
-  },
-];
-
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function SupportPage() {
@@ -110,11 +82,6 @@ export default function SupportPage() {
   const [loadingErrors, setLoadingErrors] = useState(false);
 
   useEffect(() => {
-    if (getMockMode()) {
-      setTickets(MOCK_TICKETS);
-      setErrors(MOCK_ERRORS);
-      return;
-    }
     fetchTickets();
     fetchErrors();
   }, []);
@@ -156,13 +123,6 @@ export default function SupportPage() {
       return;
     }
 
-    if (getMockMode()) {
-      setToast({ tone: "success", msg: "Ticket registrado (modo demo). Nossa equipe entrará em contato." });
-      setTicketTitle("");
-      setTicketDesc("");
-      return;
-    }
-
     setTicketLoading(true);
     try {
       const ticket = await apiFetch<Ticket>("/api/v1/support/tickets", {
@@ -186,13 +146,6 @@ export default function SupportPage() {
 
     if (fbMessage.trim().length < 10) {
       setToast({ tone: "error", msg: "Mensagem deve ter no mínimo 10 caracteres." });
-      return;
-    }
-
-    if (getMockMode()) {
-      setToast({ tone: "success", msg: "Feedback registrado (modo demo). Obrigado!" });
-      setFbTitle("");
-      setFbMessage("");
       return;
     }
 

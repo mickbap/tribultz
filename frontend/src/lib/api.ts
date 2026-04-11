@@ -19,20 +19,7 @@ import {
 } from "./types";
 import { buildJobEvidenceBundle } from "./export/jobEvidenceBundle";
 import { buildJobEvidenceZip, makeJobEvidenceZipFilename } from "./export/jobEvidenceZip";
-import {
-  mockDecideException,
-  mockGetConversation,
-  mockGetJob,
-  mockListAudits,
-  mockListConversations,
-  mockListExceptions,
-  mockListJobs,
-  mockOpenException,
-  mockPostChatMessage,
-  mockValidateXml,
-  resetMockData,
-} from "./mock";
-import { getMockMode, getTenantId, getToken } from "./storage";
+import { getTenantId, getToken } from "./storage";
 
 // Use || (not ??) so empty-string env vars also fall back to localhost.
 // If NEXT_PUBLIC_API_BASE_URL="" the fetch URL becomes relative ("/api/...")
@@ -209,11 +196,6 @@ export async function registerWithApi(payload: RegisterRequest): Promise<Registe
 }
 
 export async function postChatMessage(payload: ChatRequest): Promise<NormalizedChatResponse> {
-  const tenantId = getTenantId();
-  if (getMockMode()) {
-    const raw = await mockPostChatMessage(tenantId, payload);
-    return normalizeChatResponse(raw);
-  }
   const raw = await apiFetch<ChatApiResponse>("/api/v1/chat/message", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -223,9 +205,6 @@ export async function postChatMessage(payload: ChatRequest): Promise<NormalizedC
 
 export async function validateXml(payload: ValidateXmlRequest): Promise<ValidationResultV11> {
   const tenantId = getTenantId();
-  if (getMockMode()) {
-    return mockValidateXml(tenantId, payload);
-  }
   const transactionId = payload.transaction_id ?? createTransactionId();
   const form = new FormData();
   form.append("xml_content", payload.xml);
@@ -258,9 +237,6 @@ export async function validateXml(payload: ValidateXmlRequest): Promise<Validati
 }
 
 export async function listConversations(): Promise<Conversation[]> {
-  if (getMockMode()) {
-    return mockListConversations(getTenantId());
-  }
   try {
     const payload = await apiFetch<Conversation[]>("/api/v1/chat/conversations");
     return Array.isArray(payload) ? payload : [];
@@ -270,9 +246,6 @@ export async function listConversations(): Promise<Conversation[]> {
 }
 
 export async function getConversation(conversationId: string): Promise<Conversation | null> {
-  if (getMockMode()) {
-    return mockGetConversation(getTenantId(), conversationId);
-  }
   try {
     return await apiFetch<Conversation>(`/api/v1/chat/conversations/${encodeURIComponent(conversationId)}`);
   } catch {
@@ -282,9 +255,6 @@ export async function getConversation(conversationId: string): Promise<Conversat
 
 export async function getJobs(): Promise<Job[]> {
   const tenantId = getTenantId();
-  if (getMockMode()) {
-    return mockListJobs(tenantId);
-  }
   const payload = await apiFetch<ApiJob[] | { items?: ApiJob[] }>("/api/v1/jobs");
   const rows = Array.isArray(payload) ? payload : payload.items ?? [];
   return rows.map((row) => normalizeJob(row, tenantId));
@@ -292,18 +262,12 @@ export async function getJobs(): Promise<Job[]> {
 
 export async function getJob(jobId: string): Promise<Job | null> {
   const tenantId = getTenantId();
-  if (getMockMode()) {
-    return mockGetJob(tenantId, jobId);
-  }
   const payload = await apiFetch<ApiJob>(`/api/v1/jobs/${jobId}`);
   return normalizeJob(payload, tenantId);
 }
 
 export async function getAudits(jobId?: string): Promise<AuditLog[]> {
   const tenantId = getTenantId();
-  if (getMockMode()) {
-    return mockListAudits(tenantId, jobId);
-  }
   const q = jobId ? `?job_id=${encodeURIComponent(jobId)}` : "";
   const payload = await apiFetch<ApiAudit[] | { items?: ApiAudit[] }>(`/api/v1/audit${q}`);
   const rows = Array.isArray(payload) ? payload : payload.items ?? [];
@@ -326,20 +290,6 @@ function contentDispositionFilename(raw: string | null): string | null {
 export async function exportJobEvidenceZip(jobId: string): Promise<JobEvidenceZipResult> {
   if (!jobId) {
     throw new Error("jobId obrigatório para exportar evidências.");
-  }
-
-  if (getMockMode()) {
-    const job = await getJob(jobId);
-    if (!job) {
-      throw new Error(`Job ${jobId} nao encontrado.`);
-    }
-    const audits = await getAudits(jobId);
-    const bundle = buildJobEvidenceBundle(job, audits);
-    const bytes = buildJobEvidenceZip(bundle);
-    return {
-      filename: makeJobEvidenceZipFilename(job.id),
-      bytes,
-    };
   }
 
   const res = await fetch(`${API_BASE}/api/v1/jobs/${encodeURIComponent(jobId)}/evidence.zip`, {
@@ -373,9 +323,6 @@ export async function openExceptionRequest(payload: {
   created_by: string;
 }): Promise<ExceptionRequest> {
   const tenantId = getTenantId();
-  if (getMockMode()) {
-    return mockOpenException(tenantId, payload);
-  }
   const row = await apiFetch<ApiExceptionRequest>("/api/v1/exceptions", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -385,9 +332,6 @@ export async function openExceptionRequest(payload: {
 
 export async function listExceptionRequests(): Promise<ExceptionRequest[]> {
   const tenantId = getTenantId();
-  if (getMockMode()) {
-    return mockListExceptions(tenantId);
-  }
   const payload = await apiFetch<ApiExceptionRequest[] | { items?: ApiExceptionRequest[] }>("/api/v1/exceptions");
   const rows = Array.isArray(payload) ? payload : payload.items ?? [];
   return rows.map((row) => normalizeException(row, tenantId));
@@ -395,18 +339,11 @@ export async function listExceptionRequests(): Promise<ExceptionRequest[]> {
 
 export async function decideExceptionRequest(exceptionId: string, decision: ExceptionDecision): Promise<ExceptionRequest> {
   const tenantId = getTenantId();
-  if (getMockMode()) {
-    return mockDecideException(tenantId, exceptionId, decision);
-  }
   const row = await apiFetch<ApiExceptionRequest>(`/api/v1/exceptions/${encodeURIComponent(exceptionId)}/decision`, {
     method: "POST",
     body: JSON.stringify(decision),
   });
   return normalizeException(row, tenantId);
-}
-
-export function resetDemoData(): void {
-  resetMockData(getTenantId());
 }
 
 export type ReportListItem = {

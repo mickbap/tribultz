@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { clearSession, setMockMode } from "@/lib/storage";
+import { clearSession } from "@/lib/storage";
 
 const links = [
   { href: "/dashboard", label: "Painel" },
@@ -24,7 +24,6 @@ export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNa
 
   function handleLogout(): void {
     clearSession();
-    setMockMode(true);
     window.dispatchEvent(new Event("tribultz-settings-updated"));
     onNavigate?.();
     router.push("/login");
