@@ -15,6 +15,7 @@ const links = [
   { href: "/exceptions", label: "Exceções" },
   { href: "/billing", label: "Faturamento" },
   { href: "/settings", label: "Configurações" },
+  { href: "/support", label: "Suporte" },
 ];
 
 export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate?: () => void }) {

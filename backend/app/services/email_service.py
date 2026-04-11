@@ -135,6 +135,117 @@ def send_payment_confirmation_email(
     )
 
 
+def send_support_ticket_email(
+    to_email: str,
+    user_name: str,
+    ticket_title: str,
+    priority: str,
+) -> bool:
+    """Notify user that their support ticket was received."""
+    priority_labels = {"low": "Baixa", "medium": "Média", "high": "Alta", "critical": "Crítica"}
+    html_body = _render(
+        "support_ticket_created.html",
+        user_name=user_name,
+        ticket_title=ticket_title,
+        priority=priority_labels.get(priority, priority.capitalize()),
+        console_url=f"{settings.FRONTEND_URL}/support",
+        frontend_url=settings.FRONTEND_URL,
+    )
+    text_body = (
+        f"Olá, {user_name}!\n\n"
+        f"Ticket aberto: {ticket_title}\n"
+        f"Prioridade: {priority_labels.get(priority, priority)}\n\n"
+        "Nossa equipe irá responder em breve.\n"
+        f"Acompanhe em: {settings.FRONTEND_URL}/support\n\n"
+        "Tribultz Tecnologia Ltda."
+    )
+    return _send_email(
+        to_email=to_email,
+        subject="Tribultz Suporte — Ticket recebido",
+        html_body=html_body,
+        text_body=text_body,
+        log_url=f"{settings.FRONTEND_URL}/support",
+    )
+
+
+def send_ticket_status_email(
+    to_email: str,
+    user_name: str,
+    ticket_title: str,
+    new_status: str,
+) -> bool:
+    """Notify user of a ticket status change."""
+    status_labels = {
+        "open": "Aberto",
+        "in_progress": "Em andamento",
+        "resolved": "Resolvido",
+        "closed": "Encerrado",
+    }
+    status_display = status_labels.get(new_status, new_status)
+    html_body = _render(
+        "support_ticket_created.html",
+        user_name=user_name,
+        ticket_title=ticket_title,
+        priority=f"Status atualizado para: {status_display}",
+        console_url=f"{settings.FRONTEND_URL}/support",
+        frontend_url=settings.FRONTEND_URL,
+    )
+    text_body = (
+        f"Olá, {user_name}!\n\n"
+        f"Seu ticket '{ticket_title}' foi atualizado para: {status_display}.\n\n"
+        f"Acompanhe em: {settings.FRONTEND_URL}/support\n\n"
+        "Tribultz Tecnologia Ltda."
+    )
+    return _send_email(
+        to_email=to_email,
+        subject=f"Tribultz Suporte — Ticket {status_display}",
+        html_body=html_body,
+        text_body=text_body,
+        log_url=f"{settings.FRONTEND_URL}/support",
+    )
+
+
+def send_feedback_received_email(to_email: str, user_name: str) -> bool:
+    """Send thank-you email after feedback submission."""
+    html_body = _render(
+        "feedback_received.html",
+        user_name=user_name,
+        console_url=f"{settings.FRONTEND_URL}/dashboard",
+        frontend_url=settings.FRONTEND_URL,
+    )
+    text_body = (
+        f"Olá, {user_name}!\n\n"
+        "Recebemos seu feedback. Obrigado por ajudar a melhorar o Tribultz!\n\n"
+        "Tribultz Tecnologia Ltda."
+    )
+    return _send_email(
+        to_email=to_email,
+        subject="Tribultz — Feedback recebido, obrigado!",
+        html_body=html_body,
+        text_body=text_body,
+        log_url=f"{settings.FRONTEND_URL}/dashboard",
+    )
+
+
+def send_staff_ticket_notification(ticket_title: str, user_email: str, priority: str) -> bool:
+    """Notify contato@tribultz.com.br when a new ticket is opened."""
+    priority_labels = {"low": "Baixa", "medium": "Média", "high": "Alta", "critical": "Crítica"}
+    text_body = (
+        f"Novo ticket de suporte recebido.\n\n"
+        f"Assunto: {ticket_title}\n"
+        f"Usuário: {user_email}\n"
+        f"Prioridade: {priority_labels.get(priority, priority)}\n\n"
+        f"Acesse: {settings.FRONTEND_URL}/support"
+    )
+    return _send_email(
+        to_email="contato@tribultz.com.br",
+        subject=f"[Suporte] Novo ticket — {ticket_title}",
+        html_body=f"<pre>{text_body}</pre>",
+        text_body=text_body,
+        log_url=f"{settings.FRONTEND_URL}/support",
+    )
+
+
 # ── Internal SMTP sender ──────────────────────────────────────────
 
 

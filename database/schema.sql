@@ -298,6 +298,59 @@ CREATE TABLE IF NOT EXISTS usage_tracking (
 CREATE INDEX IF NOT EXISTS idx_usage_tracking_user   ON usage_tracking(user_id);
 CREATE INDEX IF NOT EXISTS idx_usage_tracking_tenant ON usage_tracking(tenant_id);
 
+-- ------------------------------------------------------------
+-- 15. Support Tickets
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS support_tickets (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id       UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id         UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title           VARCHAR(200)  NOT NULL,
+    description     TEXT          NOT NULL,
+    status          VARCHAR(30)   NOT NULL DEFAULT 'open',      -- open|in_progress|resolved|closed
+    priority        VARCHAR(20)   NOT NULL DEFAULT 'medium',    -- low|medium|high|critical
+    attachments     JSONB         NOT NULL DEFAULT '[]',        -- [{key, filename, content_type}]
+    github_issue_url VARCHAR(300),
+    created_at      TIMESTAMPTZ   NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_support_tickets_tenant ON support_tickets(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_user   ON support_tickets(user_id);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status);
+
+-- ------------------------------------------------------------
+-- 16. Support Messages (ticket thread)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS support_messages (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ticket_id   UUID          NOT NULL REFERENCES support_tickets(id) ON DELETE CASCADE,
+    user_id     UUID          NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    is_staff    BOOLEAN       NOT NULL DEFAULT FALSE,
+    body        TEXT          NOT NULL,
+    created_at  TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_support_messages_ticket ON support_messages(ticket_id);
+
+-- ------------------------------------------------------------
+-- 17. Known Errors (public error catalog)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS known_errors (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code                VARCHAR(50)   NOT NULL UNIQUE,          -- e.g. ERR-001
+    title               VARCHAR(200)  NOT NULL,
+    description         TEXT          NOT NULL,
+    severity            VARCHAR(20)   NOT NULL DEFAULT 'medium', -- low|medium|high|critical
+    workaround          TEXT,
+    github_issue_number INTEGER,
+    github_issue_url    VARCHAR(300),
+    affected_versions   VARCHAR(100),
+    resolved_at         TIMESTAMPTZ,
+    created_at          TIMESTAMPTZ   NOT NULL DEFAULT now(),
+    updated_at          TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
 -- ============================================================
 -- SEED DATA
 -- ============================================================

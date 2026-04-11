@@ -73,6 +73,9 @@ class Settings(BaseSettings):
     CHATOPS_TIMEOUT_SECONDS: int = 120
     CREW_MEMORY_TTL_SECONDS: int = 2_592_000
 
+    # ── GitHub Integration ────────────────────────────────────
+    GITHUB_TOKEN: str = ""
+
     # ── External APIs ─────────────────────────────────────────
     CLASSTRIB_API_URL: str = "https://cff.svrs.rs.gov.br/api/v1/consultas/classTrib"
     CNPJ_PRIMARY_URL: str = "https://brasilapi.com.br/api/cnpj/v1/{cnpj}"
