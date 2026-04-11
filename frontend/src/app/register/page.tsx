@@ -15,13 +15,13 @@ const PLANS: { slug: PlanSlug; name: string; price: string; features: string[]; 
     slug: "trial",
     name: "Trial",
     price: "Grátis por 2 dias",
-    features: ["3 validações", "20 mensagens IA", "Download TXT", "Sem dashboard", "Sem suporte"],
+    features: ["3 validações", "Download TXT", "Sem dashboard", "Sem suporte"],
   },
   {
     slug: "starter",
     name: "Starter",
     price: "R$ 49,90/mês",
-    features: ["10 validações/mês", "50 mensagens IA", "Dashboard", "Suporte por email"],
+    features: ["10 validações/mês", "Dashboard", "Suporte por email"],
   },
   {
     slug: "profissional",

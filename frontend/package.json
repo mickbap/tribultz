@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node node_modules/next/dist/bin/next dev",
     "build": "node node_modules/next/dist/bin/next build",
+    "vercel-build": "node node_modules/next/dist/bin/next build",
     "start": "node node_modules/next/dist/bin/next start",
     "lint": "eslint",
     "test": "tsx --test src/lib/validation/xmlRules.test.ts src/lib/closing/aggregate.test.ts src/lib/export/jobEvidenceBundle.test.ts src/lib/export/jobEvidenceZip.test.ts src/lib/export/evidenceExportUi.test.ts src/lib/export/auditableReport.test.ts src/lib/export/batchReport.test.ts",
