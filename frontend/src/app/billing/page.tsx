@@ -264,7 +264,7 @@ export default function BillingPage() {
                   <p className="text-lg font-bold">{formatCurrency(plan.priceCents)}/mês</p>
                   <ul className="mt-2 space-y-1 text-xs text-slate-600">
                     <li>{plan.maxValidations ?? "Ilimitadas"} validações</li>
-                    <li>{plan.maxAiMessages ?? "Ilimitadas"} mensagens IA</li>
+                    {plan.hasJustificativaFiscal && <li>Justificativa técnica por finding</li>}
                     {plan.hasPdfReports && <li>Relatório PDF</li>}
                     {plan.hasBatch && <li>Validação em lote</li>}
                     {plan.hasDashboard && <li>Dashboard</li>}

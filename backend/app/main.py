@@ -9,7 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
 from app.core.logging import configure_logging
-from app.routers import auth, audit, billing, calculadora, chat, documents, feedback, health, jobs, lgpd, news, public, reports, support, tasks, validate, validate_xml, validation
+from app.routers import auth, audit, billing, calculadora, documents, feedback, health, jobs, lgpd, news, public, reports, support, tasks, validate, validate_xml, validation
 from app.services.news_seed import ensure_default_news_entry
 
 configure_logging()
@@ -74,7 +74,7 @@ app.include_router(validation.router)
 app.include_router(audit.router)
 app.include_router(jobs.router)
 app.include_router(tasks.router)
-app.include_router(chat.router)
+# chat.router desativado — descontinuado por segurança (risco de prompt injection) e eficiência operacional
 app.include_router(feedback.router)
 app.include_router(lgpd.router)
 app.include_router(billing.router)

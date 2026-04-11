@@ -3,17 +3,12 @@ import {
   ApiExceptionRequest,
   ApiJob,
   AuditLog,
-  ChatApiResponse,
-  ChatRequest,
-  Conversation,
   ExceptionDecision,
   ExceptionRequest,
   Job,
-  NormalizedChatResponse,
   ValidateXmlRequest,
   ValidationResultV11,
   normalizeAudit,
-  normalizeChatResponse,
   normalizeException,
   normalizeJob,
 } from "./types";
@@ -194,15 +189,6 @@ export async function registerWithApi(payload: RegisterRequest): Promise<Registe
   return (await res.json()) as RegisterResponse;
 }
 
-export async function postChatMessage(payload: ChatRequest): Promise<NormalizedChatResponse> {
-  const tenantId = getTenantId();
-  const raw = await apiFetch<ChatApiResponse>("/api/v1/chat/message", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  return normalizeChatResponse(raw);
-}
-
 export async function validateXml(payload: ValidateXmlRequest): Promise<ValidationResultV11> {
   const tenantId = getTenantId();
   const transactionId = payload.transaction_id ?? createTransactionId();
@@ -234,23 +220,6 @@ export async function validateXml(payload: ValidateXmlRequest): Promise<Validati
       transaction_id: data.job?.transaction_id ?? data.transaction_id ?? transactionId,
     },
   };
-}
-
-export async function listConversations(): Promise<Conversation[]> {
-  try {
-    const payload = await apiFetch<Conversation[]>("/api/v1/chat/conversations");
-    return Array.isArray(payload) ? payload : [];
-  } catch {
-    return [];
-  }
-}
-
-export async function getConversation(conversationId: string): Promise<Conversation | null> {
-  try {
-    return await apiFetch<Conversation>(`/api/v1/chat/conversations/${encodeURIComponent(conversationId)}`);
-  } catch {
-    return null;
-  }
 }
 
 export async function getJobs(): Promise<Job[]> {

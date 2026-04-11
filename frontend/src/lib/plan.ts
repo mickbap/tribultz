@@ -25,12 +25,12 @@ export type PlanFeatures = {
   name: string;
   priceCents: number;
   maxValidations: number | null; // null = unlimited
-  maxAiMessages: number | null;
   hasPdfReports: boolean;
   hasBatch: boolean;
   hasDashboard: boolean;
   hasApiAccess: boolean;
   hasMultiCnpj: boolean;
+  hasJustificativaFiscal: boolean; // Justificativa técnica + base legal por finding
   trialDays: number | null;
 };
 
@@ -39,60 +39,60 @@ export const PLAN_FEATURES: Record<PlanSlug, PlanFeatures> = {
     name: "Trial",
     priceCents: 0,
     maxValidations: 5,
-    maxAiMessages: 25,
     hasPdfReports: false,
     hasBatch: false,
     hasDashboard: false,
     hasApiAccess: false,
     hasMultiCnpj: false,
+    hasJustificativaFiscal: false,
     trialDays: 3,
   },
   starter: {
     name: "Starter",
     priceCents: 4990,
     maxValidations: 10,
-    maxAiMessages: 50,
     hasPdfReports: false,
     hasBatch: false,
     hasDashboard: true,
     hasApiAccess: false,
     hasMultiCnpj: false,
+    hasJustificativaFiscal: false,
     trialDays: null,
   },
   profissional: {
     name: "Profissional",
     priceCents: 14900,
     maxValidations: 500,
-    maxAiMessages: null,
     hasPdfReports: true,
     hasBatch: true,
     hasDashboard: true,
     hasApiAccess: true,
     hasMultiCnpj: false,
+    hasJustificativaFiscal: true,
     trialDays: null,
   },
   empresarial: {
     name: "Empresarial",
     priceCents: 24900,
     maxValidations: 2000,
-    maxAiMessages: null,
     hasPdfReports: true,
     hasBatch: true,
     hasDashboard: true,
     hasApiAccess: true,
     hasMultiCnpj: true, // filiais — até 10 CNPJs
+    hasJustificativaFiscal: true,
     trialDays: null,
   },
   contador: {
     name: "Contador",
     priceCents: 34900,
     maxValidations: null,
-    maxAiMessages: null,
     hasPdfReports: true,
     hasBatch: true,
     hasDashboard: true,
     hasApiAccess: true,
     hasMultiCnpj: true,
+    hasJustificativaFiscal: true,
     trialDays: null,
   },
 };
