@@ -44,10 +44,10 @@ def _user_data_dict(user: User) -> dict:
 @router.get("/my-data")
 def get_my_data(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     """Return all personal data for the current user (LGPD Art. 18, I)."""
-    user_id = current_user["user_id"]
+    user_id = current_user.id
     user = db.execute(
         select(User).where(User.id == user_id)
     ).scalar_one_or_none()
@@ -68,10 +68,10 @@ def get_my_data(
 @router.get("/export")
 def export_my_data(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     """Export all user data as downloadable JSON (LGPD Art. 18, V — portability)."""
-    user_id = current_user["user_id"]
+    user_id = current_user.id
     user = db.execute(
         select(User).where(User.id == user_id)
     ).scalar_one_or_none()
@@ -100,14 +100,14 @@ def export_my_data(
 @router.post("/delete-account")
 def delete_account(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     """Soft-delete user account with PII anonymization (LGPD Art. 18, VI).
 
     Tax audit records are retained per Brazilian fiscal law.
     Personal data is replaced with anonymized hashes.
     """
-    user_id = current_user["user_id"]
+    user_id = current_user.id
     user = db.execute(
         select(User).where(User.id == user_id)
     ).scalar_one_or_none()
