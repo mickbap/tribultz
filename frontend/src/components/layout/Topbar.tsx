@@ -1,9 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import {
   getAccountType,
-  getMockMode,
   getTenantId,
   getTenants,
   setTenantId,
@@ -21,7 +20,6 @@ export function Topbar({ onOpenMenu, stateVersion }: TopbarProps) {
   const [tenant, setTenant] = useState("");
   const [tenants, setTenantsState] = useState<StoredTenant[]>([]);
   const [accountType, setAccType] = useState("empresa");
-  const [mockMode, setMock] = useState(true);
   const [switching, setSwitching] = useState(false);
 
   useEffect(() => {
@@ -29,7 +27,6 @@ export function Topbar({ onOpenMenu, stateVersion }: TopbarProps) {
       setTenant(getTenantId());
       setTenantsState(getTenants());
       setAccType(getAccountType());
-      setMock(getMockMode());
     };
     refresh();
     window.addEventListener("tribultz-settings-updated", refresh);
@@ -45,7 +42,7 @@ export function Topbar({ onOpenMenu, stateVersion }: TopbarProps) {
   const isContador = accountType === "contador" && tenants.length > 1;
 
   async function handleSwitchTenant(tenantId: string) {
-    if (mockMode || switching) return;
+    if (switching) return;
     const target = tenants.find((t) => t.id === tenantId);
     const targetName = target?.name ?? tenantId;
     if (!window.confirm(`Você está mudando para o tenant "${targetName}". Confirma?`)) return;
@@ -89,7 +86,6 @@ export function Topbar({ onOpenMenu, stateVersion }: TopbarProps) {
 
         <div className="hidden md:block">
           <p className="text-sm font-semibold text-slate-700">TRIBULTZ Console</p>
-          <p className="text-xs text-slate-500">{mockMode ? "Mock Mode" : "API Mode"}</p>
         </div>
 
         <div className="ml-auto flex items-center gap-3">

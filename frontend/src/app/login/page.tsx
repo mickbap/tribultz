@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Toast } from "@/components/common/Toast";
 import { loginWithApi, resendVerificationEmail } from "@/lib/api";
-import { DEFAULT_TENANT, setAccountType, setTenantId, setTenants, setToken } from "@/lib/storage";
+import { setAccountType, setTenantId, setTenants, setToken } from "@/lib/storage";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -44,13 +44,13 @@ export default function LoginPage() {
       const login = await loginWithApi({
         email: email.trim(),
         password,
-        tenant_slug: DEFAULT_TENANT,
+        tenant_slug: "",
         captcha_token: captchaToken,
       });
       if (!login.access_token) {
         throw new Error("Resposta de login sem access_token.");
       }
-      setTenantId(login.tenant_id ?? DEFAULT_TENANT);
+      setTenantId(login.tenant_id ?? "");
       setToken(login.access_token);
       setAccountType(login.account_type ?? "empresa");
       setTenants(login.tenants ?? []);
@@ -142,7 +142,7 @@ export default function LoginPage() {
                           await resendVerificationEmail({
                             email: email.trim(),
                             password: password,
-                            tenant_slug: DEFAULT_TENANT,
+                            tenant_slug: "",
                           });
                           setError(null);
                           setEmailUnverified(false);
