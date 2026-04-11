@@ -235,7 +235,7 @@ def get_ticket(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     ticket = db.get(SupportTicket, ticket_id)
-    if ticket is None or ticket.tenant_id != current_user.tenant_id:
+    if ticket is None or str(ticket.tenant_id) != str(current_user.tenant_id):
         raise HTTPException(status_code=404, detail="Ticket não encontrado.")
     return ticket
 
@@ -248,7 +248,7 @@ def add_message(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     ticket = db.get(SupportTicket, ticket_id)
-    if ticket is None or ticket.tenant_id != current_user.tenant_id:
+    if ticket is None or str(ticket.tenant_id) != str(current_user.tenant_id):
         raise HTTPException(status_code=404, detail="Ticket não encontrado.")
 
     is_staff = str(getattr(current_user, "role", "")) in ("superadmin", "admin")
@@ -271,7 +271,7 @@ def list_messages(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     ticket = db.get(SupportTicket, ticket_id)
-    if ticket is None or ticket.tenant_id != current_user.tenant_id:
+    if ticket is None or str(ticket.tenant_id) != str(current_user.tenant_id):
         raise HTTPException(status_code=404, detail="Ticket não encontrado.")
 
     stmt = (
@@ -297,7 +297,7 @@ def update_ticket_status(
     if ticket is None:
         raise HTTPException(status_code=404, detail="Ticket não encontrado.")
 
-    old_status = ticket.status
+    old_status = str(ticket.status)
     ticket.status = data.status  # type: ignore[assignment]
     ticket.updated_at = datetime.now(timezone.utc)  # type: ignore[assignment]
     db.commit()
@@ -419,7 +419,7 @@ def create_github_issue(
     if error is None:
         raise HTTPException(status_code=404, detail="Erro não encontrado.")
 
-    if error.github_issue_url:
+    if error.github_issue_url is not None:
         raise HTTPException(status_code=409, detail="GitHub Issue já criada.")
 
     severity_label_map = {
@@ -435,7 +435,7 @@ def create_github_issue(
         f"**Severidade:** {severity.capitalize()}\n"
         f"**Versões afetadas:** {error.affected_versions or 'não especificado'}\n\n"
         f"### Descrição\n\n{error.description}\n\n"
-        + (f"### Contorno\n\n{error.workaround}\n\n" if error.workaround else "")
+        + (f"### Contorno\n\n{error.workaround}\n\n" if error.workaround is not None else "")
         + "_Criado automaticamente pelo catálogo de erros Tribultz._"
     )
 

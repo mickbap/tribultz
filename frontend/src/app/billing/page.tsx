@@ -21,13 +21,11 @@ type BillingInfo = {
   current_period_start: string | null;
   current_period_end: string | null;
   max_validations: number | null;
-  max_ai_messages: number | null;
   has_pdf_reports: boolean;
   has_batch: boolean;
   has_dashboard: boolean;
   usage: {
     validations_used: number;
-    ai_messages_used: number;
     period: string;
   };
 };
@@ -93,7 +91,7 @@ export default function BillingPage() {
         setTrialEndsAt(billingData.trial_ends_at);
         setUsage({
           validationsUsed: billingData.usage.validations_used,
-          aiMessagesUsed: billingData.usage.ai_messages_used,
+          aiMessagesUsed: 0,
           period: billingData.usage.period,
         });
       }
@@ -195,11 +193,6 @@ export default function BillingPage() {
           label="Validações"
           used={info?.usage.validations_used ?? 0}
           max={info?.max_validations ?? null}
-        />
-        <UsageMeter
-          label="Mensagens IA"
-          used={info?.usage.ai_messages_used ?? 0}
-          max={info?.max_ai_messages ?? null}
         />
       </div>
 

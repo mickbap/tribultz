@@ -282,13 +282,21 @@ async def upgrade_plan(
     pix_qr_code = None
     pix_copy_paste = None
 
+    # Validate CNPJ before calling Asaas (avoids 502 / CORS-less error on empty CNPJ)
+    cnpj_value = cast(str, current_user.cnpj).strip() if current_user.cnpj is not None else ""
+    customer_id = cast(str, current_sub.asaas_customer_id) if current_sub.asaas_customer_id is not None else None
+    if not customer_id and len(cnpj_value.replace(".", "").replace("/", "").replace("-", "")) not in (11, 14):
+        raise HTTPException(
+            status_code=400,
+            detail="Informe seu CNPJ nas configurações antes de fazer upgrade.",
+        )
+
     try:
-        customer_id = cast(str, current_sub.asaas_customer_id) if current_sub.asaas_customer_id is not None else None
         if not customer_id:
             cust = await asaas.create_customer(
                 name=cast(str, current_user.full_name),
                 email=cast(str, current_user.email),
-                cpf_cnpj=cast(str, current_user.cnpj) if current_user.cnpj is not None else "",
+                cpf_cnpj=cnpj_value,
                 phone=cast(str, current_user.phone) if current_user.phone is not None else "",
             )
             customer_id = cust["id"]

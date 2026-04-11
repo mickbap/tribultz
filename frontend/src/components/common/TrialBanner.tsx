@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { getSubscriptionStatus, getTrialRemainingHours } from "@/lib/plan";
 
 /**
@@ -25,12 +26,12 @@ export default function TrialBanner() {
           Trial: {hours}h restante{hours !== 1 ? "s" : ""}.{" "}
         </span>
       )}
-      <a
+      <Link
         href="/billing"
         className="underline font-medium hover:text-white/90"
       >
         Adquira o Starter
-      </a>
+      </Link>
     </div>
   );
 }
