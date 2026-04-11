@@ -13,7 +13,7 @@ export function toastFromExportError(err: unknown): ExportToastFeedback {
   if (/Export via API ainda n[aã]o dispon[ií]vel\.?/i.test(message)) {
     return {
       tone: "info",
-      message: "Export via API ainda não disponível. Use Mock Mode ou tente novamente mais tarde.",
+      message: "Export via API ainda não disponível. Tente novamente mais tarde ou contate o suporte.",
     };
   }
 
