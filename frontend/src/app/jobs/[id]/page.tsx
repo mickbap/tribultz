@@ -9,7 +9,8 @@ import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { Skeleton } from "@/components/common/Skeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
-import { getJob } from "@/lib/api";
+import { getDocumentDownloadUrl, getJob, listDocuments } from "@/lib/api";
+import type { DocumentResponse } from "@/lib/api";
 import { exportEvidenceZipAndDownload } from "@/lib/export/evidenceExportUi";
 import { Job } from "@/lib/types";
 
@@ -20,6 +21,7 @@ export default function JobDetailPage() {
   const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [derivedDocs, setDerivedDocs] = useState<DocumentResponse[]>([]);
 
   useEffect(() => {
     if (!params.id) return;
@@ -30,12 +32,34 @@ export default function JobDetailPage() {
       .finally(() => setLoading(false));
   }, [params.id]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDerived(): Promise<void> {
+      if (!job?.id) return;
+      const docs = await listDocuments({ doc_type: "other", limit: 50 });
+      const filtered = docs.filter((d) => {
+        const fm = (d.fiscal_metadata || {}) as Record<string, unknown>;
+        return fm["artifact_kind"] === "corrected_xml" && fm["source_job_id"] === job.id;
+      });
+      if (!cancelled) setDerivedDocs(filtered);
+    }
+    void loadDerived();
+    return () => {
+      cancelled = true;
+    };
+  }, [job?.id]);
+
   async function exportEvidenceBundle(): Promise<void> {
     if (!job || exporting) return;
     setExporting(true);
     const feedback = await exportEvidenceZipAndDownload(job.id);
     setToast(feedback);
     setExporting(false);
+  }
+
+  async function downloadCorrectedXml(documentId: string): Promise<void> {
+    const { download_url } = await getDocumentDownloadUrl(documentId);
+    window.open(download_url, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -115,6 +139,31 @@ export default function JobDetailPage() {
                     <p className="text-xs text-slate-500">
                       rule_id: {finding.rule_id} | finding_id: {finding.id}
                     </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {derivedDocs.length ? (
+            <section className="rounded-xl border border-slate-200 bg-white p-4">
+              <h2 className="mb-2 text-sm font-semibold text-slate-700">Artefatos derivados</h2>
+              <ul className="space-y-2">
+                {derivedDocs.map((doc) => (
+                  <li key={doc.id} className="flex items-center justify-between rounded border border-slate-200 p-2 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-slate-800">
+                        XML corrigido — {doc.original_filename ?? doc.storage_key.split("/").pop()}
+                      </p>
+                      <p className="text-xs text-slate-500">Criado em: {new Date(doc.created_at).toLocaleString()}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void downloadCorrectedXml(doc.id)}
+                      className="ml-3 shrink-0 rounded border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                    >
+                      Baixar XML corrigido
+                    </button>
                   </li>
                 ))}
               </ul>

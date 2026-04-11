@@ -7,7 +7,7 @@ import { Toast } from "@/components/common/Toast";
 import { loginWithApi, resendVerificationEmail } from "@/lib/api";
 import { DEFAULT_TENANT, setAccountType, setTenantId, setTenants, setToken } from "@/lib/storage";
 
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA";
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,11 +19,17 @@ export default function LoginPage() {
   const [resending, setResending] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
   const turnstileRef = useRef<TurnstileInstance>(null);
+  const captchaConfigured = Boolean(TURNSTILE_SITE_KEY?.trim());
 
   async function onSubmit(event: FormEvent): Promise<void> {
     event.preventDefault();
     if (!email.trim() || !password.trim()) {
       setError("Informe email e senha para entrar.");
+      return;
+    }
+
+    if (!captchaConfigured) {
+      setError("CAPTCHA indisponível no momento. Contate o suporte.");
       return;
     }
 
@@ -102,16 +108,22 @@ export default function LoginPage() {
                     autoComplete="current-password"
                   />
                 </label>
-                <Turnstile
-                  ref={turnstileRef}
-                  siteKey={TURNSTILE_SITE_KEY}
-                  onSuccess={setCaptchaToken}
-                  onExpire={() => setCaptchaToken("")}
-                  options={{ theme: "light", size: "flexible" }}
-                />
+                {captchaConfigured ? (
+                  <Turnstile
+                    ref={turnstileRef}
+                    siteKey={TURNSTILE_SITE_KEY as string}
+                    onSuccess={setCaptchaToken}
+                    onExpire={() => setCaptchaToken("")}
+                    options={{ theme: "light", size: "flexible" }}
+                  />
+                ) : (
+                  <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                    CAPTCHA de produção não configurado. Defina `NEXT_PUBLIC_TURNSTILE_SITE_KEY` no ambiente do frontend.
+                  </div>
+                )}
                 <button
                   type="submit"
-                  disabled={loadingApi || !captchaToken}
+                  disabled={loadingApi || !captchaToken || !captchaConfigured}
                   className="w-full rounded-lg bg-tribultz-600 px-4 py-2.5 font-semibold text-white hover:bg-tribultz-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loadingApi ? "Autenticando..." : "Entrar"}

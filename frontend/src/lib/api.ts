@@ -436,3 +436,73 @@ export async function listReports(params?: { report_type?: string; job_id?: stri
 export async function getReportDownloadUrl(reportId: string): Promise<{ download_url: string; expires_at: string }> {
   return apiFetch(`/api/v1/reports/${encodeURIComponent(reportId)}/download`);
 }
+
+// ── XML Correction (MVP) ───────────────────────────────────────────────────
+
+export async function generateCorrectedXml(payload: { document_type?: string; xml: string }): Promise<{
+  document_id: string;
+  storage_key: string;
+  download_url: string;
+  applied_corrections: string[];
+  unresolved_findings: unknown[];
+  created_at: string;
+}> {
+  const form = new FormData();
+  form.append("xml_content", payload.xml);
+  if (payload.document_type) form.append("document_type", payload.document_type);
+
+  const token = getToken();
+  const tenantId = getTenantId();
+  const res = await fetch(`${API_BASE}/api/v1/validate/xml/correct`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "X-Tenant-Id": tenantId,
+    },
+    body: form,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "Erro ao gerar XML corrigido");
+    throw new Error(`Correção ${res.status}: ${detail}`);
+  }
+  return (await res.json()) as any;
+}
+
+// ── Documents API ───────────────────────────────────────────────────────────
+export type DocumentResponse = {
+  id: string;
+  doc_type: string;
+  original_filename: string | null;
+  storage_key: string;
+  file_size: number | null;
+  content_type: string | null;
+  status: string;
+  uploaded_at: string | null;
+  created_at: string;
+  fiscal_metadata: Record<string, unknown>;
+};
+
+export async function listDocuments(params?: {
+  doc_type?: string;
+  status?: string;
+  limit?: number;
+}): Promise<DocumentResponse[]> {
+  const q = new URLSearchParams();
+  if (params?.doc_type) q.set("doc_type", params.doc_type);
+  if (params?.status) q.set("status", params.status);
+  if (params?.limit) q.set("limit", String(params.limit));
+  const qs = q.toString();
+  try {
+    const payload = await apiFetch<DocumentResponse[]>(`/api/v1/documents${qs ? `?${qs}` : ""}`);
+    return Array.isArray(payload) ? payload : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getDocumentDownloadUrl(
+  documentId: string,
+): Promise<{ download_url: string; expires_at: string }> {
+  return apiFetch(`/api/v1/documents/${encodeURIComponent(documentId)}/download`);
+}

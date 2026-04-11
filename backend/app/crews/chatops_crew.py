@@ -95,7 +95,14 @@ class TribultzChatOpsCrew:
         )
         scoped_memory = ScopedCrewMemory(
             memory=shared_memory,
-            recall_scopes=[paths["short_term"], paths["long_term"], paths["entity"]],
+            recall_scopes=[
+                paths["short_term"],
+                paths["long_term"],
+                paths["entity"],
+                "/global/knowledge_base/classtrib",
+                "/global/knowledge_base/lei214",
+                "/global/knowledge_base/reforma_tributaria",
+            ],
             write_scope=paths["short_term"],
             default_categories=["chatops", "fiscal_classification"],
             default_metadata={

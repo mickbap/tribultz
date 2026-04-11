@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "source": "Material educacional - Roberta CRC / LC 214/2024",
+    "date": "2026-04-10",
+    "files": [
+      "Planilha1_10042026.xlsx",
+      "Planilha2_10042026.xlsx"
+    ],
+    "total_chunks": 10
+  },
+  "chunks": [
+    {
+      "id": "servicos_comparativo_lp",
+      "title": "Comparativo tributario servicos - Lucro Presumido antes e apos reforma",
+      "content": "Numa NF de servicos de R$100.000 no regime Lucro Presumido: ANTES da reforma: ISS 2-5% = R$5.000, PIS/COFINS 3,65% = R$3.650. Custo tributario total = R$8.650 (8,65% sobre receita bruta). Resultado liquido = R$91.350. APOS a reforma (IBS/CBS 28%): A NF deve ser emitida por R$138.888,89 (faturamento bruto = 100.000 / 0,72 = 138.888,89). IBS/CBS de 28% = R$38.888,89. Receita liquida ao prestador = R$100.000. A carga tributaria nominal sobe para 28% do valor da NF, mas o liquido recebido pelo prestador permanece R$100.000. Comparacao de carga efetiva: LP antes = 8,65%; LP apos = 28% (sobre NF majorada). O empresario deve repassar o IBS/CBS no preco da NF para manter a margem.",
+      "regime": [
+        "lucro_presumido"
+      ],
+      "topic": "comparativo_carga_tributaria"
+    },
+    {
+      "id": "servicos_comparativo_lr",
+      "title": "Comparativo tributario servicos - Lucro Real antes e apos reforma",
+      "content": "Numa NF de servicos de R$100.000 no regime Lucro Real: ANTES da reforma: PIS nao-cumulativo 1,65%, COFINS nao-cumulativa 7,6%. ISS 5%. Total PIS+COFINS+ISS = 14,25%. Custo tributario = R$14.250. Resultado liquido = R$85.750. APOS a reforma: IBS/CBS 28% sobre o faturamento bruto R$138.888,89. O regime nao-cumulativo de PIS/COFINS e substituido pelo credito pleno de IBS/CBS. A carga tributaria nominal no LR antes = 14,25%; apos = 28% sobre NF. Porem o LR tem direito a creditos de IBS/CBS sobre todas as entradas, o que pode reduzir o custo efetivo dependendo da cadeia de fornecedores. Faturamento sobre 1.000.000 tri: antes IPI 12%=R$120k, ICMS 18%=R$180k, PIS 1,65%=R$13.530, COFINS 7,6%=R$62.320, ISS 5%=R$50k. Total nominal = R$425.850 (42,6%). Creditos = R$11.775 (1,18%). Taxa efetiva = R$414.075 (41,4%). Apos reforma: IBS/CBS 28% = R$280.000.",
+      "regime": [
+        "lucro_real"
+      ],
+      "topic": "comparativo_carga_tributaria"
+    },
+    {
+      "id": "lucro_presumido_modelo_cumulativo",
+      "title": "Lucro Presumido - Modelo cumulativo antes da reforma tributaria",
+      "content": "Lucro Presumido opera no regime cumulativo: creditos tributarios sao limitados. Faturamento trimestral de R$1.000.000: Obrigacoes tributarias: IPI 12% = R$120.000; ICMS 18% = R$180.000; PIS 0,65% = R$5.330; COFINS 3% = R$24.600; ISS 5% = R$50.000. Custo tributario nominal = R$379.930 (37,99%). Creditos disponiveis: IPI a recuperar R$3.600; ICMS a recuperar R$5.400. PIS e COFINS NAO geram credito no Lucro Presumido (regime cumulativo). Credito tributario total = R$9.000 (0,9%). IPI a pagar = R$116.400; ICMS a pagar = R$174.600; PIS = R$5.330; COFINS = R$24.600; ISS = R$50.000. Taxa efetiva = R$370.930 (37,09%). No balanco patrimonial: Tributos a recuperar = R$9.000 (IPI + ICMS). Visao contabil: compra de mercadorias R$30.000 credita IPI R$3.600 + ICMS R$5.400, estoque efetivo = R$21.000.",
+      "regime": [
+        "lucro_presumido"
+      ],
+      "topic": "regime_tributario_atual"
+    },
+    {
+      "id": "cashback_mecanismo",
+      "title": "Mecanismo de cashback IBS/CBS na cadeia produtiva",
+      "content": "Com a Reforma Tributaria, o IBS/CBS tem aliquota de 26%. Mecanismo de cashback na cadeia: Importador/Industria: produto R$1.000, IBS/CBS R$260, valor total NF R$1.260. Revendedor: produto R$2.000, IBS/CBS R$520, valor total NF R$2.520. Apuracao da industria: debitos R$260, creditos R$0 (primeiro da cadeia), saldo a pagar R$260. Apuracao do revendedor: debitos R$520, creditos R$260 (nota de entrada), saldo a pagar R$260. Total de tributos recolhidos na cadeia = R$520 (26% sobre R$2.000 valor final). Mecanismo de cashback ao usuario final: credito IBS/CBS = 70% do tributo pago. Usuario final recebe cashback de R$364 (70% x R$520). Saldo pago efetivo = R$156. O cashback beneficia familias de baixa renda que consomem produtos da cesta basica e essenciais. O IBS/CBS e nao-cumulativo: cada elo da cadeia recolhe apenas o diferencial sobre o valor agregado.",
+      "regime": [
+        "todos"
+      ],
+      "topic": "cashback"
+    },
+    {
+      "id": "split_payment_mecanismo",
+      "title": "Split Payment - pagamento fracionado do IBS/CBS",
+      "content": "Split Payment e o mecanismo pelo qual o imposto IBS/CBS e recolhido automaticamente no momento do pagamento, sem transitar pela conta do vendedor. Passo 1: Nota fiscal emitida por R$1.260 (produto R$1.000 + IBS/CBS R$260). Passo 2: Comprador paga R$1.260 ao banco/meio de pagamento. Passo 3: Banco/maquininha retifica: taxa da maquina 1% = R$12,60; repassa IBS/CBS R$260 diretamente ao governo; repassa liquido R$987,40 ao vendedor. Vantagens: elimina sonegacao; fluxo do imposto e automatico; empresa nao precisa guardar o imposto para pagar depois. O revendedor segue o mesmo modelo: vende por R$2.520, recebe liquido o diferencial. Aliquota de referencia no exemplo = 26% sobre o valor do produto.",
+      "regime": [
+        "todos"
+      ],
+      "topic": "split_payment"
+    },
+    {
+      "id": "imposto_seletivo",
+      "title": "Imposto Seletivo (IS) - bens e servicos prejudiciais a saude e ao meio ambiente",
+      "content": "O Imposto Seletivo (IS) incide sobre bens e servicos considerados prejudiciais a saude ou ao meio ambiente. Conhecido popularmente como Imposto do Capiroto. Aliquota de referencia no exemplo = 12%. Cadeia de exemplo com IS: Industria: produto R$1.000 + IS R$120 + IBS/CBS R$260 = total R$1.380. Revendedor: produto R$2.000 + IBS/CBS R$520 = R$2.520. Apuracao industria: debitos IBS/CBS R$260 + IS R$120 = R$380. Apuracao revendedor: debitos R$520 - creditos R$260 = R$260. O IS NAO gera credito na cadeia - e custo definitivo para o primeiro na cadeia. Bens sujeitos ao IS (Anexo XVII da LC 214): veiculos (87.03, 8704), aeronaves e embarcacoes com motor (8802, 8903), produtos fumigenos (2401-2404), bebidas alcoolicas (2203-2208), bebidas acucaradas (2202.10.00), bens minerais (2601, 2709, 2711), concursos de prognosticos e fantasy sport. Reducao IBS/CBS = 0%, regime seletivo - estes sao TRIBUTADOS EXTRA, nao reduzidos.",
+      "regime": [
+        "todos"
+      ],
+      "topic": "imposto_seletivo"
+    },
+    {
+      "id": "simples_nacional_hibrido",
+      "title": "Simples Nacional hibrido com IBS/CBS na Reforma Tributaria",
+      "content": "No Simples Nacional apos a reforma, ha tres opcoes para o IBS/CBS: 1) Modelo atual (sem IBS/CBS separado): empresa recolhe tudo pelo DAS. 2) IBS/CBS por fora do DAS: emite NF majorada, recolhe IBS/CBS separado. 3) IBS/CBS por dentro do DAS (hibrido): IBS/CBS incluido no calculo do DAS. Exemplo faturamento fevereiro R$300.000 (RBT12 R$1.971.945), Anexo 3, Servicos: Modelo atual: aliq nominal 21%, parcela deducao R$125.640, aliq efetiva 14,63%, DAS = R$43.886. IBS/CBS por fora: faturamento bruto R$304.502, aliq efetiva 6,57%, DAS = R$20.006, IBS/CBS = R$85.261, IBS/CBS recuperar R$3.920, IBS/CBS a pagar R$81.341. IBS/CBS por dentro: aliq efetiva 12,9%, DAS = R$39.267. DRE comparativo: Lucro liquido = R$223.824 (atual) vs R$256.126 (fora) vs R$232.945 (dentro). A opcao IBS/CBS por fora gera maior lucro liquido pois permite creditos de IBS/CBS nas entradas.",
+      "regime": [
+        "simples_nacional"
+      ],
+      "topic": "simples_nacional_reforma"
+    },
+    {
+      "id": "cadeia_creditos_ibscbs",
+      "title": "Cadeia de creditos IBS/CBS - nao-cumulatividade plena",
+      "content": "O IBS (Imposto sobre Bens e Servicos) e o CBS (Contribuicao sobre Bens e Servicos) sao nao-cumulativos em sua totalidade, ao contrario do ICMS e PIS/COFINS atuais. Principio: cada contribuinte credita-se do IBS/CBS pago nas entradas e debita o da saida. Diferenca = tributo a recolher. Credito e pleno sobre todos os insumos da atividade. Modelo de apuracao: Industria (primeiro da cadeia): debitos IBS/CBS = 26% sobre venda. Creditos = 0. Paga 100% do debito. Revendedor (segundo): debitos = IBS/CBS da NF de saida. Creditos = IBS/CBS da NF de entrada. Paga diferencial. Comprador final: nao contribuinte, nao credita - absorve o tributo no preco. CST 0 (cClassTrib 1-4): tributacao integral, aliquota padrao, sem reducao. CST 200 (reducao de aliquota): para bens da cesta basica, saude, educacao. CST 400 (isencao): operacoes isentas, sem debito e sem credito. CST 410 (imunidade): operacoes imunes (livros, musica nacional etc.).",
+      "regime": [
+        "todos"
+      ],
+      "topic": "creditos_nao_cumulatividade"
+    },
+    {
+      "id": "carga_efetiva_comparativo_geral",
+      "title": "Comparativo geral de carga efetiva antes e apos reforma por regime",
+      "content": "Quadro comparativo de carga tributaria sobre faturamento de R$1.000.000: LUCRO PRESUMIDO ANTES: IPI 12%=R$120k + ICMS 18%=R$180k + PIS 0,65%=R$5,3k + COFINS 3%=R$24,6k + ISS 5%=R$50k. Total bruto = R$379.930 (37,99%). Creditos IPI+ICMS = R$9.000. Efetivo = R$370.930 (37,09%). LUCRO PRESUMIDO APOS reforma: IBS/CBS 28% = R$280.000. Credito pleno sobre entradas. LUCRO REAL ANTES: IPI 12%=R$120k + ICMS 18%=R$180k + PIS 1,65%=R$13,5k + COFINS 7,6%=R$62,3k + ISS 5%=R$50k. Total bruto = R$425.850 (42,59%). Creditos = R$11.775. Efetivo = R$414.075 (41,41%). LUCRO REAL APOS reforma: IBS/CBS 28% = R$280.000. Credito nao-cumulativo pleno. SERVICOS LP - comparativo NF R$100k: antes 8,65% (ISS+PIS/COFINS), apos 28% sobre NF majorada. SERVICOS LR - comparativo NF R$100k: antes 14,25%, apos 28% sobre NF majorada. Conclusao: a reforma unifica e simplifica, mas a aliquota nominal e maior. O beneficio real vem da nao-cumulatividade plena e do cashback para consumidores finais.",
+      "regime": [
+        "lucro_presumido",
+        "lucro_real"
+      ],
+      "topic": "comparativo_carga_tributaria"
+    },
+    {
+      "id": "anexos_reducao_ibscbs",
+      "title": "Anexos da LC 214 - bens e servicos com reducao ou zeracao do IBS/CBS",
+      "content": "A LC 214/2024 define anexos com tratamento diferenciado no IBS/CBS: REDUCAO A ZERO (100%): Anexo I - Cesta Basica (arroz, feijao, leite, cafe, oleo de soja, manteiga, margarina, farinha de mandioca, farinha de trigo, acucar, massas, pao frances, etc.). REDUCAO A ZERO: Dispositivos Medicos avancados (proteses, orteses) e Dispositivos de Acessibilidade para PCD. REDUCAO A ZERO: Horticolas, frutas e ovos. REDUCAO DE 60%: Educacao (ensino infantil ao superior, EJA, especial). REDUCAO DE 60%: Saude (servicos cirurgicos, consultas, exames, hospitais). REDUCAO DE 60%: Dispositivos Medicos (equipamentos hospitalares, ortopedicos). REDUCAO DE 60%: Acessibilidade (cadeira de rodas, andadores, bengalas). REDUCAO DE 60%: Formulas Nutricionais (nutricao enteral/parenteral, erros inatos do metabolismo). REDUCAO DE 60%: Alimentos para consumo humano (crustaceos, mel, leite fermentado, farinhas). REDUCAO DE 60%: Higiene pessoal para baixa renda. REDUCAO DE 60%: Insumos agropecuarios e aquicolas. REDUCAO DE 60%: Cultura (producoes artisticas, jornalisticas, audiovisuais nacionais). REDUCAO DE 60%: Seguranca nacional e seguranca da informacao. IMPOSTO SELETIVO (extra): Veiculos, aeronaves, cigarros, bebidas alcoolicas, bebidas acucaradas, minerais.",
+      "regime": [
+        "todos"
+      ],
+      "topic": "reducoes_beneficios"
+    }
+  ]
+}

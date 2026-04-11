@@ -1,0 +1,5133 @@
+{
+  "meta": {
+    "source": "LC 214/2024",
+    "date": "2026-04-10",
+    "total_items": 491,
+    "total_ncm_codes": 147,
+    "total_annexes": 15
+  },
+  "by_ncm": {
+    "10063000": {
+      "description": "Arroz das subposições 1006.20 e 1006.30 e do código 1006.40.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "10062000": {
+      "description": "Arroz das subposições 1006.20 e 1006.30 e do código 1006.40.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "10064000": {
+      "description": "Arroz das subposições 1006.20 e 1006.30 e do código 1006.40.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04011010": {
+      "description": "Leite, em conformidade com os requisitos da legislação específica relativos ao consumo direto pela população, classificado nos códigos 0401.10.10, 0401.10.90, 0401.20.10, 0401.20.90, 0401.40.10 e 0401.50.10 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04011090": {
+      "description": "Leite, em conformidade com os requisitos da legislação específica relativos ao consumo direto pela população, classificado nos códigos 0401.10.10, 0401.10.90, 0401.20.10, 0401.20.90, 0401.40.10 e 0401.50.10 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04015010": {
+      "description": "Leite, em conformidade com os requisitos da legislação específica relativos ao consumo direto pela população, classificado nos códigos 0401.10.10, 0401.10.90, 0401.20.10, 0401.20.90, 0401.40.10 e 0401.50.10 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04012090": {
+      "description": "Leite, em conformidade com os requisitos da legislação específica relativos ao consumo direto pela população, classificado nos códigos 0401.10.10, 0401.10.90, 0401.20.10, 0401.20.90, 0401.40.10 e 0401.50.10 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04014010": {
+      "description": "Leite, em conformidade com os requisitos da legislação específica relativos ao consumo direto pela população, classificado nos códigos 0401.10.10, 0401.10.90, 0401.20.10, 0401.20.90, 0401.40.10 e 0401.50.10 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04012010": {
+      "description": "Leite, em conformidade com os requisitos da legislação específica relativos ao consumo direto pela população, classificado nos códigos 0401.10.10, 0401.10.90, 0401.20.10, 0401.20.90, 0401.40.10 e 0401.50.10 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04022910": {
+      "description": "Leite em pó, em conformidade com os requisitos da legislação específica, classificado nos códigos 0402.10.10, 0402.10.90, 0402.21.10, 0402.21.20, 0402.29.10 e 0402.29.20 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04022120": {
+      "description": "Leite em pó, em conformidade com os requisitos da legislação específica, classificado nos códigos 0402.10.10, 0402.10.90, 0402.21.10, 0402.21.20, 0402.29.10 e 0402.29.20 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04021010": {
+      "description": "Leite em pó, em conformidade com os requisitos da legislação específica, classificado nos códigos 0402.10.10, 0402.10.90, 0402.21.10, 0402.21.20, 0402.29.10 e 0402.29.20 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04021090": {
+      "description": "Leite em pó, em conformidade com os requisitos da legislação específica, classificado nos códigos 0402.10.10, 0402.10.90, 0402.21.10, 0402.21.20, 0402.29.10 e 0402.29.20 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04022920": {
+      "description": "Leite em pó, em conformidade com os requisitos da legislação específica, classificado nos códigos 0402.10.10, 0402.10.90, 0402.21.10, 0402.21.20, 0402.29.10 e 0402.29.20 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04022110": {
+      "description": "Leite em pó, em conformidade com os requisitos da legislação específica, classificado nos códigos 0402.10.10, 0402.10.90, 0402.21.10, 0402.21.20, 0402.29.10 e 0402.29.20 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "19011090": {
+      "description": "Fórmulas infantis, em conformidade com os requisitos da legislação específica, classificadas nos códigos 1901.10.10, 1901.10.90 e 2106.90.90 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "21069090": {
+      "description": "Fórmulas infantis, em conformidade com os requisitos da legislação específica, classificadas nos códigos 1901.10.10, 1901.10.90 e 2106.90.90 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "19011010": {
+      "description": "Fórmulas infantis, em conformidade com os requisitos da legislação específica, classificadas nos códigos 1901.10.10, 1901.10.90 e 2106.90.90 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04051000": {
+      "description": "Manteiga do código 0405.10.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "15171000": {
+      "description": "Margarina do código 1517.10.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "07133590": {
+      "description": "Feijões dos códigos 0713.33.19, 0713.33.29, 0713.33.99 e 0713.35.90 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "07133399": {
+      "description": "Feijões dos códigos 0713.33.19, 0713.33.29, 0713.33.99 e 0713.35.90 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "07133329": {
+      "description": "Feijões dos códigos 0713.33.19, 0713.33.29, 0713.33.99 e 0713.35.90 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "07133319": {
+      "description": "Feijões dos códigos 0713.33.19, 0713.33.29, 0713.33.99 e 0713.35.90 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "09010000": {
+      "description": "Café da posição 09.01 e da subposição 2101.1, ambos da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "15132120": {
+      "description": "Óleo de babaçu do código 1513.21.20 da NCM/SH, em conformidade com os requisitos da legislação específica relativos ao consumo como alimento",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "19030000": {
+      "description": "Farinha de mandioca classificada no código 1106.20.00 da NCM/SH e tapioca e seus sucedâneos do código 1903.00.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "11062000": {
+      "description": "Farinha de mandioca classificada no código 1106.20.00 da NCM/SH e tapioca e seus sucedâneos do código 1903.00.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "11031300": {
+      "description": "Farinha, grumos e sêmolas, de milho, dos códigos 1102.20.00 e 1103.13.00 da NCM",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "11022000": {
+      "description": "Farinha, grumos e sêmolas, de milho, dos códigos 1102.20.00 e 1103.13.00 da NCM",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "11042300": {
+      "description": "Grãos de milho classificados no código 1104.19.00 e do código 1104.23.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "11041900": {
+      "description": "Grãos de milho classificados no código 1104.19.00 e do código 1104.23.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "11010010": {
+      "description": "Farinha de trigo do código 1101.00.10 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "17019900": {
+      "description": "Açúcar classificado nos códigos 1701.14.00 e 1701.99.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "17011400": {
+      "description": "Açúcar classificado nos códigos 1701.14.00 e 1701.99.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "19059090": {
+      "description": "Pão comumente denominado pão francês, de formato cilíndrico e alongado, com miolo branco creme e macio, e casca dourada e crocante, elaborado a partir da mistura ou pré-mistura de farinha de trigo, fermento biológico, água, sal, açúcar, aditivos alimentares e produtos de fortificação de farinhas, em",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "19012010": {
+      "description": "Pão comumente denominado pão francês, de formato cilíndrico e alongado, com miolo branco creme e macio, e casca dourada e crocante, elaborado a partir da mistura ou pré-mistura de farinha de trigo, fermento biológico, água, sal, açúcar, aditivos alimentares e produtos de fortificação de farinhas, em",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "19012090": {
+      "description": "Pão comumente denominado pão francês, de formato cilíndrico e alongado, com miolo branco creme e macio, e casca dourada e crocante, elaborado a partir da mistura ou pré-mistura de farinha de trigo, fermento biológico, água, sal, açúcar, aditivos alimentares e produtos de fortificação de farinhas, em",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "11042200": {
+      "description": "Grãos de aveia dos códigos 1104.12.00 e 1104.22.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "11041200": {
+      "description": "Grãos de aveia dos códigos 1104.12.00 e 1104.22.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "11029000": {
+      "description": "Farinha de aveia classificada no código 1102.90.00 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "02109920": {
+      "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "02063000": {
+      "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "02109900": {
+      "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "02074300": {
+      "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "02099000": {
+      "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "02069000": {
+      "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "02075300": {
+      "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "02068000": {
+      "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "02061000": {
+      "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "02091000": {
+      "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "02102000": {
+      "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "02109990": {
+      "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "03036500": {
+      "description": "Peixes e carnes de peixes (exceto salmonídeos, atuns, bacalhaus, hadoque, saithe e ovas e outros subprodutos) dos seguintes códigos, subposições e posições da NCM/SH: a) 03.02; exceto os produtos das subposições e dos códigos 0302.1, 0302.3, 0302.51.00, 0302.52.00, 0302.53.00 e 0302.9 da NCM/SH; b) ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "03036300": {
+      "description": "Peixes e carnes de peixes (exceto salmonídeos, atuns, bacalhaus, hadoque, saithe e ovas e outros subprodutos) dos seguintes códigos, subposições e posições da NCM/SH: a) 03.02; exceto os produtos das subposições e dos códigos 0302.1, 0302.3, 0302.51.00, 0302.52.00, 0302.53.00 e 0302.9 da NCM/SH; b) ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "03036400": {
+      "description": "Peixes e carnes de peixes (exceto salmonídeos, atuns, bacalhaus, hadoque, saithe e ovas e outros subprodutos) dos seguintes códigos, subposições e posições da NCM/SH: a) 03.02; exceto os produtos das subposições e dos códigos 0302.1, 0302.3, 0302.51.00, 0302.52.00, 0302.53.00 e 0302.9 da NCM/SH; b) ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "03025100": {
+      "description": "Peixes e carnes de peixes (exceto salmonídeos, atuns, bacalhaus, hadoque, saithe e ovas e outros subprodutos) dos seguintes códigos, subposições e posições da NCM/SH: a) 03.02; exceto os produtos das subposições e dos códigos 0302.1, 0302.3, 0302.51.00, 0302.52.00, 0302.53.00 e 0302.9 da NCM/SH; b) ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "03025200": {
+      "description": "Peixes e carnes de peixes (exceto salmonídeos, atuns, bacalhaus, hadoque, saithe e ovas e outros subprodutos) dos seguintes códigos, subposições e posições da NCM/SH: a) 03.02; exceto os produtos das subposições e dos códigos 0302.1, 0302.3, 0302.51.00, 0302.52.00, 0302.53.00 e 0302.9 da NCM/SH; b) ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "03025300": {
+      "description": "Peixes e carnes de peixes (exceto salmonídeos, atuns, bacalhaus, hadoque, saithe e ovas e outros subprodutos) dos seguintes códigos, subposições e posições da NCM/SH: a) 03.02; exceto os produtos das subposições e dos códigos 0302.1, 0302.3, 0302.51.00, 0302.52.00, 0302.53.00 e 0302.9 da NCM/SH; b) ",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04069010": {
+      "description": "Queijos tipo mozarela, minas, prato, queijo de coalho, ricota, requeijão, queijo provolone, queijo parmesão, queijo fresco não maturado e queijo do reino classificados nos códigos 0406.10.10, 0406.10.90, 0406.20.00, 0406.90.10, 0406.90.20 e 0406.90.30 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04069020": {
+      "description": "Queijos tipo mozarela, minas, prato, queijo de coalho, ricota, requeijão, queijo provolone, queijo parmesão, queijo fresco não maturado e queijo do reino classificados nos códigos 0406.10.10, 0406.10.90, 0406.20.00, 0406.90.10, 0406.90.20 e 0406.90.30 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04069030": {
+      "description": "Queijos tipo mozarela, minas, prato, queijo de coalho, ricota, requeijão, queijo provolone, queijo parmesão, queijo fresco não maturado e queijo do reino classificados nos códigos 0406.10.10, 0406.10.90, 0406.20.00, 0406.90.10, 0406.90.20 e 0406.90.30 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04061010": {
+      "description": "Queijos tipo mozarela, minas, prato, queijo de coalho, ricota, requeijão, queijo provolone, queijo parmesão, queijo fresco não maturado e queijo do reino classificados nos códigos 0406.10.10, 0406.10.90, 0406.20.00, 0406.90.10, 0406.90.20 e 0406.90.30 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04062000": {
+      "description": "Queijos tipo mozarela, minas, prato, queijo de coalho, ricota, requeijão, queijo provolone, queijo parmesão, queijo fresco não maturado e queijo do reino classificados nos códigos 0406.10.10, 0406.10.90, 0406.20.00, 0406.90.10, 0406.90.20 e 0406.90.30 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "04061090": {
+      "description": "Queijos tipo mozarela, minas, prato, queijo de coalho, ricota, requeijão, queijo provolone, queijo parmesão, queijo fresco não maturado e queijo do reino classificados nos códigos 0406.10.10, 0406.10.90, 0406.20.00, 0406.90.10, 0406.90.20 e 0406.90.30 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "25010090": {
+      "description": "Sal em conformidade com os requisitos da legislação específica relativos ao teor de iodo enquadrado nos limites próprios para consumo humano classificado nos códigos 2501.00.20 e 2501.00.90 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "25010020": {
+      "description": "Sal em conformidade com os requisitos da legislação específica relativos ao teor de iodo enquadrado nos limites próprios para consumo humano classificado nos códigos 2501.00.20 e 2501.00.90 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "09030000": {
+      "description": "Mate da posição 09.03 da NCM/SH",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "19019090": {
+      "description": "Farinha com baixo teor de proteína para pessoas com aminoacidopatias, acidemias e defeitos do ciclo da uréia da NCM 1901.90.90",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "19021900": {
+      "description": "Massas com baixo teor de proteína para pessoas com aminoacidopatias, acidemias e defeitos do ciclo da uréia da NCM 1902.19.00",
+      "annex": "CESTA BASICA",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "30060000": {
+      "description": "Reagentes de diagnóstico ou de laboratório em qualquer suporte e reagentes de diagnóstico ou de laboratório preparados, mesmo em um suporte, mesmo apresentados sob a forma de estojos, exceto os da posição 30.06; materiais de referência certificados",
+      "annex": "INSTRUMENTOS MEDICOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "90183200": {
+      "description": "Outros instrumentos e aparelhos para medicina, cirurgia e odontologia, excluídas seringas e agulhas, das posições 9018.31 e 9018.32",
+      "annex": "INSTRUMENTOS MEDICOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "90183100": {
+      "description": "Outros instrumentos e aparelhos para medicina, cirurgia e odontologia, excluídas seringas e agulhas, das posições 9018.31 e 9018.32",
+      "annex": "INSTRUMENTOS MEDICOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03061100": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03073100": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03073200": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03061500": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03079100": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03079200": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03063400": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03074300": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03074200": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03063910": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03075200": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03075100": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "03063100": {
+      "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "22029900": {
+      "description": "Leite fermentado, bebidas e compostos lácteos, em conformidade com os requisitos da legislação específica, classificados nos códigos 0403.20.00, 0403.90.00 e 2202.99.00 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "04032000": {
+      "description": "Leite fermentado, bebidas e compostos lácteos, em conformidade com os requisitos da legislação específica, classificados nos códigos 0403.20.00, 0403.90.00 e 2202.99.00 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "04039000": {
+      "description": "Leite fermentado, bebidas e compostos lácteos, em conformidade com os requisitos da legislação específica, classificados nos códigos 0403.20.00, 0403.90.00 e 2202.99.00 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "04090000": {
+      "description": "Mel natural do código 0409.00.00 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "11010000": {
+      "description": "Farinha das posições 1101.00, 11.02, 11.05, 11.06 e 12.08 da NCM/SH; ressalvados os produtos relacionados no Anexo I",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "11031900": {
+      "description": "Grumos e sêmolas de cereais dos códigos 1103.11.00 e 1103.19.00 da NCM/SH; ressalvados os produtos relacionados no Anexo I",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "11031100": {
+      "description": "Grumos e sêmolas de cereais dos códigos 1103.11.00 e 1103.19.00 da NCM/SH; ressalvados os produtos relacionados no Anexo I",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "11081200": {
+      "description": "Amido de milho do código 1108.12.00 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "15079000": {
+      "description": "Óleos de soja, de milho, canola e demais óleos vegetais, em conformidade com os requisitos da legislação específica relativos ao consumo como alimento, classificados na subposição 1507.90 e nas posições 15.08, 15.11, 15.12, 15.13, 15.14 e 15.15 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "19022000": {
+      "description": "Massas alimentícias dos códigos 1902.20.00 e 1902.30.00 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "19023000": {
+      "description": "Massas alimentícias dos códigos 1902.20.00 e 1902.30.00 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "20090000": {
+      "description": "Sucos naturais de fruta ou de produtos hortícolas sem adição de açúcar ou de outros edulcorantes e sem conservantes classificados na posição 20.09 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "20080000": {
+      "description": "Polpas de frutas ou de produtos hortícolas sem adição de açúcar ou de outros edulcorantes e sem conservantes classificadas na posição 20.08 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "19059010": {
+      "description": "Pão de Forma do código 1905.90.10 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "20029000": {
+      "description": "Extrato de tomate classificado no código 2002.90.00 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "08140000": {
+      "description": "Frutas, produtos hortícolas e demais produtos vegetais, sem adição de açúcar ou de outros edulcorantes, classificados nos capítulos 7 e 8 da NCM/SH, ressalvados as frutas de casca rija não regionais e os produtos relacionados nos Anexos I e XV e excetuadas as posições 07.11, 08.12 e 0814.00.00",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "20021000": {
+      "description": "Produtos hortícolas, mesmo misturados entre si, apenas pré-cozidos ou cozidos em água ou vapor, sem adição de sal ou de quaisquer outros produtos e substâncias, classificados nas posições 20.04 e 20.05 e no código 2002.10.00 da NCM/SH",
+      "annex": "ALIMENTOS",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "34011190": {
+      "description": "Sabões de toucador classificados no código 3401.11.90 da NCM/SH",
+      "annex": "HIGIENE",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "33061000": {
+      "description": "Dentifrícios do código 3306.10.00 da NCM/SH",
+      "annex": "HIGIENE",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "96032100": {
+      "description": "Escovas de dentes do código 9603.21.00 da NCM/SH",
+      "annex": "HIGIENE",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "48181000": {
+      "description": "Papel higiênico do código 4818.10.00 da NCM/SH",
+      "annex": "HIGIENE",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "38089419": {
+      "description": "Água sanitária classificada no código 3808.94.19 da NCM/SH",
+      "annex": "HIGIENE",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "34011900": {
+      "description": "Sabões em barra classificados no código 3401.19.00 da NCM/SH",
+      "annex": "HIGIENE",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "96190000": {
+      "description": "Fraldas e artigos higiênicos semelhantes, de qualquer matéria classificadas no código 9619.00.00 da NCM/SH",
+      "annex": "HIGIENE",
+      "reduction_pct": 60,
+      "regime": "reduzido"
+    },
+    "90181420": {
+      "description": "Aparelhos de eletrodiagnóstico, exceto os produtos classificados nos códigos 9018.11.00, 9018.12.10, 9018.12.90, 9018.13.00, 9018.14.10, 9018.14.20, 9018.14.90, 9018.19.10 e 9018.19.20",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90181490": {
+      "description": "Aparelhos de eletrodiagnóstico, exceto os produtos classificados nos códigos 9018.11.00, 9018.12.10, 9018.12.90, 9018.13.00, 9018.14.10, 9018.14.20, 9018.14.90, 9018.19.10 e 9018.19.20",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90181410": {
+      "description": "Aparelhos de eletrodiagnóstico, exceto os produtos classificados nos códigos 9018.11.00, 9018.12.10, 9018.12.90, 9018.13.00, 9018.14.10, 9018.14.20, 9018.14.90, 9018.19.10 e 9018.19.20",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90181290": {
+      "description": "Aparelhos de eletrodiagnóstico, exceto os produtos classificados nos códigos 9018.11.00, 9018.12.10, 9018.12.90, 9018.13.00, 9018.14.10, 9018.14.20, 9018.14.90, 9018.19.10 e 9018.19.20",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90181300": {
+      "description": "Aparelhos de eletrodiagnóstico, exceto os produtos classificados nos códigos 9018.11.00, 9018.12.10, 9018.12.90, 9018.13.00, 9018.14.10, 9018.14.20, 9018.14.90, 9018.19.10 e 9018.19.20",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90181920": {
+      "description": "Aparelhos de eletrodiagnóstico, exceto os produtos classificados nos códigos 9018.11.00, 9018.12.10, 9018.12.90, 9018.13.00, 9018.14.10, 9018.14.20, 9018.14.90, 9018.19.10 e 9018.19.20",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90181210": {
+      "description": "Aparelhos de eletrodiagnóstico, exceto os produtos classificados nos códigos 9018.11.00, 9018.12.10, 9018.12.90, 9018.13.00, 9018.14.10, 9018.14.20, 9018.14.90, 9018.19.10 e 9018.19.20",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90181910": {
+      "description": "Aparelhos de eletrodiagnóstico, exceto os produtos classificados nos códigos 9018.11.00, 9018.12.10, 9018.12.90, 9018.13.00, 9018.14.10, 9018.14.20, 9018.14.90, 9018.19.10 e 9018.19.20",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90181100": {
+      "description": "Aparelhos de eletrodiagnóstico, exceto os produtos classificados nos códigos 9018.11.00, 9018.12.10, 9018.12.90, 9018.13.00, 9018.14.10, 9018.14.20, 9018.14.90, 9018.19.10 e 9018.19.20",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90213991": {
+      "description": "Artigos e aparelhos de prótese, exceto os dentários e os produtos classificados nos códigos 9021.39.91 e 9021.39.99",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90213999": {
+      "description": "Artigos e aparelhos de prótese, exceto os dentários e os produtos classificados nos códigos 9021.39.91 e 9021.39.99",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90221991": {
+      "description": "Aparelhos de raio X, móveis, exceto os produtos classificados no código 9022.19.91",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90222120": {
+      "description": "Aparelhos que utilizem radiações alfa, beta, gama ou outras radiações ionizantes, para usos médicos, cirúrgicos, odontológicos ou veterinários, incluídos os aparelhos de radiofotografia ou de radioterapia, exceto os produtos classificados nos códigos 9022.21.10 e 9022.21.20",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "90222110": {
+      "description": "Aparelhos que utilizem radiações alfa, beta, gama ou outras radiações ionizantes, para usos médicos, cirúrgicos, odontológicos ou veterinários, incluídos os aparelhos de radiofotografia ou de radioterapia, exceto os produtos classificados nos códigos 9022.21.10 e 9022.21.20",
+      "annex": "OUTROS INSTRUMENTOS MEDICOS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "07108000": {
+      "description": "Produtos hortícolas das posições 07.01, 07.02.00.00, 07.03, 07.04, 07.05, 07.06, 0707.00.00, 07.08, 07.09 e 07.10, exceto os cogumelos e trufas classificados na subposição 0709.5 e no código 0710.80.00 da NCM/SH",
+      "annex": "HORTICOLAS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "07070000": {
+      "description": "Produtos hortícolas das posições 07.01, 07.02.00.00, 07.03, 07.04, 07.05, 07.06, 0707.00.00, 07.08, 07.09 e 07.10, exceto os cogumelos e trufas classificados na subposição 0709.5 e no código 0710.80.00 da NCM/SH",
+      "annex": "HORTICOLAS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "08070000": {
+      "description": "Frutas frescas ou refrigeradas e frutas congeladas sem adição de açúcar ou de outros edulcorantes classificadas nas posições 08.03, 08.04, 08.05, 08.06, 08.07, 08.08, 08.09, 08.10 e 08.11 da NCM/SH",
+      "annex": "HORTICOLAS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "08040000": {
+      "description": "Frutas frescas ou refrigeradas e frutas congeladas sem adição de açúcar ou de outros edulcorantes classificadas nas posições 08.03, 08.04, 08.05, 08.06, 08.07, 08.08, 08.09, 08.10 e 08.11 da NCM/SH",
+      "annex": "HORTICOLAS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "08090000": {
+      "description": "Frutas frescas ou refrigeradas e frutas congeladas sem adição de açúcar ou de outros edulcorantes classificadas nas posições 08.03, 08.04, 08.05, 08.06, 08.07, 08.08, 08.09, 08.10 e 08.11 da NCM/SH",
+      "annex": "HORTICOLAS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "08100000": {
+      "description": "Frutas frescas ou refrigeradas e frutas congeladas sem adição de açúcar ou de outros edulcorantes classificadas nas posições 08.03, 08.04, 08.05, 08.06, 08.07, 08.08, 08.09, 08.10 e 08.11 da NCM/SH",
+      "annex": "HORTICOLAS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "08030000": {
+      "description": "Frutas frescas ou refrigeradas e frutas congeladas sem adição de açúcar ou de outros edulcorantes classificadas nas posições 08.03, 08.04, 08.05, 08.06, 08.07, 08.08, 08.09, 08.10 e 08.11 da NCM/SH",
+      "annex": "HORTICOLAS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "08060000": {
+      "description": "Frutas frescas ou refrigeradas e frutas congeladas sem adição de açúcar ou de outros edulcorantes classificadas nas posições 08.03, 08.04, 08.05, 08.06, 08.07, 08.08, 08.09, 08.10 e 08.11 da NCM/SH",
+      "annex": "HORTICOLAS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "08110000": {
+      "description": "Frutas frescas ou refrigeradas e frutas congeladas sem adição de açúcar ou de outros edulcorantes classificadas nas posições 08.03, 08.04, 08.05, 08.06, 08.07, 08.08, 08.09, 08.10 e 08.11 da NCM/SH",
+      "annex": "HORTICOLAS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "08050000": {
+      "description": "Frutas frescas ou refrigeradas e frutas congeladas sem adição de açúcar ou de outros edulcorantes classificadas nas posições 08.03, 08.04, 08.05, 08.06, 08.07, 08.08, 08.09, 08.10 e 08.11 da NCM/SH",
+      "annex": "HORTICOLAS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "08080000": {
+      "description": "Frutas frescas ou refrigeradas e frutas congeladas sem adição de açúcar ou de outros edulcorantes classificadas nas posições 08.03, 08.04, 08.05, 08.06, 08.07, 08.08, 08.09, 08.10 e 08.11 da NCM/SH",
+      "annex": "HORTICOLAS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "07140000": {
+      "description": "Raízes e tubérculos da posição 07.14 da NCM/SH",
+      "annex": "HORTICOLAS",
+      "reduction_pct": 100,
+      "regime": "zero"
+    },
+    "87046000": {
+      "description": "87.03; 8704.21 (exceto os caminhões); 8704.31 (exceto os caminhões); 8704.41.00 (exceto os caminhões); 8704.51.00 (exceto os caminhões); 8704.60.00 (exceto os caminhões); 8704.90.00 (exceto os caminhões); ressalvados os veículos com características técnicas específicas para uso operacional das Força",
+      "annex": "PRODUTOS SELETIVOS",
+      "reduction_pct": 0,
+      "regime": "seletivo"
+    },
+    "87049000": {
+      "description": "87.03; 8704.21 (exceto os caminhões); 8704.31 (exceto os caminhões); 8704.41.00 (exceto os caminhões); 8704.51.00 (exceto os caminhões); 8704.60.00 (exceto os caminhões); 8704.90.00 (exceto os caminhões); ressalvados os veículos com características técnicas específicas para uso operacional das Força",
+      "annex": "PRODUTOS SELETIVOS",
+      "reduction_pct": 0,
+      "regime": "seletivo"
+    },
+    "87042100": {
+      "description": "87.03; 8704.21 (exceto os caminhões); 8704.31 (exceto os caminhões); 8704.41.00 (exceto os caminhões); 8704.51.00 (exceto os caminhões); 8704.60.00 (exceto os caminhões); 8704.90.00 (exceto os caminhões); ressalvados os veículos com características técnicas específicas para uso operacional das Força",
+      "annex": "PRODUTOS SELETIVOS",
+      "reduction_pct": 0,
+      "regime": "seletivo"
+    },
+    "87044100": {
+      "description": "87.03; 8704.21 (exceto os caminhões); 8704.31 (exceto os caminhões); 8704.41.00 (exceto os caminhões); 8704.51.00 (exceto os caminhões); 8704.60.00 (exceto os caminhões); 8704.90.00 (exceto os caminhões); ressalvados os veículos com características técnicas específicas para uso operacional das Força",
+      "annex": "PRODUTOS SELETIVOS",
+      "reduction_pct": 0,
+      "regime": "seletivo"
+    },
+    "87045100": {
+      "description": "87.03; 8704.21 (exceto os caminhões); 8704.31 (exceto os caminhões); 8704.41.00 (exceto os caminhões); 8704.51.00 (exceto os caminhões); 8704.60.00 (exceto os caminhões); 8704.90.00 (exceto os caminhões); ressalvados os veículos com características técnicas específicas para uso operacional das Força",
+      "annex": "PRODUTOS SELETIVOS",
+      "reduction_pct": 0,
+      "regime": "seletivo"
+    },
+    "87043100": {
+      "description": "87.03; 8704.21 (exceto os caminhões); 8704.31 (exceto os caminhões); 8704.41.00 (exceto os caminhões); 8704.51.00 (exceto os caminhões); 8704.60.00 (exceto os caminhões); 8704.90.00 (exceto os caminhões); ressalvados os veículos com características técnicas específicas para uso operacional das Força",
+      "annex": "PRODUTOS SELETIVOS",
+      "reduction_pct": 0,
+      "regime": "seletivo"
+    },
+    "88026000": {
+      "description": "8802, exceto o código 8802.60.00; e embarcações com motor classificadas na posição 8903; ressalvadas as aeronaves e embarcações com características técnicas específicas para uso operacional das Forças Armadas ou dos órgãos de Segurança Pública",
+      "annex": "PRODUTOS SELETIVOS",
+      "reduction_pct": 0,
+      "regime": "seletivo"
+    },
+    "22021000": {
+      "description": "2202.10.00",
+      "annex": "PRODUTOS SELETIVOS",
+      "reduction_pct": 0,
+      "regime": "seletivo"
+    },
+    "27111100": {
+      "description": "2601; 2709.00.10; 2711.11.00; 2711.21.00",
+      "annex": "PRODUTOS SELETIVOS",
+      "reduction_pct": 0,
+      "regime": "seletivo"
+    },
+    "27112100": {
+      "description": "2601; 2709.00.10; 2711.11.00; 2711.21.00",
+      "annex": "PRODUTOS SELETIVOS",
+      "reduction_pct": 0,
+      "regime": "seletivo"
+    },
+    "27090010": {
+      "description": "2601; 2709.00.10; 2711.11.00; 2711.21.00",
+      "annex": "PRODUTOS SELETIVOS",
+      "reduction_pct": 0,
+      "regime": "seletivo"
+    }
+  },
+  "by_annex": {
+    "CESTA BASICA": {
+      "reduction_pct": 100,
+      "regime": "zero",
+      "header": "PRODUTOS DESTINADOS À ALIMENTAÇÃO HUMANA SUBMETIDOS À REDUÇÃO A ZERO DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "Arroz das subposições 1006.20 e 1006.30 e do código 1006.40.00 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "10063000",
+            "10062000",
+            "10064000"
+          ]
+        },
+        {
+          "item": "2",
+          "description": "Leite, em conformidade com os requisitos da legislação específica relativos ao consumo direto pela população, classificado nos códigos 0401.10.10, 0401.10.90, 0401.20.10, 0401.20.90, 0401.40.10 e 0401.50.10 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "04011010",
+            "04011090",
+            "04015010",
+            "04012090",
+            "04014010",
+            "04012010"
+          ]
+        },
+        {
+          "item": "3",
+          "description": "Leite em pó, em conformidade com os requisitos da legislação específica, classificado nos códigos 0402.10.10, 0402.10.90, 0402.21.10, 0402.21.20, 0402.29.10 e 0402.29.20 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "04022910",
+            "04022120",
+            "04021010",
+            "04021090",
+            "04022920",
+            "04022110"
+          ]
+        },
+        {
+          "item": "4",
+          "description": "Fórmulas infantis, em conformidade com os requisitos da legislação específica, classificadas nos códigos 1901.10.10, 1901.10.90 e 2106.90.90 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "19011090",
+            "21069090",
+            "19011010"
+          ]
+        },
+        {
+          "item": "5",
+          "description": "Manteiga do código 0405.10.00 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "04051000"
+          ]
+        },
+        {
+          "item": "6",
+          "description": "Margarina do código 1517.10.00 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "15171000"
+          ]
+        },
+        {
+          "item": "7",
+          "description": "Feijões dos códigos 0713.33.19, 0713.33.29, 0713.33.99 e 0713.35.90 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "07133590",
+            "07133399",
+            "07133329",
+            "07133319"
+          ]
+        },
+        {
+          "item": "8",
+          "description": "Café da posição 09.01 e da subposição 2101.1, ambos da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "09010000"
+          ]
+        },
+        {
+          "item": "9",
+          "description": "Óleo de babaçu do código 1513.21.20 da NCM/SH, em conformidade com os requisitos da legislação específica relativos ao consumo como alimento",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "15132120"
+          ]
+        },
+        {
+          "item": "10",
+          "description": "Farinha de mandioca classificada no código 1106.20.00 da NCM/SH e tapioca e seus sucedâneos do código 1903.00.00 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "19030000",
+            "11062000"
+          ]
+        },
+        {
+          "item": "11",
+          "description": "Farinha, grumos e sêmolas, de milho, dos códigos 1102.20.00 e 1103.13.00 da NCM",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "11031300",
+            "11022000"
+          ]
+        },
+        {
+          "item": "12",
+          "description": "Grãos de milho classificados no código 1104.19.00 e do código 1104.23.00 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "11042300",
+            "11041900"
+          ]
+        },
+        {
+          "item": "13",
+          "description": "Farinha de trigo do código 1101.00.10 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "11010010"
+          ]
+        },
+        {
+          "item": "14",
+          "description": "Açúcar classificado nos códigos 1701.14.00 e 1701.99.00 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "17019900",
+            "17011400"
+          ]
+        },
+        {
+          "item": "15",
+          "description": "Massas alimentícias da subposição 1902.1 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "16",
+          "description": "Pão comumente denominado pão francês, de formato cilíndrico e alongado, com miolo branco creme e macio, e casca dourada e crocante, elaborado a partir da mistura ou pré-mistura de farinha de trigo, fermento biológico, água, sal, açúcar, aditivos alimentares e produtos de fortificação de farinhas, em conformidade com a legislação vigente, classificado no código 1905.90.90 da NCM/SH e a pré-mistura ou massa, para preparação do pão comumente denominado pão francês, dos códigos 1901.20.10 e 1901.20.90 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "19059090",
+            "19012010",
+            "19012090"
+          ]
+        },
+        {
+          "item": "17",
+          "description": "Grãos de aveia dos códigos 1104.12.00 e 1104.22.00 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "11042200",
+            "11041200"
+          ]
+        },
+        {
+          "item": "18",
+          "description": "Farinha de aveia classificada no código 1102.90.00 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "11029000"
+          ]
+        },
+        {
+          "item": "19",
+          "description": "Carnes bovina, suína, ovina, caprina e de aves e produtos de origem animal (exceto foies gras) dos seguintes códigos, subposições e posições da NCM/SH: a) 02.01, 02.02, 0206.10.00, 0206.2 e 0210.20.00; b) 02.03, 0206.30.00, 0206.4, 0209.10 e 0210.1; c) 02.04 e 0210.99.20, carne caprina classificada no código 0210.99.90 e miudezas comestíveis de ovinos e caprinos classificadas nos códigos 0206.80.00 e 0206.90.00; d) 02.07, 0209.90.00 e 0210.99.1, exceto os produtos dos códigos 0207.43.00 e 0207.53.00",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "02109920",
+            "02063000",
+            "02109900",
+            "02074300",
+            "02099000",
+            "02069000",
+            "02075300",
+            "02068000",
+            "02061000",
+            "02091000",
+            "02102000",
+            "02109990"
+          ]
+        },
+        {
+          "item": "20",
+          "description": "Peixes e carnes de peixes (exceto salmonídeos, atuns, bacalhaus, hadoque, saithe e ovas e outros subprodutos) dos seguintes códigos, subposições e posições da NCM/SH: a) 03.02; exceto os produtos das subposições e dos códigos 0302.1, 0302.3, 0302.51.00, 0302.52.00, 0302.53.00 e 0302.9 da NCM/SH; b) 03.03; exceto os produtos das subposições e dos códigos 0303.1, 0303.4, 0303.63.00, 0303.64.00, 0303.65.00 e 0303.9 da NCM/SH; c) 03.04; exceto os salmonídeos, atuns, bacalhaus, hadoque e saithe classificados nas subposições 0304.4, 0304.5, 0304.7, 0304.8 e 0304.9 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "03036500",
+            "03036300",
+            "03036400",
+            "03025100",
+            "03025200",
+            "03025300"
+          ]
+        },
+        {
+          "item": "21",
+          "description": "Queijos tipo mozarela, minas, prato, queijo de coalho, ricota, requeijão, queijo provolone, queijo parmesão, queijo fresco não maturado e queijo do reino classificados nos códigos 0406.10.10, 0406.10.90, 0406.20.00, 0406.90.10, 0406.90.20 e 0406.90.30 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "04069010",
+            "04069020",
+            "04069030",
+            "04061010",
+            "04062000",
+            "04061090"
+          ]
+        },
+        {
+          "item": "22",
+          "description": "Sal em conformidade com os requisitos da legislação específica relativos ao teor de iodo enquadrado nos limites próprios para consumo humano classificado nos códigos 2501.00.20 e 2501.00.90 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "25010090",
+            "25010020"
+          ]
+        },
+        {
+          "item": "23",
+          "description": "Mate da posição 09.03 da NCM/SH",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "09030000"
+          ]
+        },
+        {
+          "item": "24",
+          "description": "Farinha com baixo teor de proteína para pessoas com aminoacidopatias, acidemias e defeitos do ciclo da uréia da NCM 1901.90.90",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "19019090"
+          ]
+        },
+        {
+          "item": "25",
+          "description": "Massas com baixo teor de proteína para pessoas com aminoacidopatias, acidemias e defeitos do ciclo da uréia da NCM 1902.19.00",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "19021900"
+          ]
+        },
+        {
+          "item": "26",
+          "description": "Fórmulas Dietoterápicas para Erros Inatos do Metabolismo da NCM 2106.9090",
+          "annex": "CESTA BASICA",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "EDUCACAO": {
+      "reduction_pct": 60,
+      "regime": "reduzido",
+      "header": "SERVIÇOS DE EDUCAÇÃO SUBMETIDOS À REDUÇÃO DE 60% (SESSENTA POR CENTO) DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "Ensino Infantil, inclusive creche e pré-escola",
+          "annex": "EDUCACAO",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2",
+          "description": "Ensino Fundamental",
+          "annex": "EDUCACAO",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "3",
+          "description": "Ensino Médio",
+          "annex": "EDUCACAO",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "4",
+          "description": "Ensino Técnico de Nível Médio",
+          "annex": "EDUCACAO",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "5",
+          "description": "Ensino para jovens e adultos destinado àqueles que não tiveram acesso ou continuidade de estudos no ensino fundamental e médio na idade própria",
+          "annex": "EDUCACAO",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "6",
+          "description": "Ensino Superior, compreendidos os cursos e programas de graduação, pós-graduação, de extensão e cursos sequenciais",
+          "annex": "EDUCACAO",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "7",
+          "description": "Ensino de sistemas linguísticos de natureza visomotora e de escrita tátil",
+          "annex": "EDUCACAO",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "8",
+          "description": "Ensino de línguas nativas de povos originários",
+          "annex": "EDUCACAO",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "9",
+          "description": "Educação especial destinada a pessoas com deficiência, transtornos globais do desenvolvimento e altas habilidades ou superdotação, de modo isolado ou agregado a qualquer das etapas de educação tratadas neste Anexo",
+          "annex": "EDUCACAO",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "SAUDE": {
+      "reduction_pct": 60,
+      "regime": "reduzido",
+      "header": "SERVIÇOS DE SAÚDE SUBMETIDOS À REDUÇÃO DE 60% (SESSENTA POR CENTO) DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "Serviços cirúrgicos",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2",
+          "description": "Serviços ginecológicos e obstétricos",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "3",
+          "description": "Serviços psiquiátricos",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "4",
+          "description": "Serviços prestados em Unidades de Terapia Intensiva",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "5",
+          "description": "Serviços de atendimento de urgência",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "6",
+          "description": "Serviços hospitalares não classificados em subposições anteriores",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "7",
+          "description": "Serviços de clínica médica",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "8",
+          "description": "Serviços médicos especializados",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "9",
+          "description": "Serviços odontológicos",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "10",
+          "description": "Serviços de enfermagem",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "11",
+          "description": "Serviços de fisioterapia",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "12",
+          "description": "Serviços laboratoriais",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "13",
+          "description": "Serviços de diagnóstico por imagem",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "14",
+          "description": "Serviços de bancos de material biológico humano",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "15",
+          "description": "Serviços de ambulância",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "16",
+          "description": "Serviços de assistência ao parto e pós-parto",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "17",
+          "description": "Serviços de psicologia",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "18",
+          "description": "Serviços de vigilância sanitária",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "19",
+          "description": "Serviços de epidemiologia",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "20",
+          "description": "Serviços de vacinação",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "21",
+          "description": "Serviços de fonoaudiologia",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "22",
+          "description": "Serviços de nutrição",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "23",
+          "description": "Serviços de optometria",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "24",
+          "description": "Serviços de instrumentação cirúrgica",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "25",
+          "description": "Serviços de biomedicina",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "26",
+          "description": "Serviços farmacêuticos",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "27",
+          "description": "Serviços de cuidado e assistência a idosos e pessoas com deficiência em unidades de acolhimento",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "28",
+          "description": "Serviços domiciliares de apoio a pessoas adultas, idosas, crianças, adolescentes, pessoas com transtornos mentais e com deficiências",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "29",
+          "description": "Serviços de esterilização",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "30",
+          "description": "Serviços funerários, de cremação e de embalsamamento",
+          "annex": "SAUDE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "INSTRUMENTOS MEDICOS": {
+      "reduction_pct": 60,
+      "regime": "reduzido",
+      "header": "DISPOSITIVOS MÉDICOS SUBMETIDOS À REDUÇÃO DE 60% (SESSENTA POR CENTO) DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "Bolsa para drenagem",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2",
+          "description": "Sistema para drenagem com conjunto intermediário para medição contínua da diurese",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "3",
+          "description": "Chapas e filmes para raios-X, sensibilizados em uma face",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "4",
+          "description": "Cimentos para reconstituição óssea",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "5",
+          "description": "Substitutos de enxerto ósseo",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "6",
+          "description": "Coletor para unidade de drenagem externa",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "7",
+          "description": "Conector completo com tampa",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "8",
+          "description": "Conector em Y",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "9",
+          "description": "Conjuntos de troca e concentrados polieletrolíticos para diálise",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "10",
+          "description": "Conjunto para autotransfusão",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "11",
+          "description": "Conjunto para hidrocefalia de baixo perfil",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "12",
+          "description": "Conjunto para hidrocefalia standard",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "13",
+          "description": "Eletrodo endocárdico definitivo",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "14",
+          "description": "Eletrodo epicárdico definitivo",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "15",
+          "description": "Eletrodo para marcapasso temporário endocárdico",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "16",
+          "description": "Eletrodo para marcapasso temporário epicárdico",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "17",
+          "description": "Espaçador de tendão",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "18",
+          "description": "Filmes especiais para raios-X sensibilizados em ambas as faces",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "19",
+          "description": "Filmes especiais para raios-X sensibilizados em uma face",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "20",
+          "description": "Filtro de linha arterial e venoso",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "21",
+          "description": "Filtro de sangue arterial e venoso para recirculação",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "22",
+          "description": "Filtro para cardioplegia",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "23",
+          "description": "Categutes esterilizados, materiais esterilizados semelhantes para suturas cirúrgicas (incluídos os fios absorvíveis esterilizados para cirurgia ou odontologia) e adesivos esterilizados para tecidos orgânicos, utilizados em cirurgia para fechar ferimentos; laminárias esterilizadas; hemostáticos absorvíveis esterilizados para cirurgia ou odontologia; barreiras antiaderentes esterilizadas para cirurgia ou odontologia, absorvíveis ou não",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "24",
+          "description": "Hemoconcentrador para circulação extracorpórea",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "25",
+          "description": "Hemodialisador capilar",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "26",
+          "description": "Marcapasso cardíaco câmara dupla",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "27",
+          "description": "Marcapasso cardíaco multiprogramável com telemetria",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "28",
+          "description": "Outras chapas e filmes para raios-X",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "29",
+          "description": "Oxigenador de bolha com tubos para circulação extracorpórea",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "30",
+          "description": "Oxigenador de membrana com tubos para circulação extracorpórea",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "31",
+          "description": "Reservatório de cardiotomia",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "32",
+          "description": "Reservatório para cardioplegia com tubo sem filtro",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "33",
+          "description": "Rins artificiais",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "34",
+          "description": "Shunt lombo-peritonal",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "35",
+          "description": "Substituto temporário de pele (biológica/sintética) (por cm2)",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "36",
+          "description": "Tela inorgânica",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "37",
+          "description": "Válvula para hidrocefalia",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "38",
+          "description": "Válvula para tratamento de ascite",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "39",
+          "description": "Fonte de irídio 192",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "40",
+          "description": "Stent vascular",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "41",
+          "description": "Reprocessador de filtros utilizados em hemodiálise",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "42",
+          "description": "Implantes osseointegráveis, na forma de parafuso, e seus componentes manufaturados, tais como tampas de proteção, montadores, conjuntos, pilares (cicatrizador, conector, de transferência ou temporário), cilindros, seus acessórios, destinados a sustentar, amparar, acoplar ou fixar próteses dentárias",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "43",
+          "description": "Cardiodesfibrilador implantável",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "44",
+          "description": "Espiral para embolização",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "45",
+          "description": "Imunoglobulina anti-Rh",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "46",
+          "description": "Outras imunoglobulinas séricas",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "47",
+          "description": "Concentrado de fator VIII",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "48",
+          "description": "Outras frações do sangue, exceto as preparadas como medicamentos, as imunoglobulinas séricas, o concentrado de fator VIII e a soroalbumina sob a forma de gel para preparação de reagentes de diagnóstico",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "49",
+          "description": "Reagentes de diagnóstico ou de laboratório em qualquer suporte e reagentes de diagnóstico ou de laboratório preparados, mesmo em um suporte, mesmo apresentados sob a forma de estojos, exceto os da posição 30.06; materiais de referência certificados",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "30060000"
+          ]
+        },
+        {
+          "item": "50",
+          "description": "Reagentes de diagnóstico concebidos para serem administrados ao paciente, à base de somatoliberina",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "51",
+          "description": "Produtos para obturação dentária, exceto cimentos",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "52",
+          "description": "Preparações em gel, concebidas para uso em medicina humana ou veterinária como lubrificante para certas partes do corpo em intervenções cirúrgicas ou exames médicos ou como agente de ligação entre o corpo e os instrumentos médicos",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "53",
+          "description": "Bolsas para uso em colostomia, ileostomia e urostomia",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "54",
+          "description": "Equipamentos identificáveis para ostomia, exceto bolsas para uso em colostomia, ileostomia e urostomia",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "55",
+          "description": "Bolsas para uso em medicina (hemodiálise e usos semelhantes)",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "56",
+          "description": "Artigos exclusivamente de laboratório de análises clínicas",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "57",
+          "description": "Acessórios de plástico do tipo utilizado em linhas de sangue para hemodiálise, tais como: obturadores, incluídos os reguláveis (clamps), clipes e similares",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "58",
+          "description": "Luvas cirúrgicas e luvas de procedimento",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "59",
+          "description": "Seringas, mesmo com agulhas",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "60",
+          "description": "Agulhas tubulares de metal e agulhas para suturas",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "61",
+          "description": "Agulhas, exceto as de metal e as para suturas",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "62",
+          "description": "Sondas, cateteres e cânulas, individualmente ou em conjunto",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "63",
+          "description": "Lancetas para vacinação e cautérios",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "64",
+          "description": "Instrumentos semelhantes a seringas, a agulhas, a cateteres e a cânulas",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "65",
+          "description": "Brocas para odontologia",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "66",
+          "description": "Limas",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "67",
+          "description": "Grampos e clipes, seus aplicadores e extratores",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "68",
+          "description": "Outros instrumentos e aparelhos para medicina, cirurgia e odontologia, excluídas seringas e agulhas, das posições 9018.31 e 9018.32",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "90183200",
+            "90183100"
+          ]
+        },
+        {
+          "item": "69",
+          "description": "Mesas de operação e para exames, camas hospitalares e de uso clínico",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "70",
+          "description": "Fotocoagulador a laser",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "71",
+          "description": "Bisturi elétrico",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "72",
+          "description": "Aparelho de anestesia com monitor multiparâmetros",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "73",
+          "description": "Autoclave",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "74",
+          "description": "Retinógrafo",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "75",
+          "description": "Meios de cultura",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "76",
+          "description": "Termocicladores utilizados em diagnóstico e na pesquisa científica",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "77",
+          "description": "Partes e peças de termocicladores",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "78",
+          "description": "Pipetadores laboratoriais para diagnóstico e pesquisa científica",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "79",
+          "description": "Cromatógrafo de fase líquida",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "80",
+          "description": "Sequenciadores automáticos de ADN mediante eletroforese capilar",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "81",
+          "description": "Aparelhos de eletroforese para diagnóstico e pesquisa científica",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "82",
+          "description": "Analisadores por espectrofotometria para diagnóstico e pesquisa científica",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "83",
+          "description": "Analisadores por fotometria para diagnóstico e pesquisa científica",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "84",
+          "description": "Citômetro de fluxo",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "85",
+          "description": "Analisadores por radiações ópticas para diagnóstico e pesquisa científica",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "86",
+          "description": "Outros analisadores para diagnóstico e pesquisa científica",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "87",
+          "description": "Espectrômetro de massa",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "88",
+          "description": "Outros analisadores para diagnóstico",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "89",
+          "description": "Micrótomo",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "90",
+          "description": "Partes e peças de equipamentos analisadores laboratoriais",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "91",
+          "description": "Preservativo",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "92",
+          "description": "Dispositivo intrauterino (DIU)",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "93",
+          "description": "Substância para conservação de órgãos e tecidos",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "94",
+          "description": "Introdutor de punção para implante de eletrodo endocárdico",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "95",
+          "description": "Enxerto tubular de politetrafluoretileno - PTFE (por cm2)",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "96",
+          "description": "Enxerto arterial e venoso tubular inorgânico",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "97",
+          "description": "Botão para crânio",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "98",
+          "description": "Guia metálico para introdução de cateter duplo lumen",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "99",
+          "description": "Dilatador para implante de cateter duplo lumen",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "100",
+          "description": "Guia de troca para angioplastia",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "101",
+          "description": "Introdutor para cateter com e sem válvula",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "102",
+          "description": "Kit cânula",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "103",
+          "description": "Dreno para sucção",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "104",
+          "description": "Sistema de drenagem mediastinal",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "105",
+          "description": "Conjunto descartável de balão intra-aórtico",
+          "annex": "INSTRUMENTOS MEDICOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "ACESSIBILIDADE": {
+      "reduction_pct": 60,
+      "regime": "reduzido",
+      "header": "DISPOSITIVOS DE ACESSIBILIDADE PRÓPRIOS PARA PESSOAS COM DEFICIÊNCIA SUBMETIDOS À REDUÇÃO DE 60% (SESSENTA POR CENTO) DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "ACESSÓRIOS E ADAPTAÇÕES ESPECIAIS PARA SEREM INSTALADOS EM VEÍCULOS AUTOMOTORES PERTENCENTES OU QUE FOREM DESTINADOS A PESSOAS COM DEFICIÊNCIA FÍSICA",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.1",
+          "description": "Comando de embreagem manual, suas partes e acessórios",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.2",
+          "description": "Comando de freio manual, suas partes e acessórios",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.3",
+          "description": "Comando de acelerador manual, suas partes e acessórios",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.4",
+          "description": "Inversão do pedal do acelerador, suas partes e acessórios",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.5",
+          "description": "Prolongamento de pedais, suas partes e acessórios",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.6",
+          "description": "Empunhadura, suas partes e acessórios",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.7",
+          "description": "Servo acionadores de volante, suas partes e acessórios",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.8",
+          "description": "Deslocamento de comandos do painel, suas partes e acessórios",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.9",
+          "description": "Plataforma giratória para deslocamento giratório do assento de veículo, suas partes e acessórios",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.10",
+          "description": "Trilho elétrico para deslocamento do assento dianteiro para outra parte do interior do veículo, suas partes e acessórios",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.11",
+          "description": "Plataforma de elevação para cadeira de rodas, manual, eletro-hidráulica ou eletromecânica",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.12",
+          "description": "Rampa para cadeira de rodas, suas partes e acessórios",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.13",
+          "description": "Guincho para transportar cadeira de rodas",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2",
+          "description": "PRODUTOS DESTINADOS A USO DE PESSOA COM DEFICIÊNCIA VISUAL",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.1",
+          "description": "Bengala inteiriça, dobrável ou telescópica, com ponteira de náilon",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.2",
+          "description": "Relógio em braille, com sintetizador de voz e mostrador ampliado",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.3",
+          "description": "Termômetro digital com sistema de voz",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.4",
+          "description": "Calculadora digital com sistema de voz, com verbalização dos ajustes de minutos e horas, tanto no modo horário, como no modo alarme, e comunicação por voz dos dígitos de cálculo e resultados",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.5",
+          "description": "Agenda eletrônica com teclado em braille, com ou sem sintetizador de voz",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.6",
+          "description": "Reglete para escrita em braille",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.7",
+          "description": "Display braille e teclado em Braille para uso em microcomputador, com sistema interativo para introdução e leitura de dados por meio de tabelas de caracteres Braille",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.8",
+          "description": "Máquina de escrever para escrita em braille, manual ou elétrica, com teclado de datilografia comum ou na formação Braille",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.9",
+          "description": "Impressora de caracteres em braille para uso com microcomputadores, com sistema de folha solta ou dois lados da folha, com ou sem sistema de comando de voz ou sistema acústico",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.10",
+          "description": "Equipamento sintetizador para reprodução em voz de sinais gerados por microcomputadores, permitida a leitura de dados de arquivos, de uso interno ou externo, com padrão de protocolo SSIL de interface com softwares leitores de tela",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "3",
+          "description": "PRODUTOS DESTINADOS AO USO DE PESSOAS COM DEFICIÊNCIA AUDITIVA",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "3.1",
+          "description": "Aparelho telefônico com teclado alfanumérico e visor luminoso, com ou sem impressora embutida, que permite converter sinais transmitidos por sistema telefônico em caracteres e símbolos",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "3.2",
+          "description": "Relógio despertador vibratório e/ou luminoso",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "3.3",
+          "description": "Unidades de entrada de dados tipo mouse controláveis pelo movimento dos olhos para deficientes",
+          "annex": "ACESSIBILIDADE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "FORMULAS NUTRICIONAIS": {
+      "reduction_pct": 60,
+      "regime": "reduzido",
+      "header": "COMPOSIÇÕES PARA NUTRIÇÃO ENTERAL OU PARENTERAL E COMPOSIÇÕES ESPECIAIS E FÓRMULAS NUTRICIONAIS DESTINADAS ÀS PESSOAS COM ERROS INATOS DO METABOLISMO SUBMETIDAS À REDUÇÃO DE 60% (SESSENTA POR CENTO) DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "Acetato de dextroalfatocoferol",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2",
+          "description": "Acetato de lisina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "3",
+          "description": "Acetato de potássio",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "4",
+          "description": "Acetato de sódio",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "5",
+          "description": "Acetato de zinco",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "6",
+          "description": "Acetiltirosina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "7",
+          "description": "Ácido acético",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "8",
+          "description": "Ácido ascórbico",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "9",
+          "description": "Ácido aspártico",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "10",
+          "description": "Ácido cítrico",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "11",
+          "description": "Ácido fólico",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "12",
+          "description": "Ácido glutâmico",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "13",
+          "description": "Ácido málico",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "14",
+          "description": "Ácido selenioso",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "15",
+          "description": "Água para injeção",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "16",
+          "description": "Alanilglutamina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "17",
+          "description": "Alanina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "18",
+          "description": "Albumina humana",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "19",
+          "description": "Arginina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "20",
+          "description": "Asparagina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "21",
+          "description": "Bicarbonato de sódio",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "22",
+          "description": "Biotina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "23",
+          "description": "Cianocobalamina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "24",
+          "description": "Cistina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "25",
+          "description": "Cloreto crômico",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "26",
+          "description": "Cloreto de cálcio",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "27",
+          "description": "Cloreto de magnésio",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "28",
+          "description": "Cloreto de manganês",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "29",
+          "description": "Cloreto de potássio",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "30",
+          "description": "Cloreto de sódio",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "31",
+          "description": "Cloreto de zinco",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "32",
+          "description": "Cloridrato de piridoxina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "33",
+          "description": "Cloridrato de tiamina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "34",
+          "description": "Cocarboxilase",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "35",
+          "description": "Colecalciferol",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "36",
+          "description": "Ergocalciferol",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "37",
+          "description": "Fenilalanina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "38",
+          "description": "Fitomenadiona",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "39",
+          "description": "Fórmula para dieta isenta de fenilalanina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "40",
+          "description": "Fórmula para dieta isenta demetionina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "41",
+          "description": "Fórmula para dieta isenta de lisina e pobre de triptofano",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "42",
+          "description": "Fórmula para dieta isenta de leucina, de isoleucina ou de valina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "43",
+          "description": "Fórmula para dieta isenta de fenilalanina e de metionina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "44",
+          "description": "Fórmula para dieta isenta de aminoácidos não essenciais",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "45",
+          "description": "Fórmula para dieta isenta de metionina, de treonina, de valina e restrita de isoleucina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "46",
+          "description": "Fórmula para dieta cetogênica, na proporção de 4 g de gordura para cada 1 g de carboidratos e proteínas",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "47",
+          "description": "Fórmula hiperlipídica, para suplementação de triglicerídios de cadeia média ou triheptanoína",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "48",
+          "description": "Preparação líquida, de quatro partes de trioleato de glicerol de ácido para uma parte de trierucato de glicerol",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "49",
+          "description": "Fosfato de potássio dibásico",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "50",
+          "description": "Fosfato de potássio monobásico",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "51",
+          "description": "Fosfato de sódio monobásico",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "52",
+          "description": "Fosfato de tiamina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "53",
+          "description": "Fosfato sódico de riboflavina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "54",
+          "description": "Frutose",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "55",
+          "description": "Glicerofosfato de sódio",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "56",
+          "description": "Glicina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "57",
+          "description": "Gliconato de cálcio",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "58",
+          "description": "Glicose",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "59",
+          "description": "Histidina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "60",
+          "description": "Icodextrina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "61",
+          "description": "Iodeto de potássio",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "62",
+          "description": "Isoleucina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "63",
+          "description": "Lecitina de ovo",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "64",
+          "description": "Leucina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "65",
+          "description": "Levovalina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "66",
+          "description": "Lisina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "67",
+          "description": "Metionina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "68",
+          "description": "Nicotinamida",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "69",
+          "description": "Palmitato de retinol",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "70",
+          "description": "Prolina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "71",
+          "description": "Riboflavina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "72",
+          "description": "Selenito de sódio",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "73",
+          "description": "Serina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "74",
+          "description": "Sorbitol",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "75",
+          "description": "Sulfato de magnésio",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "76",
+          "description": "Sulfato de zinco",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "77",
+          "description": "Taurina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "78",
+          "description": "Tirosina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "79",
+          "description": "Tocoferol",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "80",
+          "description": "Treonina",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "81",
+          "description": "Triglicerídeos de cadeia média",
+          "annex": "FORMULAS NUTRICIONAIS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "ALIMENTOS": {
+      "reduction_pct": 60,
+      "regime": "reduzido",
+      "header": "ALIMENTOS DESTINADOS AO CONSUMO HUMANO SUBMETIDOS À REDUÇÃO DE 60% (SESSENTA POR CENTO) DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "Crustáceos (exceto lagostas e lagostim) e moluscos dos seguintes códigos e subposições da NCM/SH: a) 0306.1 e 0306.3, exceto os produtos da subposição 0306.11 e dos códigos 0306.15.00, 0306.31.00, 0306.34.00, 0306.39.10; e b) 0307.31.00, 0307.32.00, 0307.42.00, 0307.43, 0307.51.00, 0307.52.00, 0307.91.00 e 0307.92.00",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "03061100",
+            "03073100",
+            "03073200",
+            "03061500",
+            "03079100",
+            "03079200",
+            "03063400",
+            "03074300",
+            "03074200",
+            "03063910",
+            "03075200",
+            "03075100",
+            "03063100"
+          ]
+        },
+        {
+          "item": "2",
+          "description": "Leite fermentado, bebidas e compostos lácteos, em conformidade com os requisitos da legislação específica, classificados nos códigos 0403.20.00, 0403.90.00 e 2202.99.00 da NCM/SH",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "22029900",
+            "04032000",
+            "04039000"
+          ]
+        },
+        {
+          "item": "3",
+          "description": "Mel natural do código 0409.00.00 da NCM/SH",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "04090000"
+          ]
+        },
+        {
+          "item": "4",
+          "description": "Farinha das posições 1101.00, 11.02, 11.05, 11.06 e 12.08 da NCM/SH; ressalvados os produtos relacionados no Anexo I",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "11010000"
+          ]
+        },
+        {
+          "item": "5",
+          "description": "Grumos e sêmolas de cereais dos códigos 1103.11.00 e 1103.19.00 da NCM/SH; ressalvados os produtos relacionados no Anexo I",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "11031900",
+            "11031100"
+          ]
+        },
+        {
+          "item": "6",
+          "description": "Grãos de cereais das subposições 1104.1 e 1104.2 da NCM/SH; ressalvados os produtos relacionados no Anexo I",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "7",
+          "description": "Amido de milho do código 1108.12.00 da NCM/SH",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "11081200"
+          ]
+        },
+        {
+          "item": "8",
+          "description": "Óleos de soja, de milho, canola e demais óleos vegetais, em conformidade com os requisitos da legislação específica relativos ao consumo como alimento, classificados na subposição 1507.90 e nas posições 15.08, 15.11, 15.12, 15.13, 15.14 e 15.15 da NCM/SH",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "15079000"
+          ]
+        },
+        {
+          "item": "9",
+          "description": "Massas alimentícias dos códigos 1902.20.00 e 1902.30.00 da NCM/SH",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "19022000",
+            "19023000"
+          ]
+        },
+        {
+          "item": "10",
+          "description": "Sucos naturais de fruta ou de produtos hortícolas sem adição de açúcar ou de outros edulcorantes e sem conservantes classificados na posição 20.09 da NCM/SH",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "20090000"
+          ]
+        },
+        {
+          "item": "11",
+          "description": "Polpas de frutas ou de produtos hortícolas sem adição de açúcar ou de outros edulcorantes e sem conservantes classificadas na posição 20.08 da NCM/SH",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "20080000"
+          ]
+        },
+        {
+          "item": "12",
+          "description": "Pão de Forma do código 1905.90.10 da NCM/SH",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "19059010"
+          ]
+        },
+        {
+          "item": "13",
+          "description": "Extrato de tomate classificado no código 2002.90.00 da NCM/SH",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "20029000"
+          ]
+        },
+        {
+          "item": "14",
+          "description": "Frutas, produtos hortícolas e demais produtos vegetais, sem adição de açúcar ou de outros edulcorantes, classificados nos capítulos 7 e 8 da NCM/SH, ressalvados as frutas de casca rija não regionais e os produtos relacionados nos Anexos I e XV e excetuadas as posições 07.11, 08.12 e 0814.00.00",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "08140000"
+          ]
+        },
+        {
+          "item": "15",
+          "description": "Cereais do capítulo 10 e sementes e frutos oleaginosos classificados no capítulo 12, ambos da NCM/SH, ressalvados os produtos relacionados no Anexo I",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "16",
+          "description": "Produtos hortícolas, mesmo misturados entre si, apenas pré-cozidos ou cozidos em água ou vapor, sem adição de sal ou de quaisquer outros produtos e substâncias, classificados nas posições 20.04 e 20.05 e no código 2002.10.00 da NCM/SH",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "20021000"
+          ]
+        },
+        {
+          "item": "17",
+          "description": "Fruta de casca rija regional, amendoins e outras sementes, mesmo misturados entre si, apenas torrados ou cozidos, sem adição de sal ou de quaisquer outros produtos e substâncias, classificados na subposição 2008.1 da NCM/SH",
+          "annex": "ALIMENTOS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "HIGIENE": {
+      "reduction_pct": 60,
+      "regime": "reduzido",
+      "header": "PRODUTOS DE HIGIENE PESSOAL E LIMPEZA MAJORITARIAMENTE CONSUMIDOS POR FAMÍLIAS DE BAIXA RENDA SUBMETIDOS À REDUÇÃO DE 60% (SESSENTA POR CENTO) DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "Sabões de toucador classificados no código 3401.11.90 da NCM/SH",
+          "annex": "HIGIENE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "34011190"
+          ]
+        },
+        {
+          "item": "2",
+          "description": "Dentifrícios do código 3306.10.00 da NCM/SH",
+          "annex": "HIGIENE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "33061000"
+          ]
+        },
+        {
+          "item": "3",
+          "description": "Escovas de dentes do código 9603.21.00 da NCM/SH",
+          "annex": "HIGIENE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "96032100"
+          ]
+        },
+        {
+          "item": "4",
+          "description": "Papel higiênico do código 4818.10.00 da NCM/SH",
+          "annex": "HIGIENE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "48181000"
+          ]
+        },
+        {
+          "item": "5",
+          "description": "Água sanitária classificada no código 3808.94.19 da NCM/SH",
+          "annex": "HIGIENE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "38089419"
+          ]
+        },
+        {
+          "item": "6",
+          "description": "Sabões em barra classificados no código 3401.19.00 da NCM/SH",
+          "annex": "HIGIENE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "34011900"
+          ]
+        },
+        {
+          "item": "7",
+          "description": "Fraldas e artigos higiênicos semelhantes, de qualquer matéria classificadas no código 9619.00.00 da NCM/SH",
+          "annex": "HIGIENE",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": [
+            "96190000"
+          ]
+        }
+      ]
+    },
+    "AGRICOLAS": {
+      "reduction_pct": 60,
+      "regime": "reduzido",
+      "header": "INSUMOS AGROPECUÁRIOS E AQUÍCOLAS SUBMETIDOS À REDUÇÃO DE 60% (SESSENTA POR CENTO) DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "Biofertilizantes, em conformidade com as definições e demais requisitos da legislação específica",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2",
+          "description": "Fertilizantes (adubos), em conformidade com as definições e demais requisitos da legislação específica",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "3",
+          "description": "Corretivos de solo (inclusive condicionadores), remineralizadores e substratos para plantas; em conformidade com as definições e demais requisitos da legislação específica",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "4",
+          "description": "Inoculantes, meios de cultura e outros microorganismos para uso agrícola; em conformidade com as definições e demais requisitos da legislação específica",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "5",
+          "description": "Bioestimulantes e bioinsumos para controle fitossanitário, em conformidade com as definições e demais requisitos da legislação específica",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "6",
+          "description": "Inseticidas, fungicidas, formicidas, herbicidas, parasiticidas, germicidas, acaricidas, nematicidas, raticidas, desfolhantes, dessecantes, espalhantes adesivos, estimuladores e inibidores de crescimento (reguladores); todos destinados diretamente ao uso agropecuário ou destinados diretamente à fabricação de defensivo agropecuário; em conformidade com as definições e demais requisitos da legislação específica",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "7",
+          "description": "Calcário, casca de coco triturada, turfa; tortas, bagaços e demais resíduos e desperdícios vegetais das indústrias alimentares; cascas, serragens e demais resíduos e desperdícios de madeira; resíduos da indústria de celulose (dregs e grits), ossos, borra de carnaúba, cinzas, resíduos agroindustriais orgânicos, DL-Metionina e seus análogos, vermiculita e argilas expandidas, palhas e cascas de produtos vegetais, fibra de coco e outras fibras vegetais, silicatos de potássio ou de magnésio, resinas e oleorresinas naturais, sucos e extratos vegetais, aminoácidos e microrganismos mortos, óleos essenciais, argilas e terras, carvão vegetal e pastas mecânicas de madeira; todos destinados diretamente à fabricação de biofertilizantes, fertilizantes, corretivos de solo (inclusive condicionadores), remineralizadores, substratos para plantas, bioestimulantes ou biodefensivos para controle fitossanitário ou utilizados diretamente como biofertilizantes, fertilizantes, corretivos de solo (inclusive condicionadores), remineralizadores, substratos para plantas, bioestimulantes ou biodefensivos para controle fitossanitário; em conformidade com as definições e demais requisitos da legislação específica",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "8",
+          "description": "Ácido nítrico, ácido sulfúrico, ácido fosfórico, fosfatos de cálcio naturais, enxofre, ácido clorídrico, ácido fosforoso, ácido acético, hidróxido de sódio e carbonato dissódico; todos destinados diretamente à fabricação de fertilizantes",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "9",
+          "description": "Enzimas preparadas para decomposição de matéria orgânica animal e vegetal",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "10",
+          "description": "Semente genética, semente básica, semente nativa in natura, semente certificada de primeira geração (C1), semente certificada de segunda geração (C2), semente não certificada de primeira geração (S1), semente não certificada de segunda geração (S2) e sementes de cultivar local, tradicional ou crioula; em conformidade com as definições e demais requisitos da legislação específica",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "11",
+          "description": "Mudas de plantas e demais materiais propagativos de plantas e fungos, inclusive plantas e fungos nativos de espécies florestais; em conformidade com as definições e demais requisitos da legislação específica",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "12",
+          "description": "Vacinas, soros e medicamentos, de uso veterinário, exceto de animais domésticos",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "13",
+          "description": "Aves de um dia, exceto as ornamentais",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "14",
+          "description": "Embriões e sêmen, congelado ou resfriado",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "15",
+          "description": "Reprodutores de raça pura, inclusive matrizes de animais puros de origem com registro genealógico; em conformidade com as definições e demais requisitos da legislação específica",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "16",
+          "description": "Ovos fertilizados",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "17",
+          "description": "Girinos e alevinos",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "18",
+          "description": "Rações para animais, concentrados, suplementos, aditivos, premix ou núcleo, exceto para animais domésticos",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "19",
+          "description": "Sementes e cereais, mesmo triturados, em grãos esmagados ou trabalhados de outro modo; todos destinados diretamente à fabricação de ração para animais ou diretamente à alimentação animal, exceto de animais domésticos",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "20",
+          "description": "Farelos e tortas de produtos vegetais e demais resíduos e desperdícios das indústrias alimentares; todos destinados diretamente à fabricação de ração para animais ou diretamente à alimentação animal, exceto de animais domésticos",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "21",
+          "description": "Alho em pó, sal mineralizado, farinhas de peixe, de ostra, de carne, de osso, de pena, de sangue e de víscera, calcário calcítico,  gorduras e óleos animais, resíduos de óleo e de gordura de origem animal ou vegetal descartados por empresas do ramo alimentício, e DL-Metionina e seus análogos; todos destinados diretamente à fabricação de ração para animais ou diretamente à alimentação animal, exceto de animais domésticos",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "22",
+          "description": "Serviços agronômicos",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "23",
+          "description": "Serviços de técnico agrícola, agropecuário ou em agroecologia",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "24",
+          "description": "Serviços veterinários para produção animal",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "25",
+          "description": "Serviços de zootecnistas",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "26",
+          "description": "Serviços de inseminação e fertilização de animais de criação",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "27",
+          "description": "Serviços de engenharia florestal",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "28",
+          "description": "Serviços de pulverização e controle de pragas",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "29",
+          "description": "Serviços de semeadura, adubação, inclusive mistura de adubos, reparação de solo, plantio e colheita",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "30",
+          "description": "Serviços de projetos para irrigação e fertirrigação",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "31",
+          "description": "Serviços de análise laboratorial de solos, sementes e outros materiais propagativos, fitossanitários, água de produção, bromatologia e sanidade animal",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "32",
+          "description": "Licenciamento de direitos sobre cultivares",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "33",
+          "description": "Cessão definitiva de direitos sobre cultivares",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "34",
+          "description": "Melhoramento genético de animais e plantas e biotecnologia, inclusive seus royalties",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "35",
+          "description": "Vinhaça",
+          "annex": "AGRICOLAS",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "CULTURA": {
+      "reduction_pct": 60,
+      "regime": "reduzido",
+      "header": "PRODUÇÕES NACIONAIS ARTÍSTICAS, CULTURAIS, DE EVENTOS, JORNALÍSTICAS E AUDIOVISUAIS SUBMETIDAS À REDUÇÃO DE 60% (SESSENTA POR CENTO) DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "Licenciamento de direitos de autor e de direitos conexos",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2",
+          "description": "Licenciamento de direitos de obras literárias",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "3",
+          "description": "Licenciamento de direitos de autor de obras cinematográficas",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "4",
+          "description": "Licenciamento de direitos de autor de obras jornalísticas",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "5",
+          "description": "Licenciamento de direitos conexos de artistas intérpretes ou executantes em obras audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "6",
+          "description": "Licenciamento de direitos conexos de produtores de obras audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "7",
+          "description": "Licenciamento de direitos de obras audiovisuais destinadas à televisão",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "8",
+          "description": "Licenciamento de direitos de obras musicais e fonogramas",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "9",
+          "description": "Cessão temporária de direitos de obras literárias",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "10",
+          "description": "Cessão temporária de direitos de autor de obras cinematográficas",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "11",
+          "description": "Cessão temporária de direitos de autor de obras jornalísticas",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "12",
+          "description": "Cessão temporária de direitos conexos de artistas intérpretes ou executantes em obras audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "13",
+          "description": "Cessão temporária de direitos conexos de produtores de obras audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "14",
+          "description": "Cessão temporária de direitos de obras audiovisuais destinadas à televisão",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "15",
+          "description": "Cessão temporária de direitos de obras musicais e fonogramas",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "16",
+          "description": "Cessão definitiva de direitos de obras literárias",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "17",
+          "description": "Cessão definitiva de direitos de obras cinematográficas",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "18",
+          "description": "Cessão definitiva de direitos de obras jornalísticas",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "19",
+          "description": "Cessão definitiva de direitos de obras musicais e fonogramas",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "20",
+          "description": "Serviços de agências de notícias para jornais e periódicos",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "21",
+          "description": "Serviços de agências de notícias para mídia audiovisual",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "22",
+          "description": "Serviços de assistência e organização de convenções, feiras de negócios, exposições e outros eventos",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "23",
+          "description": "Serviços de gravação de som em estúdio destinados diretamente às produções nacionais artísticas, culturais e audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "24",
+          "description": "Serviços de gravação de som ao vivo destinados diretamente às produções nacionais artísticas, culturais e audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "25",
+          "description": "Serviços de produção de programas de televisão, videoteipes e filmes",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "26",
+          "description": "Serviços de produção de programas de rádio",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "27",
+          "description": "Serviços de edição de obras audiovisuais destinados diretamente às produções nacionais artísticas, culturais e audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "28",
+          "description": "Serviços de duplicação e transferência de obras audiovisuais destinados diretamente às produções nacionais artísticas, culturais e audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "29",
+          "description": "Serviços de correção de cor e restauração digital de obras audiovisuais destinados diretamente às produções nacionais artísticas, culturais e audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "30",
+          "description": "Serviços de efeitos visuais em obras audiovisuais destinados diretamente às produções nacionais artísticas, culturais e audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "31",
+          "description": "Serviços de animação destinados diretamente às produções nacionais artísticas, culturais e audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "32",
+          "description": "Serviços de legendas, títulos e dublagem em obras audiovisuais destinados diretamente às produções nacionais artísticas, culturais e audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "33",
+          "description": "Serviços de projeto e edição de som em obras audiovisuais destinados diretamente às produções nacionais artísticas, culturais e audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "34",
+          "description": "Serviços de projeção de filmes",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "35",
+          "description": "Serviços de produção audiovisual, de apoio e relacionados não classificados em subposições anteriores",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "36",
+          "description": "Serviços de organização e promoção de atuações artísticas ao vivo",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "37",
+          "description": "Serviços de produção e apresentação de atuações artísticas ao vivo, inclusive os ingressos relativos a estes serviços",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "38",
+          "description": "Serviços de atuação artística",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "39",
+          "description": "Serviços de autores, compositores, escultores, pintores e outros artistas, exceto os de atuação artística",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "40",
+          "description": "Serviços de museus, inclusive serviços relativos a mostras e coleções de arte",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "41",
+          "description": "Serviços de reservas de ingressos para eventos de produções nacionais artísticas, culturais e audiovisuais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "42",
+          "description": "Fotografias artísticas originais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "43",
+          "description": "Quadros, pinturas e desenhos, artísticos originais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "44",
+          "description": "Gravuras, estampas e litografias, artísticas originais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "45",
+          "description": "Produções originais de arte estatutária ou de escultura",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "46",
+          "description": "Licenciamento de direitos conexos de artistas intérpretes ou executantes",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "47",
+          "description": "Cessão temporária de direitos de autor e de direitos conexos",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "48",
+          "description": "Cessão temporária de direitos conexos de artistas intérpretes ou executantes",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "49",
+          "description": "Licenciamento de direitos de autor de obras teatrais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "50",
+          "description": "Licenciamento de direitos conexos de produtores de obras teatrais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "51",
+          "description": "Licenciamento de direitos conexos de artistas intérpretes ou executantes em obras teatrais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "52",
+          "description": "Cessão temporária de direitos de autor de obras teatrais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "53",
+          "description": "Cessão temporária de direitos conexos de artistas intérpretes ou executantes em obras teatrais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "54",
+          "description": "Cessão temporária de direitos conexos de produtores intérpretes ou executantes em obras teatrais",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "55",
+          "description": "Serviços de sonorização, iluminação, figurino, videografia e cenografia para atuações artísticas ao vivo, destinados às produções de que trata o art. 139 desta Lei Complementar",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "56",
+          "description": "Serviços de locação, montagem e desmontagem de palcos, destinados às produções de que trata o art. 139 desta Lei Complementar",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "57",
+          "description": "Serviços de apresentação e promoção de atuações artísticas, inclusive gestão de espaços destinados a apresentações de exposições de artes cênicas, espetáculos e demais produções de que trata o art. 139 desta Lei Complementar",
+          "annex": "CULTURA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "SEGURANCA": {
+      "reduction_pct": 60,
+      "regime": "reduzido",
+      "header": "BENS E SERVIÇOS RELACIONADOS À SOBERANIA E À SEGURANÇA NACIONAL, À SEGURANÇA DA INFORMAÇÃO E À SEGURANÇA CIBERNÉTICA SUBMETIDOS À REDUÇÃO DE 60% (SESSENTA POR CENTO) DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "SERVIÇOS RELACIONADOS À SOBERANIA E À SEGURANÇA NACIONAL, À SEGURANÇA DA INFORMAÇÃO E À SEGURANÇA CIBERNÉTICA",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.1",
+          "description": "Segurança em Tecnologia da Informação (TI)",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.2",
+          "description": "Serviços de projeto e desenvolvimento de aplicativos e programas em Tecnologia da Informação (TI) não classificados em subposições anteriores",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.3",
+          "description": "Serviços de Tecnologia da Informação (TI) não classificados em subposições anteriores",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.4",
+          "description": "(VETADO)",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.5",
+          "description": "(VETADO)",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.6",
+          "description": "Serviço de localização de dispositivo perdido ou furtado, para proteção de informações pessoais",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.7",
+          "description": "Serviço de bloqueio de dispositivo perdido ou furtado, para proteção de informações pessoais",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.8",
+          "description": "(VETADO)",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.9",
+          "description": "(VETADO)",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.10",
+          "description": "Serviço de monitoramento de uso de dados pessoais e corporativos em redes do tipo onion",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.11",
+          "description": "Serviço de conexão protegida e criptografada para dispositivos",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.12",
+          "description": "Identificação e alerta de arquivos maliciosos ou alterações indevidas em dispositivos, que permitam o acesso a informações",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.13",
+          "description": "Serviços de manutenção e reparação de veículos militares para uso pela segurança nacional",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.14",
+          "description": "Serviços de manutenção e reparação de equipamentos militares para uso pela segurança nacional",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2",
+          "description": "BENS RELACIONADOS À SOBERANIA E À SEGURANÇA NACIONAL, À SEGURANÇA DA INFORMAÇÃO E À SEGURANÇA CIBERNÉTICA",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.1",
+          "description": "Viatura operacional militar e também suas partes e peças",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.2",
+          "description": "Carro blindado e carro de combate, terrestre ou anfíbio, sobre lagartas ou rodas, com ou sem armamento e também suas partes e peças",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.3",
+          "description": "Outros veículos de qualquer tipo, para uso pelos órgãos de Segurança Pública e das Forças Armadas, com especificação própria dos Órgãos Militares e de Segurança Pública e também suas partes e peças",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.4",
+          "description": "Simuladores de veículos militares",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.5",
+          "description": "Tratores de baixa ou de alta velocidades, para uso pelos órgãos de Segurança Pública e das Forças Armadas, sobre lagartas ou rodas, destinados às unidades de engenharia ou de artilharia, para obras ou para rebocar equipamentos pesados e também suas partes e peças",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.6",
+          "description": "Radares para uso militar",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.7",
+          "description": "Foguetes para uso militar",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.8",
+          "description": "Explosivos de emprego militar",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.9",
+          "description": "Optrônicos",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.10",
+          "description": "Rações operacionais",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.11",
+          "description": "Minas marítimas",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.12",
+          "description": "Cartuchos de munição naval e de artilharia e seus componentes (projétil, estojo, estopilha, espoleta, traçador, pólvora e alto-explosivo), de calibre igual ou superior a 40 mm de diâmetro interno de tubo da arma",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.13",
+          "description": "Bombas, torpedos, minas, mísseis, foguetes e seus componentes",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.14",
+          "description": "Aeronaves, inclusive Veículo Aéreo Não Tripulado (VANT) para uso pela segurança nacional e também suas partes e peças",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.15",
+          "description": "Veículos espaciais para uso pela segurança nacional",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.16",
+          "description": "Paraquedas para uso pela segurança nacional",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.17",
+          "description": "Aparelhos e dispositivos para lançamento e aterrissagem de veículos aéreos e espaciais para uso pela segurança nacional",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.18",
+          "description": "Simuladores de voo e similares para uso pela segurança nacional",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.19",
+          "description": "Equipamentos de apoio no solo para uso pela segurança nacional",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.20",
+          "description": "Equipamentos de auxílio à comunicação, navegação e controle de tráfego aéreo para uso pela segurança nacional",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.21",
+          "description": "Embarcações construídas no País suas peças, partes e componentes utilizados no reparo, conserto e reconstrução de embarcações",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.22",
+          "description": "Dispositivos destinados a prover a segurança da informação do tipo Prevenção de Intrusão (IPS)",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.23",
+          "description": "Dispositivos destinados a prover a segurança da informação do tipo de Detecção de Intrusão (IDS)",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.24",
+          "description": "Dispositivos de Autenticação (tokens, leitores biométricos) que garantam a segurança da informação/cibernética",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.25",
+          "description": "Equipamentos para criptografia para a segurança da informação/cibernética",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.26",
+          "description": "Firewalls para a segurança da informação/cibernética",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.27",
+          "description": "Switches e roteadores seguros para a segurança da informação/cibernética",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.28",
+          "description": "Dispositivos de comunicação criptografada para a segurança da informação/cibernética",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.29",
+          "description": "Unidades de armazenamento criptografadas para a segurança da informação/cibernética",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.30",
+          "description": "Servidores de armazenamento seguro para a segurança da informação/cibernética",
+          "annex": "SEGURANCA",
+          "reduction_pct": 60,
+          "regime": "reduzido",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "OUTROS INSTRUMENTOS MEDICOS": {
+      "reduction_pct": 100,
+      "regime": "zero",
+      "header": "DISPOSITIVOS MÉDICOS SUBMETIDOS À REDUÇÃO A ZERO DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "Aparelhos de eletrodiagnóstico (incluídos os aparelhos de exploração funcional e os de verificação de parâmetros fisiológicos)",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.1",
+          "description": "Eletrocardiógrafos",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.2",
+          "description": "Eletroencefalógrafos",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "1.3",
+          "description": "Aparelhos de eletrodiagnóstico, exceto os produtos classificados nos códigos 9018.11.00, 9018.12.10, 9018.12.90, 9018.13.00, 9018.14.10, 9018.14.20, 9018.14.90, 9018.19.10 e 9018.19.20",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "90181420",
+            "90181490",
+            "90181410",
+            "90181290",
+            "90181300",
+            "90181920",
+            "90181210",
+            "90181910",
+            "90181100"
+          ]
+        },
+        {
+          "item": "2",
+          "description": "Aparelhos de raios ultravioleta ou infravermelhos",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "3",
+          "description": "Artigos e aparelhos ortopédicos",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "4",
+          "description": "Artigos e aparelhos para fraturas",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "5",
+          "description": "Artigos e aparelhos de prótese, exceto os dentários e os produtos classificados nos códigos 9021.39.91 e 9021.39.99",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "90213991",
+            "90213999"
+          ]
+        },
+        {
+          "item": "6",
+          "description": "Tomógrafo computadorizado",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "7",
+          "description": "Aparelhos de raio X, móveis, exceto os produtos classificados no código 9022.19.91",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "90221991"
+          ]
+        },
+        {
+          "item": "8",
+          "description": "Aparelho de radiocobalto (bomba de cobalto)",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "9",
+          "description": "Aparelho de crioterapia",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "10",
+          "description": "Aparelho de gamaterapia",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "11",
+          "description": "Aparelhos que utilizem radiações alfa, beta, gama ou outras radiações ionizantes, para usos médicos, cirúrgicos, odontológicos ou veterinários, incluídos os aparelhos de radiofotografia ou de radioterapia, exceto os produtos classificados nos códigos 9022.21.10 e 9022.21.20",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "90222120",
+            "90222110"
+          ]
+        },
+        {
+          "item": "12",
+          "description": "Densímetros, areômetros, pesa-líquidos e instrumentos flutuantes semelhantes, termômetros, pirômetros, barômetros, higrômetros e psicômetros, registradores ou não, mesmo combinados entre si",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "13",
+          "description": "Respirador",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "14",
+          "description": "Monitor multiparâmetros",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "15",
+          "description": "Bomba de infusão",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "16",
+          "description": "Aparelhos de diagnóstico por visualização de ressonância magnética",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "17",
+          "description": "Aparelhos de ultrassom",
+          "annex": "OUTROS INSTRUMENTOS MEDICOS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "ACESSIBILDADE OUTROS": {
+      "reduction_pct": 100,
+      "regime": "zero",
+      "header": "DISPOSITIVOS DE ACESSIBILIDADE PRÓPRIOS PARA PESSOAS COM DEFICIÊNCIA SUBMETIDOS À REDUÇÃO A ZERO DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "Barra de apoio para pessoa com deficiência física",
+          "annex": "ACESSIBILDADE OUTROS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "2",
+          "description": "CADEIRA DE RODAS E OUTROS VEÍCULOS PARA DEFICIENTES, MESMO COM MOTOR OU OUTRO MECANISMO DE PROPULSÃO",
+          "annex": "ACESSIBILDADE OUTROS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.1",
+          "description": "Sem mecanismo de propulsão",
+          "annex": "ACESSIBILDADE OUTROS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "2.2",
+          "description": "Cadeiras de rodas com motor",
+          "annex": "ACESSIBILDADE OUTROS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "3",
+          "description": "Partes e acessórios destinados exclusivamente a aplicação em cadeiras de rodas ou em outros veículos para deficientes",
+          "annex": "ACESSIBILDADE OUTROS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "4",
+          "description": "Aparelhos para facilitar a audição dos surdos, exceto partes e acessórios",
+          "annex": "ACESSIBILDADE OUTROS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "5",
+          "description": "Partes e acessórios de aparelhos para facilitar a audição dos surdos",
+          "annex": "ACESSIBILDADE OUTROS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "6",
+          "description": "Implantes cocleares",
+          "annex": "ACESSIBILDADE OUTROS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "HORTICOLAS": {
+      "reduction_pct": 100,
+      "regime": "zero",
+      "header": "PRODUTOS HORTÍCOLAS, FRUTAS E OVOS SUBMETIDOS À REDUÇÃO DE 100% (CEM POR CENTO) DAS ALÍQUOTAS DO IBS E DA CBS",
+      "items": [
+        {
+          "item": "1",
+          "description": "Ovos da subposição 0407.2 da NCM/SH",
+          "annex": "HORTICOLAS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "2",
+          "description": "Produtos hortícolas das posições 07.01, 07.02.00.00, 07.03, 07.04, 07.05, 07.06, 0707.00.00, 07.08, 07.09 e 07.10, exceto os cogumelos e trufas classificados na subposição 0709.5 e no código 0710.80.00 da NCM/SH",
+          "annex": "HORTICOLAS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "07108000",
+            "07070000"
+          ]
+        },
+        {
+          "item": "3",
+          "description": "Frutas frescas ou refrigeradas e frutas congeladas sem adição de açúcar ou de outros edulcorantes classificadas nas posições 08.03, 08.04, 08.05, 08.06, 08.07, 08.08, 08.09, 08.10 e 08.11 da NCM/SH",
+          "annex": "HORTICOLAS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "08070000",
+            "08040000",
+            "08090000",
+            "08100000",
+            "08030000",
+            "08060000",
+            "08110000",
+            "08050000",
+            "08080000"
+          ]
+        },
+        {
+          "item": "4",
+          "description": "Plantas e produtos de floricultura relativos à horticultura e cultivados para fins alimentares, ornamentais ou medicinais classificados no Capítulo 6 da NCM/SH",
+          "annex": "HORTICOLAS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        },
+        {
+          "item": "5",
+          "description": "Raízes e tubérculos da posição 07.14 da NCM/SH",
+          "annex": "HORTICOLAS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": [
+            "07140000"
+          ]
+        },
+        {
+          "item": "6",
+          "description": "Cocos da subposição 0801.1 da NCM/SH",
+          "annex": "HORTICOLAS",
+          "reduction_pct": 100,
+          "regime": "zero",
+          "ncm_codes": []
+        }
+      ]
+    },
+    "PRODUTOS SELETIVOS": {
+      "reduction_pct": 0,
+      "regime": "seletivo",
+      "header": "BENS E SERVIÇOS SUJEITOS AO IMPOSTO SELETIVO",
+      "items": [
+        {
+          "item": "1",
+          "description": "ANEXO XVII",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": []
+        },
+        {
+          "item": "3",
+          "description": "BENS E SERVIÇOS SUJEITOS AO IMPOSTO SELETIVO",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": []
+        },
+        {
+          "item": "5",
+          "description": "Veículos",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": []
+        },
+        {
+          "item": "6",
+          "description": "87.03; 8704.21 (exceto os caminhões); 8704.31 (exceto os caminhões); 8704.41.00 (exceto os caminhões); 8704.51.00 (exceto os caminhões); 8704.60.00 (exceto os caminhões); 8704.90.00 (exceto os caminhões); ressalvados os veículos com características técnicas específicas para uso operacional das Forças Armadas ou dos órgãos de Segurança Pública",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": [
+            "87046000",
+            "87049000",
+            "87042100",
+            "87044100",
+            "87045100",
+            "87043100"
+          ]
+        },
+        {
+          "item": "7",
+          "description": "Aeronaves e Embarcações",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": []
+        },
+        {
+          "item": "8",
+          "description": "8802, exceto o código 8802.60.00; e embarcações com motor classificadas na posição 8903; ressalvadas as aeronaves e embarcações com características técnicas específicas para uso operacional das Forças Armadas ou dos órgãos de Segurança Pública",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": [
+            "88026000"
+          ]
+        },
+        {
+          "item": "9",
+          "description": "Produtos fumígenos",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": []
+        },
+        {
+          "item": "10",
+          "description": "2401; 2402; 2403; 2404",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": []
+        },
+        {
+          "item": "11",
+          "description": "Bebidas alcóolicas",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": []
+        },
+        {
+          "item": "12",
+          "description": "2203; 2204; 2205; 2206; 2208",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": []
+        },
+        {
+          "item": "13",
+          "description": "Bebidas açucaradas",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": []
+        },
+        {
+          "item": "14",
+          "description": "2202.10.00",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": [
+            "22021000"
+          ]
+        },
+        {
+          "item": "15",
+          "description": "Bens minerais",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": []
+        },
+        {
+          "item": "16",
+          "description": "2601; 2709.00.10; 2711.11.00; 2711.21.00",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": [
+            "27111100",
+            "27112100",
+            "27090010"
+          ]
+        },
+        {
+          "item": "17",
+          "description": "Concursos de prognósticos e Fantasy sport",
+          "annex": "PRODUTOS SELETIVOS",
+          "reduction_pct": 0,
+          "regime": "seletivo",
+          "ncm_codes": []
+        }
+      ]
+    }
+  }
+}

@@ -81,8 +81,9 @@ def _probe_asaas() -> ServiceStatus:
             headers={"access_token": settings.ASAAS_API_KEY},
             timeout=3.0,
         )
-        # 200 / 401 / 403 all mean the API gateway is reachable
-        if resp.status_code in (200, 401, 403):
+        # 200 / 401 / 403 / 404 all mean the API gateway is reachable
+        # 404 can occur when the account has no balance record yet
+        if resp.status_code in (200, 401, 403, 404):
             return "ok"
         logger.warning("Health: Asaas returned HTTP %s", resp.status_code)
         return "degraded"

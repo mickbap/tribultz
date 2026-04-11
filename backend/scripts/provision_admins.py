@@ -14,6 +14,7 @@ Or inside the Docker api container:
 import os
 import sys
 import getpass
+import argparse
 from datetime import datetime, timezone, timedelta
 
 # Ensure backend package is importable
@@ -130,15 +131,22 @@ def main() -> None:
     print(f"DB: {settings.DATABASE_URL.split('@')[-1]}")
     print()
 
-    password = getpass.getpass("Senha para os 2 admins (min 8 caracteres): ")
-    if len(password) < 8:
-        print("ERRO: senha deve ter no mínimo 8 caracteres.")
-        sys.exit(1)
-
-    confirm = getpass.getpass("Confirmar senha: ")
-    if password != confirm:
-        print("ERRO: senhas não conferem.")
-        sys.exit(1)
+    # Accept password from env var (non-interactive) or prompt
+    password = os.environ.get("ADMIN_PASSWORD", "")
+    if password:
+        if len(password) < 8:
+            print("ERRO: ADMIN_PASSWORD deve ter no mínimo 8 caracteres.")
+            sys.exit(1)
+        print("  [i] Senha lida de ADMIN_PASSWORD (modo não-interativo)")
+    else:
+        password = getpass.getpass("Senha para os 2 admins (min 8 caracteres): ")
+        if len(password) < 8:
+            print("ERRO: senha deve ter no mínimo 8 caracteres.")
+            sys.exit(1)
+        confirm = getpass.getpass("Confirmar senha: ")
+        if password != confirm:
+            print("ERRO: senhas não conferem.")
+            sys.exit(1)
 
     engine = create_engine(settings.DATABASE_URL)
 

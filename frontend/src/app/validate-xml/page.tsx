@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
 import { Toast } from "@/components/common/Toast";
-import { getJob, openExceptionRequest, validateXml } from "@/lib/api";
+import { generateCorrectedXml, getJob, openExceptionRequest, validateXml } from "@/lib/api";
 import { buildAuditableReportCsv, buildAuditableReportHtml, downloadCsv, downloadPdf } from "@/lib/export/auditableReport";
 import { Finding, Job, ValidateXmlRequest, ValidationEvidence, ValidationResultV11, XmlDocumentType } from "@/lib/types";
 import { CST_TABLE, detectDocumentType } from "@/lib/validation/xmlRules";
@@ -43,6 +43,8 @@ export default function ValidateXmlPage() {
   const [justification, setJustification] = useState("");
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; msg: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [correcting, setCorrecting] = useState(false);
+  const [correctionDownloadUrl, setCorrectionDownloadUrl] = useState<string | null>(null);
 
   const evidenceMap = useMemo(() => {
     const map = new Map<string, ValidationEvidence>();
@@ -95,6 +97,7 @@ export default function ValidateXmlPage() {
     setLoading(true);
     setResult(null);
     setJob(null);
+    setCorrectionDownloadUrl(null);
 
     try {
       const payload: ValidateXmlRequest = {
@@ -113,6 +116,23 @@ export default function ValidateXmlPage() {
       setError(err instanceof Error ? err.message : "Falha ao validar XML.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function onGenerateCorrection(): Promise<void> {
+    if (!result) return;
+    setToast(null);
+    setError(null);
+    setCorrecting(true);
+    setCorrectionDownloadUrl(null);
+    try {
+      const resp = await generateCorrectedXml({ document_type: documentType, xml: xmlText });
+      setCorrectionDownloadUrl(resp.download_url);
+      setToast({ tone: "success", msg: "XML corrigido gerado e persistido." });
+    } catch (err) {
+      setToast({ tone: "error", msg: err instanceof Error ? err.message : "Falha ao gerar XML corrigido." });
+    } finally {
+      setCorrecting(false);
     }
   }
 
@@ -240,6 +260,24 @@ export default function ValidateXmlPage() {
               >
                 PDF
               </button>
+              <button
+                type="button"
+                onClick={() => void onGenerateCorrection()}
+                disabled={correcting}
+                className="rounded border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-70"
+              >
+                {correcting ? "Gerando..." : "Gerar XML corrigido"}
+              </button>
+              {correctionDownloadUrl ? (
+                <a
+                  href={correctionDownloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-tribultz-700 underline"
+                >
+                  Baixar XML corrigido
+                </a>
+              ) : null}
             </>
           ) : null}
         </div>
