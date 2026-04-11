@@ -40,7 +40,7 @@ export default function TermsPage() {
         <p>
           O cliente continua responsável pela revisão final de parâmetros fiscais, pela decisão
           operacional sobre emissão de documentos e pela conferência do ERP, mesmo quando utilizar
-          automação, relatórios, chats ou evidências geradas pela Tribultz.
+          automação, relatórios ou evidências geradas pela Tribultz.
         </p>
       </section>
 

@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { EvidenceList } from "@/components/chat/EvidenceList";
+import { EvidenceList } from "@/components/common/EvidenceList";
 import { JsonViewer } from "@/components/common/JsonViewer";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { Skeleton } from "@/components/common/Skeleton";
@@ -12,7 +12,59 @@ import { Toast } from "@/components/common/Toast";
 import { getDocumentDownloadUrl, getJob, listDocuments } from "@/lib/api";
 import type { DocumentResponse } from "@/lib/api";
 import { exportEvidenceZipAndDownload } from "@/lib/export/evidenceExportUi";
-import { Job } from "@/lib/types";
+import { getJustification } from "@/lib/fiscalJustification";
+import { isPlanAtLeast } from "@/lib/plan";
+import { Job, Finding } from "@/lib/types";
+
+function JustificativaPanel({ finding }: { finding: Finding }) {
+  const [open, setOpen] = useState(false);
+  const hasPlan = isPlanAtLeast("profissional");
+  const justification = getJustification(finding.rule_id);
+
+  if (!justification) return null;
+
+  if (!hasPlan) {
+    return (
+      <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <span className="font-semibold">Justificativa técnica + base legal</span> disponível a partir do plano{" "}
+        <span className="font-semibold">Profissional</span>.{" "}
+        <Link href="/billing" className="underline hover:text-amber-900">
+          Fazer upgrade →
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-xs font-medium text-tribultz-700 hover:underline"
+        aria-expanded={open}
+      >
+        <span>{open ? "▾" : "▸"}</span>
+        Justificativa técnica e base legal
+      </button>
+      {open ? (
+        <dl className="mt-2 space-y-2 rounded-lg border border-tribultz-100 bg-tribultz-50 px-3 py-3 text-xs text-slate-700">
+          <div>
+            <dt className="font-semibold text-tribultz-800">Base legal</dt>
+            <dd className="mt-0.5 text-slate-600">{justification.base_legal}</dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-tribultz-800">Por que essa regra existe</dt>
+            <dd className="mt-0.5 leading-5 text-slate-600">{justification.explicacao}</dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-tribultz-800">Correção recomendada</dt>
+            <dd className="mt-0.5 leading-5 text-slate-600">{justification.correcao}</dd>
+          </div>
+        </dl>
+      ) : null}
+    </div>
+  );
+}
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
@@ -129,16 +181,41 @@ export default function JobDetailPage() {
 
           {job.findings?.length ? (
             <section className="rounded-xl border border-slate-200 bg-white p-4">
-              <h2 className="mb-2 text-sm font-semibold text-slate-700">Findings da validação</h2>
-              <ul className="space-y-2">
+              <h2 className="mb-3 text-sm font-semibold text-slate-700">
+                Findings da validação
+                <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-normal text-slate-500">
+                  {job.findings.length}
+                </span>
+              </h2>
+              <ul className="space-y-3">
                 {job.findings.map((finding) => (
-                  <li key={finding.id} className="rounded border border-slate-200 p-2 text-sm">
-                    <p className="font-semibold">
-                      {finding.severity} - {finding.title}
+                  <li
+                    key={finding.id}
+                    className={`rounded-lg border p-3 text-sm ${
+                      finding.severity === "FATAL"
+                        ? "border-red-200 bg-red-50"
+                        : "border-amber-200 bg-amber-50"
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-bold tracking-wide ${
+                          finding.severity === "FATAL"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {finding.severity}
+                      </span>
+                      <span className="font-semibold text-slate-800">{finding.title}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Regra: <code className="font-mono">{finding.rule_id}</code>
                     </p>
-                    <p className="text-xs text-slate-500">
-                      rule_id: {finding.rule_id} | finding_id: {finding.id}
-                    </p>
+                    {finding.recommendation ? (
+                      <p className="mt-1 text-xs text-slate-600">{finding.recommendation}</p>
+                    ) : null}
+                    <JustificativaPanel finding={finding} />
                   </li>
                 ))}
               </ul>

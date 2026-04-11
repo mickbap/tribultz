@@ -40,7 +40,7 @@ const PLANS: { slug: PlanSlug; name: string; price: string; features: string[]; 
     slug: "contador",
     name: "Contador",
     price: "R$ 349,00/mês",
-    features: ["Validações ilimitadas", "IA ilimitada", "Relatório PDF", "Multi-CNPJ", "API access", "Suporte via chat"],
+    features: ["Validações ilimitadas", "Justificativa técnica por finding", "Relatório PDF", "Multi-CNPJ", "API access", "Suporte prioritário"],
   },
 ];
 

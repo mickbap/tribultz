@@ -99,21 +99,6 @@ export type ValidateXmlRequest = {
   transaction_id?: string;
 };
 
-export type ChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  markdown: string;
-  createdAt: string;
-  evidence?: Evidence[];
-};
-
-export type Conversation = {
-  id: string;
-  title: string;
-  updatedAt: string;
-  messages: ChatMessage[];
-};
-
 export type JobStatus = "QUEUED" | "RUNNING" | "SUCCESS" | "FAILED";
 
 export type Job = {
@@ -139,29 +124,6 @@ export type AuditLog = {
   createdAt: string;
   payload: Record<string, unknown>;
 };
-
-export type ChatRequest = {
-  message: string;
-  conversation_id?: string | null;
-};
-
-export type ChatResponseA = {
-  conversation_id: string;
-  assistant_markdown?: string;
-  response_markdown?: string;
-  evidence?: Evidence[];
-};
-
-export type ChatResponseB = {
-  conversation_id: string;
-  assistant_markdown?: string;
-  response_markdown?: string;
-  job_id?: string;
-  job_href?: string;
-  evidence?: Evidence[];
-};
-
-export type ChatApiResponse = ChatResponseA | ChatResponseB;
 
 export type ApiJob = {
   id: string;
@@ -211,16 +173,6 @@ export type ApiExceptionRequest = {
   decision_comment?: string;
 };
 
-export type NormalizedChatResponse = {
-  conversationId: string;
-  assistantMarkdown: string;
-  evidence: Evidence[];
-  job?: {
-    id: string;
-    href: string;
-  };
-};
-
 function toIsoOrNow(value?: string): string {
   if (!value) return new Date().toISOString();
   const d = new Date(value);
@@ -251,33 +203,6 @@ function asEvidenceList(raw: unknown): Evidence[] {
         payload: row.payload && typeof row.payload === "object" ? (row.payload as Record<string, unknown>) : null,
       };
     });
-}
-
-export function normalizeChatResponse(raw: ChatApiResponse): NormalizedChatResponse {
-  const assistantMarkdown = raw.assistant_markdown ?? raw.response_markdown ?? "";
-  const evidence = asEvidenceList(raw.evidence);
-
-  const jobFromEvidence = evidence.find((item) => item.type === "job" && item.job_id && item.href);
-  const rawJobId = "job_id" in raw ? raw.job_id : undefined;
-  const rawJobHref = "job_href" in raw ? raw.job_href : undefined;
-  const jobId = rawJobId ?? jobFromEvidence?.job_id;
-  const jobHref = rawJobHref ?? jobFromEvidence?.href;
-
-  if (jobId && jobHref && !jobFromEvidence) {
-    evidence.unshift({
-      type: "job",
-      job_id: jobId,
-      href: jobHref,
-      label: "Job de validação",
-    });
-  }
-
-  return {
-    conversationId: raw.conversation_id,
-    assistantMarkdown,
-    evidence,
-    job: jobId && jobHref ? { id: jobId, href: jobHref } : undefined,
-  };
 }
 
 export function normalizeJob(raw: ApiJob, fallbackTenant: string): Job {
