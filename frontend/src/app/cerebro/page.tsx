@@ -222,9 +222,15 @@ export default function CerebroPage() {
       {/* Integration note */}
       <div className="mt-6 max-w-lg w-full rounded-xl border border-slate-800 bg-slate-900/60 px-5 py-4">
         <p className="text-xs font-semibold text-slate-400 mb-2">Integração com CrewAI (produção)</p>
-        <pre className="text-[11px] text-slate-600 leading-relaxed overflow-x-auto font-mono">{`// Consumir do hook de chat (SSE / WebSocket)
+        <pre className="text-[11px] text-slate-600 leading-relaxed overflow-x-auto font-mono">{`// O Agente consome XML fiscal + documentação técnica
+// (LC 214/2025, NT 2025.002-RTC, ClassTrib SVRS)
+// e formula, no linguajar do contador, a evidência
+// auditável perfeita para cada divergência encontrada.
+//
+// Streaming via SSE: cada estágio do CrewAI emite eventos
+// que atualizam stages[] em tempo real.
 <AIStatusTimeline
-  stages={crewStages}       // atualizado via streaming
+  stages={crewStages}       // atualizado via SSE do CrewAI
   elapsedMs={Date.now() - startedAt}
   maxMs={45_000}            // timeout máximo CrewAI
 />`}</pre>

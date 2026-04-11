@@ -8,11 +8,19 @@ x-backend-env: &backend-env
   environment:
     PYTHONUNBUFFERED: "1"
 
+# Rede única explícita — garante DNS interno consistente após rebuilds
+# isolados (--no-deps). Sem declaração explícita, o Docker Compose cria
+# "infra_default" mas pode perder serviços no reconnect pós-rebuild.
+networks:
+  tribultz:
+    driver: bridge
+
 services:
   # ── PostgreSQL ────────────────────────────────────────────
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    networks: [tribultz]
     env_file:
       - ../.env
     ports:
@@ -30,6 +38,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    networks: [tribultz]
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
@@ -45,6 +54,7 @@ services:
   minio:
     image: minio/minio:latest
     restart: unless-stopped
+    networks: [tribultz]
     env_file:
       - ../.env
     command: server /data --console-address ":9001"
@@ -65,11 +75,10 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     restart: unless-stopped
+    networks: [tribultz]
     <<: *backend-env
     ports:
       - "8000:8000"
-    volumes:
-      - ../backend:/app
     depends_on:
       db:
         condition: service_healthy
@@ -82,10 +91,9 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     restart: unless-stopped
+    networks: [tribultz]
     <<: *backend-env
     command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
-    volumes:
-      - ../backend:/app
     depends_on:
       db:
         condition: service_healthy
@@ -100,10 +108,9 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     restart: unless-stopped
+    networks: [tribultz]
     <<: *backend-env
     command: ["celery", "-A", "app.celery_app", "beat", "--loglevel=info"]
-    volumes:
-      - ../backend:/app
     depends_on:
       db:
         condition: service_healthy

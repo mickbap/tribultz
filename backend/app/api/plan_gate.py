@@ -137,6 +137,14 @@ def increment_usage(db: Session, user_id: object, tenant_id: object, usage_type:
     db.flush()
 
 
+def get_plan_slug(db: Session, user: User) -> str | None:
+    """Return the active plan slug for a user, or None if no active subscription."""
+    _, plan = _get_active_subscription(db, user)
+    if plan is None:
+        return None
+    return str(plan.slug)
+
+
 def _get_active_subscription(db: Session, user: User) -> tuple[Any, Any]:
     """Get the user's most recent subscription + plan. Returns (sub, plan) or (None, None)."""
     result = db.execute(
