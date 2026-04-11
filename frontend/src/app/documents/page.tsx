@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { listDocuments, getDocumentDownloadUrl, type DocumentResponse } from "@/lib/api";
 
-export default function DocumentsPage(): JSX.Element {
+export default function DocumentsPage() {
   const [docs, setDocs] = useState<DocumentResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [onlyCorrected, setOnlyCorrected] = useState(true);
