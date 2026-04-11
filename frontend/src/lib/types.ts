@@ -22,6 +22,12 @@ export type FindingWhere = {
   snippet?: string;
 };
 
+export type FiscalJustification = {
+  base_legal: string;
+  explicacao: string;
+  correcao: string;
+};
+
 export type Finding = {
   id: string;
   severity: FindingSeverity;
@@ -30,6 +36,10 @@ export type Finding = {
   where: FindingWhere;
   recommendation: string;
   evidence_ids: string[];
+  /** Justificativa técnica — presente apenas em planos Profissional/Empresarial/Contador */
+  justification?: FiscalJustification;
+  /** true quando há justificativa mas o plano atual não tem acesso */
+  justification_gated?: boolean;
 };
 
 export type ValidationEvidence = {
@@ -221,7 +231,12 @@ export function normalizeJob(raw: ApiJob, fallbackTenant: string): Job {
     output: raw.output ?? raw.output_data ?? null,
     reportMarkdown: raw.reportMarkdown ?? raw.report_markdown ?? null,
     evidence,
-    findings: Array.isArray(raw.findings) ? raw.findings : undefined,
+    // findings at top level (enriched by server) takes priority; fallback to result.findings
+    findings: Array.isArray(raw.findings) && raw.findings.length
+      ? (raw.findings as Finding[])
+      : Array.isArray((raw.output as Record<string, unknown> | null)?.findings)
+        ? ((raw.output as Record<string, unknown>).findings as Finding[])
+        : undefined,
   };
 }
 

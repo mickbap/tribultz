@@ -13,8 +13,9 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.api.deps import get_current_user
-from app.api.plan_gate import require_plan
+from app.api.plan_gate import require_plan, get_plan_slug
 from app.models.auth import User
+from app.services.fiscal_justification import enrich_findings
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,8 @@ class JobResponse(BaseModel):
     error_message: Optional[str]
     created_at: str
     updated_at: str
+    # Findings enriched with justificativa técnica (server-side gate by plan)
+    findings: Optional[list[dict[str, Any]]] = None
 
 
 # ── Bootstrap (ensure jobs table exists) ─────────────────────────────────────
@@ -153,7 +156,13 @@ def get_job(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Get job status by ID."""
+    """Get job status by ID.
+
+    Returns findings enriched with justificativa técnica (base legal + explicação + correção)
+    gated by subscription plan:
+      - profissional / empresarial / contador → justification included
+      - trial / starter → justification_gated=True (frontend shows upgrade CTA)
+    """
     _ensure_table(db)
     tenant_id = str(current_user.tenant_id)
     row = db.execute(
@@ -162,7 +171,17 @@ def get_job(
     ).fetchone()
     if not row:
         raise HTTPException(404, "Job not found")
-    return _row_to_response(row)
+
+    response = _row_to_response(row)
+
+    # Enrich findings with justificativa técnica based on plan
+    result = response.result or {}
+    raw_findings = result.get("findings", [])
+    if isinstance(raw_findings, list) and raw_findings:
+        plan_slug = get_plan_slug(db, current_user)
+        response.findings = enrich_findings(raw_findings, plan_slug)
+
+    return response
 
 
 @router.patch("/{job_id}", response_model=JobResponse)

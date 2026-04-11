@@ -12,18 +12,19 @@ import { Toast } from "@/components/common/Toast";
 import { getDocumentDownloadUrl, getJob, listDocuments } from "@/lib/api";
 import type { DocumentResponse } from "@/lib/api";
 import { exportEvidenceZipAndDownload } from "@/lib/export/evidenceExportUi";
-import { getJustification } from "@/lib/fiscalJustification";
-import { isPlanAtLeast } from "@/lib/plan";
 import { Job, Finding } from "@/lib/types";
 
+/**
+ * JustificativaPanel — dados fornecidos pelo servidor (gate de plano server-side).
+ * Não usa fiscalJustification.ts nem isPlanAtLeast() — a decisão de expor
+ * os dados é tomada exclusivamente no backend ao retornar GET /api/v1/jobs/{id}.
+ */
 function JustificativaPanel({ finding }: { finding: Finding }) {
   const [open, setOpen] = useState(false);
-  const hasPlan = isPlanAtLeast("profissional");
-  const justification = getJustification(finding.rule_id);
 
-  if (!justification) return null;
-
-  if (!hasPlan) {
+  // Gate resolvido server-side: se justification_gated=true, servidor sinalizou que
+  // o plano atual não tem acesso mas existe justificativa para esta regra.
+  if (finding.justification_gated) {
     return (
       <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
         <span className="font-semibold">Justificativa técnica + base legal</span> disponível a partir do plano{" "}
@@ -34,6 +35,10 @@ function JustificativaPanel({ finding }: { finding: Finding }) {
       </div>
     );
   }
+
+  if (!finding.justification) return null;
+
+  const j = finding.justification;
 
   return (
     <div className="mt-2">
@@ -50,15 +55,15 @@ function JustificativaPanel({ finding }: { finding: Finding }) {
         <dl className="mt-2 space-y-2 rounded-lg border border-tribultz-100 bg-tribultz-50 px-3 py-3 text-xs text-slate-700">
           <div>
             <dt className="font-semibold text-tribultz-800">Base legal</dt>
-            <dd className="mt-0.5 text-slate-600">{justification.base_legal}</dd>
+            <dd className="mt-0.5 text-slate-600">{j.base_legal}</dd>
           </div>
           <div>
             <dt className="font-semibold text-tribultz-800">Por que essa regra existe</dt>
-            <dd className="mt-0.5 leading-5 text-slate-600">{justification.explicacao}</dd>
+            <dd className="mt-0.5 leading-5 text-slate-600">{j.explicacao}</dd>
           </div>
           <div>
             <dt className="font-semibold text-tribultz-800">Correção recomendada</dt>
-            <dd className="mt-0.5 leading-5 text-slate-600">{justification.correcao}</dd>
+            <dd className="mt-0.5 leading-5 text-slate-600">{j.correcao}</dd>
           </div>
         </dl>
       ) : null}
