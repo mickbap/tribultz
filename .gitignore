@@ -234,3 +234,7 @@ reports/
 .tmp_*.py
 
 .vercel
+
+# Scripts de seed/admin com credenciais — NUNCA commitar
+backend/scripts/
+tools/smoke_test_prod.sh
