@@ -283,7 +283,7 @@ async def upgrade_plan(
     pix_copy_paste = None
 
     # Validate CNPJ before calling Asaas (avoids 502 / CORS-less error on empty CNPJ)
-    cnpj_value = cast(str, current_user.cnpj).strip() if current_user.cnpj else ""
+    cnpj_value = cast(str, current_user.cnpj).strip() if current_user.cnpj is not None else ""
     customer_id = cast(str, current_sub.asaas_customer_id) if current_sub.asaas_customer_id is not None else None
     if not customer_id and len(cnpj_value.replace(".", "").replace("/", "").replace("-", "")) not in (11, 14):
         raise HTTPException(
