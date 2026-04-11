@@ -17,8 +17,7 @@ import {
   normalizeException,
   normalizeJob,
 } from "./types";
-import { buildJobEvidenceBundle } from "./export/jobEvidenceBundle";
-import { buildJobEvidenceZip, makeJobEvidenceZipFilename } from "./export/jobEvidenceZip";
+import { makeJobEvidenceZipFilename } from "./export/jobEvidenceZip";
 import { getTenantId, getToken } from "./storage";
 
 // Use || (not ??) so empty-string env vars also fall back to localhost.
@@ -196,6 +195,7 @@ export async function registerWithApi(payload: RegisterRequest): Promise<Registe
 }
 
 export async function postChatMessage(payload: ChatRequest): Promise<NormalizedChatResponse> {
+  const tenantId = getTenantId();
   const raw = await apiFetch<ChatApiResponse>("/api/v1/chat/message", {
     method: "POST",
     body: JSON.stringify(payload),

@@ -17,33 +17,6 @@ type NewsFeedProps = {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
-const MOCK_NEWS: NewsItem[] = [
-  {
-    id: "mock-1",
-    title: "Motor CBS/IBS com 18 regras determinísticas",
-    description:
-      "Validação completa de notas fiscais contra as regras da LC 214 com evidências auditáveis por finding.",
-    category: "Feature",
-    created_at: "2026-03-28T00:00:00Z",
-  },
-  {
-    id: "mock-2",
-    title: "Calculadora CBS/IBS local para regime geral",
-    description:
-      "Calcule CBS e IBS por NCM, UF e CST sem autenticação. Gera snippet XML pronto para ERP.",
-    category: "Feature",
-    created_at: "2026-03-22T00:00:00Z",
-  },
-  {
-    id: "mock-3",
-    title: "Diagnóstico gratuito de XML fiscal",
-    description:
-      "Envie sua NF-e e receba um relatório completo de conformidade com a reforma tributária 2026.",
-    category: "Feature",
-    created_at: "2026-03-15T00:00:00Z",
-  },
-];
-
 const categoryStyles: Record<NewsItem["category"], string> = {
   Feature: "bg-emerald-100 text-emerald-800",
   Fix: "bg-amber-100 text-amber-800",
@@ -96,13 +69,8 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
           url: `${API_BASE}/api/v1/news`,
           hint: message.includes("fetch") ? "Connection Refused / CORS" : "HTTP error",
         });
-        // Resiliência: exibe mock enquanto a API não está disponível
-        setItems(limit ? MOCK_NEWS.slice(0, limit) : MOCK_NEWS);
-        setLastUpdated(new Date().toLocaleTimeString("pt-BR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }));
-        setError("");
+        setItems([]);
+        setError("Não foi possível carregar as atualizações no momento.");
       } finally {
         if (active) {
           setLoading(false);

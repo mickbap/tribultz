@@ -25,7 +25,7 @@ export default function CookiesPage() {
         <ul className="mt-3 list-disc space-y-2 pl-6">
           <li>
             <strong>Armazenamento local do navegador:</strong> o console grava chaves como
-            tenant ativo, token de acesso, modo mock, tipo de conta e lista de tenants
+            tenant ativo, token de acesso, tipo de conta e lista de tenants
             para sustentar a navegação entre as ferramentas.
           </li>
           <li>

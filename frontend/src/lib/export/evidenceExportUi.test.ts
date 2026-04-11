@@ -5,7 +5,7 @@ import { toastFromExportError } from "./evidenceExportUi";
 test("toastFromExportError retorna info para placeholder de API indisponivel", () => {
   const feedback = toastFromExportError(new Error("Export via API ainda nao disponivel."));
   assert.equal(feedback.tone, "info");
-  assert.equal(feedback.message, "Export via API ainda não disponível. Use Mock Mode ou tente novamente mais tarde.");
+  assert.equal(feedback.message, "Export via API ainda não disponível. Tente novamente mais tarde ou contate o suporte.");
 });
 
 test("toastFromExportError retorna erro padrao para falha generica", () => {
