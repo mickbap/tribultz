@@ -59,30 +59,6 @@ class JobResponse(BaseModel):
     findings: Optional[list[dict[str, Any]]] = None
 
 
-# ── Bootstrap (ensure jobs table exists) ─────────────────────────────────────
-_JOBS_DDL = """
-CREATE TABLE IF NOT EXISTS jobs (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    job_type        VARCHAR(100) NOT NULL,
-    status          VARCHAR(30)  NOT NULL DEFAULT 'QUEUED',
-    idempotency_key VARCHAR(200),
-    payload         JSONB NOT NULL DEFAULT '{}',
-    result          JSONB,
-    error_message   TEXT,
-    created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    UNIQUE (tenant_id, idempotency_key)
-);
-CREATE INDEX IF NOT EXISTS idx_jobs_tenant ON jobs(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(tenant_id, status);
-"""
-
-
-def _ensure_table(db: Session):
-    db.execute(text(_JOBS_DDL))
-    db.commit()
-
 
 def _row_to_response(r) -> JobResponse:
     return JobResponse(
@@ -110,7 +86,7 @@ def create_job(
     Enqueue a new job.  If an idempotency_key is provided and already
     exists for this tenant, the existing job is returned (safe retry).
     """
-    _ensure_table(db)
+
     tenant_id = str(current_user.tenant_id)
 
     # Idempotent check
@@ -163,7 +139,7 @@ def get_job(
       - profissional / empresarial / contador → justification included
       - trial / starter → justification_gated=True (frontend shows upgrade CTA)
     """
-    _ensure_table(db)
+
     tenant_id = str(current_user.tenant_id)
     row = db.execute(
         text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"),
@@ -195,7 +171,7 @@ def update_job(
     Transition a job to a new status.
     Used by the worker or human-in-the-loop to mark progress.
     """
-    _ensure_table(db)
+
     import json
 
     updates = ["status = :status", "updated_at = now()"]
@@ -230,7 +206,7 @@ def list_jobs(
     current_user: User = Depends(get_current_user),
 ):
     """List jobs for the authenticated user's tenant, optionally filtered by status."""
-    _ensure_table(db)
+
     tenant_id = str(current_user.tenant_id)
 
     filters = ["j.tenant_id = :tid"]
@@ -263,7 +239,7 @@ def reprocess_job(
     """
     Reset a FAILED or NEEDS_HUMAN job back to QUEUED for idempotent retry.
     """
-    _ensure_table(db)
+
     tenant_id = str(current_user.tenant_id)
     row = db.execute(
         text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"),
@@ -300,7 +276,7 @@ def get_job_report_pdf(
 
     Gated to Profissional and Contador plans.
     """
-    _ensure_table(db)
+
     tenant_id = str(current_user.tenant_id)
 
     row = db.execute(
