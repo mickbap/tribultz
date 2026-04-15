@@ -165,7 +165,7 @@ class AsaasService:
         description: str = "Assinatura Tribultz",
         next_due_date: str | None = None,
     ) -> dict[str, Any]:
-        """Create a monthly subscription. billing_type: CREDIT_CARD | PIX | BOLETO."""
+        """Create a monthly subscription. billing_type: CREDIT_CARD | PIX."""
         payload: dict[str, Any] = {
             "customer": customer_id,
             "billingType": billing_type,

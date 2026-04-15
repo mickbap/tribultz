@@ -95,7 +95,7 @@ def send_payment_confirmation_email(
     payment_method: str,
 ) -> bool:
     """Send the 'Payment confirmed / Premium activated' receipt email."""
-    method_labels = {"pix": "PIX", "credit_card": "Cartão de Crédito", "boleto": "Boleto"}
+    method_labels = {"pix": "PIX", "credit_card": "Cartão de Crédito"}
     method_display = method_labels.get(payment_method.lower(), payment_method.upper())
     amount_display = f"R$ {amount_cents / 100:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
