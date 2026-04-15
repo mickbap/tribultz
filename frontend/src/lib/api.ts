@@ -46,6 +46,8 @@ type LoginResponse = {
   token_type?: string;
   tenant_id?: string;
   account_type?: string;
+  plan_slug?: string;
+  role?: string;
   tenants?: TenantInfo[];
 };
 

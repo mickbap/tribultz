@@ -190,6 +190,7 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
         "tenant_id": default_tenant_id,
         "account_type": cast(str, user.account_type),
         "plan_slug": plan_slug,
+        "role": cast(str, user.role),
         "tenants": [t.model_dump() for t in user_tenant_list],
     }
 
@@ -603,6 +604,71 @@ async def switch_tenant(
         "token_type": "bearer",
         "tenant_id": str(data.tenant_id),
         "tenant_name": cast(str, tenant.name) if tenant else "",
+    }
+
+
+# ── Select Mode (superadmin only) ────────────────────────────
+
+VALID_TEST_MODES = ("trial", "starter", "profissional", "empresarial", "contador", "admin")
+
+
+class SelectModeRequest(BaseModel):
+    plan_slug: str
+
+
+@router.post("/select-mode")
+async def select_mode(
+    data: SelectModeRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Superadmin-only: override plan_slug in JWT for functional testing.
+
+    Returns a new JWT with the chosen plan_slug so that superadmins can
+    experience the platform as any plan tier (trial, starter, etc.) or
+    enter the admin dashboard (plan_slug="admin").
+    """
+    from app.api.deps import get_current_user, oauth2_scheme
+
+    token = await oauth2_scheme(request)
+    if not token:
+        raise HTTPException(status_code=401, detail="Token ausente.")
+    user = await get_current_user(token, db)
+
+    # Only superadmins may switch test mode
+    if cast(str, user.role) != "superadmin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito a superadmins.",
+        )
+
+    if data.plan_slug not in VALID_TEST_MODES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Modo inválido. Opções: {', '.join(VALID_TEST_MODES)}",
+        )
+
+    access_token = create_access_token(
+        subject=str(user.id),
+        extra_claims={
+            "tenant_id": str(user.tenant_id),
+            "role": cast(str, user.role),
+            "account_type": cast(str, user.account_type),
+            "plan_slug": data.plan_slug,
+            "test_mode": True,
+        },
+    )
+
+    logger.info(
+        "select_mode",
+        extra={"user_id": str(user.id), "plan_slug": data.plan_slug},
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "plan_slug": data.plan_slug,
+        "test_mode": True,
     }
 
 

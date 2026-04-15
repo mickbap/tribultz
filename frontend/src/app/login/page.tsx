@@ -55,7 +55,12 @@ export default function LoginPage() {
       setAccountType(login.account_type ?? "empresa");
       setTenants(login.tenants ?? []);
       window.dispatchEvent(new Event("tribultz-settings-updated"));
-      router.push("/dashboard");
+      // Superadmins go to plan/mode selector before entering the app
+      if (login.role === "superadmin") {
+        router.push("/select-mode");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha ao autenticar.";
       if (msg.includes("não verificado") || msg.includes("not verified")) {
