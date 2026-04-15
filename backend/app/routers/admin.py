@@ -41,14 +41,14 @@ def _registrations_last_30_days(db: Session) -> list[dict[str, Any]]:
     try:
         rows = db.execute(
             text("""
-                SELECT DATE(created_at) AS day, COUNT(*) AS count
+                SELECT DATE(created_at) AS day, COUNT(*) AS cnt
                 FROM users
                 WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
                 GROUP BY DATE(created_at)
                 ORDER BY day
             """)
         ).fetchall()
-        return [{"day": str(r.day), "count": r.count} for r in rows]
+        return [{"day": str(r.day), "count": r.cnt} for r in rows]
     except Exception:
         return []
 
@@ -57,12 +57,12 @@ def _plan_distribution(db: Session) -> list[dict[str, Any]]:
     """Count subscriptions per plan slug."""
     try:
         rows = db.execute(
-            select(Plan.slug, func.count(Subscription.id).label("count"))
+            select(Plan.slug, func.count(Subscription.id).label("cnt"))
             .select_from(Subscription)
             .join(Plan, Subscription.plan_id == Plan.id)
             .group_by(Plan.slug)
         ).fetchall()
-        return [{"plan": r.slug, "count": r.count} for r in rows]
+        return [{"plan": r.slug, "count": r.cnt} for r in rows]
     except Exception:
         return []
 
@@ -72,7 +72,7 @@ def _revenue_by_plan(db: Session, month_start: datetime) -> list[dict[str, Any]]
     try:
         rows = db.execute(
             text("""
-                SELECT p.slug, COUNT(pay.id) AS count,
+                SELECT p.slug, COUNT(pay.id) AS cnt,
                        COALESCE(SUM(pay.amount_cents), 0) AS total_cents
                 FROM payments pay
                 JOIN subscriptions s ON pay.subscription_id = s.id
@@ -85,7 +85,7 @@ def _revenue_by_plan(db: Session, month_start: datetime) -> list[dict[str, Any]]
             {"start": month_start},
         ).fetchall()
         return [
-            {"plan": r.slug, "count": r.count, "total_cents": r.total_cents}
+            {"plan": r.slug, "count": r.cnt, "total_cents": r.total_cents}
             for r in rows
         ]
     except Exception:
@@ -97,14 +97,14 @@ def _validations_last_7_days(db: Session) -> list[dict[str, Any]]:
     try:
         rows = db.execute(
             text("""
-                SELECT DATE(created_at) AS day, COUNT(*) AS count
+                SELECT DATE(created_at) AS day, COUNT(*) AS cnt
                 FROM jobs
                 WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
                 GROUP BY DATE(created_at)
                 ORDER BY day
             """)
         ).fetchall()
-        return [{"day": str(r.day), "count": r.count} for r in rows]
+        return [{"day": str(r.day), "count": r.cnt} for r in rows]
     except Exception:
         return []
 
@@ -114,14 +114,14 @@ def _support_stats(db: Session) -> dict[str, int]:
     try:
         rows = db.execute(
             text("""
-                SELECT status, COUNT(*) AS count
+                SELECT status, COUNT(*) AS cnt
                 FROM support_tickets
                 GROUP BY status
             """)
         ).fetchall()
         result: dict[str, int] = {"open": 0, "in_progress": 0, "resolved": 0, "closed": 0}
         for r in rows:
-            result[str(r.status)] = int(r.count)
+            result[str(r.status)] = int(r.cnt)
         return result
     except Exception:
         return {"open": 0, "in_progress": 0, "resolved": 0, "closed": 0}
@@ -132,7 +132,7 @@ def _feedback_stats(db: Session, month_start: datetime) -> dict[str, int]:
     try:
         rows = db.execute(
             text("""
-                SELECT category, COUNT(*) AS count
+                SELECT category, COUNT(*) AS cnt
                 FROM feedback
                 WHERE created_at >= :start
                 GROUP BY category
@@ -142,8 +142,8 @@ def _feedback_stats(db: Session, month_start: datetime) -> dict[str, int]:
         result: dict[str, int] = {}
         total = 0
         for r in rows:
-            result[str(r.category)] = int(r.count)
-            total += int(r.count)
+            result[str(r.category)] = int(r.cnt)
+            total += int(r.cnt)
         result["total"] = total
         return result
     except Exception:
