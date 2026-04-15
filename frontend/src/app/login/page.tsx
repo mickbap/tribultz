@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, Suspense, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Toast } from "@/components/common/Toast";
 import { loginWithApi, resendVerificationEmail } from "@/lib/api";
@@ -11,7 +11,21 @@ import { setAccountType, setTenantId, setTenants, setToken } from "@/lib/storage
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-tribultz-600" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loadingApi, setLoadingApi] = useState(false);
@@ -60,7 +74,7 @@ export default function LoginPage() {
       if (login.role === "superadmin") {
         router.push("/select-mode");
       } else {
-        router.push("/dashboard");
+        router.push(redirectTo ?? "/dashboard");
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha ao autenticar.";
