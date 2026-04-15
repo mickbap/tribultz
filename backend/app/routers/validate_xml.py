@@ -126,7 +126,7 @@ def _xpath(tag: str, doc_type: str) -> str:
 
 
 def _fingerprint(xml: str) -> str:
-    return hashlib.md5(xml.encode()).hexdigest()[:12]
+    return hashlib.sha256(xml.encode()).hexdigest()[:12]
 
 
 # ── Validation engine ───────────────────────────────────────────────────────

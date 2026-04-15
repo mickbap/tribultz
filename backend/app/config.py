@@ -36,8 +36,6 @@ class Settings(BaseSettings):
     HUBSPOT_ENABLED: bool = False
     HUBSPOT_PRIVATE_APP_TOKEN: str = ""
     HUBSPOT_API_BASE_URL: str = "https://api.hubapi.com"
-    CHATOPS_TIMEOUT_SECONDS: int = 45
-
     # ── Security ────────────────────────────────────────────
     ALLOWED_ORIGINS: str = "http://localhost:3000,https://tribultz.com.br,https://*.vercel.app"
     ENVIRONMENT: str = "development"  # development | staging | production
