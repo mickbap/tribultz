@@ -14,8 +14,8 @@ const PLANS: { slug: PlanSlug; name: string; price: string; features: string[]; 
   {
     slug: "trial",
     name: "Trial",
-    price: "Grátis por 2 dias",
-    features: ["3 validações", "Download TXT", "Sem dashboard", "Sem suporte"],
+    price: "Grátis por 3 dias",
+    features: ["5 validações", "Download TXT", "Sem dashboard", "Sem suporte"],
   },
   {
     slug: "starter",
@@ -27,14 +27,14 @@ const PLANS: { slug: PlanSlug; name: string; price: string; features: string[]; 
     slug: "profissional",
     name: "Profissional",
     price: "R$ 149,00/mês",
-    features: ["500 validações/mês", "IA ilimitada", "Relatório PDF", "Validação em lote", "Suporte prioritário"],
+    features: ["500 validações/mês", "Relatório PDF", "Validação em lote", "Suporte prioritário"],
     highlight: true,
   },
   {
     slug: "empresarial",
     name: "Empresarial",
     price: "R$ 249,00/mês",
-    features: ["2.000 validações/mês", "IA ilimitada", "Relatório PDF", "Validação em lote", "Até 10 CNPJs (filiais)"],
+    features: ["2.000 validações/mês", "Relatório PDF", "Validação em lote", "Até 10 CNPJs (filiais)"],
   },
   {
     slug: "contador",
