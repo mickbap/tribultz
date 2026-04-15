@@ -129,7 +129,7 @@ class TestUploadUrl:
     def test_invalid_doc_type_returns_422(self, client_with_auth):
         resp = client_with_auth.post(
             self.ENDPOINT,
-            json={"doc_type": "boleto"},
+            json={"doc_type": "invalid_type"},
         )
         assert resp.status_code == 422
 

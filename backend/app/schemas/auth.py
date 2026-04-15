@@ -33,7 +33,7 @@ class UserRegister(BaseModel):
     phone: str = ""
     account_type: str = "empresa"  # empresa | contador
     plan_slug: str = "trial"  # trial | starter | profissional | contador
-    billing_type: str = "PIX"  # PIX | CREDIT_CARD
+    billing_type: str = "PIX"  # PIX | CREDIT_CARD (boleto not supported)
     lgpd_consent: bool = False
     tenant_slug: str = "default"
     captcha_token: str = ""

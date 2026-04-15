@@ -144,7 +144,7 @@ type UpgradeModalProps = {
 
 function UpgradeModal({ plan, onClose }: UpgradeModalProps) {
   const [loading, setLoading] = useState(false);
-  const [billingType, setBillingType] = useState<"PIX" | "CREDIT_CARD" | "BOLETO">("PIX");
+  const [billingType, setBillingType] = useState<"PIX" | "CREDIT_CARD">("PIX");
   const [result, setResult] = useState<{
     pixQrCode?: string;
     pixCopyPaste?: string;
@@ -194,8 +194,8 @@ function UpgradeModal({ plan, onClose }: UpgradeModalProps) {
             <p className="mb-4 text-sm text-slate-600">
               Escolha a forma de pagamento:
             </p>
-            <div className="mb-6 grid grid-cols-3 gap-2">
-              {(["PIX", "CREDIT_CARD", "BOLETO"] as const).map((type) => (
+            <div className="mb-6 grid grid-cols-2 gap-2">
+              {(["PIX", "CREDIT_CARD"] as const).map((type) => (
                 <button
                   key={type}
                   onClick={() => setBillingType(type)}
@@ -205,7 +205,7 @@ function UpgradeModal({ plan, onClose }: UpgradeModalProps) {
                       : "border-slate-200 text-slate-600 hover:border-slate-300"
                   }`}
                 >
-                  {type === "PIX" ? "PIX" : type === "CREDIT_CARD" ? "Cartão" : "Boleto"}
+                  {type === "PIX" ? "PIX" : "Cartão"}
                 </button>
               ))}
             </div>
@@ -500,7 +500,7 @@ export default function PricingPage() {
               },
               {
                 q: "Quais formas de pagamento são aceitas?",
-                a: "PIX (aprovação instantânea), cartão de crédito e boleto bancário.",
+                a: "PIX (aprovação instantânea) e cartão de crédito.",
               },
               {
                 q: "O que é a validação cruzada em lote?",
