@@ -19,7 +19,7 @@ function safeLocalStorage(): Storage | null {
 
 // ── Plan feature matrix ─────────────────────────────────────────
 
-export type PlanSlug = "trial" | "starter" | "profissional" | "empresarial" | "contador";
+export type PlanSlug = "trial" | "starter" | "profissional" | "empresarial" | "contador" | "admin";
 
 export type PlanFeatures = {
   name: string;
@@ -86,6 +86,18 @@ export const PLAN_FEATURES: Record<PlanSlug, PlanFeatures> = {
   contador: {
     name: "Contador",
     priceCents: 34900,
+    maxValidations: null,
+    hasPdfReports: true,
+    hasBatch: true,
+    hasDashboard: true,
+    hasApiAccess: true,
+    hasMultiCnpj: true,
+    hasJustificativaFiscal: true,
+    trialDays: null,
+  },
+  admin: {
+    name: "Administrador",
+    priceCents: 0,
     maxValidations: null,
     hasPdfReports: true,
     hasBatch: true,

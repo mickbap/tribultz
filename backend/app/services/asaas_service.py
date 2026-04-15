@@ -231,7 +231,8 @@ class AsaasService:
         if not self.webhook_token:
             logger.warning("ASAAS_WEBHOOK_TOKEN not configured, rejecting webhook")
             return False
-        return token == self.webhook_token
+        import hmac
+        return hmac.compare_digest(token, self.webhook_token)
 
 
 # Singleton instance

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Toast } from "@/components/common/Toast";
@@ -55,7 +56,12 @@ export default function LoginPage() {
       setAccountType(login.account_type ?? "empresa");
       setTenants(login.tenants ?? []);
       window.dispatchEvent(new Event("tribultz-settings-updated"));
-      router.push("/dashboard");
+      // Superadmins go to plan/mode selector before entering the app
+      if (login.role === "superadmin") {
+        router.push("/select-mode");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha ao autenticar.";
       if (msg.includes("não verificado") || msg.includes("not verified")) {
@@ -160,9 +166,9 @@ export default function LoginPage() {
                   </div>
                 )}
                 <p className="text-center text-xs text-slate-500">
-                  <a href="/forgot-password" className="font-medium text-tribultz-700 hover:underline">
+                  <Link href="/forgot-password" className="font-medium text-tribultz-700 hover:underline">
                     Esqueci minha senha
-                  </a>
+                  </Link>
                 </p>
               </form>
             </div>
@@ -171,13 +177,13 @@ export default function LoginPage() {
       </section>
       <p className="mt-4 text-center text-sm text-slate-500">
         Não tem conta?{" "}
-        <a href="/register" className="font-medium text-tribultz-700 hover:underline">
+        <Link href="/register" className="font-medium text-tribultz-700 hover:underline">
           Criar conta
-        </a>
+        </Link>
         {" "}&middot;{" "}
-        <a href="/changelog" className="font-medium text-slate-500 hover:text-tribultz-700 hover:underline">
+        <Link href="/changelog" className="font-medium text-slate-500 hover:text-tribultz-700 hover:underline">
           Novidades
-        </a>
+        </Link>
       </p>
       {error ? <Toast message={error} tone="error" onClose={() => setError(null)} /> : null}
     </main>

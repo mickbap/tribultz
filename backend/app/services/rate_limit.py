@@ -25,7 +25,9 @@ class RateLimiter:
                 self.redis = redis.from_url(settings.REDIS_URL, decode_responses=True)
                 # Test connection
                 self.redis.ping()
-                logger.info(f"RateLimiter connected to Redis: {settings.REDIS_URL}")
+                # Redact credentials from URL before logging
+                _safe_url = settings.REDIS_URL.split("@")[-1] if "@" in settings.REDIS_URL else settings.REDIS_URL
+                logger.info("RateLimiter connected to Redis: %s", _safe_url)
             except Exception as e:
                 logger.warning(f"RateLimiter failed to connect to Redis: {e}. Fallback to in-memory.")
                 self.redis = None

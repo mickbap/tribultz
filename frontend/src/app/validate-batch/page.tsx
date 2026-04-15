@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ChangeEvent, useCallback, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Toast } from "@/components/common/Toast";
 import { validateXml } from "@/lib/api";
+import { canAccess } from "@/lib/plan";
 import { buildBatchReportCsv, buildBatchReportHtml, downloadBatchCsv, downloadBatchPdf } from "@/lib/export/batchReport";
 import { ValidateXmlRequest, ValidationResultV11, XmlDocumentType } from "@/lib/types";
 
@@ -54,6 +56,15 @@ function resultBadgeColor(item: BatchItem): string {
 }
 
 export default function ValidateBatchPage() {
+  const router = useRouter();
+
+  // Plan gate: only profissional, empresarial, contador, admin can access batch
+  useEffect(() => {
+    if (!canAccess("hasBatch")) {
+      router.replace("/billing");
+    }
+  }, [router]);
+
   const [documentType, setDocumentType] = useState<XmlDocumentType>("NFSE");
   const [items, setItems] = useState<BatchItem[]>([]);
   const [running, setRunning] = useState(false);
