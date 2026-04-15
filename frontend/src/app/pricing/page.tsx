@@ -500,7 +500,7 @@ export default function PricingPage() {
               },
               {
                 q: "Quais formas de pagamento são aceitas?",
-                a: "PIX (aprovação instantânea) e cartão de crédito.",
+                a: "PIX e cartão de crédito, ambos com aprovação instantânea.",
               },
               {
                 q: "O que é a validação cruzada em lote?",
