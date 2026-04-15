@@ -514,7 +514,9 @@ async def add_cnpj(
 
     # Validate CNPJ
     cnpj_result = await validate_cnpj(cnpj_digits)
-    company_name = cnpj_result.company_name if cnpj_result.valid else ""
+    if not cnpj_result.valid:
+        raise HTTPException(status_code=400, detail="CNPJ inválido ou não encontrado na Receita Federal.")
+    company_name = cnpj_result.company_name
 
     # Get or create tenant
     tenant = _get_or_create_tenant_for_cnpj(db, cnpj_digits, company_name)
