@@ -245,7 +245,7 @@ export default function BillingPage() {
         <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="mb-4 font-semibold text-slate-800">Planos disponíveis</h3>
           <div className="grid gap-3 md:grid-cols-3">
-            {(["starter", "profissional", "contador"] as PlanSlug[]).map((slug) => {
+            {(["starter", "profissional", "empresarial", "contador"] as PlanSlug[]).map((slug) => {
               const plan = PLAN_FEATURES[slug];
               const isCurrent = slug === currentSlug;
               return (
