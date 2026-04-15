@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { NewsFeed } from "@/components/public/NewsFeed";
+
+export const metadata: Metadata = {
+  title: "Changelog",
+  description: "Novidades e atualizações da plataforma Tribultz de conformidade fiscal.",
+};
 
 export default function ChangelogPage() {
   return (

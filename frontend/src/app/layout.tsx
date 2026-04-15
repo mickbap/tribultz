@@ -13,9 +13,35 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://tribultz.com.br";
+const SITE_NAME = "Tribultz";
+const DEFAULT_DESCRIPTION =
+  "Plataforma de inteligência fiscal para a reforma tributária brasileira. Validação determinística CBS/IBS, memória de precedentes e trilha auditável.";
+
 export const metadata: Metadata = {
-  title: "Tribultz | Inteligência Fiscal para a Reforma Tributária",
-  description: "Plataforma de inteligência fiscal para a reforma tributária com validação determinística, memória de precedentes e trilha auditável.",
+  title: {
+    default: "Tribultz | Inteligência Fiscal para a Reforma Tributária",
+    template: "%s | Tribultz",
+  },
+  description: DEFAULT_DESCRIPTION,
+  metadataBase: new URL(SITE_URL),
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: "Tribultz | Inteligência Fiscal para a Reforma Tributária",
+    description: DEFAULT_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tribultz | Inteligência Fiscal para a Reforma Tributária",
+    description: DEFAULT_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

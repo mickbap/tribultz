@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+
+export const metadata: Metadata = {
+  title: "LGPD",
+  description: "Como a Tribultz trata seus dados pessoais de acordo com a LGPD.",
+};
 
 export default function LGPDPage() {
   return (
