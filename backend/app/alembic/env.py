@@ -7,7 +7,7 @@ from alembic import context
 
 from app.database import Base
 from app.config import settings
-from app.models import auth, billing, chat, documents, feedback, news, reports  # noqa: F401
+from app.models import auth, billing, documents, feedback, news, reports  # noqa: F401
 
 # Import models to register them with metadata
 
