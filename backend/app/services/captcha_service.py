@@ -26,8 +26,8 @@ async def verify_captcha(token: str, remote_ip: str | None = None) -> bool:
         return True
 
     if not settings.TURNSTILE_SECRET_KEY:
-        logger.warning("captcha_no_secret_key: CAPTCHA_ENABLED but no TURNSTILE_SECRET_KEY set")
-        return True
+        logger.error("captcha_no_secret_key: CAPTCHA_ENABLED but no TURNSTILE_SECRET_KEY set")
+        return False
 
     if not token:
         return False
@@ -50,5 +50,6 @@ async def verify_captcha(token: str, remote_ip: str | None = None) -> bool:
             return success
     except Exception as exc:
         logger.error("captcha_verify_error", extra={"error": str(exc)})
-        # Fail open: don't block users if Cloudflare is unreachable
-        return True
+        # Fail closed: reject request when Cloudflare is unreachable.
+        # Attacker could block Cloudflare connectivity to bypass CAPTCHA.
+        return False
