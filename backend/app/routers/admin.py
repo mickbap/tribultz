@@ -121,7 +121,7 @@ def _support_stats(db: Session) -> dict[str, int]:
         ).fetchall()
         result: dict[str, int] = {"open": 0, "in_progress": 0, "resolved": 0, "closed": 0}
         for r in rows:
-            result[r.status] = r.count
+            result[str(r.status)] = int(r.count)
         return result
     except Exception:
         return {"open": 0, "in_progress": 0, "resolved": 0, "closed": 0}
@@ -142,8 +142,8 @@ def _feedback_stats(db: Session, month_start: datetime) -> dict[str, int]:
         result: dict[str, int] = {}
         total = 0
         for r in rows:
-            result[r.category] = r.count
-            total += r.count
+            result[str(r.category)] = int(r.count)
+            total += int(r.count)
         result["total"] = total
         return result
     except Exception:
@@ -156,13 +156,14 @@ def _redis_info(redis_url: str) -> dict[str, Any]:
         import redis as redis_lib
         r = redis_lib.from_url(redis_url, socket_connect_timeout=2)
         r.ping()
-        info = r.info(section="memory")
-        clients = r.info(section="clients")
+        info: dict[str, Any] = r.info(section="memory")  # type: ignore[assignment]
+        clients: dict[str, Any] = r.info(section="clients")  # type: ignore[assignment]
+        server: dict[str, Any] = r.info(section="server")  # type: ignore[assignment]
         return {
             "status": "healthy",
             "used_memory_human": info.get("used_memory_human", "?"),
             "connected_clients": clients.get("connected_clients", 0),
-            "uptime_days": r.info(section="server").get("uptime_in_days", 0),
+            "uptime_days": server.get("uptime_in_days", 0),
         }
     except Exception:
         return {"status": "unhealthy", "used_memory_human": "?", "connected_clients": 0, "uptime_days": 0}
