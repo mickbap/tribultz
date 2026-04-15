@@ -1,7 +1,7 @@
 """Feedback router — in-platform customer feedback channel."""
 
 import logging
-from typing import cast
+from typing import Annotated, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.database import get_db
+from app.models.auth import User
 from app.models.feedback import Feedback
 from app.schemas.feedback import FeedbackCreate, FeedbackRead
 from app.api.deps import get_current_user
@@ -20,11 +21,11 @@ router = APIRouter(prefix="/api/v1/feedback", tags=["feedback"])
 @router.post("/", response_model=FeedbackRead, status_code=status.HTTP_201_CREATED)
 def create_feedback(
     data: FeedbackCreate,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
-    user_id = current_user["user_id"]
-    tenant_id = current_user["tenant_id"]
+    user_id = current_user.id
+    tenant_id = current_user.tenant_id
 
     feedback = Feedback(
         tenant_id=tenant_id,
@@ -53,10 +54,10 @@ def create_feedback(
 
 @router.get("/", response_model=list[FeedbackRead])
 def list_feedback(
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
-    tenant_id = current_user["tenant_id"]
+    tenant_id = current_user.tenant_id
     stmt = (
         select(Feedback)
         .where(Feedback.tenant_id == tenant_id)

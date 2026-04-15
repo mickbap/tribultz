@@ -88,14 +88,21 @@ async def asaas_webhook(
             .values(status="active", current_period_start=datetime.now(timezone.utc))
         )
 
-        # Activate user
+        # Activate user (skip if LGPD-deleted)
         sub = db.execute(
             select(Subscription).where(Subscription.id == payment.subscription_id)
         ).scalar_one_or_none()
         if sub:
-            db.execute(
-                update(User).where(User.id == sub.user_id).values(is_active=True)
-            )
+            user = db.get(User, sub.user_id)
+            if user and user.deleted_at is None:
+                db.execute(
+                    update(User).where(User.id == sub.user_id).values(is_active=True)
+                )
+            elif user and user.deleted_at is not None:
+                logger.warning(
+                    "Skipping activation for LGPD-deleted user %s (payment %s)",
+                    sub.user_id, asaas_payment_id,
+                )
 
         db.commit()
         logger.info("Payment %s confirmed, subscription activated", asaas_payment_id)

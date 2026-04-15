@@ -422,13 +422,17 @@ async def validate_xml_endpoint(
     Auto-detects document type if not specified.
     Enriches validation with ClassTrib API + CNPJ status check.
     """
+    MAX_XML_SIZE = 10 * 1024 * 1024  # 10 MB
     if file:
-        raw = await file.read()
+        raw = await file.read(MAX_XML_SIZE + 1)
+        if len(raw) > MAX_XML_SIZE:
+            raise HTTPException(status_code=413, detail="Arquivo XML excede o limite de 10 MB.")
         xml = raw.decode("utf-8")
     elif xml_content:
+        if len(xml_content.encode("utf-8")) > MAX_XML_SIZE:
+            raise HTTPException(status_code=413, detail="XML excede o limite de 10 MB.")
         xml = xml_content
     else:
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Envie um arquivo XML ou xml_content.")
 
     doc_type = document_type if document_type in ("NFSE", "NFE", "NFCE") else None
@@ -474,8 +478,11 @@ async def correct_xml_endpoint(
     - Persists corrected XML as a Document (doc_type='other', artifact_kind='corrected_xml')
     - Returns presigned download URL
     """
+    MAX_XML_SIZE = 10 * 1024 * 1024  # 10 MB
     if file:
-        raw = await file.read()
+        raw = await file.read(MAX_XML_SIZE + 1)
+        if len(raw) > MAX_XML_SIZE:
+            raise HTTPException(status_code=413, detail="Arquivo XML excede o limite de 10 MB.")
         xml = raw.decode("utf-8")
     elif xml_content:
         xml = xml_content

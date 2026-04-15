@@ -51,12 +51,16 @@ async def get_current_user(
     user = db.get(User, user_uuid)
     if user is None:
         raise credentials_exception()
-        
+
+    # Block soft-deleted users (LGPD deletion sets deleted_at)
+    if user.deleted_at is not None:
+        raise credentials_exception()
+
     if not cast(bool, user.is_active):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Inactive user",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
+
     return user

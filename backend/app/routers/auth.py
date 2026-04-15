@@ -39,9 +39,15 @@ _register_limiter.limit = 3
 
 
 def _client_ip(request: Request) -> str:
+    # Cloudflare sets CF-Connecting-IP with the real client IP (most reliable)
+    cf_ip = request.headers.get("cf-connecting-ip")
+    if cf_ip:
+        return cf_ip.strip()
+    # Fallback: rightmost X-Forwarded-For (last untrusted hop)
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        parts = [p.strip() for p in forwarded.split(",")]
+        return parts[-1] if parts else "unknown"
     if request.client:
         return request.client.host
     return "unknown"
