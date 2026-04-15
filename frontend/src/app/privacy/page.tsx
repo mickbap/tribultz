@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+
+export const metadata: Metadata = {
+  title: "Privacidade",
+  description: "Política de privacidade da plataforma Tribultz.",
+};
 
 export default function PrivacyPage() {
   return (

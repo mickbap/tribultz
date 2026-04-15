@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { NewsFeed } from "@/components/public/NewsFeed";
+
+export const metadata: Metadata = {
+  title: "Tribultz | Inteligência Fiscal para a Reforma Tributária",
+  description:
+    "Valide notas fiscais contra CBS/IBS, classifique produtos com cClassTrib e garanta conformidade com a LC 214. Motor determinístico com trilha auditável.",
+};
 
 // ── Dados estáticos ────────────────────────────────────────────────────────────
 

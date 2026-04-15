@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+
+export const metadata: Metadata = {
+  title: "Termos de Uso",
+  description: "Termos de uso da plataforma Tribultz de conformidade fiscal.",
+};
 
 export default function TermsPage() {
   return (
