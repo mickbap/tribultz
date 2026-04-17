@@ -33,7 +33,7 @@ test("auth guard redirects unauthenticated users from protected route to /login"
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  await page.goto(`${APP_BASE}/jobs`, { waitUntil: "networkidle" });
+  await page.goto(`${APP_BASE}/jobs`, { waitUntil: "domcontentloaded" });
 
   await page.waitForURL(/\/login\?redirect=/, { timeout: 15_000 });
 
