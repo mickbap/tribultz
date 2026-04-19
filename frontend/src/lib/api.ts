@@ -191,6 +191,46 @@ export async function registerWithApi(payload: RegisterRequest): Promise<Registe
   return (await res.json()) as RegisterResponse;
 }
 
+type ValidationResultApi = {
+  job_id?: string;
+  audit_id?: string;
+  document_type?: string;
+  findings?: ValidationResultV11["findings"];
+  evidences?: ValidationResultV11["evidences"];
+  fatals?: number;
+  alerts?: number;
+  created_at?: string;
+  job?: ValidationResultV11["job"];
+  audit?: ValidationResultV11["audit"];
+  transaction_id?: string;
+};
+
+export function adaptValidationResult(
+  raw: ValidationResultApi,
+  tenantId: string,
+  transactionId: string,
+): ValidationResultV11 {
+  const createdAt = raw.created_at ?? raw.job?.created_at ?? new Date().toISOString();
+  const jobId = raw.job?.id ?? raw.job_id ?? "";
+  const auditId = raw.audit?.id ?? raw.audit_id ?? "";
+  return {
+    job: {
+      id: jobId,
+      created_at: raw.job?.created_at ?? createdAt,
+      tenant_id: raw.job?.tenant_id ?? tenantId,
+      transaction_id: raw.job?.transaction_id ?? raw.transaction_id ?? transactionId,
+    },
+    audit: {
+      id: auditId,
+      job_id: raw.audit?.job_id ?? jobId,
+      events: raw.audit?.events ?? [],
+    },
+    findings: raw.findings ?? [],
+    evidences: raw.evidences ?? [],
+    transaction_id: raw.transaction_id ?? transactionId,
+  };
+}
+
 export async function validateXml(payload: ValidateXmlRequest): Promise<ValidationResultV11> {
   const tenantId = getTenantId();
   const transactionId = payload.transaction_id ?? createTransactionId();
@@ -213,15 +253,8 @@ export async function validateXml(payload: ValidateXmlRequest): Promise<Validati
     const detail = await res.text().catch(() => "Erro de API");
     throw new Error(`API ${res.status}: ${detail}`);
   }
-  const data = (await res.json()) as ValidationResultV11;
-  return {
-    ...data,
-    transaction_id: data.transaction_id ?? transactionId,
-    job: {
-      ...data.job,
-      transaction_id: data.job?.transaction_id ?? data.transaction_id ?? transactionId,
-    },
-  };
+  const raw = (await res.json()) as ValidationResultApi;
+  return adaptValidationResult(raw, tenantId, transactionId);
 }
 
 export async function getJobs(): Promise<Job[]> {
