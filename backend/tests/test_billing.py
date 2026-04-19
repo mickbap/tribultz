@@ -338,6 +338,99 @@ class TestPlanGate:
         assert callable(increment_usage)
 
 
+# ── Trial plan access to XML validation (issue #231) ──────────────────────
+
+
+class TestValidateXmlTrialAccess:
+    """Trial plan must reach /validate/xml and be bounded by max_validations quota."""
+
+    def _routes(self):
+        from app.routers.validate_xml import router
+        return {getattr(r, "path", ""): r for r in router.routes}
+
+    def _allowed_slugs(self, route):
+        # require_plan closure captures allowed_slugs; inspect free vars
+        for dep in route.dependant.dependencies:
+            fn = dep.call
+            cells = getattr(fn, "__closure__", None) or ()
+            for cell in cells:
+                val = cell.cell_contents
+                if isinstance(val, tuple) and val and all(isinstance(s, str) for s in val):
+                    if "starter" in val or "profissional" in val or "trial" in val:
+                        return val
+        return None
+
+    def _has_usage_check(self, route):
+        for dep in route.dependant.dependencies:
+            fn = dep.call
+            cells = getattr(fn, "__closure__", None) or ()
+            for cell in cells:
+                if cell.cell_contents == "validations":
+                    return True
+        return False
+
+    def test_validate_xml_allows_trial(self):
+        route = self._routes().get("/api/v1/validate/xml")
+        assert route is not None
+        slugs = self._allowed_slugs(route)
+        assert slugs is not None and "trial" in slugs
+
+    def test_validate_xml_has_usage_limit(self):
+        route = self._routes().get("/api/v1/validate/xml")
+        assert self._has_usage_check(route) is True
+
+    def test_correct_xml_allows_trial(self):
+        route = self._routes().get("/api/v1/validate/xml/correct")
+        assert route is not None
+        slugs = self._allowed_slugs(route)
+        assert slugs is not None and "trial" in slugs
+
+    def test_correct_xml_has_usage_limit(self):
+        route = self._routes().get("/api/v1/validate/xml/correct")
+        assert self._has_usage_check(route) is True
+
+    def test_batch_cross_check_still_blocks_trial(self):
+        # Batch is not advertised for Trial — must stay Profissional+
+        route = self._routes().get("/api/v1/validate/batch-cross-check")
+        assert route is not None
+        slugs = self._allowed_slugs(route)
+        assert slugs is not None and "trial" not in slugs
+
+    def test_check_usage_limit_blocks_trial_at_quota(self):
+        # At 5/5, Trial user must be rejected with 403
+        from fastapi import HTTPException
+        from app.api.plan_gate import check_usage_limit
+
+        mock_plan = MagicMock(max_validations=5)
+        mock_user = MagicMock(id="u1", tenant_id="t1")
+        mock_usage = MagicMock(validations_used=5)
+
+        mock_db = MagicMock()
+        mock_db.execute.return_value.scalar_one_or_none.return_value = mock_usage
+
+        with patch("app.api.plan_gate._get_active_subscription", return_value=(MagicMock(), mock_plan)):
+            dep = check_usage_limit("validations")
+            with pytest.raises(HTTPException) as exc:
+                dep(current_user=mock_user, db=mock_db)
+            assert exc.value.status_code == 403
+            assert "Limite mensal" in exc.value.detail
+
+    def test_check_usage_limit_allows_trial_under_quota(self):
+        from app.api.plan_gate import check_usage_limit
+
+        mock_plan = MagicMock(max_validations=5)
+        mock_user = MagicMock(id="u1", tenant_id="t1")
+        mock_usage = MagicMock(validations_used=3)
+
+        mock_db = MagicMock()
+        mock_db.execute.return_value.scalar_one_or_none.return_value = mock_usage
+
+        with patch("app.api.plan_gate._get_active_subscription", return_value=(MagicMock(), mock_plan)):
+            dep = check_usage_limit("validations")
+            result = dep(current_user=mock_user, db=mock_db)
+            assert result is mock_user
+
+
 # ── PDF service tests ─────────────────────────────────────────────────────
 
 
