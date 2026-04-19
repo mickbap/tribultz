@@ -374,6 +374,20 @@ Vercel → Frontend Next.js
 
 ### Deploy
 
+**Auto-deploy (padrão)**: todo push em `main` que toque `backend/**` ou `infra/**` dispara o workflow [`deploy-prod.yml`](.github/workflows/deploy-prod.yml), que conecta na VM via SSH e roda `deploy.sh`. Mudanças só-frontend não disparam (frontend é Vercel).
+
+Disparo manual (com flags) via Actions → "Deploy Prod (Magalu)" → Run workflow (`migrate` / `skip_pull` opcionais).
+
+**Secrets necessários** (Settings → Secrets and variables → Actions):
+
+| Secret | Valor |
+|---|---|
+| `MAGALU_SSH_KEY` | Chave privada ed25519 (`tribultz-infra`) — conteúdo completo do arquivo |
+| `MAGALU_SSH_HOST` | `201.54.20.18` |
+| `MAGALU_SSH_USER` | `ubuntu` |
+
+**Execução manual na VM** (fallback / debug):
+
 ```bash
 # Bootstrap inicial (uma vez, na VM)
 sudo bash infra/scripts/magalu-init.sh
