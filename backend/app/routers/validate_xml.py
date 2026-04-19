@@ -24,7 +24,7 @@ from app.models.auth import User
 from app.models.documents import Document
 from app.tools import s3_tool, postgres_tool
 from app.services.xml_correction_service import correct_xml
-from app.api.plan_gate import require_plan
+from app.api.plan_gate import require_plan, check_usage_limit, increment_usage
 from app.data.ncm_codes import VALID_NCM_CODES
 from uuid import uuid4
 
@@ -408,13 +408,17 @@ def validate_xml(
 @router.post(
     "/validate/xml",
     response_model=ValidationResult,
-    dependencies=[Depends(require_plan("starter", "profissional", "contador"))],
+    dependencies=[
+        Depends(require_plan("trial", "starter", "profissional", "contador")),
+        Depends(check_usage_limit("validations")),
+    ],
 )
 async def validate_xml_endpoint(
     file: UploadFile = File(None),
     xml_content: str = Form(None),
     document_type: str | None = Form(None),
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> ValidationResult:
     """Validate an XML document (NFS-e, NF-e, or NFC-e) against fiscal rules.
 
@@ -441,11 +445,16 @@ async def validate_xml_endpoint(
     classtrib_data = await _enrich_classtrib(xml)
     cnpj_data = await _enrich_cnpj(xml)
 
-    return validate_xml(
+    result = validate_xml(
         xml, doc_type,
         classtrib_results=classtrib_data,
         cnpj_result=cnpj_data,
     )
+
+    increment_usage(db, current_user.id, current_user.tenant_id, "validations")
+    db.commit()
+
+    return result
 
 
 # ── XML Correction (MVP) ───────────────────────────────────────────────────
@@ -462,7 +471,10 @@ class CorrectionResponse(BaseModel):
 @router.post(
     "/validate/xml/correct",
     response_model=CorrectionResponse,
-    dependencies=[Depends(require_plan("starter", "profissional", "contador"))],
+    dependencies=[
+        Depends(require_plan("trial", "starter", "profissional", "contador")),
+        Depends(check_usage_limit("validations")),
+    ],
 )
 async def correct_xml_endpoint(
     file: UploadFile = File(None),
@@ -541,6 +553,7 @@ async def correct_xml_endpoint(
         },
     )
     db.add(doc)
+    increment_usage(db, current_user.id, current_user.tenant_id, "validations")
     db.commit()
     db.refresh(doc)
 
