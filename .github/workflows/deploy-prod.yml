@@ -1,0 +1,99 @@
+name: Deploy Prod (Magalu)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "infra/**"
+      - ".github/workflows/deploy-prod.yml"
+  workflow_dispatch:
+    inputs:
+      migrate:
+        description: "Rodar migrações Alembic (--migrate)"
+        type: boolean
+        default: false
+      skip_pull:
+        description: "Pular git pull na VM (--skip-pull, deploy do código atual)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: SSH deploy → 201.54.20.18
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout (para referência do commit)
+        uses: actions/checkout@v4
+
+      - name: Resolver flags do deploy.sh
+        id: flags
+        run: |
+          FLAGS=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            [ "${{ inputs.migrate }}" = "true" ] && FLAGS="$FLAGS --migrate"
+            [ "${{ inputs.skip_pull }}" = "true" ] && FLAGS="$FLAGS --skip-pull"
+          fi
+          echo "flags=$FLAGS" >> "$GITHUB_OUTPUT"
+          echo "Flags: $FLAGS"
+
+      - name: Configurar chave SSH
+        env:
+          SSH_KEY: ${{ secrets.MAGALU_SSH_KEY }}
+          SSH_HOST: ${{ secrets.MAGALU_SSH_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Executar deploy.sh na VM
+        id: deploy
+        env:
+          SSH_HOST: ${{ secrets.MAGALU_SSH_HOST }}
+          SSH_USER: ${{ secrets.MAGALU_SSH_USER }}
+          FLAGS: ${{ steps.flags.outputs.flags }}
+        run: |
+          set -o pipefail
+          LOG=/tmp/deploy-output.log
+          ssh -o StrictHostKeyChecking=yes \
+              -o ServerAliveInterval=30 \
+              -i ~/.ssh/id_ed25519 \
+              "$SSH_USER@$SSH_HOST" \
+              "sudo bash /opt/tribultz/infra/scripts/deploy.sh $FLAGS" 2>&1 | tee "$LOG"
+
+      - name: Publicar log no summary do job
+        if: always()
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          ACTOR: ${{ github.actor }}
+          FLAGS: ${{ steps.flags.outputs.flags }}
+        run: |
+          {
+            echo "## Tribultz — Deploy Prod"
+            echo ""
+            echo "- **Commit**: \`${COMMIT_SHA:0:7}\`"
+            echo "- **Trigger**: ${{ github.event_name }} por @${ACTOR}"
+            echo "- **Flags**: \`${FLAGS:-(nenhuma)}\`"
+            echo "- **Mensagem**: ${COMMIT_MSG%%$'\n'*}"
+            echo ""
+            echo "<details><summary>Saída de deploy.sh</summary>"
+            echo ""
+            echo '```'
+            tail -c 60000 /tmp/deploy-output.log 2>/dev/null || echo "(sem log)"
+            echo '```'
+            echo ""
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Limpar chave SSH
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
