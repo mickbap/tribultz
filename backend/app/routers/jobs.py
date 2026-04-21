@@ -61,6 +61,12 @@ class JobResponse(BaseModel):
 
 
 def _row_to_response(r) -> JobResponse:
+    raw_result = r.result if isinstance(r.result, dict) else None
+    findings = None
+    if raw_result:
+        raw_findings = raw_result.get("findings")
+        if isinstance(raw_findings, list) and raw_findings:
+            findings = raw_findings
     return JobResponse(
         id=str(r.id),
         tenant_id=str(r.tenant_id),
@@ -68,10 +74,11 @@ def _row_to_response(r) -> JobResponse:
         status=r.status,
         idempotency_key=r.idempotency_key,
         payload=r.payload if isinstance(r.payload, dict) else {},
-        result=r.result if isinstance(r.result, dict) else None,
+        result=raw_result,
         error_message=r.error_message,
         created_at=r.created_at.isoformat() if r.created_at else "",
         updated_at=r.updated_at.isoformat() if r.updated_at else "",
+        findings=findings,
     )
 
 

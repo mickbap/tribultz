@@ -10,9 +10,11 @@ Rules 15-18: Cross-validation (NCM, ClassTrib, CNPJ — S13)
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 from datetime import datetime, timezone
 from typing import Any
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel
@@ -22,11 +24,13 @@ from app.api.deps import get_current_user
 from app.database import get_db
 from app.models.auth import User
 from app.models.documents import Document
+from app.models.jobs import Job as JobModel
 from app.tools import s3_tool, postgres_tool
 from app.services.xml_correction_service import correct_xml
 from app.api.plan_gate import require_plan, check_usage_limit, increment_usage
 from app.data.ncm_codes import VALID_NCM_CODES
-from uuid import uuid4
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["validate-xml"])
 
@@ -450,6 +454,21 @@ async def validate_xml_endpoint(
         classtrib_results=classtrib_data,
         cnpj_result=cnpj_data,
     )
+
+    # Persist job record so dashboard metrics reflect this validation
+    try:
+        sp = db.begin_nested()
+        db.add(JobModel(
+            tenant_id=current_user.tenant_id,
+            job_type="validate_xml",
+            status="SUCCESS",
+            payload={"document_type": result.document_type},
+            result=result.model_dump(),
+        ))
+        sp.commit()
+    except Exception:
+        logger.warning("validate_xml: failed to persist job record", exc_info=True)
+        sp.rollback()
 
     increment_usage(db, current_user.id, current_user.tenant_id, "validations")
     db.commit()
