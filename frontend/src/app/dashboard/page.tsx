@@ -113,13 +113,13 @@ export default function DashboardPage() {
     setTenantName(match?.name ?? tid);
 
     setLoading(true);
-    Promise.all([getJobs(), getAudits(), listExceptionRequests()])
-      .then(([jobsData, auditsData, exceptionsData]) => {
-        setJobs(jobsData);
-        setAudits(auditsData);
-        setExceptions(exceptionsData);
+    Promise.allSettled([getJobs(), getAudits(), listExceptionRequests()])
+      .then(([jobsResult, auditsResult, exceptionsResult]) => {
+        if (jobsResult.status === "fulfilled") setJobs(jobsResult.value);
+        else setError((jobsResult.reason as Error)?.message ?? "Erro ao carregar jobs");
+        if (auditsResult.status === "fulfilled") setAudits(auditsResult.value);
+        if (exceptionsResult.status === "fulfilled") setExceptions(exceptionsResult.value);
       })
-      .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
