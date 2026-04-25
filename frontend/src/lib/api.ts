@@ -324,7 +324,8 @@ export async function openExceptionRequest(payload: {
   finding_id: string;
   rule_id: string;
   justification: string;
-  created_by: string;
+  admin_name: string;
+  admin_email: string;
 }): Promise<ExceptionRequest> {
   const tenantId = getTenantId();
   const row = await apiFetch<ApiExceptionRequest>("/api/v1/exceptions", {

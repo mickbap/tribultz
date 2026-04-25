@@ -89,6 +89,8 @@ export type ExceptionRequest = {
   rule_id: string;
   justification: string;
   status: ExceptionRequestStatus;
+  admin_name: string;
+  admin_email: string;
   created_by: string;
   created_at: string;
   decided_by?: string;
@@ -177,6 +179,8 @@ export type ApiExceptionRequest = {
   rule_id: string;
   justification: string;
   status: ExceptionRequestStatus;
+  admin_name?: string;
+  admin_email?: string;
   created_by: string;
   created_at: string;
   decided_by?: string;
@@ -263,6 +267,8 @@ export function normalizeException(raw: ApiExceptionRequest, fallbackTenant: str
     rule_id: raw.rule_id,
     justification: raw.justification,
     status: raw.status,
+    admin_name: raw.admin_name ?? "",
+    admin_email: raw.admin_email ?? "",
     created_by: raw.created_by,
     created_at: raw.created_at,
     decided_by: raw.decided_by,
