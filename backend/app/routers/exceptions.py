@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, cast
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
@@ -69,21 +69,24 @@ class ExceptionRequestResponse(BaseModel):
 
 
 def _to_response(row: ExceptionRequest) -> ExceptionRequestResponse:
+    job_uuid = row.job_id
+    created_at = row.created_at
+    decided_at = row.decided_at
     return ExceptionRequestResponse(
         id=str(row.id),
         tenant_id=str(row.tenant_id),
-        job_id=str(row.job_id) if row.job_id else None,
-        finding_id=row.finding_id,
-        rule_id=row.rule_id,
-        justification=row.justification,
-        status=row.status,
-        admin_name=row.admin_name,
-        admin_email=row.admin_email,
-        created_by=row.created_by,
-        created_at=row.created_at.isoformat() if row.created_at else "",
-        decided_by=row.decided_by,
-        decided_at=row.decided_at.isoformat() if row.decided_at else None,
-        decision_comment=row.decision_comment,
+        job_id=str(job_uuid) if job_uuid is not None else None,
+        finding_id=cast(str, row.finding_id),
+        rule_id=cast(str, row.rule_id),
+        justification=cast(str, row.justification),
+        status=cast(str, row.status),
+        admin_name=cast(str, row.admin_name),
+        admin_email=cast(str, row.admin_email),
+        created_by=cast(str, row.created_by),
+        created_at=cast(datetime, created_at).isoformat() if created_at is not None else "",
+        decided_by=cast(Optional[str], row.decided_by),
+        decided_at=cast(datetime, decided_at).isoformat() if decided_at is not None else None,
+        decision_comment=cast(Optional[str], row.decision_comment),
     )
 
 
@@ -107,9 +110,9 @@ def create_exception_request(
             logger.warning("create_exception: invalid job_id %r — saving without link", req.job_id)
             job_uuid = None
 
-    operator_email = current_user.email
-    operator_name = current_user.full_name or operator_email
-    operator_phone = current_user.phone
+    operator_email = cast(str, current_user.email)
+    operator_name = cast(str, current_user.full_name) or operator_email
+    operator_phone = cast(Optional[str], current_user.phone)
 
     row = ExceptionRequest(
         id=uuid4(),
@@ -198,13 +201,14 @@ def decide_exception_request(
     )
     if not row:
         raise HTTPException(404, "Exception not found")
-    if row.status != "OPEN":
-        raise HTTPException(409, f"Exception already {row.status}")
+    current_status = cast(str, row.status)
+    if current_status != "OPEN":
+        raise HTTPException(409, f"Exception already {current_status}")
 
-    row.status = req.status
-    row.decided_by = current_user.email
-    row.decided_at = datetime.now(timezone.utc)
-    row.decision_comment = req.decision_comment
+    row.status = req.status  # type: ignore[assignment]
+    row.decided_by = cast(str, current_user.email)  # type: ignore[assignment]
+    row.decided_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+    row.decision_comment = req.decision_comment  # type: ignore[assignment]
     db.commit()
     db.refresh(row)
 
