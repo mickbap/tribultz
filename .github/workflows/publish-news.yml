@@ -1,0 +1,49 @@
+name: Publish News on Merge
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA to publish (defaults to HEAD of main)"
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  publish-news:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install httpx
+        run: pip install httpx==0.28.1
+
+      - name: Resolve commit SHA
+        id: sha
+        run: |
+          if [ -n "${{ inputs.sha }}" ]; then
+            echo "value=${{ inputs.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish news entry
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEWS_PUBLISH_TOKEN: ${{ secrets.NEWS_PUBLISH_TOKEN }}
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          COMMIT_SHA: ${{ steps.sha.outputs.value }}
+        run: python .github/scripts/publish_news.py

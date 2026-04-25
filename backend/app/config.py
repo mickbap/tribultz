@@ -74,6 +74,9 @@ class Settings(BaseSettings):
     # ── GitHub Integration ────────────────────────────────────
     GITHUB_TOKEN: str = ""
 
+    # ── News Publishing (auto-publish via GitHub Actions on merge) ──
+    NEWS_PUBLISH_TOKEN: str = ""
+
     # ── External APIs ─────────────────────────────────────────
     CLASSTRIB_API_URL: str = "https://cff.svrs.rs.gov.br/api/v1/consultas/classTrib"
     CNPJ_PRIMARY_URL: str = "https://brasilapi.com.br/api/cnpj/v1/{cnpj}"
