@@ -41,6 +41,8 @@ export default function ValidateXmlPage() {
   const [loading, setLoading] = useState(false);
   const [openingExceptionFor, setOpeningExceptionFor] = useState<Finding | null>(null);
   const [justification, setJustification] = useState("");
+  const [adminName, setAdminName] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; msg: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [correcting, setCorrecting] = useState(false);
@@ -143,17 +145,29 @@ export default function ValidateXmlPage() {
       setToast({ tone: "error", msg: "Justificativa obrigatória para abrir exceção." });
       return;
     }
+    if (!adminName.trim()) {
+      setToast({ tone: "error", msg: "Nome do admin obrigatório." });
+      return;
+    }
+    const emailTrimmed = adminEmail.trim();
+    if (!emailTrimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
+      setToast({ tone: "error", msg: "E-mail do admin inválido." });
+      return;
+    }
     try {
       await openExceptionRequest({
         job_id: result.job.id,
         finding_id: openingExceptionFor.id,
         rule_id: openingExceptionFor.rule_id,
         justification: justification.trim(),
-        created_by: "operador.demo",
+        admin_name: adminName.trim(),
+        admin_email: emailTrimmed,
       });
       setOpeningExceptionFor(null);
       setJustification("");
-      setToast({ tone: "success", msg: "Exceção aberta e enviada para fila do coordenador." });
+      setAdminName("");
+      setAdminEmail("");
+      setToast({ tone: "success", msg: "Exceção aberta. Admin foi notificado por e-mail." });
       await refreshJob(result.job.id);
     } catch (err) {
       setToast({ tone: "error", msg: err instanceof Error ? err.message : "Falha ao abrir exceção." });
@@ -462,12 +476,37 @@ export default function ValidateXmlPage() {
                 placeholder="Descreva motivo, base legal e plano de correção."
               />
             </label>
+            <label className="mt-3 block text-sm">
+              <span className="mb-1 block text-slate-600">Nome do admin (obrigatório)</span>
+              <input
+                type="text"
+                value={adminName}
+                onChange={(e) => setAdminName(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 p-2 text-sm"
+                placeholder="Ex.: Roberta Silva"
+              />
+            </label>
+            <label className="mt-3 block text-sm">
+              <span className="mb-1 block text-slate-600">E-mail do admin (obrigatório)</span>
+              <input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 p-2 text-sm"
+                placeholder="admin@empresa.com.br"
+              />
+            </label>
+            <p className="mt-2 text-xs text-slate-500">
+              O admin receberá um e-mail informando seu contato (e-mail e telefone do operador) para coordenar a decisão.
+            </p>
             <div className="mt-3 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setOpeningExceptionFor(null);
                   setJustification("");
+                  setAdminName("");
+                  setAdminEmail("");
                 }}
                 className="rounded border border-slate-300 px-3 py-1.5 text-sm"
               >

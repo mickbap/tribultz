@@ -47,6 +47,8 @@ function makeException(id: string, createdAt: string, status: ExceptionRequest["
     rule_id: "RULE_X",
     justification: "Need exception",
     status,
+    admin_name: "Admin Test",
+    admin_email: "admin@example.com",
     created_by: "operator.demo",
     created_at: createdAt,
   };

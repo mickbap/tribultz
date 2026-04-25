@@ -227,6 +227,48 @@ def send_feedback_received_email(to_email: str, user_name: str) -> bool:
     )
 
 
+def send_exception_notification_email(
+    to_email: str,
+    admin_name: str,
+    operator_name: str,
+    operator_email: str,
+    operator_phone: str | None,
+) -> bool:
+    """Notifica o admin indicado pelo operador sobre uma exceção aberta.
+
+    Notificação puramente informativa — a decisão é registrada no app
+    pelo operador após alinhamento off-line com o admin.
+    """
+    html_body = _render(
+        "exception_notification.html",
+        admin_name=admin_name,
+        operator_name=operator_name,
+        operator_email=operator_email,
+        operator_phone=operator_phone,
+        frontend_url=settings.FRONTEND_URL,
+    )
+    phone_line = operator_phone or "Não informado"
+    text_body = (
+        f"Prezado(a) {admin_name},\n\n"
+        f"{operator_name} cadastrou você como responsável por aprovar ou rejeitar "
+        "uma exceção no Tribultz.\n\n"
+        f"Localize o operador pelo e-mail {operator_email} ou telefone "
+        f"{phone_line} para prosseguir com o processo.\n\n"
+        "Qualquer dúvida, pode entrar em contato conosco pelo e-mail "
+        "suporte@tribultz.com.br\n\n"
+        "Cordialmente,\n"
+        "TRIbultz Admin.\n"
+        "Sem improviso, sem risco silencioso."
+    )
+    return _send_email(
+        to_email=to_email,
+        subject="Tribultz — Solicitação de exceção fiscal",
+        html_body=html_body,
+        text_body=text_body,
+        log_url=f"{settings.FRONTEND_URL}/exceptions",
+    )
+
+
 def send_staff_ticket_notification(ticket_title: str, user_email: str, priority: str) -> bool:
     """Notify contato@tribultz.com.br when a new ticket is opened."""
     priority_labels = {"low": "Baixa", "medium": "Média", "high": "Alta", "critical": "Crítica"}
