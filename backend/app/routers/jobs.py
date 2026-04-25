@@ -148,10 +148,13 @@ def get_job(
     """
 
     tenant_id = str(current_user.tenant_id)
-    row = db.execute(
-        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"),
-        {"id": job_id, "tid": tenant_id},
-    ).fetchone()
+    try:
+        row = db.execute(
+            text("SELECT * FROM jobs WHERE id = CAST(:id AS uuid) AND tenant_id = :tid"),
+            {"id": job_id, "tid": tenant_id},
+        ).fetchone()
+    except Exception:
+        raise HTTPException(404, "Job not found")
     if not row:
         raise HTTPException(404, "Job not found")
 

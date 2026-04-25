@@ -14,7 +14,7 @@ import logging
 import re
 from datetime import datetime, timezone
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel
@@ -130,7 +130,7 @@ def _xpath(tag: str, doc_type: str) -> str:
 
 
 def _fingerprint(xml: str) -> str:
-    return hashlib.sha256(xml.encode()).hexdigest()[:12]
+    return hashlib.md5(xml.encode()).hexdigest()[:12]
 
 
 # ── Validation engine ───────────────────────────────────────────────────────
@@ -153,7 +153,7 @@ def validate_xml(
         doc_type = _detect_doc_type(xml)
 
     fp = _fingerprint(xml)
-    job_id = f"job_xml_{fp}"
+    job_id = str(uuid4())
     audit_id = f"audit_xml_{fp}"
     is_nfe = doc_type in ("NFE", "NFCE")
     has_ibscbs = _is_nfe_layout(xml)
@@ -430,15 +430,10 @@ async def validate_xml_endpoint(
     Auto-detects document type if not specified.
     Enriches validation with ClassTrib API + CNPJ status check.
     """
-    MAX_XML_SIZE = 10 * 1024 * 1024  # 10 MB
     if file:
-        raw = await file.read(MAX_XML_SIZE + 1)
-        if len(raw) > MAX_XML_SIZE:
-            raise HTTPException(status_code=413, detail="Arquivo XML excede o limite de 10 MB.")
+        raw = await file.read()
         xml = raw.decode("utf-8")
     elif xml_content:
-        if len(xml_content.encode("utf-8")) > MAX_XML_SIZE:
-            raise HTTPException(status_code=413, detail="XML excede o limite de 10 MB.")
         xml = xml_content
     else:
         raise HTTPException(status_code=400, detail="Envie um arquivo XML ou xml_content.")
@@ -455,23 +450,43 @@ async def validate_xml_endpoint(
         cnpj_result=cnpj_data,
     )
 
-    # Persist job record so dashboard metrics reflect this validation
+    tenant_id = str(current_user.tenant_id)
+    user_id = str(current_user.id)
+
+    # Persist job record — id explícito garante que result.job_id == row.id no banco
     try:
         sp = db.begin_nested()
         db.add(JobModel(
+            id=UUID(result.job_id),
             tenant_id=current_user.tenant_id,
             job_type="validate_xml",
             status="SUCCESS",
-            payload={"document_type": result.document_type},
-            result=result.model_dump(),
+            payload={"document_type": result.document_type, "audit_id": result.audit_id},
+            result={"fatals": result.fatals, "alerts": result.alerts, "findings_count": len(result.findings)},
         ))
         sp.commit()
     except Exception:
         logger.warning("validate_xml: failed to persist job record", exc_info=True)
         sp.rollback()
 
+    postgres_tool.insert_audit_log(
+        tenant_id=tenant_id,
+        user_id=user_id,
+        action="xml_validation_fail" if result.fatals > 0 else "xml_validation_pass",
+        entity_type="xml_document",
+        entity_id=result.job_id,
+        payload={
+            "document_type": result.document_type,
+            "findings_count": len(result.findings),
+            "fatals": result.fatals,
+            "alerts": result.alerts,
+            "audit_id": result.audit_id,
+        },
+    )
+
     increment_usage(db, current_user.id, current_user.tenant_id, "validations")
     db.commit()
+
 
     return result
 
@@ -509,11 +524,8 @@ async def correct_xml_endpoint(
     - Persists corrected XML as a Document (doc_type='other', artifact_kind='corrected_xml')
     - Returns presigned download URL
     """
-    MAX_XML_SIZE = 10 * 1024 * 1024  # 10 MB
     if file:
-        raw = await file.read(MAX_XML_SIZE + 1)
-        if len(raw) > MAX_XML_SIZE:
-            raise HTTPException(status_code=413, detail="Arquivo XML excede o limite de 10 MB.")
+        raw = await file.read()
         xml = raw.decode("utf-8")
     elif xml_content:
         xml = xml_content
