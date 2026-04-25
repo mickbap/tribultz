@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -41,10 +41,13 @@ class NewsCreateRequest(BaseModel):
     "",
     response_model=list[NewsResponse],
     summary="Listar novidades do sistema",
-    description="Retorna as 10 entradas mais recentes do changelog em ordem decrescente de data.",
+    description="Retorna as N entradas mais recentes do changelog em ordem decrescente de data (default 10, máximo 50).",
 )
-def list_news(db: Session = Depends(get_db)) -> list[News]:
-    stmt = select(News).order_by(News.created_at.desc()).limit(10)
+def list_news(
+    db: Session = Depends(get_db),
+    limit: int = Query(10, ge=1, le=50, description="Quantas entradas retornar (1-50)"),
+) -> list[News]:
+    stmt = select(News).order_by(News.created_at.desc()).limit(limit)
     return list(db.scalars(stmt).all())
 
 

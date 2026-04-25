@@ -54,6 +54,34 @@ def test_list_news_returns_200(client):
     assert isinstance(resp.json(), list)
 
 
+def test_list_news_respects_limit_query_param(client, publish_token):
+    # Cria 12 entradas para validar que ?limit=N retorna até N e o default fica em 10
+    headers = {"Authorization": f"Bearer {publish_token}"}
+    for _ in range(12):
+        client.post(
+            "/api/v1/news",
+            json={
+                "title": f"Limit probe {uuid.uuid4().hex[:8]}",
+                "description": "probe",
+                "category": "Feature",
+            },
+            headers=headers,
+        )
+
+    default_resp = client.get("/api/v1/news")
+    assert default_resp.status_code == 200
+    assert len(default_resp.json()) <= 10
+
+    custom_resp = client.get("/api/v1/news?limit=12")
+    assert custom_resp.status_code == 200
+    assert len(custom_resp.json()) == 12
+
+
+def test_list_news_rejects_limit_out_of_range(client):
+    assert client.get("/api/v1/news?limit=0").status_code == 422
+    assert client.get("/api/v1/news?limit=51").status_code == 422
+
+
 # ── POST /api/v1/news ────────────────────────────────────────────────────
 
 

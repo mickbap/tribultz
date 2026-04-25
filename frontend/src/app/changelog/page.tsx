@@ -31,7 +31,7 @@ export default function ChangelogPage() {
         </section>
 
         <section className="mx-auto max-w-5xl px-4 py-12 md:px-6">
-          <NewsFeed />
+          <NewsFeed limit={50} />
         </section>
       </main>
 
