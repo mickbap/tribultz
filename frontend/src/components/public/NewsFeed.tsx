@@ -34,7 +34,8 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
     let intervalId: number | undefined;
 
     async function loadNews() {
-      const newsUrl = API_BASE ? `${API_BASE}/api/v1/news` : "/api/v1/news";
+      const base = API_BASE ? `${API_BASE}/api/v1/news` : "/api/v1/news";
+      const newsUrl = limit ? `${base}?limit=${limit}` : base;
 
       if (!API_BASE) {
         console.warn(
@@ -56,7 +57,7 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
         const data = (await res.json()) as NewsItem[];
         if (!active) return;
 
-        setItems(limit ? data.slice(0, limit) : data);
+        setItems(data);
         setLastUpdated(new Date().toLocaleTimeString("pt-BR", {
           hour: "2-digit",
           minute: "2-digit",
