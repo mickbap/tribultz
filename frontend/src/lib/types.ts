@@ -150,6 +150,7 @@ export type ApiJob = {
   input?: Record<string, unknown>;
   output_data?: Record<string, unknown> | null;
   output?: Record<string, unknown> | null;
+  result?: Record<string, unknown> | null;
   report_markdown?: string | null;
   reportMarkdown?: string | null;
   evidence?: Evidence[];
@@ -231,12 +232,14 @@ export function normalizeJob(raw: ApiJob, fallbackTenant: string): Job {
     output: raw.output ?? raw.output_data ?? null,
     reportMarkdown: raw.reportMarkdown ?? raw.report_markdown ?? null,
     evidence,
-    // findings at top level (enriched by server) takes priority; fallback to result.findings
+    // findings at top level (enriched by server) takes priority; fallback to output.findings or result.findings
     findings: Array.isArray(raw.findings) && raw.findings.length
       ? (raw.findings as Finding[])
       : Array.isArray((raw.output as Record<string, unknown> | null)?.findings)
         ? ((raw.output as Record<string, unknown>).findings as Finding[])
-        : undefined,
+        : Array.isArray((raw.result as Record<string, unknown> | null)?.findings)
+          ? ((raw.result as Record<string, unknown>).findings as Finding[])
+          : undefined,
   };
 }
 

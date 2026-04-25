@@ -77,6 +77,13 @@ cd backend && source .venv/Scripts/activate && python -m pytest tests/ -q && ruf
 - Frontend: `cd frontend && npm run dev` → porta 3000
 - Backend + infra: `docker compose -f infra/docker-compose.yml up -d` → porta 8000
 
+## Deploy
+
+- **Automático**: push em `main` afetando `backend/**` ou `infra/**` dispara `.github/workflows/deploy-prod.yml`, que roda `deploy.sh` na VM Magalu via SSH (rollback automático em falha)
+- **Manual**: Actions → "Deploy Prod (Magalu)" → Run workflow (com flags `migrate` / `skip_pull`)
+- **Frontend**: deploy via Vercel (não dispara este workflow)
+- Secrets necessários: `MAGALU_SSH_KEY`, `MAGALU_SSH_HOST`, `MAGALU_SSH_USER`
+
 ## Superpowers skills disponíveis
 
 | Skill | Uso |

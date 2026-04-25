@@ -70,7 +70,7 @@ jobs:
       - name: Setup Node (pin) # needed for pyright via npx
         uses: actions/setup-node@v4
         with:
-          node-version: "20.11.1"
+          node-version: "22.12.0"
 
       - name: Install backend deps
         working-directory: backend
@@ -168,7 +168,7 @@ jobs:
       - name: Setup Node (pin)
         uses: actions/setup-node@v4
         with:
-          node-version: "20.11.1"
+          node-version: "22.12.0"
           cache: "npm"
           cache-dependency-path: |
             package-lock.json

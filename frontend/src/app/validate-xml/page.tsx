@@ -45,6 +45,7 @@ export default function ValidateXmlPage() {
   const [error, setError] = useState<string | null>(null);
   const [correcting, setCorrecting] = useState(false);
   const [correctionDownloadUrl, setCorrectionDownloadUrl] = useState<string | null>(null);
+  const [awaitingCorrectionConfirm, setAwaitingCorrectionConfirm] = useState(false);
 
   const evidenceMap = useMemo(() => {
     const map = new Map<string, ValidationEvidence>();
@@ -260,14 +261,34 @@ export default function ValidateXmlPage() {
               >
                 PDF
               </button>
-              <button
-                type="button"
-                onClick={() => void onGenerateCorrection()}
-                disabled={correcting}
-                className="rounded border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-70"
-              >
-                {correcting ? "Gerando..." : "Gerar XML corrigido"}
-              </button>
+              {awaitingCorrectionConfirm ? (
+                <span className="inline-flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
+                  <span>⚠️ Isso consumirá <strong>1 validação</strong> do seu plano.</span>
+                  <button
+                    type="button"
+                    onClick={() => { setAwaitingCorrectionConfirm(false); void onGenerateCorrection(); }}
+                    className="font-semibold underline hover:text-amber-900"
+                  >
+                    Confirmar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAwaitingCorrectionConfirm(false)}
+                    className="hover:text-amber-900"
+                  >
+                    Cancelar
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAwaitingCorrectionConfirm(true)}
+                  disabled={correcting}
+                  className="rounded border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-70"
+                >
+                  {correcting ? "Gerando..." : "Gerar XML corrigido"}
+                </button>
+              )}
               {correctionDownloadUrl ? (
                 <a
                   href={correctionDownloadUrl}

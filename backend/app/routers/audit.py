@@ -3,7 +3,7 @@ from hashlib import sha256
 from typing import Any, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -49,7 +49,59 @@ def _compute_checksum(payload: dict) -> str:
     return sha256(raw).hexdigest()
 
 
+class AuditLogItem(BaseModel):
+    id: str
+    tenant_id: str
+    job_id: Optional[str]
+    action: str
+    created_at: str
+    payload: dict[str, Any]
+
+
 # ── Endpoints ─────────────────────────────────────────────────
+@router.get("", response_model=list[AuditLogItem])
+def list_audit_logs(
+    job_id: Optional[str] = Query(None),
+    limit: int = Query(default=50, le=200),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List audit log entries for the tenant, optionally filtered by job_id."""
+    tenant_id = str(current_user.tenant_id)
+
+    filters = ["al.tenant_id = CAST(:tid AS uuid)"]
+    bind: dict[str, Any] = {"tid": tenant_id, "limit": limit}
+
+    if job_id:
+        filters.append("al.entity_id = :job_id")
+        bind["job_id"] = job_id
+
+    where = " AND ".join(filters)
+    rows = db.execute(
+        text(f"""
+            SELECT al.id, al.tenant_id, al.entity_id, al.action,
+                   al.payload, al.created_at
+            FROM audit_log al
+            WHERE {where}
+            ORDER BY al.created_at DESC
+            LIMIT :limit
+        """),
+        bind,
+    ).fetchall()
+
+    return [
+        AuditLogItem(
+            id=str(r.id),
+            tenant_id=str(r.tenant_id),
+            job_id=str(r.entity_id) if r.entity_id else None,
+            action=r.action,
+            created_at=r.created_at.isoformat() if r.created_at else "",
+            payload=r.payload if isinstance(r.payload, dict) else {},
+        )
+        for r in rows
+    ]
+
+
 @router.post("/log", response_model=AuditRecord)
 def create_audit_log(
     entry: AuditEntry,

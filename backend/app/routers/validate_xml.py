@@ -10,25 +10,27 @@ Rules 15-18: Cross-validation (NCM, ClassTrib, CNPJ — S13)
 from __future__ import annotations
 
 import hashlib
-import json
+import logging
 import re
 from datetime import datetime, timezone
 from typing import Any
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.database import get_db
 from app.models.auth import User
 from app.models.documents import Document
+from app.models.jobs import Job as JobModel
 from app.tools import s3_tool, postgres_tool
 from app.services.xml_correction_service import correct_xml
-from app.api.plan_gate import require_plan
+from app.api.plan_gate import require_plan, check_usage_limit, increment_usage
 from app.data.ncm_codes import VALID_NCM_CODES
-from uuid import uuid4
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["validate-xml"])
 
@@ -410,7 +412,10 @@ def validate_xml(
 @router.post(
     "/validate/xml",
     response_model=ValidationResult,
-    dependencies=[Depends(require_plan("starter", "profissional", "contador"))],
+    dependencies=[
+        Depends(require_plan("trial", "starter", "profissional", "contador")),
+        Depends(check_usage_limit("validations")),
+    ],
 )
 async def validate_xml_endpoint(
     file: UploadFile = File(None),
@@ -448,20 +453,21 @@ async def validate_xml_endpoint(
     tenant_id = str(current_user.tenant_id)
     user_id = str(current_user.id)
 
-    db.execute(
-        text("""
-            INSERT INTO jobs (id, tenant_id, job_type, status, payload, result)
-            VALUES (CAST(:id AS uuid), CAST(:tid AS uuid), 'validate_xml', 'DONE',
-                    CAST(:payload AS jsonb), CAST(:res AS jsonb))
-        """),
-        {
-            "id": result.job_id,
-            "tid": tenant_id,
-            "payload": json.dumps({"document_type": result.document_type, "audit_id": result.audit_id}),
-            "res": json.dumps({"fatals": result.fatals, "alerts": result.alerts, "findings_count": len(result.findings)}),
-        },
-    )
-    db.commit()
+    # Persist job record — id explícito garante que result.job_id == row.id no banco
+    try:
+        sp = db.begin_nested()
+        db.add(JobModel(
+            id=UUID(result.job_id),
+            tenant_id=current_user.tenant_id,
+            job_type="validate_xml",
+            status="SUCCESS",
+            payload={"document_type": result.document_type, "audit_id": result.audit_id},
+            result={"fatals": result.fatals, "alerts": result.alerts, "findings_count": len(result.findings)},
+        ))
+        sp.commit()
+    except Exception:
+        logger.warning("validate_xml: failed to persist job record", exc_info=True)
+        sp.rollback()
 
     postgres_tool.insert_audit_log(
         tenant_id=tenant_id,
@@ -477,6 +483,10 @@ async def validate_xml_endpoint(
             "audit_id": result.audit_id,
         },
     )
+
+    increment_usage(db, current_user.id, current_user.tenant_id, "validations")
+    db.commit()
+
 
     return result
 
@@ -495,7 +505,10 @@ class CorrectionResponse(BaseModel):
 @router.post(
     "/validate/xml/correct",
     response_model=CorrectionResponse,
-    dependencies=[Depends(require_plan("starter", "profissional", "contador"))],
+    dependencies=[
+        Depends(require_plan("trial", "starter", "profissional", "contador")),
+        Depends(check_usage_limit("validations")),
+    ],
 )
 async def correct_xml_endpoint(
     file: UploadFile = File(None),
@@ -571,6 +584,7 @@ async def correct_xml_endpoint(
         },
     )
     db.add(doc)
+    increment_usage(db, current_user.id, current_user.tenant_id, "validations")
     db.commit()
     db.refresh(doc)
 

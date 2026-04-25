@@ -29,7 +29,6 @@ const PLANS: Plan[] = [
     tagline: "Comece agora, sem cartão",
     features: [
       "5 validações XML por mês",
-      "25 mensagens com IA fiscal",
       "18 regras CBS/IBS",
       "Diagnóstico gratuito",
       "Calculadora CBS/IBS",
@@ -46,7 +45,6 @@ const PLANS: Plan[] = [
     tagline: "Para autônomos e MEIs",
     features: [
       "10 validações XML por mês",
-      "50 mensagens com IA fiscal",
       "18 regras CBS/IBS",
       "Dashboard de conformidade",
       "Histórico de validações",
@@ -63,7 +61,7 @@ const PLANS: Plan[] = [
     tagline: "Para contadores e PMEs",
     features: [
       "500 validações XML por mês",
-      "IA fiscal ilimitada",
+      "Justificativa técnica + base legal por finding",
       "Relatórios PDF auditáveis",
       "Validação cruzada em lote",
       "Acesso à API REST",
@@ -81,7 +79,7 @@ const PLANS: Plan[] = [
     tagline: "Para empresas com filiais",
     features: [
       "2.000 validações XML por mês",
-      "IA fiscal ilimitada",
+      "Justificativa técnica + base legal por finding",
       "Relatórios PDF auditáveis",
       "Validação cruzada em lote",
       "Acesso à API REST",
@@ -99,7 +97,7 @@ const PLANS: Plan[] = [
     tagline: "Para escritórios contábeis",
     features: [
       "Validações ilimitadas",
-      "IA fiscal ilimitada",
+      "Justificativa técnica + base legal por finding",
       "Relatórios PDF e evidências auditáveis",
       "Validação cruzada em lote ilimitada",
       "API REST com webhooks",
@@ -423,8 +421,8 @@ export default function PricingPage() {
                     values: ["5", "10", "500", "2.000", "Ilimitadas"],
                   },
                   {
-                    label: "Mensagens IA fiscal",
-                    values: ["25", "50", "Ilimitadas", "Ilimitadas", "Ilimitadas"],
+                    label: "Justificativa técnica + base legal",
+                    values: [false, false, true, true, true],
                   },
                   {
                     label: "18 regras CBS/IBS",
