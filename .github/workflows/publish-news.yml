@@ -21,7 +21,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          # 0 = histórico completo. Necessário para workflow_dispatch poder
+          # re-publicar entradas a partir de SHAs antigos (caso contrário
+          # `git show <old-sha>` falha por falta de objeto local).
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
