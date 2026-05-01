@@ -66,7 +66,7 @@ export function NewsFeed({ limit, compact = false }: NewsFeedProps) {
       } catch (err) {
         if (!active) return;
         const message = err instanceof Error ? err.message : String(err);
-        console.error("[NewsFeed] Falha ao buscar notícias:", message, {
+        console.warn("[NewsFeed] Falha ao buscar notícias:", message, {
           url: `${API_BASE}/api/v1/news`,
           hint: message.includes("fetch") ? "Connection Refused / CORS" : "HTTP error",
         });

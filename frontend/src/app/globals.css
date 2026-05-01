@@ -3,12 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f6f8fc;
+  /* Paleta de marca */
+  --tribultz-blue: #2956E3;
+  --tribultz-blue-light: #E8F0FE;
+  --tribultz-yellow: #FFD600;
+
+  /* Tokens semânticos */
+  --bg: #ffffff;
   --surface: #ffffff;
-  --text: #0f172a;
-  --muted: #64748b;
-  --border: #dbe4f0;
-  --accent: #3968ff;
+  --text: #24292E;
+  --muted: #6C757D;
+  --border: #e8f0fe;
+  --accent: #2956E3;
+
+  /* Tipografia */
+  --font-heading: var(--font-montserrat), 'Montserrat', sans-serif;
+  --font-body: var(--font-montserrat), 'Montserrat', sans-serif;
+  --font-digital: var(--font-source-sans), 'Source Sans 3', sans-serif;
+  --font-code: var(--font-roboto-mono), 'Roboto Mono', monospace;
 }
 
 html,
@@ -16,8 +28,9 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background: radial-gradient(circle at top right, #edf3ff 0%, var(--bg) 40%, #eef2f8 100%);
+  background: var(--bg);
   color: var(--text);
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
 }
 
 * {
@@ -36,8 +49,18 @@ textarea {
   font: inherit;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--text);
+}
+
+code, pre {
+  font-family: var(--font-code);
+}
+
 :focus-visible {
-  outline: 3px solid rgba(57, 104, 255, 0.45);
+  outline: 3px solid rgba(41, 86, 227, 0.45);
   outline-offset: 2px;
   border-radius: 0.4rem;
 }
@@ -48,6 +71,6 @@ textarea {
 }
 
 .scroll-thin::-webkit-scrollbar-thumb {
-  background: #cdd8ef;
+  background: #c4d8fc;
   border-radius: 999px;
 }
