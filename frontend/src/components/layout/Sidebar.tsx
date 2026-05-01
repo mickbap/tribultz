@@ -31,8 +31,14 @@ export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNa
 
   return (
     <aside className={`flex flex-col border-r border-slate-200 bg-white ${mobile ? "w-full" : "hidden w-64 md:flex"}`}>
-      <div className="border-b border-slate-200 px-4 py-4">
-        <h1 className="text-base font-bold tracking-wide text-tribultz-600">Tribultz</h1>
+      <div className="border-b border-slate-200 px-4 py-3 flex items-center gap-2.5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: "#2956E3" }}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+            <path d="M5 7 H19 M12 7 V19" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+            <circle cx="19" cy="19" r="2" fill="#FFD600" />
+          </svg>
+        </div>
+        <h1 className="text-base font-bold tracking-tight text-[#2956E3]">Tribultz</h1>
       </div>
       <nav className="flex-1 p-3" aria-label="Navegação principal">
         <ul className="space-y-1">

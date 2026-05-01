@@ -3,51 +3,95 @@
 @tailwind utilities;
 
 :root {
-  /* Paleta de marca */
-  --tribultz-blue: #2956E3;
-  --tribultz-blue-light: #E8F0FE;
-  --tribultz-yellow: #FFD600;
+  /* ── Brand ───────────────────────────────────────────────── */
+  --tribultz-blue:        #2956E3;
+  --tribultz-blue-light:  #E8F0FE;
+  --tribultz-yellow:      #FFD600;
 
-  /* Tokens semânticos */
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --text: #24292E;
-  --muted: #6C757D;
-  --border: #e8f0fe;
-  --accent: #2956E3;
+  /* ── Surfaces ────────────────────────────────────────────── */
+  --bg:        #FFFFFF;
+  --surface:   #FFFFFF;
+  --surface-2: #F8FAFC;
+  --surface-3: #F1F5F9;
 
-  /* Tipografia */
-  --font-heading: var(--font-montserrat), 'Montserrat', sans-serif;
-  --font-body: var(--font-montserrat), 'Montserrat', sans-serif;
+  /* ── Text ────────────────────────────────────────────────── */
+  --text:    #24292E;
+  --text-2:  #334155;
+  --muted:   #6C757D;
+  --muted-2: #94A3B8;
+  --accent:  #2956E3;
+
+  /* ── Borders ─────────────────────────────────────────────── */
+  --border:        #E2E8F0;
+  --border-2:      #E8F0FE;
+  --border-strong: #CBD5E1;
+
+  /* ── Status: success ─────────────────────────────────────── */
+  --success:        #10B981;
+  --success-bg:     #ECFDF5;
+  --success-border: #A7F3D0;
+  --success-text:   #047857;
+
+  /* ── Status: warning ─────────────────────────────────────── */
+  --warning:        #F59E0B;
+  --warning-bg:     #FFFBEB;
+  --warning-border: #FDE68A;
+  --warning-text:   #B45309;
+
+  /* ── Status: danger ──────────────────────────────────────── */
+  --danger:         #EF4444;
+  --danger-bg:      #FEF2F2;
+  --danger-border:  #FECACA;
+  --danger-text:    #B91C1C;
+
+  /* ── Status: info / running ──────────────────────────────── */
+  --info:           #3B82F6;
+  --info-bg:        #EFF6FF;
+  --info-border:    #BFDBFE;
+  --info-text:      #1D4ED8;
+
+  /* ── Status: pending ─────────────────────────────────────── */
+  --pending:        #94A3B8;
+  --pending-bg:     #F1F5F9;
+  --pending-border: #CBD5E1;
+  --pending-text:   #475569;
+
+  /* ── Typography ──────────────────────────────────────────── */
+  --font-sans:    var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+  --font-heading: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+  --font-mono:    var(--font-roboto-mono), 'Roboto Mono', ui-monospace, monospace;
   --font-digital: var(--font-source-sans), 'Source Sans 3', sans-serif;
-  --font-code: var(--font-roboto-mono), 'Roboto Mono', monospace;
+
+  /* ── Shadows ─────────────────────────────────────────────── */
+  --shadow-sm:    0 1px 2px rgba(36,41,46,0.04);
+  --shadow-md:    0 2px 8px rgba(36,41,46,0.06);
+  --shadow-lg:    0 8px 24px rgba(36,41,46,0.08);
+  --shadow-xl:    0 12px 32px rgba(41,86,227,0.12);
+  --shadow-focus: 0 0 0 3px rgba(41,86,227,0.35);
+
+  /* ── Motion ──────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast:    120ms;
+  --dur-base:    200ms;
+  --dur-slow:    350ms;
 }
 
-html,
-body {
+html, body {
   margin: 0;
   padding: 0;
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-a {
-  text-decoration: none;
-  color: inherit;
-}
+a { text-decoration: none; color: inherit; }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
+button, input, select, textarea { font: inherit; }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
@@ -55,9 +99,7 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text);
 }
 
-code, pre {
-  font-family: var(--font-code);
-}
+code, pre { font-family: var(--font-mono); }
 
 :focus-visible {
   outline: 3px solid rgba(41, 86, 227, 0.45);
@@ -65,11 +107,7 @@ code, pre {
   border-radius: 0.4rem;
 }
 
-.scroll-thin::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
+.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
 .scroll-thin::-webkit-scrollbar-thumb {
   background: #c4d8fc;
   border-radius: 999px;
