@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
-import { getAudits, getJobs, listExceptionRequests } from "@/lib/api";
+import { ComplianceScore, getAudits, getComplianceScore, getJobs, listExceptionRequests } from "@/lib/api";
 import { AuditLog, ExceptionRequest, Finding, Job } from "@/lib/types";
 import { getAccountType, getTenantId, getTenants, type StoredTenant } from "@/lib/storage";
 
@@ -95,6 +95,7 @@ export default function DashboardPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [audits, setAudits] = useState<AuditLog[]>([]);
   const [exceptions, setExceptions] = useState<ExceptionRequest[]>([]);
+  const [complianceScore, setComplianceScore] = useState<ComplianceScore | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tenantId, setTenantIdState] = useState("");
@@ -113,12 +114,13 @@ export default function DashboardPage() {
     setTenantName(match?.name ?? tid);
 
     setLoading(true);
-    Promise.allSettled([getJobs(), getAudits(), listExceptionRequests()])
-      .then(([jobsResult, auditsResult, exceptionsResult]) => {
+    Promise.allSettled([getJobs(), getAudits(), listExceptionRequests(), getComplianceScore()])
+      .then(([jobsResult, auditsResult, exceptionsResult, complianceResult]) => {
         if (jobsResult.status === "fulfilled") setJobs(jobsResult.value);
         else setError((jobsResult.reason as Error)?.message ?? "Erro ao carregar jobs");
         if (auditsResult.status === "fulfilled") setAudits(auditsResult.value);
         if (exceptionsResult.status === "fulfilled") setExceptions(exceptionsResult.value);
+        if (complianceResult.status === "fulfilled") setComplianceScore(complianceResult.value);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -209,6 +211,40 @@ export default function DashboardPage() {
           <p className="text-xs uppercase text-slate-500">FATAL</p>
           <p className="mt-2 text-3xl font-bold text-red-600">{loading ? "..." : metrics.fatalFindings}</p>
         </article>
+      </div>
+
+      {/* Compliance Score widget */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-slate-700">Compliance Score CBS/IBS</h2>
+          <Link href="/compliance" className="text-xs text-tribultz-600 hover:underline">Ver detalhes →</Link>
+        </div>
+        {loading ? (
+          <div className="flex gap-4 items-center">
+            <Skeleton className="h-12 w-20" />
+            <Skeleton className="h-8 w-40" />
+          </div>
+        ) : complianceScore ? (
+          <div className="flex flex-wrap items-center gap-6">
+            <div>
+              <span className={`text-3xl font-bold tabular-nums ${
+                complianceScore.score_pct >= 90 ? "text-emerald-600" : complianceScore.score_pct >= 70 ? "text-amber-500" : "text-red-600"
+              }`}>
+                {complianceScore.score_pct.toFixed(1)}%
+              </span>
+              <p className="text-xs text-slate-500 mt-0.5">Período: {complianceScore.period}</p>
+            </div>
+            <div className="flex gap-4 text-sm">
+              <span className="text-emerald-700"><strong>{complianceScore.nfs_ok}</strong> conformes</span>
+              <span className="text-slate-500">/ {complianceScore.nfs_total} total</span>
+              {complianceScore.findings_error > 0 && (
+                <span className="text-red-600"><strong>{complianceScore.findings_error}</strong> erros</span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">Sem dados para o período atual.</p>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

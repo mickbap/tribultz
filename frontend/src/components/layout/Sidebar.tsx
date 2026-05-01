@@ -6,8 +6,10 @@ import { clearSession } from "@/lib/storage";
 
 const links = [
   { href: "/dashboard", label: "Painel" },
+  { href: "/compliance", label: "Compliance Score" },
   { href: "/closing", label: "Fechamento" },
   { href: "/validate-xml", label: "Validar XML" },
+  { href: "/validate-sped", label: "SPED Fiscal" },
   { href: "/jobs", label: "Jobs" },
   { href: "/audit", label: "Auditoria" },
   { href: "/exceptions", label: "Exceções" },

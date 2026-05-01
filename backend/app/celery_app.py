@@ -26,6 +26,14 @@ celery.conf.update(
             "task": "billing.reset_monthly_usage",
             "schedule": crontab(minute="0", hour="0", day_of_month="1"),  # 1st of month at midnight
         },
+        "classtrib-sync-weekly": {
+            "task": "classtrib.sync_svrs",
+            "schedule": crontab(minute="0", hour="0", day_of_week="0"),  # Sunday midnight
+        },
+        "compliance-monthly-scores": {
+            "task": "compliance.compute_monthly_scores",
+            "schedule": crontab(minute="0", hour="2", day_of_month="1"),  # 1st of month at 02:00
+        },
     },
 )
 
@@ -37,4 +45,6 @@ celery.autodiscover_tasks([
     "app.tasks.task_d_reconciliation",
     "app.tasks.task_e_hubspot",
     "app.tasks.task_g_billing",
+    "app.tasks.task_h_sped",
+    "app.tasks.task_i_compliance",
 ])
