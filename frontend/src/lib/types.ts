@@ -150,6 +150,7 @@ export type ApiJob = {
   updatedAt?: string;
   input_data?: Record<string, unknown>;
   input?: Record<string, unknown>;
+  payload?: Record<string, unknown>;
   output_data?: Record<string, unknown> | null;
   output?: Record<string, unknown> | null;
   result?: Record<string, unknown> | null;
@@ -232,8 +233,8 @@ export function normalizeJob(raw: ApiJob, fallbackTenant: string): Job {
       : "QUEUED") as JobStatus,
     createdAt: toIsoOrNow(raw.createdAt ?? raw.created_at),
     updatedAt: toIsoOrNow(raw.updatedAt ?? raw.updated_at),
-    input: raw.input ?? raw.input_data ?? {},
-    output: raw.output ?? raw.output_data ?? null,
+    input: raw.input ?? raw.input_data ?? raw.payload ?? {},
+    output: raw.output ?? raw.output_data ?? raw.result ?? null,
     reportMarkdown: raw.reportMarkdown ?? raw.report_markdown ?? null,
     evidence,
     // findings at top level (enriched by server) takes priority; fallback to output.findings or result.findings
