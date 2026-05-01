@@ -109,18 +109,18 @@ const regimes = [
 const steps = [
   {
     num: "01",
-    title: "Upload ou NCM",
-    description: "Faça upload do XML da NF-e ou informe NCM + valor base + UF de destino na calculadora.",
+    title: "Conecte seu sistema",
+    description: "Integração simples com seu ERP ou emissor de notas. Também aceita upload direto do XML.",
   },
   {
     num: "02",
-    title: "Motor verifica em < 1s",
-    description: "10 regras CBS/IBS checadas deterministicamente. Sem IA generativa, sem ambiguidade.",
+    title: "Valide automaticamente",
+    description: "Tribultz verifica IBS, CBS e ClassTrib antes de emitir. 10 regras da LC 214, resultado em menos de 1s.",
   },
   {
     num: "03",
-    title: "Evidência pronta",
-    description: "PDF auditável + XML snippet para ERP + CSV para TOTVS/SAP. Defensável em qualquer fiscalização.",
+    title: "Emita com segurança",
+    description: "Zero rejeições. Zero multas. Zero retrabalho. Evidência auditável em PDF inclusa.",
   },
 ];
 
@@ -159,27 +159,27 @@ export default function HomePage() {
               </span>
 
               <h1 className="mt-6 max-w-2xl text-4xl font-black tracking-tight text-slate-950 md:text-5xl lg:text-6xl">
-                Sua nota fiscal já está pronta para 2026?
+                IBS e CBS sem erro.{" "}
+                <span className="text-tribultz-600">Sem multa. Sem susto.</span>
               </h1>
 
               <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
-                Tribultz é o motor determinístico de validação CBS/IBS: 10 regras
-                fiscais da LC 214, evidência auditável por nota e calculadora
-                pública para as 27 UFs. Sem improviso, sem risco silencioso.
+                A Tribultz valida suas notas fiscais no padrão da Reforma
+                Tributária antes da emissão. Compliance automático, sem surpresas.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  href="/calculadora"
-                  className="rounded-2xl bg-slate-950 px-7 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-slate-900/25 transition hover:bg-slate-800"
+                  href="/register"
+                  className="rounded-2xl bg-tribultz-600 px-7 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-tribultz-600/25 transition hover:bg-tribultz-700"
                 >
-                  Calcular CBS/IBS agora — grátis
+                  Conheça a solução
                 </Link>
                 <Link
-                  href="/register"
+                  href="/calculadora"
                   className="rounded-2xl border border-slate-300 bg-white px-7 py-3.5 text-center text-sm font-semibold text-slate-700 transition hover:border-tribultz-400 hover:text-tribultz-700"
                 >
-                  Criar conta gratuita
+                  Calcular CBS/IBS — grátis
                 </Link>
               </div>
 
@@ -319,7 +319,7 @@ export default function HomePage() {
               Como funciona
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
-              Do XML à evidência em 3 passos.
+              Validação inteligente em 3 passos.
             </h2>
           </div>
 
@@ -339,16 +339,16 @@ export default function HomePage() {
 
           <div className="mt-12 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/calculadora"
-              className="rounded-2xl bg-slate-950 px-7 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-800"
+              href="/register"
+              className="rounded-2xl bg-tribultz-600 px-7 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-tribultz-600/20 transition hover:bg-tribultz-700"
             >
-              Testar a calculadora agora
+              Conheça a solução
             </Link>
             <Link
-              href="/validate-xml"
+              href="/calculadora"
               className="rounded-2xl border border-slate-300 bg-white px-7 py-3.5 text-center text-sm font-semibold text-slate-700 transition hover:border-tribultz-400 hover:text-tribultz-700"
             >
-              Validar minha NF-e
+              Calcular CBS/IBS — grátis
             </Link>
           </div>
         </section>
@@ -433,7 +433,7 @@ export default function HomePage() {
                 </p>
                 <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
                   Sua NF precisa ser CBS/IBS compliant.{" "}
-                  <span className="text-emerald-400">Confirme isso hoje.</span>
+                  <span className="text-tribultz-yellow">Confirme isso hoje.</span>
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-slate-300">
                   Calculadora gratuita sem cadastro. Conta gratuita para até 5
@@ -442,16 +442,16 @@ export default function HomePage() {
               </div>
               <div className="flex shrink-0 flex-col gap-3 sm:flex-row md:flex-col lg:flex-row">
                 <Link
-                  href="/calculadora"
-                  className="rounded-2xl bg-emerald-400 px-7 py-3.5 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-300"
+                  href="/register"
+                  className="rounded-2xl bg-tribultz-yellow px-7 py-3.5 text-center text-sm font-bold text-[#24292E] transition hover:brightness-95"
                 >
-                  Abrir calculadora
+                  Conheça a solução
                 </Link>
                 <Link
-                  href="/register"
+                  href="/calculadora"
                   className="rounded-2xl border border-white/20 px-7 py-3.5 text-center text-sm font-semibold text-white transition hover:border-white/50"
                 >
-                  Criar conta grátis
+                  Calcular CBS/IBS — grátis
                 </Link>
               </div>
             </div>
@@ -464,7 +464,7 @@ export default function HomePage() {
                 "Cancel a qualquer momento",
               ].map((item) => (
                 <p key={item} className="text-xs text-slate-400">
-                  <span className="mr-1 text-emerald-400">✓</span>
+                  <span className="mr-1 text-tribultz-yellow">✓</span>
                   {item}
                 </p>
               ))}

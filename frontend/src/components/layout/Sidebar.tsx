@@ -30,7 +30,7 @@ export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNa
   return (
     <aside className={`flex flex-col border-r border-slate-200 bg-white ${mobile ? "w-full" : "hidden w-64 md:flex"}`}>
       <div className="border-b border-slate-200 px-4 py-4">
-        <h1 className="text-base font-bold tracking-wide text-tribultz-700">TRIBULTZ</h1>
+        <h1 className="text-base font-bold tracking-wide text-tribultz-600">Tribultz</h1>
       </div>
       <nav className="flex-1 p-3" aria-label="Navegação principal">
         <ul className="space-y-1">
