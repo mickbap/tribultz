@@ -448,3 +448,92 @@ export async function getDocumentDownloadUrl(
 ): Promise<{ download_url: string; expires_at: string }> {
   return apiFetch(`/api/v1/documents/${encodeURIComponent(documentId)}/download`);
 }
+
+// ── SPED ──────────────────────────────────────────────────────────────────────
+
+export type SpedUploadResponse = {
+  sped_run_id: string;
+  job_id: string;
+  message: string;
+};
+
+export type SpedRunResponse = {
+  id: string;
+  job_id: string | null;
+  original_filename: string;
+  file_size: number | null;
+  status: string;
+  total_produtos: number;
+  produtos_conformes: number;
+  produtos_divergentes: number;
+  cnpj_empresa: string | null;
+  nome_empresa: string | null;
+  periodo_ini: string | null;
+  periodo_fim: string | null;
+  created_at: string;
+};
+
+export async function uploadSped(file: File): Promise<SpedUploadResponse> {
+  const token = getToken();
+  const tenant = getTenantId();
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_BASE}/api/v1/sped/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "X-Tenant-Id": tenant },
+    body: form,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "Erro no upload");
+    throw new Error(`API ${res.status}: ${detail}`);
+  }
+  return res.json() as Promise<SpedUploadResponse>;
+}
+
+export async function getSpedRun(runId: string): Promise<SpedRunResponse> {
+  return apiFetch(`/api/v1/sped/${encodeURIComponent(runId)}`);
+}
+
+export async function getSpedCsv(runId: string): Promise<string> {
+  const token = getToken();
+  const tenant = getTenantId();
+  const res = await fetch(`${API_BASE}/api/v1/sped/${encodeURIComponent(runId)}/csv`, {
+    headers: { Authorization: `Bearer ${token}`, "X-Tenant-Id": tenant },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.text();
+}
+
+// ── Compliance ─────────────────────────────────────────────────────────────────
+
+export type ComplianceScore = {
+  tenant_id: string;
+  period: string;
+  score_pct: number;
+  nfs_ok: number;
+  nfs_total: number;
+  findings_error: number;
+  findings_warning: number;
+  findings_info: number;
+  credit_at_risk: number;
+  computed_at: string;
+};
+
+export type ComplianceHistory = {
+  period: string;
+  score_pct: number;
+  nfs_total: number;
+  findings_error: number;
+  credit_at_risk: number;
+};
+
+export async function getComplianceScore(period?: string): Promise<ComplianceScore> {
+  const qs = period ? `?period=${encodeURIComponent(period)}` : "";
+  return apiFetch(`/api/v1/compliance/score${qs}`);
+}
+
+export async function getComplianceHistory(): Promise<ComplianceHistory[]> {
+  return apiFetch("/api/v1/compliance/score/history");
+}
