@@ -72,8 +72,8 @@ async def upload_sped(
     file: UploadFile = File(..., description="Arquivo SPED Fiscal (.txt)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    _plan: User = Depends(require_plan("empresarial", "contador")),
 ) -> SpedUploadResponse:
-    require_plan(current_user, min_plan="empresarial")
 
     if not file.filename or not file.filename.lower().endswith(".txt"):
         raise HTTPException(
@@ -94,7 +94,7 @@ async def upload_sped(
     run_id = str(_uuid.uuid4())
     storage_key = f"sped/{current_user.tenant_id}/{run_id}/{file.filename}"
     try:
-        s3_tool.put_object(key=storage_key, body=content, content_type="text/plain")
+        s3_tool.put_object(key=storage_key, data=content, content_type="text/plain")
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -120,7 +120,9 @@ async def upload_sped(
     db.commit()
 
     # Criar job
-    job_id = job_create(
+    job_id_str = str(_uuid.uuid4())
+    job_create(
+        job_id=job_id_str,
         tenant_id=str(current_user.tenant_id),
         job_type="sped_validation",
         payload={
@@ -130,6 +132,7 @@ async def upload_sped(
             "file_size":         len(content),
         },
     )
+    job_id = job_id_str
 
     # Vincular job ao run
     db.execute(
