@@ -43,9 +43,10 @@ export function PublicFooter() {
                 { href: "/pricing", label: "Preços" },
                 { href: "/changelog", label: "Novidades" },
                 { href: "mailto:contato@tribultz.com.br", label: "Contato" },
+                { href: "https://wa.me/5551991881026?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Tribultz%20e%20quero%20saber%20mais%20sobre%20valida%C3%A7%C3%A3o%20CBS%2FIBS.", label: "💬 WhatsApp (51) 99188-1026", external: true },
               ].map((l) => (
                 <li key={l.href}>
-                  <Link href={l.href} className="transition-colors hover:text-white">
+                  <Link href={l.href} className="transition-colors hover:text-white" {...(l.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
                     {l.label}
                   </Link>
                 </li>
