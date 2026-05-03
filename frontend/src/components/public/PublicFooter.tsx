@@ -76,7 +76,7 @@ export function PublicFooter() {
 
         <div className="flex flex-col items-center justify-between gap-3 pt-6 text-xs md:flex-row" style={{ color: "#64748B" }}>
           <span>© {new Date().getFullYear()} 6tech · Tribultz. Todos os direitos reservados.</span>
-          <span>São Paulo, BR</span>
+          <span>Produzido com Orgulho no Rio Grande do Sul</span>
         </div>
       </div>
     </footer>
