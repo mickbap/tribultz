@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from hashlib import sha256
 from typing import Any, Optional
@@ -131,7 +132,7 @@ def create_audit_log(
             "action": entry.action,
             "entity_type": entry.entity_type,
             "entity_id": entry.entity_id,
-            "payload": __import__("json").dumps({**entry.payload, "_checksum": checksum}),
+            "payload": json.dumps({**entry.payload, "_checksum": checksum}),
         },
     )
     db.commit()

@@ -9,11 +9,11 @@ from __future__ import annotations
 import json
 import uuid as _uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from fastapi.responses import PlainTextResponse
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import PlainTextResponse, Response
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -236,3 +236,53 @@ def get_sped_csv(
         return buf.getvalue()
 
     return str(csv_data)
+
+
+@router.get(
+    "/{run_id}/export/erp",
+    summary="Exportar catálogo SPED para ERP (TOTVS, SAP, Omie, Linx, Genérico)",
+    description=(
+        "Gera arquivo de exportação no formato do ERP selecionado. "
+        "Disponível quando o processamento estiver em status SUCCESS."
+    ),
+)
+def export_sped_erp(
+    run_id: UUID,
+    format: Literal["totvs", "sap", "omie", "linx", "generic"] = Query(
+        default="generic",
+        description="Formato de exportação: totvs | sap | omie | linx | generic",
+    ),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    from app.services.erp_export import generate as erp_generate
+
+    row = db.execute(
+        text("""
+            SELECT j.result, sr.created_at
+            FROM sped_ingestion_runs sr
+            JOIN jobs j ON j.id = sr.job_id
+            WHERE sr.id = CAST(:id AS uuid) AND sr.tenant_id = CAST(:tid AS uuid)
+              AND sr.status = 'SUCCESS'
+        """),
+        {"id": str(run_id), "tid": str(current_user.tenant_id)},
+    ).fetchone()
+
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Resultado não disponível. Aguarde o processamento ou verifique o status.",
+        )
+
+    result = row[0] if isinstance(row[0], dict) else json.loads(row[0])
+    produtos = result.get("produtos", [])
+    data_validacao = row[1].date().isoformat() if row[1] else None
+
+    content, content_type, suffix = erp_generate(produtos, format, data_validacao)  # type: ignore[arg-type]
+    filename = f"tribultz_sped_{str(run_id)[:8]}_{suffix}"
+
+    return Response(
+        content=content,
+        media_type=content_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

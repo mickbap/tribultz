@@ -1,20 +1,22 @@
 """Orchestration / Job Control Agent — manages async job lifecycle."""
 
+import json
 import logging
 from enum import Enum
 from typing import Any, Optional
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
-from sqlalchemy import text
+from sqlalchemy import func, text, update as sa_update
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.api.deps import get_current_user
 from app.api.plan_gate import require_plan, get_plan_slug
 from app.models.auth import User
+from app.models.jobs import Job
 from app.services.fiscal_justification import enrich_findings
 
 logger = logging.getLogger(__name__)
@@ -108,7 +110,6 @@ def create_job(
         if existing:
             return _row_to_response(existing)
 
-    import json
     job_id = str(uuid4())
     db.execute(
         text("""
@@ -177,33 +178,24 @@ def update_job(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Transition a job to a new status.
+    """Transition a job to a new status.
     Used by the worker or human-in-the-loop to mark progress.
     """
-
-    import json
-
-    updates = ["status = :status", "updated_at = now()"]
-    tenant_id = str(current_user.tenant_id)
-    params: dict[str, Any] = {"id": job_id, "tid": tenant_id, "status": req.status.value}
-
+    patch: dict[str, Any] = {"status": req.status.value, "updated_at": func.now()}
     if req.result is not None:
-        updates.append("result = CAST(:result AS jsonb)")
-        params["result"] = json.dumps(req.result)
+        patch["result"] = req.result
     if req.error_message is not None:
-        updates.append("error_message = :err")
-        params["err"] = req.error_message
-
-    set_clause = ", ".join(updates)
-    db.execute(text(f"UPDATE jobs SET {set_clause} WHERE id = :id AND tenant_id = :tid"), params)
-    db.commit()
+        patch["error_message"] = req.error_message
 
     row = db.execute(
-        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"),
-        {"id": job_id, "tid": tenant_id},
+        sa_update(Job)
+        .where(Job.id == UUID(job_id), Job.tenant_id == current_user.tenant_id)
+        .values(**patch)
+        .returning(Job)
     ).fetchone()
-    if not row:
+    db.commit()
+
+    if row is None:
         raise HTTPException(404, "Job not found")
     return _row_to_response(row)
 

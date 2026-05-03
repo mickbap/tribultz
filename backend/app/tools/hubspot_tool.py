@@ -1,6 +1,7 @@
 """HubSpotTool – CRM integration (MVP). All calls gated by HUBSPOT_ENABLED."""
 
 import logging
+import time
 from typing import Any, Optional
 
 import httpx
@@ -163,7 +164,7 @@ def log_note(
     payload = {
         "properties": {
             "hs_note_body": body,
-            "hs_timestamp": str(int(__import__("time").time() * 1000)),
+            "hs_timestamp": str(int(time.time() * 1000)),
         },
         "associations": [
             {

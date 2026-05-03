@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
 import { Toast } from "@/components/common/Toast";
-import { getSpedCsv, getSpedRun, SpedRunResponse, uploadSped } from "@/lib/api";
+import { ErpFormat, getSpedCsv, getSpedErpExport, getSpedRun, SpedRunResponse, uploadSped } from "@/lib/api";
 
 type UploadState = "idle" | "uploading" | "polling" | "done" | "error";
 
@@ -36,8 +36,19 @@ export default function ValidateSpedPage() {
   const [run, setRun] = useState<SpedRunResponse | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [erpOpen, setErpOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const erpRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!erpOpen) return;
+    function close(e: MouseEvent) {
+      if (erpRef.current && !erpRef.current.contains(e.target as Node)) setErpOpen(false);
+    }
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [erpOpen]);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -110,6 +121,32 @@ export default function ValidateSpedPage() {
       URL.revokeObjectURL(url);
     } catch {
       setError("Não foi possível baixar o CSV.");
+    }
+  }
+
+  const ERP_OPTIONS: { value: ErpFormat; label: string }[] = [
+    { value: "totvs",   label: "TOTVS Protheus" },
+    { value: "sap",     label: "SAP Business One" },
+    { value: "omie",    label: "Omie" },
+    { value: "linx",    label: "Linx" },
+    { value: "generic", label: "Genérico (CSV)" },
+  ];
+
+  async function downloadErp(fmt: ErpFormat) {
+    if (!run) return;
+    setErpOpen(false);
+    try {
+      const blob = await getSpedErpExport(run.id, fmt);
+      const opt = ERP_OPTIONS.find((o) => o.value === fmt);
+      const ext = fmt === "linx" ? "txt" : "csv";
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tribultz_sped_${run.id.slice(0, 8)}_${fmt}.${ext}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Não foi possível exportar para o ERP selecionado.");
     }
   }
 
@@ -206,16 +243,45 @@ export default function ValidateSpedPage() {
             </div>
           )}
 
-          {/* CSV download */}
+          {/* Export buttons */}
           {state === "done" && run.status === "SUCCESS" && (
-            <div className="flex justify-end">
+            <div className="flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={downloadCsv}
-                className="rounded-lg bg-tribultz-600 px-4 py-2 text-sm font-semibold text-white hover:bg-tribultz-700 transition-colors"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
               >
-                Baixar CSV ERP-ready
+                CSV Genérico
               </button>
+
+              {/* ERP dropdown */}
+              <div ref={erpRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setErpOpen((o) => !o)}
+                  className="flex items-center gap-1.5 rounded-lg bg-tribultz-600 px-4 py-2 text-sm font-semibold text-white hover:bg-tribultz-700 transition-colors"
+                >
+                  Exportar para ERP
+                  <svg className={`h-4 w-4 transition-transform ${erpOpen ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                  </svg>
+                </button>
+
+                {erpOpen && (
+                  <div className="absolute right-0 z-10 mt-1 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                    {ERP_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => downloadErp(opt.value)}
+                        className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
