@@ -519,6 +519,31 @@ export async function getSpedErpExport(runId: string, format: ErpFormat): Promis
   return res.blob();
 }
 
+// ── NCM Auto-classify ─────────────────────────────────────────────────────────
+
+export type NcmSuggestResponse = {
+  ncm: string;
+  confidence: number;
+  cClassTrib: string | null;
+  cest: string | null;
+  reasoning: string;
+  cached: boolean;
+};
+
+export async function suggestNcm(descricao: string): Promise<NcmSuggestResponse> {
+  const res = await fetch(`${API_BASE}/api/v1/public/ncm/suggest`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ descricao }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "Erro ao sugerir NCM");
+    throw new Error(`API ${res.status}: ${detail}`);
+  }
+  return res.json() as Promise<NcmSuggestResponse>;
+}
+
 // ── Compliance ─────────────────────────────────────────────────────────────────
 
 export type ComplianceScore = {

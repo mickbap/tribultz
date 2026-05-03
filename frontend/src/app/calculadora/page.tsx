@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { API_BASE, createTransactionId } from "@/lib/api";
+import { API_BASE, createTransactionId, suggestNcm, type NcmSuggestResponse } from "@/lib/api";
 import { UF_LIST } from "@/lib/data/ufList";
 import { CST_LIST } from "@/lib/data/cstList";
 
@@ -43,10 +43,29 @@ function CalculadoraInner() {
   const [cst, setCst] = useState(searchParams.get("cst") ?? "000");
   const [quantity, setQuantity] = useState(searchParams.get("qty") ?? "1");
 
+  const [descricao, setDescricao] = useState("");
+  const [ncmSuggest, setNcmSuggest] = useState<NcmSuggestResponse | null>(null);
+  const [ncmSuggestLoading, setNcmSuggestLoading] = useState(false);
+
   const [state, setState] = useState<CalcState>("idle");
   const [result, setResult] = useState<CalculadoraResult | null>(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const handleNcmSuggest = useCallback(async () => {
+    if (descricao.trim().length < 3) return;
+    setNcmSuggestLoading(true);
+    setNcmSuggest(null);
+    try {
+      const suggestion = await suggestNcm(descricao.trim());
+      setNcmSuggest(suggestion);
+      if (!ncm.trim()) setNcm(suggestion.ncm);
+    } catch {
+      // silently ignore — suggestion is optional
+    } finally {
+      setNcmSuggestLoading(false);
+    }
+  }, [descricao, ncm]);
 
   const handleCalculate = useCallback(async () => {
     setState("loading");
@@ -162,6 +181,58 @@ function CalculadoraInner() {
       {/* Calculator form */}
       <section className="mx-auto -mt-6 max-w-2xl px-4 pb-16">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          {/* Description + NCM auto-suggest */}
+          <div className="mb-4">
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Descrição do produto <span className="text-slate-400">(opcional — sugere NCM automaticamente)</span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleNcmSuggest()}
+                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-tribultz-500 focus:outline-none focus:ring-1 focus:ring-tribultz-500"
+                placeholder="Ex: Notebook com processador Intel i7 e 16GB RAM"
+                maxLength={500}
+              />
+              <button
+                type="button"
+                onClick={handleNcmSuggest}
+                disabled={descricao.trim().length < 3 || ncmSuggestLoading}
+                className="whitespace-nowrap rounded-lg border border-tribultz-300 bg-tribultz-50 px-3 py-2 text-xs font-semibold text-tribultz-700 hover:bg-tribultz-100 disabled:opacity-40"
+              >
+                {ncmSuggestLoading ? "Buscando…" : "Sugerir NCM"}
+              </button>
+            </div>
+            {ncmSuggest && (
+              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-tribultz-200 bg-tribultz-50 px-3 py-2 text-xs">
+                <span className="font-mono font-semibold text-tribultz-800">{ncmSuggest.ncm}</span>
+                <span
+                  className={`rounded-full px-2 py-0.5 font-medium ${
+                    ncmSuggest.confidence >= 0.8
+                      ? "bg-emerald-100 text-emerald-700"
+                      : ncmSuggest.confidence >= 0.5
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {Math.round(ncmSuggest.confidence * 100)}% confiança
+                </span>
+                <span className="text-slate-500">{ncmSuggest.reasoning}</span>
+                {ncmSuggest.ncm !== ncm && (
+                  <button
+                    type="button"
+                    onClick={() => setNcm(ncmSuggest.ncm)}
+                    className="ml-auto text-tribultz-600 underline hover:text-tribultz-700"
+                  >
+                    Usar este NCM
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2">
             {/* UF */}
             <div>
