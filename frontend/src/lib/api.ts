@@ -506,6 +506,19 @@ export async function getSpedCsv(runId: string): Promise<string> {
   return res.text();
 }
 
+export type ErpFormat = "totvs" | "sap" | "omie" | "linx" | "generic";
+
+export async function getSpedErpExport(runId: string, format: ErpFormat): Promise<Blob> {
+  const token = getToken();
+  const tenant = getTenantId();
+  const res = await fetch(
+    `${API_BASE}/api/v1/sped/${encodeURIComponent(runId)}/export/erp?format=${format}`,
+    { headers: { Authorization: `Bearer ${token}`, "X-Tenant-Id": tenant }, cache: "no-store" },
+  );
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.blob();
+}
+
 // ── Compliance ─────────────────────────────────────────────────────────────────
 
 export type ComplianceScore = {
