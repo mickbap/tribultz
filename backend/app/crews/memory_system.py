@@ -4,7 +4,7 @@ import json
 import logging
 import math
 from collections.abc import Iterable
-from datetime import datetime
+from datetime import UTC, datetime
 from threading import RLock
 from typing import Any, cast
 
@@ -25,7 +25,7 @@ def _normalize_scope(scope: str | None) -> str:
 
 def _datetime_from_iso(value: str | None) -> datetime:
     if not value:
-        return datetime.utcnow()
+        return datetime.now(UTC)
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
@@ -310,7 +310,7 @@ class RedisMemoryStorage(StorageBackend):
             record = self.get_record(record_id)
             if record is None:
                 continue
-            updated = record.model_copy(update={"last_accessed": datetime.utcnow()})
+            updated = record.model_copy(update={"last_accessed": datetime.now(UTC)})
             self.update(updated)
 
     def get_record_ttl_seconds(self, record_id: str) -> int:
