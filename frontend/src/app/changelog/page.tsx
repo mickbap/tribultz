@@ -5,8 +5,15 @@ import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { NewsFeed } from "@/components/public/NewsFeed";
 
 export const metadata: Metadata = {
-  title: "Changelog",
-  description: "Novidades e atualizações da plataforma Tribultz de conformidade fiscal.",
+  title: "Changelog — Novidades CBS/IBS e Reforma Tributária",
+  description:
+    "Atualizações da plataforma Tribultz: novas regras CBS/IBS, exportação para ERPs, SPED Fiscal, Compliance Score e melhorias de conformidade tributária (LC 214).",
+  keywords: ["changelog", "atualizações", "CBS", "IBS", "reforma tributária", "LC 214", "novidades fiscais"],
+  openGraph: {
+    title: "Changelog Tribultz — Novidades de Conformidade Fiscal",
+    description: "Acompanhe as atualizações de validação CBS/IBS, SPED Fiscal, Compliance Score e exportação para ERP.",
+    type: "website",
+  },
 };
 
 export default function ChangelogPage() {

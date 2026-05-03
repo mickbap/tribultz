@@ -1,7 +1,36 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { NewsFeed } from "@/components/public/NewsFeed";
+
+export const metadata: Metadata = {
+  title: "Tribultz — Validação CBS/IBS e Compliance para a Reforma Tributária | LC 214",
+  description:
+    "Valide notas fiscais contra CBS e IBS da reforma tributária brasileira (LC 214). Motor determinístico com 18 regras, SPED Fiscal, Compliance Score e exportação para TOTVS, SAP, Omie e Linx.",
+  keywords: [
+    "CBS", "IBS", "reforma tributária", "LC 214", "LC 227",
+    "validação fiscal", "SPED fiscal", "nota fiscal eletrônica", "NFe CBS IBS",
+    "calculadora CBS IBS", "compliance tributário", "Split Payment",
+    "cClassTrib", "NCM", "CEST", "reforma tributária 2026",
+  ],
+  alternates: { canonical: "https://tribultz.com.br" },
+  openGraph: {
+    title: "Tribultz — Validação CBS/IBS para a Reforma Tributária",
+    description:
+      "Motor determinístico de conformidade fiscal CBS/IBS. Valide NFe, SPED e catálogo de produtos contra a LC 214 e exporte para o seu ERP.",
+    url: "https://tribultz.com.br",
+    siteName: "Tribultz",
+    locale: "pt_BR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tribultz — CBS/IBS | Reforma Tributária LC 214",
+    description:
+      "Validação determinística de notas fiscais, SPED e catálogo de produtos contra CBS e IBS. Relatório auditável e exportação para ERP.",
+  },
+};
 
 function Check({ color = "#10B981" }: { color?: string }) {
   return (
