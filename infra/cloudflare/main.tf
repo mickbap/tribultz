@@ -229,9 +229,8 @@ resource "cloudflare_record" "resend_send_spf" {
 }
 
 # ── DMARC ─────────────────────────────────────────────────────────────────────
-# Fase 1 — p=none: monitorar sem bloquear (primeiras 2-4 semanas)
-#   → Acompanhar relatórios em dpo@ para confirmar que SPF + DKIM estão OK
-# Fase 2 — mudar para p=quarantine após confirmar zero falsos positivos
+# Fase 2 — p=quarantine: emails não autenticados vão para spam (não rejeitados)
+#   Monitoramento p=none rodou ~6 semanas (22/03 → 03/05/2026) sem falsos positivos
 # Fase 3 — mudar para p=reject quando 100% dos envios forem autenticados
 #
 # aspf=r (relaxed): Return-Path send.tribultz.com.br ≈ From tribultz.com.br ✅
@@ -241,9 +240,9 @@ resource "cloudflare_record" "resend_send_spf" {
 resource "cloudflare_record" "dmarc" {
   zone_id = var.zone_id
   name    = "_dmarc"
-  content = "v=DMARC1; p=none; rua=mailto:dpo@tribultz.com.br; ruf=mailto:infra@tribultz.com.br; fo=1; adkim=s; aspf=r; pct=100"
+  content = "v=DMARC1; p=quarantine; rua=mailto:dpo@tribultz.com.br; ruf=mailto:infra@tribultz.com.br; fo=1; adkim=s; aspf=r; pct=100"
   type    = "TXT"
   proxied = false
   ttl     = 3600
-  comment = "DMARC fase 1 — p=none (monitorar). Evoluir: none → quarantine → reject"
+  comment = "DMARC fase 2 — p=quarantine. Próximo: quarantine → reject"
 }
