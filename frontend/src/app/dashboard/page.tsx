@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
-import { ComplianceScore, getAudits, getComplianceScore, getJobs, listExceptionRequests } from "@/lib/api";
+import { ComplianceScore, getAudits, getComplianceScore, getJobs, getSplitPaymentSummary, listExceptionRequests } from "@/lib/api";
+import type { SplitPaymentSummary } from "@/lib/api";
 import { AuditLog, ExceptionRequest, Finding, Job } from "@/lib/types";
 import { getAccountType, getTenantId, getTenants, type StoredTenant } from "@/lib/storage";
 
@@ -96,6 +97,7 @@ export default function DashboardPage() {
   const [audits, setAudits] = useState<AuditLog[]>([]);
   const [exceptions, setExceptions] = useState<ExceptionRequest[]>([]);
   const [complianceScore, setComplianceScore] = useState<ComplianceScore | null>(null);
+  const [splitSummary, setSplitSummary] = useState<SplitPaymentSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tenantId, setTenantIdState] = useState("");
@@ -114,13 +116,14 @@ export default function DashboardPage() {
     setTenantName(match?.name ?? tid);
 
     setLoading(true);
-    Promise.allSettled([getJobs(), getAudits(), listExceptionRequests(), getComplianceScore()])
-      .then(([jobsResult, auditsResult, exceptionsResult, complianceResult]) => {
+    Promise.allSettled([getJobs(), getAudits(), listExceptionRequests(), getComplianceScore(), getSplitPaymentSummary()])
+      .then(([jobsResult, auditsResult, exceptionsResult, complianceResult, splitResult]) => {
         if (jobsResult.status === "fulfilled") setJobs(jobsResult.value);
         else setError((jobsResult.reason as Error)?.message ?? "Erro ao carregar jobs");
         if (auditsResult.status === "fulfilled") setAudits(auditsResult.value);
         if (exceptionsResult.status === "fulfilled") setExceptions(exceptionsResult.value);
         if (complianceResult.status === "fulfilled") setComplianceScore(complianceResult.value);
+        if (splitResult.status === "fulfilled") setSplitSummary(splitResult.value);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -212,6 +215,52 @@ export default function DashboardPage() {
           <p className="mt-2 text-3xl font-bold text-red-600">{loading ? "..." : metrics.fatalFindings}</p>
         </article>
       </div>
+
+      {/* Split Payment widget */}
+      {(splitSummary || loading) && (
+        <div className={`rounded-xl border p-4 ${
+          splitSummary && splitSummary.at_risk_count > 0
+            ? "border-red-200 bg-red-50"
+            : "border-amber-200 bg-amber-50"
+        }`}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-slate-700">Split Payment — Crédito CBS/IBS</h2>
+            <Link href="/split-payment" className="text-xs text-tribultz-600 hover:underline">Ver painel →</Link>
+          </div>
+          {loading ? (
+            <div className="flex gap-4">
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-8 w-32" />
+            </div>
+          ) : splitSummary ? (
+            <div className="flex flex-wrap gap-6 text-sm">
+              <div>
+                <p className="text-xs text-slate-500">Pendente</p>
+                <p className="mt-0.5 text-xl font-bold text-amber-700">
+                  R$ {parseFloat(splitSummary.pending_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-slate-500">{splitSummary.pending_count} NF(s)</p>
+              </div>
+              {splitSummary.at_risk_count > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-red-600">Em Risco ({">"}5 dias)</p>
+                  <p className="mt-0.5 text-xl font-bold text-red-700">
+                    R$ {parseFloat(splitSummary.at_risk_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-red-500">{splitSummary.at_risk_count} NF(s)</p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs text-slate-500">Liberado</p>
+                <p className="mt-0.5 text-xl font-bold text-emerald-700">
+                  R$ {parseFloat(splitSummary.credit_released_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-slate-500">{splitSummary.credit_released_count} NF(s)</p>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
 
       {/* Compliance Score widget */}
       <div className="rounded-xl border border-slate-200 bg-white p-4">

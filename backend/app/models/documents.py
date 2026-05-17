@@ -56,4 +56,9 @@ class Document(Base):
 
     # Flexible fiscal metadata extracted from XML
     # Keys: chave_acesso, cnpj_emitente, cnpj_destinatario, valor_total, ncm, etc.
+    # Split Payment: credit_value (CBS+IBS), credit_due_date
     fiscal_metadata = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+
+    # Split Payment status (LC 214 art. 22)
+    # NULL = não aplicável; pending | confirmed | credit_released | failed
+    split_payment_status = Column(String(30), nullable=True)

@@ -550,3 +550,49 @@ export async function getComplianceScore(period?: string): Promise<ComplianceSco
 export async function getComplianceHistory(): Promise<ComplianceHistory[]> {
   return apiFetch("/api/v1/compliance/score/history");
 }
+
+// ── Split Payment ────────────────────────────────────────────────────────────
+
+export type SplitPaymentDoc = {
+  document_id: string;
+  original_filename: string | null;
+  doc_type: string;
+  split_payment_status: "pending" | "confirmed" | "credit_released" | "failed";
+  credit_value: string | null;
+  credit_due_date: string | null;
+  created_at: string;
+  days_pending: number | null;
+};
+
+export type SplitPaymentSummary = {
+  pending_count: number;
+  pending_total: string;
+  confirmed_count: number;
+  confirmed_total: string;
+  credit_released_count: number;
+  credit_released_total: string;
+  failed_count: number;
+  failed_total: string;
+  at_risk_count: number;
+  at_risk_total: string;
+};
+
+export async function getSplitPaymentSummary(): Promise<SplitPaymentSummary> {
+  return apiFetch("/api/v1/split-payment/summary");
+}
+
+export async function listSplitPaymentDocs(status?: string): Promise<SplitPaymentDoc[]> {
+  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+  return apiFetch(`/api/v1/split-payment/documents${qs}`);
+}
+
+export async function updateSplitPaymentStatus(
+  documentId: string,
+  payload: { status: string; credit_value?: string; credit_due_date?: string },
+): Promise<SplitPaymentDoc> {
+  return apiFetch(`/api/v1/split-payment/status/${encodeURIComponent(documentId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
