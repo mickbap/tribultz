@@ -82,6 +82,20 @@ class Evidence(BaseModel):
     snippet: str | None = None
 
 
+class RegimeComparison(BaseModel):
+    """Side-by-side old-regime vs. new-regime totals extracted from the XML."""
+    base_old: str | None = None      # vBC (ICMS base, ICMSTot block)
+    base_new: str | None = None      # vBC (CBS/IBS base, IBSCBS block)
+    icms: str | None = None          # vICMS
+    pis: str | None = None           # vPIS
+    cofins: str | None = None        # vCOFINS
+    cbs: str | None = None           # vCBS
+    ibs: str | None = None           # vIBS (total)
+    total_old: str | None = None     # icms + pis + cofins
+    total_new: str | None = None     # cbs + ibs
+    delta: str | None = None         # total_new - total_old
+
+
 class ValidationResult(BaseModel):
     job_id: str
     audit_id: str
@@ -91,6 +105,7 @@ class ValidationResult(BaseModel):
     fatals: int
     alerts: int
     created_at: str
+    regime_comparison: RegimeComparison | None = None
 
 
 # ── XML helpers ─────────────────────────────────────────────────────────────
@@ -131,6 +146,62 @@ def _xpath(tag: str, doc_type: str) -> str:
 
 def _fingerprint(xml: str) -> str:
     return hashlib.md5(xml.encode()).hexdigest()[:12]
+
+
+def _extract_regime_comparison(xml: str, has_ibscbs: bool) -> RegimeComparison | None:
+    """Extract old-regime (ICMS/PIS/COFINS) and new-regime (CBS/IBS) monetary totals."""
+    from decimal import Decimal, InvalidOperation
+
+    def _val(tag_result: dict[str, Any] | None) -> Decimal | None:
+        if not tag_result:
+            return None
+        try:
+            return Decimal(tag_result["value"].replace(",", "."))
+        except (InvalidOperation, KeyError):
+            return None
+
+    # Old regime — prefer ICMSTot block so we don't grab CBS/IBS vBC by mistake
+    icms_tot = _first_tag(xml, ["ICMSTot"])
+    icms_block = icms_tot["snippet"] if icms_tot else xml
+
+    base_old = _val(_first_tag(icms_block, ["vBC"]))
+    v_icms = _val(_first_tag(icms_block, ["vICMS"]))
+    v_pis = _val(_first_tag(icms_block, ["vPIS"]))
+    v_cofins = _val(_first_tag(icms_block, ["vCOFINS"]))
+
+    # New regime — IBSCBS block
+    ibscbs = _first_tag(xml, ["IBSCBS"])
+    ibscbs_src = ibscbs["snippet"] if ibscbs else xml
+    base_new = _val(_first_tag(ibscbs_src, ["vBC"])) if has_ibscbs else None
+    v_cbs = _val(_first_tag(ibscbs_src, ["vCBS"])) if has_ibscbs else _val(_first_tag(xml, ["ValorCBS"]))
+    v_ibs = _val(_first_tag(ibscbs_src, ["vIBS"])) if has_ibscbs else _val(_first_tag(xml, ["ValorIBS"]))
+
+    # Skip if no useful data
+    has_old = any(x is not None for x in [v_icms, v_pis, v_cofins])
+    has_new = any(x is not None for x in [v_cbs, v_ibs])
+    if not has_old and not has_new:
+        return None
+
+    zero = Decimal("0")
+    total_old = (v_icms or zero) + (v_pis or zero) + (v_cofins or zero)
+    total_new = (v_cbs or zero) + (v_ibs or zero)
+    delta = total_new - total_old
+
+    def _fmt(d: Decimal | None) -> str | None:
+        return str(d.quantize(Decimal("0.01"))) if d is not None else None
+
+    return RegimeComparison(
+        base_old=_fmt(base_old),
+        base_new=_fmt(base_new),
+        icms=_fmt(v_icms),
+        pis=_fmt(v_pis),
+        cofins=_fmt(v_cofins),
+        cbs=_fmt(v_cbs),
+        ibs=_fmt(v_ibs),
+        total_old=_fmt(total_old),
+        total_new=_fmt(total_new),
+        delta=_fmt(delta),
+    )
 
 
 # ── Validation engine ───────────────────────────────────────────────────────
@@ -394,6 +465,7 @@ def validate_xml(
 
     fatals = sum(1 for f in findings if f.severity == "FATAL")
     alerts = sum(1 for f in findings if f.severity == "ALERT")
+    regime_comparison = _extract_regime_comparison(xml, has_ibscbs)
 
     return ValidationResult(
         job_id=job_id,
@@ -404,6 +476,7 @@ def validate_xml(
         fatals=fatals,
         alerts=alerts,
         created_at=datetime.now(timezone.utc).isoformat(),
+        regime_comparison=regime_comparison,
     )
 
 
@@ -456,13 +529,21 @@ async def validate_xml_endpoint(
     # Persist job record — id explícito garante que result.job_id == row.id no banco
     try:
         sp = db.begin_nested()
+        job_result: dict[str, Any] = {
+            "fatals": result.fatals,
+            "alerts": result.alerts,
+            "findings_count": len(result.findings),
+            "findings": [f.model_dump() for f in result.findings],
+        }
+        if result.regime_comparison:
+            job_result["regime_comparison"] = result.regime_comparison.model_dump()
         db.add(JobModel(
             id=UUID(result.job_id),
             tenant_id=current_user.tenant_id,
             job_type="validate_xml",
             status="SUCCESS",
             payload={"document_type": result.document_type, "audit_id": result.audit_id},
-            result={"fatals": result.fatals, "alerts": result.alerts, "findings_count": len(result.findings)},
+            result=job_result,
         ))
         sp.commit()
     except Exception:
