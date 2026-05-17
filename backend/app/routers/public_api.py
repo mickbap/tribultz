@@ -11,7 +11,7 @@ import hashlib
 import secrets
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
-from typing import Optional
+from typing import Optional, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, field_validator
@@ -132,7 +132,7 @@ def _resolve_api_key(x_api_key: str = Header(..., alias="X-API-Key"), db: Sessio
     ).scalar_one_or_none()
     if not api_key:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="X-API-Key inválida ou revogada.")
-    if api_key.credits_balance <= 0:
+    if cast(int, api_key.credits_balance) <= 0:
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
             detail="Créditos esgotados. Adquira mais em tribultz.com.br/settings/api.",
@@ -175,7 +175,7 @@ def classify(
     )
 
     # 3. Debitar 1 crédito e registrar last_used_at
-    new_balance = api_key.credits_balance - 1
+    new_balance = cast(int, api_key.credits_balance) - 1
     db.execute(
         update(ApiKey)
         .where(ApiKey.id == api_key.id)
@@ -217,18 +217,19 @@ def list_api_keys(
         .where(ApiKey.user_id == current_user.id)
         .order_by(ApiKey.created_at.desc())
     ).scalars().all()
-    return [
-        ApiKeyOut(
+    out: list[ApiKeyOut] = []
+    for k in rows:
+        lua = cast(Optional[datetime], k.last_used_at)
+        out.append(ApiKeyOut(
             id=str(k.id),
             name=str(k.name),
             key_prefix=str(k.key_prefix),
-            credits_balance=int(k.credits_balance),
-            is_active=bool(k.is_active),
-            last_used_at=k.last_used_at.isoformat() if k.last_used_at else None,
-            created_at=k.created_at.isoformat(),
-        )
-        for k in rows
-    ]
+            credits_balance=cast(int, k.credits_balance),
+            is_active=cast(bool, k.is_active),
+            last_used_at=lua.isoformat() if lua is not None else None,
+            created_at=cast(datetime, k.created_at).isoformat(),
+        ))
+    return out
 
 
 @router.post(
