@@ -24,31 +24,41 @@ const robotoMono = Roboto_Mono({
 const SITE_URL = "https://tribultz.com.br";
 const SITE_NAME = "Tribultz";
 const DEFAULT_DESCRIPTION =
-  "Plataforma de inteligência fiscal para a reforma tributária brasileira. Validação determinística CBS/IBS, memória de precedentes e trilha auditável.";
+  "Evite Rejeição 1024 e penalidades CBS/IBS. Classifique NCM → cClassTrib, valide 18 regras LC 214 e exporte para TOTVS, SAP, Omie e Linx. Compliance auditável para a Reforma Tributária.";
 
 export const metadata: Metadata = {
   title: {
-    default: "Tribultz | Inteligência Fiscal para a Reforma Tributária",
+    default: "Tribultz | Validação CBS/IBS e cClassTrib — Evite Rejeições de NF-e",
     template: "%s | Tribultz",
   },
   description: DEFAULT_DESCRIPTION,
+  keywords: [
+    "cClassTrib", "CBS IBS", "NCM cClassTrib", "Rejeição 1024 NF-e",
+    "validação CBS IBS", "reforma tributária compliance", "LC 214 CBS IBS",
+    "SPED CBS IBS", "API NCM tributário", "split payment 2027",
+    "compliance fiscal 2026", "penalidades CBS IBS agosto 2026",
+    "software reforma tributária", "validar NF-e CBS IBS",
+  ],
   metadataBase: new URL(SITE_URL),
   openGraph: {
     type: "website",
     locale: "pt_BR",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: "Tribultz | Inteligência Fiscal para a Reforma Tributária",
+    title: "Tribultz | Validação CBS/IBS e cClassTrib — Evite Rejeições de NF-e",
     description: DEFAULT_DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tribultz | Inteligência Fiscal para a Reforma Tributária",
+    title: "Tribultz | Validação CBS/IBS e cClassTrib — Evite Rejeições de NF-e",
     description: DEFAULT_DESCRIPTION,
   },
   robots: {
     index: true,
     follow: true,
+  },
+  alternates: {
+    canonical: SITE_URL,
   },
 };
 

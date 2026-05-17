@@ -1,0 +1,247 @@
+"""NCM Auto-classify — POST /api/v1/public/ncm/suggest (#170).
+
+Freemium: 10 classificações/IP/dia sem autenticação.
+Cache Redis 30 dias (mapeamento NCM-cClassTrib é estável).
+LLM via OpenRouter com fallback em 3 tiers.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import logging
+import os
+import re
+from datetime import date
+from typing import Optional, cast
+
+import litellm
+from litellm.types.utils import Choices as LiteLLMChoices
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel, field_validator
+from sqlalchemy.orm import Session
+from sqlalchemy.sql import text
+
+from app.data.ncm_codes import is_valid_ncm
+from app.database import get_db
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(tags=["ncm-suggest"])
+
+_DAILY_LIMIT = 10
+_CACHE_TTL_SECONDS = 86_400 * 30  # 30 days
+
+_LLM_MODELS = [
+    "openrouter/openai/gpt-oss-20b:free",
+    "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+    "openrouter/google/gemma-4-31b-it:free",
+]
+
+_SYSTEM_PROMPT = """\
+Você é um especialista em classificação NCM (Nomenclatura Comum do Mercosul) \
+para a legislação tributária brasileira (TIPI — Decreto 11.158/2022).
+
+Dado a descrição de um produto em português, retorne o código NCM de 8 dígitos \
+mais adequado conforme a TIPI vigente.
+
+Responda SOMENTE com JSON válido, sem markdown, sem texto adicional:
+{
+  "ncm": "XXXXXXXX",
+  "ncm_descricao": "descrição resumida do capítulo/posição NCM",
+  "confidence": 0.95
+}
+
+Regras:
+- ncm: exatamente 8 dígitos numéricos, sem pontos ou hífens
+- confidence: 0.0–1.0 (use < 0.70 quando o produto for ambíguo ou você não tiver certeza)
+- Se o produto for muito vago, use confidence < 0.50 e o NCM mais provável do capítulo
+
+Exemplos:
+{"descricao": "Carne bovina traseira resfriada"} \
+→ {"ncm": "02013000", "ncm_descricao": "Carnes bovinas frescas ou refrigeradas", "confidence": 0.95}
+{"descricao": "Smartphone Samsung Galaxy 15"} \
+→ {"ncm": "85171200", "ncm_descricao": "Telefones para redes celulares/sem fio", "confidence": 0.92}
+{"descricao": "Serviço de consultoria"} \
+→ {"ncm": "98010100", "ncm_descricao": "Serviços profissionais", "confidence": 0.40}
+"""
+
+
+# ── Schemas ────────────────────────────────────────────────────────────────────
+
+class SuggestRequest(BaseModel):
+    descricao: str
+
+    @field_validator("descricao")
+    @classmethod
+    def validate_descricao(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) < 3:
+            raise ValueError("Descrição muito curta (mínimo 3 caracteres)")
+        if len(v) > 500:
+            raise ValueError("Descrição muito longa (máximo 500 caracteres)")
+        return v
+
+
+class SuggestResponse(BaseModel):
+    ncm: str
+    ncm_descricao: str
+    confidence: float
+    cClassTrib: Optional[str]
+    cest: None = None
+    rate_source: str = "ncm_ai"
+    aviso: Optional[str] = None
+
+
+# ── Redis helpers (best-effort — falls back gracefully) ────────────────────────
+
+def _get_redis():  # type: ignore[return]
+    import redis as redis_lib
+    from app.config import settings
+    return redis_lib.from_url(settings.REDIS_URL, decode_responses=True)
+
+
+def _rate_check(client_ip: str) -> None:
+    try:
+        r = _get_redis()
+        today = date.today().isoformat()
+        key = f"ncm_suggest_rate:{client_ip}:{today}"
+        count = cast(int, r.incr(key))
+        if count == 1:
+            r.expire(key, 86_400)
+        if count > _DAILY_LIMIT:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=(
+                    f"Limite de {_DAILY_LIMIT} classificações gratuitas por dia atingido. "
+                    "Crie uma conta para ampliar o limite."
+                ),
+                headers={"Retry-After": "86400"},
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # Redis unavailable — allow through
+
+
+def _cache_get(key: str) -> Optional[dict]:
+    try:
+        raw = cast(Optional[str], _get_redis().get(key))
+        return json.loads(raw) if raw else None
+    except Exception:
+        return None
+
+
+def _cache_set(key: str, value: dict) -> None:
+    try:
+        _get_redis().setex(key, _CACHE_TTL_SECONDS, json.dumps(value))
+    except Exception:
+        pass
+
+
+# ── LLM call with 3-tier fallback ─────────────────────────────────────────────
+
+def _llm_classify(descricao: str) -> dict:
+    api_key = os.environ.get("OPENROUTER_API_KEY", "")
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Serviço de classificação temporariamente indisponível.",
+        )
+
+    for model in _LLM_MODELS:
+        try:
+            resp = litellm.completion(
+                model=model,
+                messages=[
+                    {"role": "system", "content": _SYSTEM_PROMPT},
+                    {"role": "user", "content": f"Produto: {descricao}"},
+                ],
+                api_key=api_key,
+                base_url="https://openrouter.ai/api/v1",
+                max_tokens=150,
+                temperature=0.1,
+                timeout=20,
+            )
+            model_resp = cast(litellm.ModelResponse, resp)
+            choice = cast(LiteLLMChoices, model_resp.choices[0])
+            content = (choice.message.content or "").strip()
+            match = re.search(r"\{[^}]+\}", content, re.DOTALL)
+            if match:
+                data = json.loads(match.group())
+                if "ncm" in data and "confidence" in data:
+                    logger.info("ncm_suggest: model=%s ncm=%s confidence=%s", model, data.get("ncm"), data.get("confidence"))
+                    return data
+        except Exception as exc:
+            logger.warning("ncm_suggest: model=%s failed: %s", model, str(exc)[:200])
+            continue
+
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail="Classificação indisponível no momento. Tente novamente em alguns segundos.",
+    )
+
+
+# ── Endpoint ───────────────────────────────────────────────────────────────────
+
+@router.post(
+    "/api/v1/public/ncm/suggest",
+    response_model=SuggestResponse,
+    summary="Sugerir NCM a partir de descrição do produto (freemium, 10/dia por IP)",
+)
+def suggest_ncm(
+    payload: SuggestRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> SuggestResponse:
+    client_ip = (request.client.host if request.client else "unknown")
+    _rate_check(client_ip)
+
+    # Cache key: SHA-256 de descrição normalizada (case-insensitive, espaços colapsados)
+    normalized = " ".join(payload.descricao.lower().split())
+    cache_key = f"ncm_suggest:{hashlib.sha256(normalized.encode()).hexdigest()[:24]}"
+
+    cached = _cache_get(cache_key)
+    if cached:
+        return SuggestResponse(**cached)
+
+    llm_result = _llm_classify(normalized)
+
+    raw_ncm = str(llm_result.get("ncm", "")).strip().replace(".", "").replace("-", "")
+    ncm = raw_ncm.zfill(8)[:8]
+    confidence = min(max(float(llm_result.get("confidence", 0.5)), 0.0), 1.0)
+    ncm_descricao = str(llm_result.get("ncm_descricao", "")).strip()
+
+    # Se o NCM não é válido na tabela TIPI, abaixa confiança
+    if not is_valid_ncm(ncm):
+        confidence = min(confidence, 0.50)
+        logger.warning("ncm_suggest: NCM %s not in TIPI table — confidence capped at 0.50", ncm)
+
+    # Buscar cClassTrib pelo capítulo (2 primeiros dígitos)
+    ncm_prefix = ncm[:2]
+    row = db.execute(
+        text("""
+            SELECT codigo FROM cclass_trib_items
+            WHERE codigo LIKE :prefix AND is_active = TRUE
+            ORDER BY codigo
+            LIMIT 1
+        """),
+        {"prefix": f"{ncm_prefix}.%"},
+    ).mappings().fetchone()
+    classtrib: str | None = dict(row)["codigo"] if row else None
+
+    aviso: str | None = None
+    if confidence < 0.70:
+        aviso = "Confiança baixa — confirme o NCM com seu contador antes de usar em NF-e."
+
+    result: dict = {
+        "ncm": ncm,
+        "ncm_descricao": ncm_descricao,
+        "confidence": round(confidence, 2),
+        "cClassTrib": classtrib,
+        "cest": None,
+        "rate_source": "ncm_ai",
+        "aviso": aviso,
+    }
+    _cache_set(cache_key, result)
+    return SuggestResponse(**result)

@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Planos e Preços",
+  title: "Planos e Preços — Compliance CBS/IBS a partir de R$ 49,90",
   description:
-    "Conheça os planos Tribultz: Trial, Starter, Profissional, Empresarial e Contador. " +
-    "Validação fiscal CBS/IBS a partir de R$49,90/mês.",
+    "Planos para autônomos, PMEs, contadores e empresas com filiais. " +
+    "API NCM → cClassTrib, export TOTVS/SAP/Omie/Linx, PDF auditável. " +
+    "Penalidades CBS/IBS a partir de agosto/2026.",
+  keywords: [
+    "preço software CBS IBS", "planos validação fiscal reforma tributária",
+    "API cClassTrib preço", "software compliance CBS IBS", "validação NF-e CBS planos",
+  ],
   openGraph: {
-    title: "Planos e Preços — Tribultz",
+    title: "Planos Tribultz — Compliance CBS/IBS a partir de R$ 49,90",
     description:
-      "Escolha o plano ideal para sua empresa. Validação fiscal CBS/IBS com trilha auditável.",
+      "API NCM → cClassTrib, export TOTVS/SAP/Omie/Linx e PDF auditável. Penalidades CBS/IBS a partir de agosto/2026.",
     type: "website",
   },
 };
