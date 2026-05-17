@@ -13,6 +13,7 @@ const links = [
   { href: "/jobs", label: "Jobs" },
   { href: "/audit", label: "Auditoria" },
   { href: "/exceptions", label: "Exceções" },
+  { href: "/split-payment", label: "Split Payment" },
   { href: "/billing", label: "Faturamento" },
   { href: "/settings", label: "Configurações" },
   { href: "/support", label: "Suporte" },
