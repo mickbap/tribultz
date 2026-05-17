@@ -25,6 +25,7 @@ export default function JobsPage() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [exportingByJobId, setExportingByJobId] = useState<Record<string, boolean>>({});
+  const [erpDropdownJobId, setErpDropdownJobId] = useState<string | null>(null);
 
   const [status, setStatus] = useState<JobStatus | "ALL">("ALL");
   const [period, setPeriod] = useState<PeriodFilter>("all");
@@ -53,6 +54,32 @@ export default function JobsPage() {
     const feedback = await exportEvidenceZipAndDownload(jobId);
     setToast(feedback);
     setExportingByJobId((prev) => ({ ...prev, [jobId]: false }));
+  }
+
+  async function handleErpExport(jobId: string, format: string): Promise<void> {
+    setErpDropdownJobId(null);
+    try {
+      const { getToken, getTenantId } = await import("@/lib/storage");
+      const { API_BASE } = await import("@/lib/api");
+      const res = await fetch(`${API_BASE}/api/v1/jobs/${jobId}/export/erp?format=${format}`, {
+        headers: { Authorization: `Bearer ${getToken()}`, "X-Tenant-Id": getTenantId() },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Erro ao exportar." }));
+        setToast({ tone: "error", message: err.detail ?? "Erro ao exportar." });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tribultz_erp_${jobId.slice(0, 8)}_${format}.${format === "linx" ? "txt" : "csv"}`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setToast({ tone: "success", message: `Export ${format.toUpperCase()} iniciado.` });
+    } catch {
+      setToast({ tone: "error", message: "Erro ao gerar export ERP." });
+    }
   }
 
   return (
@@ -146,6 +173,34 @@ export default function JobsPage() {
                         >
                           {exportingByJobId[job.id] ? "Exportando…" : "Exportar evidências"}
                         </button>
+                        {job.status === "SUCCESS" && job.jobType === "sped_validation" && (
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => setErpDropdownJobId(erpDropdownJobId === job.id ? null : job.id)}
+                              className="rounded border border-blue-300 bg-blue-50 px-2 py-1 text-xs text-blue-700 hover:bg-blue-100"
+                            >
+                              Exportar ERP ▾
+                            </button>
+                            {erpDropdownJobId === job.id && (
+                              <div className="absolute left-0 top-full z-10 mt-1 w-36 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                                {(["totvs", "sap", "omie", "linx", "generic"] as const).map((fmt) => (
+                                  <button
+                                    key={fmt}
+                                    type="button"
+                                    onClick={() => void handleErpExport(job.id, fmt)}
+                                    className="block w-full px-4 py-1.5 text-left text-xs text-slate-700 hover:bg-slate-50"
+                                  >
+                                    {fmt === "totvs" ? "TOTVS Protheus" :
+                                     fmt === "sap" ? "SAP Business One" :
+                                     fmt === "omie" ? "Omie" :
+                                     fmt === "linx" ? "Linx" : "Genérico CSV"}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>

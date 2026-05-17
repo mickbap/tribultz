@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy import func, text, update as sa_update
@@ -324,3 +324,41 @@ def get_job_report_pdf(
         },
     )
 
+
+@router.get(
+    "/{job_id}/export/erp",
+    summary="Exportar catálogo de produtos do job em formato ERP (TOTVS, SAP, Omie, Linx, Genérico)",
+)
+def export_job_erp(
+    job_id: str,
+    format: str = Query("generic", pattern="^(totvs|sap|omie|linx|generic)$"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _plan: User = Depends(require_plan("profissional", "empresarial", "contador")),
+) -> Response:
+    tenant_id = str(current_user.tenant_id)
+    row = db.execute(
+        text("SELECT * FROM jobs WHERE id = :id AND tenant_id = :tid"),
+        {"id": job_id, "tid": tenant_id},
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Job não encontrado.")
+    if row.status != "SUCCESS":
+        raise HTTPException(status_code=400, detail=f"Job não concluído (status: {row.status}).")
+
+    result = row.result if isinstance(row.result, dict) else {}
+    produtos = result.get("produtos", [])
+    if not produtos:
+        raise HTTPException(
+            status_code=400,
+            detail="Este job não possui catálogo de produtos exportável. Apenas jobs SPED suportam export ERP.",
+        )
+
+    from app.services.erp_export import generate as erp_generate
+
+    content, content_type, suffix = erp_generate(produtos, format, result.get("periodo", {}).get("ini"))  # type: ignore[arg-type]
+    return Response(
+        content=content,
+        media_type=content_type,
+        headers={"Content-Disposition": f'attachment; filename="tribultz_erp_{job_id[:8]}_{suffix}"'},
+    )
