@@ -41,6 +41,21 @@ export default function SettingsPage() {
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 className="text-lg font-semibold text-slate-900">API Keys</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Integre ERPs e sistemas externos via API pay-per-call.
+        </p>
+        <div className="mt-3">
+          <Link
+            href="/settings/api"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Gerenciar API Keys
+          </Link>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold text-slate-900">Meus Dados (LGPD)</h2>
         <p className="mt-1 text-sm text-slate-500">
           Seus direitos conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018).
