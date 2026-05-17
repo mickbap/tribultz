@@ -13,9 +13,10 @@ import logging
 import os
 import re
 from datetime import date
-from typing import Optional
+from typing import Optional, cast
 
 import litellm
+from litellm.types.utils import Choices as LiteLLMChoices
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
@@ -105,7 +106,7 @@ def _rate_check(client_ip: str) -> None:
         r = _get_redis()
         today = date.today().isoformat()
         key = f"ncm_suggest_rate:{client_ip}:{today}"
-        count = r.incr(key)
+        count = cast(int, r.incr(key))
         if count == 1:
             r.expire(key, 86_400)
         if count > _DAILY_LIMIT:
@@ -125,7 +126,7 @@ def _rate_check(client_ip: str) -> None:
 
 def _cache_get(key: str) -> Optional[dict]:
     try:
-        raw = _get_redis().get(key)
+        raw = cast(Optional[str], _get_redis().get(key))
         return json.loads(raw) if raw else None
     except Exception:
         return None
@@ -162,7 +163,9 @@ def _llm_classify(descricao: str) -> dict:
                 temperature=0.1,
                 timeout=20,
             )
-            content = (resp.choices[0].message.content or "").strip()
+            model_resp = cast(litellm.ModelResponse, resp)
+            choice = cast(LiteLLMChoices, model_resp.choices[0])
+            content = (choice.message.content or "").strip()
             match = re.search(r"\{[^}]+\}", content, re.DOTALL)
             if match:
                 data = json.loads(match.group())
