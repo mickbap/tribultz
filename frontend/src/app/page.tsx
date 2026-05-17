@@ -123,11 +123,11 @@ export default function HomePage() {
           <div className="mx-auto max-w-6xl px-4 md:px-6">
             <div className="grid items-center gap-16 md:grid-cols-2">
               <div>
-                <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#E8F0FE] py-1.5 pl-1.5 pr-4">
-                  <span className="rounded-full bg-[#2956E3] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
-                    LC 214/2025
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#FEF2F2] py-1.5 pl-1.5 pr-4">
+                  <span className="rounded-full bg-[#DC2626] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
+                    ATIVO
                   </span>
-                  <span className="text-xs font-semibold text-[#2044C7]">Reforma Tributária pronta para 2026</span>
+                  <span className="text-xs font-semibold text-[#991B1B]">Penalidades CBS/IBS a partir de agosto/2026</span>
                 </div>
 
                 <h1 className="mb-5 text-5xl font-extrabold leading-[1.04] tracking-tight text-[#24292E] md:text-[3.5rem]">
@@ -158,7 +158,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-7 flex flex-wrap gap-5 text-sm text-[#6C757D]">
-                  {["Sem cartão de crédito", "5 validações grátis", "Setup em 5 minutos"].map((t) => (
+                  {["Sem cartão de crédito", "5 validações grátis", "100 créditos API grátis"].map((t) => (
                     <span key={t} className="flex items-center gap-1.5"><Check />{t}</span>
                   ))}
                 </div>
@@ -174,8 +174,9 @@ export default function HomePage() {
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-10 px-4 md:px-6">
             {[
               { icon: "🛡", label: "Tabela oficial SVRS" },
-              { icon: "🔒", label: "LGPD compliant" },
+              { icon: "🔌", label: "API NCM → cClassTrib" },
               { icon: "✅", label: "18 regras CBS/IBS LC 214" },
+              { icon: "🔗", label: "TOTVS · SAP · Omie · Linx" },
               { icon: "⏱", label: "SLA 99,9% (plano Contador)" },
               { icon: "📄", label: "Auditável (PDF + JSON)" },
             ].map((t) => (
@@ -246,18 +247,18 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
               {[
                 {
                   badge: "SPED FISCAL",
                   preview: [
                     { l: "EFD-ICMS/IPI · 12.430 itens", r: "✓", ok: true },
                     { l: "Catálogo CBS/IBS", r: "100%", ok: true },
-                    { l: "CSV pronto p/ ERP", r: "↓", ok: false },
+                    { l: "Export TOTVS / SAP / Omie", r: "↓", ok: false },
                   ],
                   title: "SPED Fiscal",
-                  body: "Envie o EFD-ICMS/IPI e valide todo o catálogo de produtos contra as regras CBS/IBS. CSV pronto para o ERP.",
-                  meta: "EFD-ICMS/IPI · cBenef · cClassTrib",
+                  body: "Envie o EFD-ICMS/IPI e valide todo o catálogo de produtos contra as regras CBS/IBS. Export pronto para TOTVS, SAP, Omie, Linx ou CSV genérico.",
+                  meta: "EFD-ICMS/IPI · TOTVS · SAP · Omie · Linx",
                 },
                 {
                   badge: "cClassTrib · LC 214",
@@ -280,6 +281,17 @@ export default function HomePage() {
                   title: "Compliance Score",
                   body: "Acompanhe o índice mensal de conformidade da sua empresa e atue antes da fiscalização.",
                   meta: "Alertas · tendência · benchmark setor",
+                },
+                {
+                  badge: "API · PAY-PER-CALL",
+                  preview: [
+                    { l: "POST /classify", r: "NCM → cClassTrib", ok: true },
+                    { l: "CBS 8,80% + IBS 17,70%", r: "26,50%", ok: true },
+                    { l: "1 crédito / chamada", r: "100 grátis", ok: false },
+                  ],
+                  title: "API Classify",
+                  body: "Classifique NCM e calcule CBS/IBS direto no seu ERP via API. 100 créditos grátis. Sem contrato — pague só o que usar.",
+                  meta: "X-API-Key · REST · JSON",
                 },
               ].map((f) => (
                 <div key={f.badge} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-8 transition-all hover:-translate-y-0.5 hover:border-[#8db1f8]">
@@ -352,7 +364,7 @@ export default function HomePage() {
                 {[
                   { n: "2.847", l: "Empresas usando hoje" },
                   { n: "1.2M", l: "XMLs validados" },
-                  { n: "18", l: "Regras CBS/IBS" },
+                  { n: "100", l: "Créditos API grátis" },
                   { n: "99,9%", l: "SLA disponível" },
                 ].map((s) => (
                   <div
