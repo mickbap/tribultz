@@ -4,14 +4,19 @@ import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { PublicFooter } from "@/components/public/PublicFooter";
 
 export const metadata: Metadata = {
-  title: "Calculadora CBS/IBS — Reforma Tributária 2026 | Tribultz",
+  title: "Calculadora CBS/IBS — Calcule NCM → cClassTrib + Alíquotas LC 214",
   description:
-    "Calcule CBS e IBS gratuitamente. Insira NCM, UF e valor base para obter " +
-    "alíquotas, valores e XML <IBSCBS> pronto para o ERP. LC 214/2025.",
+    "Calcule CBS e IBS por NCM e UF gratuitamente. Alíquotas LC 214 atualizadas, " +
+    "cClassTrib e base legal incluídos. Evite erros antes das penalidades de agosto/2026.",
+  keywords: [
+    "calculadora CBS IBS", "calcular IBS CBS NCM", "cClassTrib calculadora",
+    "reforma tributária calculadora", "alíquota CBS IBS 2026",
+    "calcular CBS IBS por NCM grátis", "calculadora reforma tributária",
+  ],
   openGraph: {
-    title: "Calculadora CBS/IBS — Reforma Tributária 2026",
+    title: "Calculadora CBS/IBS — cClassTrib por NCM | Tribultz",
     description:
-      "Calcule CBS e IBS de qualquer operação. Gere o XML IBSCBS conforme NT 2025.002-RTC.",
+      "Calcule CBS e IBS por NCM, UF e CST. Alíquotas LC 214, cClassTrib e base legal. Grátis.",
     type: "website",
   },
 };

@@ -9,7 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
 from app.core.logging import configure_logging
-from app.routers import admin, auth, audit, billing, calculadora, classtrib, compliance, documents, exceptions, feedback, health, jobs, lgpd, news, public, public_api, reports, sped, support, tasks, validate, validate_xml, validation
+from app.routers import admin, auth, audit, billing, calculadora, classtrib, compliance, documents, exceptions, feedback, health, jobs, lgpd, ncm_suggest, news, public, public_api, reports, sped, support, tasks, validate, validate_xml, validation
 from app.services.news_seed import ensure_default_news_entry
 
 configure_logging()
@@ -82,6 +82,7 @@ app.include_router(billing.router)
 app.include_router(validate_xml.router)
 app.include_router(public.router)
 app.include_router(public_api.router)
+app.include_router(ncm_suggest.router)
 app.include_router(calculadora.router)
 app.include_router(reports.router)
 app.include_router(news.router)

@@ -1,11 +1,80 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { NewsFeed } from "@/components/public/NewsFeed";
 
+export const metadata: Metadata = {
+  title: "IBS e CBS sem Rejeição de NF-e — Compliance LC 214",
+  description: "Rejeição 1024 por cClassTrib errado? Penalidades CBS/IBS a partir de agosto/2026. Classifique NCM → cClassTrib, valide 18 regras da Reforma e exporte para TOTVS/SAP/Omie/Linx. 100 créditos API grátis.",
+  keywords: [
+    "Rejeição 1024 NF-e", "cClassTrib CBS IBS", "NCM cClassTrib LC 214",
+    "penalidades CBS IBS 2026", "validação NF-e reform tributária",
+    "compliance CBS IBS", "API NCM classificação", "TOTVS SAP Omie Linx CBS IBS",
+  ],
+  openGraph: {
+    title: "IBS e CBS sem Rejeição de NF-e | Tribultz",
+    description: "Evite a Rejeição 1024. Classifique NCM → cClassTrib e valide CBS/IBS antes das penalidades de agosto/2026.",
+  },
+};
+
 const WA_NUMBER = "5551991881026";
 const WA_MSG = encodeURIComponent("Olá! Vim pelo site da Tribultz e quero saber mais sobre validação CBS/IBS.");
 const WA_URL = `https://wa.me/${WA_NUMBER}?text=${WA_MSG}`;
+const WA_REJEICAO = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Olá! Estou com Rejeição 1024 na NF-e (cClassTrib incorreto) e preciso de ajuda urgente.")}`;
+const WA_ERP = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Olá! Preciso integrar CBS/IBS ao meu ERP (TOTVS/SAP/Omie/Linx) e quero entender como a Tribultz pode ajudar.")}`;
+
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://tribultz.com.br/#org",
+      "name": "Tribultz",
+      "url": "https://tribultz.com.br",
+      "logo": "https://tribultz.com.br/logo.png",
+      "contactPoint": { "@type": "ContactPoint", "contactType": "customer support", "availableLanguage": "Portuguese" },
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "Tribultz",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL", "description": "100 créditos API grátis" },
+      "description": "Plataforma de validação CBS/IBS, classificação NCM → cClassTrib e compliance para a Reforma Tributária brasileira (LC 214).",
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "O que é a Rejeição 1024 na NF-e com CBS/IBS?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A Rejeição 1024 ocorre quando o cClassTrib informado na NF-e é incompatível com o CST do produto, tornando-se o erro mais comum desde janeiro/2026. A Tribultz valida essa compatibilidade automaticamente antes da emissão e indica a correção necessária." },
+        },
+        {
+          "@type": "Question",
+          "name": "Quando começam as penalidades por erro em CBS/IBS?",
+          "acceptedAnswer": { "@type": "Answer", "text": "As penalidades efetivas por erros de CBS/IBS em NF-e começam em agosto/2026, encerrando o período educacional da Receita Federal. Empresas com cClassTrib incorreto ficarão sujeitas a autuações e multas." },
+        },
+        {
+          "@type": "Question",
+          "name": "Como classificar o NCM correto para o cClassTrib na Reforma Tributária?",
+          "acceptedAnswer": { "@type": "Answer", "text": "O cClassTrib é determinado pelo capítulo NCM e pelo regime tributário aplicável (padrão, reduzido, cesta básica, imune, etc). A Tribultz oferece classificação automática NCM → cClassTrib via API pay-per-call ou pelo validador gratuito, com evidência auditável da base legal." },
+        },
+        {
+          "@type": "Question",
+          "name": "Como integrar CBS/IBS no TOTVS, SAP, Omie ou Linx?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A Tribultz exporta o catálogo de produtos validado nos formatos TOTVS Protheus, SAP Business One, Omie, Linx e CSV genérico, prontos para importação direta no ERP sem alterações manuais." },
+        },
+        {
+          "@type": "Question",
+          "name": "O que é o split payment e quando entra em vigor?",
+          "acceptedAnswer": { "@type": "Answer", "text": "O split payment é o mecanismo de retenção automática de IBS/CBS no momento do pagamento (Pix, boleto, transferência bancária), previsto para entrar em vigor em 2027. Impacta diretamente o capital de giro — empresas devem modelar o impacto antes do prazo." },
+        },
+      ],
+    },
+  ],
+};
 
 function WhatsAppIcon({ size = 18 }: { size?: number }) {
   return (
@@ -225,10 +294,10 @@ export default function HomePage() {
         <section className="border-y border-slate-200 bg-white py-10">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 md:flex-row md:px-6">
             <div>
-              <p className="text-base font-bold text-[#24292E]">Dúvida sobre a Reforma Tributária?</p>
-              <p className="mt-1 text-sm text-[#334155]">Nosso time responde em minutos pelo WhatsApp — <span className="font-semibold">(51) 99188-1026</span>.</p>
+              <p className="text-base font-bold text-[#24292E]">NF-e rejeitada? Penalidades CBS/IBS chegam em agosto/2026.</p>
+              <p className="mt-1 text-sm text-[#334155]">Nosso time fiscal responde em minutos — sem enrolação. <span className="font-semibold">(51) 99188-1026</span>.</p>
             </div>
-            <WhatsAppButton label="Chamar no WhatsApp agora" variant="green" />
+            <WhatsAppButton label="Chamar agora" variant="green" />
           </div>
         </section>
 
@@ -318,6 +387,38 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* REJEIÇÃO 1024 — CTA após produtos, alta urgência */}
+        <section className="border-y border-red-200 bg-red-50 py-10">
+          <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 md:flex-row md:items-center md:justify-between md:px-6">
+            <div>
+              <p className="text-base font-bold text-red-800">NF sendo rejeitada por cClassTrib incorreto?</p>
+              <p className="mt-1 text-sm text-red-700">
+                A <strong>Rejeição 1024</strong> é o erro mais comum desde jan/2026 — incompatibilidade entre CST e cClassTrib.
+                Nosso time resolve ao vivo no WhatsApp.
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-3">
+              <a
+                href={WA_REJEICAO}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700"
+              >
+                <WhatsAppIcon size={16} />
+                Resolver a Rejeição 1024
+              </a>
+              <a
+                href={WA_ERP}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-5 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50"
+              >
+                Integrar ao ERP →
+              </a>
+            </div>
+          </div>
+        </section>
+
         {/* NEWS */}
         <section className="py-16">
           <div className="mx-auto max-w-6xl px-4 md:px-6">
@@ -383,6 +484,11 @@ export default function HomePage() {
       </main>
 
       <PublicFooter />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
     </>
   );
 }
