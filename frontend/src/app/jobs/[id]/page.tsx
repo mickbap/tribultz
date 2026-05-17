@@ -9,6 +9,7 @@ import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { Skeleton } from "@/components/common/Skeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
+import { RegimeComparison } from "@/components/jobs/RegimeComparison";
 import { getDocumentDownloadUrl, getJob, listDocuments } from "@/lib/api";
 import type { DocumentResponse } from "@/lib/api";
 import { exportEvidenceZipAndDownload } from "@/lib/export/evidenceExportUi";
@@ -169,6 +170,10 @@ export default function JobDetailPage() {
               <p className="mt-1 text-slate-700">{new Date(job.updatedAt).toLocaleString()}</p>
             </div>
           </section>
+
+          {job.output?.regime_comparison ? (
+            <RegimeComparison data={job.output.regime_comparison as Record<string, string | null>} />
+          ) : null}
 
           <div className="grid gap-3 lg:grid-cols-2">
             <JsonViewer title="JSON de entrada" data={job.input} />
