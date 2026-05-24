@@ -596,3 +596,44 @@ export async function updateSplitPaymentStatus(
     body: JSON.stringify(payload),
   });
 }
+
+// ── Credits Dashboard (#258) ────────────────────────────────────────────────
+
+export type CreditPeriodRow = {
+  period: string;
+  generated_count: number;
+  generated_total: string;
+  apropriated_count: number;
+  apropriated_total: string;
+  available_count: number;
+  available_total: string;
+  at_risk_count: number;
+  at_risk_total: string;
+};
+
+export type CreditBalanceResponse = {
+  period_type: "month" | "quarter";
+  periods: CreditPeriodRow[];
+};
+
+export async function getCreditBalance(
+  period: "month" | "quarter" = "month",
+  monthsBack: number = 12,
+): Promise<CreditBalanceResponse> {
+  return apiFetch(`/api/v1/credits/balance?period=${period}&months_back=${monthsBack}`);
+}
+
+export async function downloadCreditCsv(
+  period: "month" | "quarter" = "month",
+  monthsBack: number = 12,
+): Promise<Blob> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/credits/export.csv?period=${period}&months_back=${monthsBack}`,
+    {
+      headers: { Authorization: `Bearer ${getToken()}`, "X-Tenant-Id": getTenantId() },
+      cache: "no-store",
+    },
+  );
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.blob();
+}

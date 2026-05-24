@@ -14,6 +14,7 @@ const links = [
   { href: "/audit", label: "Auditoria" },
   { href: "/exceptions", label: "Exceções" },
   { href: "/split-payment", label: "Split Payment" },
+  { href: "/credits", label: "Crédito IBS/CBS" },
   { href: "/billing", label: "Faturamento" },
   { href: "/settings", label: "Configurações" },
   { href: "/support", label: "Suporte" },
