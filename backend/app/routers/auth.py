@@ -323,15 +323,23 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
             asaas_customer_id = customer["id"]
             subscription.asaas_customer_id = asaas_customer_id  # type: ignore[assignment]
 
-            # Create Asaas payment (first charge)
+            # Create recurring Asaas subscription (monthly)
             price_reais = cast(int, plan.price_cents) / 100
-            payment = await asaas.create_payment(
+            sub_resp = await asaas.create_subscription(
                 customer_id=asaas_customer_id,
                 value=price_reais,
                 billing_type=data.billing_type,
                 description=f"Assinatura Tribultz — {cast(str, plan.name)}",
             )
-            asaas_payment_id = payment["id"]
+            asaas_subscription_id = sub_resp["id"]
+            subscription.asaas_subscription_id = asaas_subscription_id  # type: ignore[assignment]
+
+            # Asaas creates the first payment automatically — retrieve it
+            sub_payments = await asaas.get_subscription_payments(asaas_subscription_id)
+            if not sub_payments:
+                raise ValueError("Asaas subscription created but no payment found")
+            first_payment = sub_payments[0]
+            asaas_payment_id = first_payment["id"]
 
             # Store payment record
             from app.models.billing import Payment
@@ -364,17 +372,16 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
             # Don't fail registration — user can pay later via billing page
             checkout_url = None
 
-    # Trial: send verification email immediately
-    if is_trial:
-        verification_token = create_email_verification_token(str(user.id))
-        user.email_verification_token = verification_token  # type: ignore[assignment]
-        db.commit()
+    # Send email verification for all new accounts (trial and paid)
+    verification_token = create_email_verification_token(str(user.id))
+    user.email_verification_token = verification_token  # type: ignore[assignment]
+    db.commit()
 
-        send_verification_email(
-            to_email=data.email,
-            user_name=data.full_name,
-            token=verification_token,
-        )
+    send_verification_email(
+        to_email=data.email,
+        user_name=data.full_name,
+        token=verification_token,
+    )
 
     logger.info(
         "user_registered",

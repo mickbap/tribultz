@@ -1,7 +1,7 @@
 """Celery tasks for billing lifecycle — trial expiry and monthly usage reset."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, update
 
@@ -32,6 +32,8 @@ def expire_trials():
             )
         ).scalars().all()
 
+        from app.services.email_service import send_trial_expired_email
+
         count = 0
         for sub in expired_subs:
             sub.status = "expired"  # type: ignore[assignment]
@@ -39,6 +41,15 @@ def expire_trials():
             db.execute(
                 update(User).where(User.id == sub.user_id).values(is_active=False)
             )
+            # Notify user
+            user = db.execute(
+                select(User).where(User.id == sub.user_id)
+            ).scalar_one_or_none()
+            if user:
+                send_trial_expired_email(
+                    to_email=str(user.email),
+                    user_name=str(user.full_name),
+                )
             count += 1
             logger.info(
                 "trial_expired",
@@ -55,6 +66,52 @@ def expire_trials():
         db.rollback()
         logger.exception("expire_trials failed")
         raise
+    finally:
+        db.close()
+
+
+@celery.task(name="billing.warn_trial_expiring")
+def warn_trial_expiring():
+    """Send warning emails for trials expiring in ~3 days or ~1 day.
+
+    Runs hourly at :30. Uses a ±1h window around each threshold so a
+    single hourly run covers each user exactly once per warning level.
+    """
+    from app.services.email_service import send_trial_expiring_email
+
+    db = SessionLocal()
+    try:
+        now = datetime.now(timezone.utc)
+
+        for days_before in (3, 1):
+            window_start = now + timedelta(days=days_before) - timedelta(hours=1)
+            window_end   = now + timedelta(days=days_before) + timedelta(hours=1)
+
+            subs = db.execute(
+                select(Subscription).where(
+                    Subscription.status == "trial",
+                    Subscription.trial_ends_at >= window_start,
+                    Subscription.trial_ends_at < window_end,
+                )
+            ).scalars().all()
+
+            for sub in subs:
+                user = db.execute(
+                    select(User).where(User.id == sub.user_id)
+                ).scalar_one_or_none()
+                if user:
+                    send_trial_expiring_email(
+                        to_email=str(user.email),
+                        user_name=str(user.full_name),
+                        days_remaining=days_before,
+                    )
+                    logger.info(
+                        "trial_warning_sent",
+                        extra={"days": days_before, "user_id": str(sub.user_id)},
+                    )
+
+    except Exception:
+        logger.exception("warn_trial_expiring failed")
     finally:
         db.close()
 

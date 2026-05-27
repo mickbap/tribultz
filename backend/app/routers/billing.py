@@ -1,7 +1,7 @@
 """Billing router — Asaas webhooks, plan info, payments, upgrade, cancel."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -65,11 +65,43 @@ async def asaas_webhook(
 
     # ── PAYMENT_CONFIRMED / PAYMENT_RECEIVED ──
     if event in ("PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"):
+        now = datetime.now(timezone.utc)
         payment = db.execute(
             select(Payment).where(Payment.asaas_payment_id == asaas_payment_id)
         ).scalar_one_or_none()
 
         if not payment:
+            # Unknown payment — may be a monthly renewal from an Asaas subscription
+            asaas_sub_id = payment_data.get("subscription") or payment_data.get("subscriptionId", "")
+            if asaas_sub_id:
+                sub = db.execute(
+                    select(Subscription).where(Subscription.asaas_subscription_id == asaas_sub_id)
+                ).scalar_one_or_none()
+                if sub:
+                    renewal = Payment(
+                        tenant_id=sub.tenant_id,
+                        subscription_id=sub.id,
+                        asaas_payment_id=asaas_payment_id,
+                        amount_cents=int(float(payment_data.get("value", 0)) * 100),
+                        status="confirmed",
+                        payment_method=payment_data.get("billingType", "PIX").lower(),
+                        paid_at=now,
+                    )
+                    db.add(renewal)
+                    db.execute(
+                        update(Subscription)
+                        .where(Subscription.id == sub.id)
+                        .values(
+                            status="active",
+                            current_period_start=now,
+                            current_period_end=now + timedelta(days=30),
+                        )
+                    )
+                    db.commit()
+                    logger.info(
+                        "Renewal confirmed | payment=%s subscription=%s", asaas_payment_id, sub.id
+                    )
+                    return {"status": "ok", "action": "renewal_confirmed"}
             logger.warning("Payment %s not found in DB", asaas_payment_id)
             return {"status": "ignored", "reason": "payment not found"}
 
@@ -79,16 +111,20 @@ async def asaas_webhook(
 
         # Update payment
         payment.status = "confirmed"  # type: ignore[assignment]
-        payment.paid_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        payment.paid_at = now  # type: ignore[assignment]
 
-        # Activate subscription
+        # Activate subscription + extend period
         db.execute(
             update(Subscription)
             .where(Subscription.id == payment.subscription_id)
-            .values(status="active", current_period_start=datetime.now(timezone.utc))
+            .values(
+                status="active",
+                current_period_start=now,
+                current_period_end=now + timedelta(days=30),
+            )
         )
 
-        # Activate user (skip if LGPD-deleted)
+        # Activate user + auto-verify email (skip if LGPD-deleted)
         sub = db.execute(
             select(Subscription).where(Subscription.id == payment.subscription_id)
         ).scalar_one_or_none()
@@ -96,7 +132,9 @@ async def asaas_webhook(
             user = db.get(User, sub.user_id)
             if user and user.deleted_at is None:
                 db.execute(
-                    update(User).where(User.id == sub.user_id).values(is_active=True)
+                    update(User)
+                    .where(User.id == sub.user_id)
+                    .values(is_active=True, email_verified=True)
                 )
             elif user and user.deleted_at is not None:
                 logger.warning(
@@ -115,7 +153,6 @@ async def asaas_webhook(
                 sub.user_id,
                 sub.id,
             )
-            # Fetch user + plan for the email
             confirmed_user = db.execute(
                 select(User).where(User.id == sub.user_id)
             ).scalar_one_or_none()
@@ -308,13 +345,21 @@ async def upgrade_plan(
             )
             customer_id = cust["id"]
 
-        payment_resp = await asaas.create_payment(
+        # Create recurring Asaas subscription (monthly)
+        sub_resp = await asaas.create_subscription(
             customer_id=customer_id,
             value=value,
             billing_type=billing_type.upper(),
             description=f"Upgrade Tribultz — {cast(str, target_plan.name)}",
         )
-        asaas_payment_id = payment_resp["id"]
+        new_asaas_sub_id = sub_resp["id"]
+
+        # Retrieve first payment created automatically by Asaas
+        sub_payments = await asaas.get_subscription_payments(new_asaas_sub_id)
+        if not sub_payments:
+            raise ValueError("Asaas subscription created but no payment found")
+        first_payment = sub_payments[0]
+        asaas_payment_id = first_payment["id"]
 
         if billing_type.upper() == "PIX":
             pix_data = await asaas.get_pix_qr_code(asaas_payment_id)
@@ -323,7 +368,7 @@ async def upgrade_plan(
         else:
             checkout_url = asaas.get_checkout_url(asaas_payment_id)
     except Exception:
-        logger.exception("Erro ao criar pagamento Asaas no upgrade")
+        logger.exception("Erro ao criar assinatura Asaas no upgrade")
         raise HTTPException(status_code=502, detail="Erro ao processar pagamento. Tente novamente.")
 
     # Create new subscription
@@ -333,6 +378,7 @@ async def upgrade_plan(
         plan_id=target_plan.id,
         status="pending",
         asaas_customer_id=customer_id,
+        asaas_subscription_id=new_asaas_sub_id,
     )
     db.add(new_sub)
     db.flush()
