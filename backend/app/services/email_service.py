@@ -269,6 +269,55 @@ def send_exception_notification_email(
     )
 
 
+def send_trial_expiring_email(to_email: str, user_name: str, days_remaining: int) -> bool:
+    """Warn user their trial expires in `days_remaining` days (sent at D-3 and D-1)."""
+    pricing_url = f"{settings.FRONTEND_URL}/pricing"
+    html_body = _render(
+        "trial_expiring.html",
+        user_name=user_name,
+        days_remaining=days_remaining,
+        pricing_url=pricing_url,
+        frontend_url=settings.FRONTEND_URL,
+    )
+    text_body = (
+        f"Olá, {user_name}!\n\n"
+        f"Seu trial do Tribultz expira em {days_remaining} dia(s).\n"
+        f"Assine um plano para manter o acesso: {pricing_url}\n\n"
+        "Tribultz Tecnologia Ltda."
+    )
+    return _send_email(
+        to_email=to_email,
+        subject=f"Tribultz — Seu trial expira em {days_remaining} dia(s)",
+        html_body=html_body,
+        text_body=text_body,
+        log_url=pricing_url,
+    )
+
+
+def send_trial_expired_email(to_email: str, user_name: str) -> bool:
+    """Notify user their trial has expired and invite them to upgrade."""
+    pricing_url = f"{settings.FRONTEND_URL}/pricing"
+    html_body = _render(
+        "trial_expired.html",
+        user_name=user_name,
+        pricing_url=pricing_url,
+        frontend_url=settings.FRONTEND_URL,
+    )
+    text_body = (
+        f"Olá, {user_name}!\n\n"
+        "Seu trial do Tribultz expirou. Para reativar o acesso:\n"
+        f"{pricing_url}\n\n"
+        "Tribultz Tecnologia Ltda."
+    )
+    return _send_email(
+        to_email=to_email,
+        subject="Tribultz — Seu trial expirou",
+        html_body=html_body,
+        text_body=text_body,
+        log_url=pricing_url,
+    )
+
+
 def send_staff_ticket_notification(ticket_title: str, user_email: str, priority: str) -> bool:
     """Notify contato@tribultz.com.br when a new ticket is opened."""
     priority_labels = {"low": "Baixa", "medium": "Média", "high": "Alta", "critical": "Crítica"}

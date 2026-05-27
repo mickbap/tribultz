@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seu trial expira em breve — Tribultz</title>
+</head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;max-width:560px;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#0f172a;padding:28px 40px;">
+            <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.3px;">Tribultz</span>
+            <span style="color:#64748b;font-size:12px;margin-left:10px;letter-spacing:0.08em;text-transform:uppercase;">Console</span>
+          </td>
+        </tr>
+
+        <!-- Warning badge -->
+        <tr>
+          <td style="background:#fffbeb;border-bottom:1px solid #fde68a;padding:20px 40px;">
+            <p style="margin:0;font-size:14px;color:#92400e;font-weight:700;">
+              ⏳ Seu trial expira em {{ days_remaining }} dia{% if days_remaining > 1 %}s{% endif %}
+            </p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 40px 24px;">
+            <p style="margin:0 0 16px;font-size:16px;color:#1e293b;line-height:1.6;">
+              Olá, <strong>{{ user_name }}</strong>!
+            </p>
+            <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.7;">
+              Seu período de trial do Tribultz encerra em <strong>{{ days_remaining }} dia{% if days_remaining > 1 %}s{% endif %}</strong>.
+              Para continuar validando notas fiscais e garantir conformidade com a LC 214 antes das
+              <strong>penalidades de agosto/2026</strong>, escolha um plano agora.
+            </p>
+            <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.7;">
+              Planos a partir de <strong>R$ 49,90/mês</strong>. Sem contrato de fidelidade.
+            </p>
+          </td>
+        </tr>
+
+        <!-- CTA -->
+        <tr>
+          <td align="center" style="padding:0 40px 36px;">
+            <a href="{{ pricing_url }}"
+               style="display:inline-block;background:#2956E3;color:#ffffff;font-size:15px;font-weight:700;
+                      text-decoration:none;padding:14px 36px;border-radius:8px;letter-spacing:-0.2px;">
+              Ver planos e assinar
+            </a>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="border-top:1px solid #e2e8f0;padding:20px 40px;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
+              Tribultz Tecnologia Ltda. · <a href="{{ frontend_url }}" style="color:#94a3b8;">tribultz.com.br</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

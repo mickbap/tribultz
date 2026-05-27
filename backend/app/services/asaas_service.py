@@ -182,6 +182,14 @@ class AsaasService:
     async def get_subscription(self, subscription_id: str) -> dict[str, Any]:
         return await self._request("GET", f"/v3/subscriptions/{subscription_id}")
 
+    async def get_subscription_payments(self, subscription_id: str) -> list[dict[str, Any]]:
+        """Return payments for a subscription, sorted by dueDate ascending (first = current charge)."""
+        result = await self._request(
+            "GET",
+            f"/v3/subscriptions/{subscription_id}/payments",
+        )
+        return result.get("data", [])
+
     async def cancel_subscription(self, subscription_id: str) -> dict[str, Any]:
         return await self._request("DELETE", f"/v3/subscriptions/{subscription_id}")
 
