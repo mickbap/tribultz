@@ -38,6 +38,10 @@ celery.conf.update(
             "task": "compliance.compute_monthly_scores",
             "schedule": crontab(minute="0", hour="2", day_of_month="1"),  # 1st of month at 02:00
         },
+        "crm-audit-daily": {
+            "task": "crm.audit",
+            "schedule": crontab(minute="0", hour="9"),  # daily at 09:00 BRT
+        },
     },
 )
 
@@ -51,4 +55,5 @@ celery.autodiscover_tasks([
     "app.tasks.task_g_billing",
     "app.tasks.task_h_sped",
     "app.tasks.task_i_compliance",
+    "app.tasks.task_crm",
 ])

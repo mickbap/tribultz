@@ -318,6 +318,31 @@ def send_trial_expired_email(to_email: str, user_name: str) -> bool:
     )
 
 
+def send_payment_overdue_email(to_email: str, user_name: str) -> bool:
+    """Fallback dunning email when LLM crew is unavailable (payment_overdue event)."""
+    pricing_url = f"{settings.FRONTEND_URL}/pricing"
+    html_body = _render(
+        "payment_overdue.html",
+        user_name=user_name,
+        pricing_url=pricing_url,
+        frontend_url=settings.FRONTEND_URL,
+    )
+    text_body = (
+        f"Olá, {user_name}!\n\n"
+        "O pagamento da sua assinatura Tribultz está pendente.\n"
+        f"Regularize sua situação em: {pricing_url}\n\n"
+        "Lembre-se: penalidades CBS/IBS entram em vigor em agosto/2026.\n\n"
+        "Tribultz Tecnologia Ltda."
+    )
+    return _send_email(
+        to_email=to_email,
+        subject="Tribultz — Pagamento pendente",
+        html_body=html_body,
+        text_body=text_body,
+        log_url=pricing_url,
+    )
+
+
 def send_staff_ticket_notification(ticket_title: str, user_email: str, priority: str) -> bool:
     """Notify contato@tribultz.com.br when a new ticket is opened."""
     priority_labels = {"low": "Baixa", "medium": "Média", "high": "Alta", "critical": "Crítica"}

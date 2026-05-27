@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pagamento pendente — Tribultz</title>
+</head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;max-width:560px;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#0f172a;padding:28px 40px;">
+            <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.3px;">Tribultz</span>
+            <span style="color:#64748b;font-size:12px;margin-left:10px;letter-spacing:0.08em;text-transform:uppercase;">Console</span>
+          </td>
+        </tr>
+
+        <!-- Alert badge -->
+        <tr>
+          <td style="background:#fef2f2;border-bottom:1px solid #fecaca;padding:20px 40px;">
+            <p style="margin:0;font-size:14px;color:#991b1b;font-weight:700;">
+              ⚠️ Pagamento pendente — acesso em risco
+            </p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 40px 24px;">
+            <p style="margin:0 0 16px;font-size:16px;color:#1e293b;line-height:1.6;">
+              Olá, <strong>{{ user_name }}</strong>!
+            </p>
+            <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.7;">
+              Identificamos que o pagamento da sua assinatura Tribultz está pendente.
+              Para manter o acesso ao console e continuar gerando evidências auditáveis
+              de conformidade com a <strong>LC 214</strong>, regularize sua situação agora.
+            </p>
+            <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.7;">
+              Lembre-se: as <strong>penalidades CBS/IBS entram em vigor em agosto/2026</strong>.
+              Documentação auditável sem interrupção é essencial para evitar multas.
+            </p>
+          </td>
+        </tr>
+
+        <!-- CTA -->
+        <tr>
+          <td align="center" style="padding:0 40px 36px;">
+            <a href="{{ pricing_url }}"
+               style="display:inline-block;background:#2956E3;color:#ffffff;font-size:15px;font-weight:700;
+                      text-decoration:none;padding:14px 36px;border-radius:8px;letter-spacing:-0.2px;">
+              Regularizar pagamento
+            </a>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="border-top:1px solid #e2e8f0;padding:20px 40px;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
+              Tribultz Tecnologia Ltda. · <a href="{{ frontend_url }}" style="color:#94a3b8;">tribultz.com.br</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

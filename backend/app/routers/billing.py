@@ -48,6 +48,9 @@ async def asaas_webhook(
         sub_data = body.get("subscription", {})
         sub_id = sub_data.get("id", "") if isinstance(sub_data, dict) else ""
         if sub_id:
+            cancelled_sub = db.execute(
+                select(Subscription).where(Subscription.asaas_subscription_id == sub_id)
+            ).scalar_one_or_none()
             db.execute(
                 update(Subscription)
                 .where(Subscription.asaas_subscription_id == sub_id)
@@ -55,6 +58,10 @@ async def asaas_webhook(
             )
             db.commit()
             logger.info("Subscription %s cancelled via webhook", sub_id)
+            if cancelled_sub:
+                from app.tasks.task_crm import crm_sync, crm_engagement
+                crm_sync.delay(user_id=str(cancelled_sub.user_id), event_type="subscription_cancelled")
+                crm_engagement.delay(user_id=str(cancelled_sub.user_id), event_type="subscription_cancelled")
         return {"status": "ok", "action": "subscription_cancelled"}
 
     if not asaas_payment_id:
@@ -101,6 +108,8 @@ async def asaas_webhook(
                     logger.info(
                         "Renewal confirmed | payment=%s subscription=%s", asaas_payment_id, sub.id
                     )
+                    from app.tasks.task_crm import crm_sync
+                    crm_sync.delay(user_id=str(sub.user_id), event_type="payment_confirmed")
                     return {"status": "ok", "action": "renewal_confirmed"}
             logger.warning("Payment %s not found in DB", asaas_payment_id)
             return {"status": "ignored", "reason": "payment not found"}
@@ -167,6 +176,9 @@ async def asaas_webhook(
                     amount_cents=int(confirmed_plan.price_cents),  # type: ignore[arg-type]
                     payment_method=str(payment.payment_method),
                 )
+            # CRM sync: move deal to closedwon
+            from app.tasks.task_crm import crm_sync
+            crm_sync.delay(user_id=str(sub.user_id), event_type="payment_confirmed")
 
         return {"status": "ok", "action": "payment_confirmed"}
 
@@ -178,6 +190,9 @@ async def asaas_webhook(
 
         if payment and cast(str, payment.status) != "overdue":
             payment.status = "overdue"  # type: ignore[assignment]
+            sub_overdue = db.execute(
+                select(Subscription).where(Subscription.id == payment.subscription_id)
+            ).scalar_one_or_none()
             db.execute(
                 update(Subscription)
                 .where(Subscription.id == payment.subscription_id)
@@ -185,6 +200,10 @@ async def asaas_webhook(
             )
             db.commit()
             logger.info("Payment %s overdue, subscription past_due", asaas_payment_id)
+            if sub_overdue:
+                from app.tasks.task_crm import crm_sync, crm_engagement
+                crm_sync.delay(user_id=str(sub_overdue.user_id), event_type="payment_overdue")
+                crm_engagement.delay(user_id=str(sub_overdue.user_id), event_type="payment_overdue")
 
         return {"status": "ok", "action": "payment_overdue"}
 
