@@ -1,0 +1,83 @@
+name: Uptime Monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # a cada 5 minutos
+  workflow_dispatch:
+
+concurrency:
+  group: monitor
+  cancel-in-progress: true
+
+jobs:
+  health-check:
+    name: GET /health/deep
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Probe health endpoint
+        id: probe
+        run: |
+          RESPONSE=$(curl -sf --max-time 10 \
+            https://api.tribultz.com.br/health/deep 2>&1) || {
+            echo "status=unreachable" >> "$GITHUB_OUTPUT"
+            echo "body=$RESPONSE"     >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+          echo "body=$RESPONSE" >> "$GITHUB_OUTPUT"
+          STATUS=$(echo "$RESPONSE" | python3 -c \
+            "import sys,json; d=json.load(sys.stdin); print(d.get('status','unknown'))")
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+
+      - name: Fail on error
+        if: steps.probe.outputs.status == 'error' || steps.probe.outputs.status == 'unreachable'
+        run: |
+          echo "::error::Health check FAILED — status: ${{ steps.probe.outputs.status }}"
+          echo "Response: ${{ steps.probe.outputs.body }}"
+          exit 1
+
+      - name: Send alert email (Resend)
+        if: failure()
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          PROBE_STATUS:   ${{ steps.probe.outputs.status }}
+          PROBE_BODY:     ${{ steps.probe.outputs.body }}
+        run: |
+          python3 - << 'PY'
+          import os, json, urllib.request, urllib.error
+
+          key    = os.environ["RESEND_API_KEY"]
+          status = os.environ.get("PROBE_STATUS", "unknown")
+          body   = os.environ.get("PROBE_BODY", "")
+
+          payload = json.dumps({
+            "from": "noreply@tribultz.com.br",
+            "to":   ["mickel@tribultz.com.br"],
+            "subject": f"[ALERTA] Tribultz API — status: {status}",
+            "html": f"<h2>Tribultz API degradada</h2>"
+                    f"<p><b>Status:</b> {status}</p>"
+                    f"<pre>{body[:2000]}</pre>"
+                    f"<p><a href='https://api.tribultz.com.br/health/deep'>Ver health</a></p>",
+          }).encode()
+
+          req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=payload,
+            headers={
+              "Authorization": f"Bearer {key}",
+              "Content-Type":  "application/json",
+            },
+          )
+          try:
+            with urllib.request.urlopen(req, timeout=10) as r:
+              print("Alert sent:", r.status)
+          except urllib.error.HTTPError as e:
+            print("Resend error:", e.read().decode())
+          PY
+
+      - name: Log status (degraded warning)
+        if: steps.probe.outputs.status == 'degraded'
+        run: |
+          echo "::warning::API degraded — serviços opcionais com falha"
+          echo "${{ steps.probe.outputs.body }}"

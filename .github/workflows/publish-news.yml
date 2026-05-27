@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # 0 = histórico completo. Necessário para workflow_dispatch poder
           # re-publicar entradas a partir de SHAs antigos (caso contrário

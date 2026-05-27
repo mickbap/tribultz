@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Checkout (para referência do commit)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Resolver flags do deploy.sh
         id: flags
