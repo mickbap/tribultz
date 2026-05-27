@@ -383,6 +383,11 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         token=verification_token,
     )
 
+    # CRM: sync new contact/deal
+    from app.tasks.task_crm import crm_sync
+    _crm_event = "register" if is_trial else "subscription_pending"
+    crm_sync.delay(user_id=str(user.id), event_type=_crm_event)
+
     logger.info(
         "user_registered",
         extra={

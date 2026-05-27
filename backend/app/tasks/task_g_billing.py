@@ -50,6 +50,9 @@ def expire_trials():
                     to_email=str(user.email),
                     user_name=str(user.full_name),
                 )
+            # CRM: move deal to closedlost
+            from app.tasks.task_crm import crm_sync
+            crm_sync.delay(user_id=str(sub.user_id), event_type="trial_expired")
             count += 1
             logger.info(
                 "trial_expired",
@@ -105,6 +108,10 @@ def warn_trial_expiring():
                         user_name=str(user.full_name),
                         days_remaining=days_before,
                     )
+                    # CRM: move deal to presentationscheduled on first warning (D-3)
+                    if days_before == 3:
+                        from app.tasks.task_crm import crm_sync
+                        crm_sync.delay(user_id=str(sub.user_id), event_type="trial_expiring")
                     logger.info(
                         "trial_warning_sent",
                         extra={"days": days_before, "user_id": str(sub.user_id)},
