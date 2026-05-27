@@ -100,8 +100,8 @@ class GetCustomerContextTool(BaseTool):
                     "full_name": str(user.full_name),
                     "email": str(user.email),
                     "account_type": str(user.account_type),
-                    "cnpj": str(user.cnpj) if user.cnpj else None,
-                    "created_at": user.created_at.isoformat() if user.created_at else None,
+                    "cnpj": str(user.cnpj) if user.cnpj is not None else None,
+                    "created_at": user.created_at.isoformat() if user.created_at is not None else None,
                 },
                 "company": {
                     "name": str(tenant.name) if tenant else "Empresa",
