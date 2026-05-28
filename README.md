@@ -3,7 +3,7 @@
 > Motor determinístico de validação CBS/IBS · Multi-tenant SaaS · LC 214 + LC 227
 
 [![CI Backend](https://github.com/mickbap/tribultz/actions/workflows/ci.yml/badge.svg)](https://github.com/mickbap/tribultz/actions/workflows/ci.yml)
-[![Testes](https://img.shields.io/badge/testes-378%20passing-brightgreen)](#ci--cd)
+[![Testes](https://img.shields.io/badge/testes-401%20passing-brightgreen)](#ci--cd)
 [![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org)
 [![Next.js](https://img.shields.io/badge/next.js-16-black)](https://nextjs.org)
 [![Licença](https://img.shields.io/badge/licença-proprietária-red)](#licença)
@@ -51,7 +51,9 @@ O motor determinístico aplica 14 regras de conformidade contra XML de NF-e, NFC
 | **Créditos tributários** | Rastreio de créditos CBS/IBS por CNPJ/período |
 | **Encerramento de período** | Agregação de obrigações; exportação ZIP com evidências assinadas |
 | **Dashboard** | KPIs em tempo real: total validado, taxa de erro, créditos acumulados |
-| **Billing Asaas** | PIX + cartão; 5 planos; trial 3 dias; webhooks de pagamento/cancelamento |
+| **Billing Asaas** | Assinatura recorrente (PIX + cartão); 5 planos; trial 3 dias; notificações D-3/D-1/expirado; webhooks idempotentes |
+| **CRM automatizado** | HubSpot lifecycle gerenciado por Crew: contato/deal sync + emails personalizados de dunning e win-back via CrewAI |
+| **Monitoring** | Health check a cada 5 min (GitHub Actions); alerta por email se `/health/deep` degradar |
 | **LGPD** | Export de dados pessoais + solicitação de exclusão (`/lgpd/data`, `/lgpd/delete`) |
 
 ---
@@ -115,6 +117,7 @@ O motor determinístico aplica 14 regras de conformidade contra XML de NF-e, NFC
 │                  APIS EXTERNAS                          │
 │  Asaas (pagamentos)  ·  ClassTrib SVRS  ·  CNPJ.ws     │
 │  OpenRouter (LLM)   ·  Cloudflare Turnstile             │
+│  HubSpot CRM (HUBSPOT_ENABLED)                          │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -340,6 +343,25 @@ Triager → Operator → Narrator
 
 Fallback determinístico: se o LLM falhar, retorna findings da validação diretamente.
 
+### CRM Engagement Crew (backend)
+
+```
+CRM Analyst → Email Copywriter → Executor
+```
+
+| Agente | Papel |
+|---|---|
+| `CRM Analyst` | Lê contexto do cliente via DB (plan, status, usage, dias) e avalia risco de churn |
+| `Email Copywriter` | Escreve email personalizado PT-BR com urgência CBS/IBS (dunning ou win-back) |
+| `Executor` | Envia email via SMTP e loga nota no HubSpot (`send_email` + `hubspot_log_note`) |
+
+Acionado por: `PAYMENT_OVERDUE` e `SUBSCRIPTION_DELETED`. Fallback para template estático se todos os 6 tiers LLM esgotarem. Camada determinística (`crm.sync`) cuida do contact/deal sync separadamente — sem LLM.
+
+Tarefas Celery relacionadas:
+- `crm.sync` — determinístico, mapeia lifecycle event → HubSpot deal stage
+- `crm.engagement` — LLM crew para dunning/win-back
+- `crm.audit` — daily beat 09:00, reconcilia subscriptions com updated_at < 24h
+
 ### NF-e Validation Crew (backend)
 
 ```
@@ -362,7 +384,7 @@ VM (Ubuntu 24.04)
 ├── Docker Compose
 │   ├── api      (FastAPI · 127.0.0.1:8000 · 1GB RAM)
 │   ├── worker   (Celery · concurrency=2 · 768MB RAM)
-│   ├── beat     (Celery scheduler · 256MB RAM)
+│   ├── beat     (Celery scheduler · 6 schedules · 256MB RAM)
 │   └── redis    (broker/cache · password · 256MB RAM)
 ├── UFW (22/80/443 apenas)
 └── fail2ban (SSH + nginx)
@@ -417,6 +439,7 @@ O `deploy.sh` executa um rolling deploy sequencial com rollback automático:
 
 | Controle | Implementação |
 |---|---|
+| Monitoramento | GitHub Actions a cada 5 min · alerta email se `/health/deep` retornar status=error ou HTTP ≥ 400 |
 | Autenticação | JWT HS256 · email verification · password reset |
 | Multi-tenant | `tenant_id` em todas as queries · extraído do JWT |
 | Rate limiting | Por IP em todos os endpoints públicos |
@@ -445,13 +468,19 @@ Push / PR
     │       ├── ruff check app/ tests/
     │       ├── pyright (type check)
     │       ├── alembic upgrade head
-    │       ├── pytest tests/ -q  (378 testes)
+    │       ├── pytest tests/ -q  (401 testes)
     │       ├── crewai import sanity
     │       └── qa_gates/run_gates.py → artifact: qa_gates_report.md
     │
     └── Frontend Job
             ├── npm ci
             └── npm run build
+
+Merge em main
+    │
+    ├── deploy-prod.yml → rolling deploy na VM Magalu (apenas backend/**)
+    ├── publish-news.yml → POST /api/v1/news (feat/fix/security commits)
+    └── monitor.yml (cron 5min) → GET /health/deep → alerta email se degradar
 ```
 
 **Gates obrigatórios antes de PR:**
@@ -509,6 +538,7 @@ cd frontend && npm install && npm run dev
 | `SMTP_USER` / `SMTP_PASSWORD` | Gmail App Password |
 | `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile |
 | `S3_ACCESS_KEY` / `S3_SECRET_KEY` | Object Storage credentials |
+| `HUBSPOT_PRIVATE_APP_TOKEN` | HubSpot Private App token (opcional; `HUBSPOT_ENABLED=false` por padrão) |
 
 ---
 
@@ -531,13 +561,22 @@ cd frontend && npm install && npm run dev
 | S12 | Freemium: diagnóstico público (3 findings) · funil de conversão |
 | S13 | Registro multi-tenant · consent empresarial/contador · Turnstile |
 | S14 | Calculadora CBS/IBS · 14 regras S11–S13 · snippet XML para ERP |
+| S15 | API pública pay-per-call (`POST /api/v1/public/classify`) · créditos API · API keys |
+| S16 | ERP Export multi-formato (TOTVS, SAP, Omie, Linx, CSV) |
+| S17 | NCM Auto-classify via IA (`POST /ncm/suggest`) · SEO optimizado |
+| S18 | Dual-regime comparison ICMS/PIS/COFINS vs CBS/IBS (jobs) |
+| S19 | Split Payment Dashboard · rastreabilidade crédito CBS/IBS por NF |
+| S20 | Credits Dashboard (saldo IBS/CBS por período) |
+| #268 | Monitoring contínuo · GitHub Actions uptime check 5min · alerta email |
+| #269 | Billing recorrente Asaas · notificações trial D-3/D-1/expirado · fix login pós-pagamento |
+| #270 | CRM Engagement Crew · HubSpot lifecycle automático · dunning e win-back via CrewAI |
 | Infra | Magalu Cloud · docker-compose.prod · rolling deploy · SecDevOps |
 
 ### Em andamento
 
 | Item | Descrição | Prioridade |
 |---|---|---|
-| Provisionamento Magalu | Aguardando resolução de erro no console Magalu Cloud | Alta |
+| HubSpot em prod | `HUBSPOT_ENABLED=true` + `HUBSPOT_PRIVATE_APP_TOKEN` na VM — crew e sync prontos, aguarda configuração | Alta |
 | `no-new-privileges` + `cap_drop` | Adicionar ao docker-compose.prod.yml | Alta |
 | `unattended-upgrades` | Patches automáticos de segurança na VM | Média |
 

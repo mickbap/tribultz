@@ -246,8 +246,9 @@ export default function HomePage() {
               { icon: "🔌", label: "API NCM → cClassTrib" },
               { icon: "✅", label: "18 regras CBS/IBS LC 214" },
               { icon: "🔗", label: "TOTVS · SAP · Omie · Linx" },
-              { icon: "⏱", label: "SLA 99,9% (plano Contador)" },
               { icon: "📄", label: "Auditável (PDF + JSON)" },
+              { icon: "🔔", label: "Trial gerenciado · avisos D-3 e D-1" },
+              { icon: "📡", label: "Monitoramento 24/7" },
             ].map((t) => (
               <span key={t.label} className="flex items-center gap-2 text-sm font-semibold text-[#6C757D]">
                 <span>{t.icon}</span>
@@ -463,10 +464,10 @@ export default function HomePage() {
 
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { n: "2.847", l: "Empresas usando hoje" },
-                  { n: "1.2M", l: "XMLs validados" },
+                  { n: "18", l: "Regras CBS/IBS validadas" },
+                  { n: "1.247", l: "Códigos cClassTrib ativos" },
                   { n: "100", l: "Créditos API grátis" },
-                  { n: "99,9%", l: "SLA disponível" },
+                  { n: "5 min", l: "Monitoramento contínuo" },
                 ].map((s) => (
                   <div
                     key={s.l}
