@@ -54,12 +54,13 @@ echo "[migrate] Backup complete ($(du -h "$BACKUP_DIR/pre_migrate_$TIMESTAMP.dum
 
 # ── 2. Show current head ──────────────────────────────────
 echo "[migrate] Current revision:"
-docker compose -f "$COMPOSE_FILE" run --rm api \
+docker compose -f "$COMPOSE_FILE" run --rm --no-deps api \
     python -m alembic current 2>/dev/null || true
 
 # ── 3. Run migration ──────────────────────────────────────
+# --no-deps: evita recriar Redis/outros serviços durante a migration
 echo "[migrate] Running: alembic upgrade head"
-if docker compose -f "$COMPOSE_FILE" run --rm api \
+if docker compose -f "$COMPOSE_FILE" run --rm --no-deps api \
         python -m alembic upgrade head; then
     echo "[migrate] SUCCESS — all migrations applied"
 else
@@ -83,7 +84,7 @@ fi
 
 # ── 4. Show new head ──────────────────────────────────────
 echo "[migrate] New revision:"
-docker compose -f "$COMPOSE_FILE" run --rm api \
+docker compose -f "$COMPOSE_FILE" run --rm --no-deps api \
     python -m alembic current 2>/dev/null || true
 
 echo ""

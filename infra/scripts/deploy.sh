@@ -72,12 +72,18 @@ docker compose -f "$COMPOSE_FILE" build --pull 2>&1 | tee -a "$LOG_FILE"
 log "    Build concluído"
 
 # ── 3. Migrações Alembic ─────────────────────────────────────
+# Sempre executa alembic upgrade head — idempotente, sem risco.
+# --no-deps evita recriar Redis/outros serviços durante a migration.
+# Se --migrate foi passado, usa o script completo (com backup pg_dump).
 if [ "$RUN_MIGRATE" = true ]; then
-    log "==> [3/6] Rodando migrações Alembic"
+    log "==> [3/6] Rodando migrações Alembic (modo completo com backup)"
     bash "$DEPLOY_DIR/infra/scripts/db-migrate.sh" --prod
     log "    Migrações concluídas"
 else
-    log "==> [3/6] Pulando migrações (use --migrate para executar)"
+    log "==> [3/6] Aplicando migrações pendentes (upgrade head)"
+    docker compose -f "$COMPOSE_FILE" run --rm --no-deps api \
+        python -m alembic upgrade head 2>&1 | tee -a "$LOG_FILE"
+    log "    Upgrade head concluído"
 fi
 
 # ── Função: aguardar health check ────────────────────────────
