@@ -285,6 +285,11 @@ def validate_xml(
     v_ibs_mun = _first_tag(xml, ["vIBSMun"])
     v_ibs = _first_tag(xml, ["vIBS"])
 
+    # dPrevEntrega fields (NT 2025.002 V1.36 + Cartilha CGIBS item 1.1)
+    d_prev_entrega = _first_tag(xml, ["dPrevEntrega"])
+    dh_emi = _first_tag(xml, ["dhEmi"])
+    mod_frete = _first_tag(xml, ["modFrete"])
+
     # NFS-e legacy fields
     valor_cbs = _first_tag(xml, ["ValorCBS", "vCBS"])
     valor_ibs = _first_tag(xml, ["ValorIBS", "vIBS"])
@@ -467,6 +472,104 @@ def validate_xml(
             _add(
                 Finding(id="F_LAYOUT_PORTAL", severity=_sev, rule_id="LAYOUT_PORTAL", title=f"Layout fora do padrão — faltam: {', '.join(missing)}", where=FindingWhere(field="Estrutura XML", xpath=_xpath("infNfse", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="Layout — tags ausentes", xpath=_xpath("infNfse", doc_type)),
+            )
+
+    # ── Rules NT 2025.002 V1.36: dPrevEntrega (Cartilha CGIBS item 1.1) ────────
+    # Determina o período de apuração do IBS. Nenhum outro validador cobre essas regras.
+
+    if is_nfe:
+        # Rule: DPREV_ENTREGA_FRETE — Rejeição 1157 preventiva
+        # dPrevEntrega só é permitido em operações CIF. modFrete 1 (FOB) ou 9 rejeita.
+        _frete_val = (mod_frete or {}).get("value", "")
+        if d_prev_entrega and _frete_val in ("1", "9"):
+            ev_id = "E_XML_DPREV_ENTREGA_FRETE"
+            _add(
+                Finding(
+                    id="F_DPREV_ENTREGA_FRETE",
+                    severity="FATAL",
+                    rule_id="DPREV_ENTREGA_FRETE",
+                    title=f"Rejeição 1157 — dPrevEntrega inválido para modFrete={_frete_val}",
+                    where=FindingWhere(
+                        field="dPrevEntrega",
+                        xpath=_xpath("dPrevEntrega", doc_type),
+                        snippet=d_prev_entrega["snippet"],
+                    ),
+                    recommendation=(
+                        f"dPrevEntrega é permitido apenas em operações CIF. "
+                        f"modFrete={_frete_val} ({'FOB' if _frete_val == '1' else 'Sem Frete'}) "
+                        "causará Rejeição 1157 no SEFAZ. "
+                        "Remova o campo ou altere a modalidade de frete (NT 2025.002 V1.36)."
+                    ),
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label="dPrevEntrega — Rejeição 1157",
+                         xpath=_xpath("dPrevEntrega", doc_type), snippet=d_prev_entrega["snippet"]),
+            )
+
+        # Rule: DPREV_ENTREGA_COMPETENCIA — divergência contabilização × apuração IBS
+        # Quando dPrevEntrega está em mês/ano diferente do dhEmi:
+        #   - Contabilização: mês da emissão (ICMS/legado)
+        #   - Apuração IBS:   mês da entrega (dPrevEntrega)
+        # Empresas fecham o mês sem o IBS correto sem este aviso.
+        if d_prev_entrega and dh_emi:
+            _dprev_month = d_prev_entrega["value"][:7]    # YYYY-MM
+            _demi_month  = dh_emi["value"][:7]            # YYYY-MM (de YYYY-MM-DDTHH:...)
+            if _dprev_month and _demi_month and _dprev_month != _demi_month:
+                ev_id = "E_XML_DPREV_ENTREGA_COMPETENCIA"
+                _add(
+                    Finding(
+                        id="F_DPREV_ENTREGA_COMPETENCIA",
+                        severity="ALERT",
+                        rule_id="DPREV_ENTREGA_COMPETENCIA",
+                        title=(
+                            f"Divergência de competência: IBS apurado em {_dprev_month}, "
+                            f"contabilização em {_demi_month}"
+                        ),
+                        where=FindingWhere(
+                            field="dPrevEntrega",
+                            xpath=_xpath("dPrevEntrega", doc_type),
+                            snippet=d_prev_entrega["snippet"],
+                        ),
+                        recommendation=(
+                            f"dPrevEntrega ({_dprev_month}) difere do mês de emissão ({_demi_month}). "
+                            "O débito de IBS será apurado em "
+                            f"{_dprev_month} (mês da entrega), mas o ICMS e a contabilização "
+                            f"ficam em {_demi_month} (mês da emissão). "
+                            "Verifique a alíquota vigente na data de entrega e alinhe com o contador. "
+                            "Use Evento 112150 se precisar corrigir a data de entrega após a emissão "
+                            "(Cartilha CGIBS item 1.1 + 4.12)."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="dPrevEntrega — divergência de competência",
+                             xpath=_xpath("dPrevEntrega", doc_type), snippet=d_prev_entrega["snippet"]),
+                )
+
+        # Rule: DPREV_ENTREGA_CIF_AUSENTE — CIF sem dPrevEntrega
+        # Em operações CIF, o fato gerador do IBS é a entrega, não a saída.
+        # Sem dPrevEntrega, o IBS vai para o período de dhSaiEnt, que pode ser diferente da entrega.
+        if not d_prev_entrega and _frete_val == "0":
+            ev_id = "E_XML_DPREV_ENTREGA_CIF_AUSENTE"
+            _add(
+                Finding(
+                    id="F_DPREV_ENTREGA_CIF_AUSENTE",
+                    severity="ALERT",
+                    rule_id="DPREV_ENTREGA_CIF_AUSENTE",
+                    title="Operação CIF sem dPrevEntrega — risco de IBS em período incorreto",
+                    where=FindingWhere(field="dPrevEntrega", xpath=_xpath("ide", doc_type)),
+                    recommendation=(
+                        "Operação CIF (frete por conta do emitente): o fato gerador do IBS ocorre "
+                        "na entrega ao destinatário. Sem dPrevEntrega, o sistema de Apuração Assistida "
+                        "do IBS usará a Data de Saída (dhSaiEnt). Se a entrega ocorrer em mês diferente "
+                        "da saída, o IBS será lançado no período errado. "
+                        "Preencha dPrevEntrega com a data prevista de entrega "
+                        "ou use o Evento 112150 para corrigir após a emissão "
+                        "(Cartilha CGIBS item 1.1 + NT 2025.002 V1.36)."
+                    ),
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label="dPrevEntrega — ausente em CIF",
+                         xpath=_xpath("ide", doc_type)),
             )
 
     # ── Rule 15: NCM_FORMAT ──────────────────────────────────────────────────

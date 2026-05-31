@@ -212,6 +212,11 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
   const ncm = firstTag(xml, ["NCM"]);
   const cest = firstTag(xml, ["CEST"]);
 
+  // dPrevEntrega fields (NT 2025.002 V1.36 + Cartilha CGIBS item 1.1)
+  const dPrevEntrega = firstTag(xml, ["dPrevEntrega"]);
+  const dhEmi = firstTag(xml, ["dhEmi"]);
+  const modFrete = firstTag(xml, ["modFrete"]);
+
   // NFS-e legacy fields
   const serviceCode = firstTag(xml, ["CodigoServico", "cServ", "codigoServico"]);
   const valorCbs = firstTag(xml, ["ValorCBS", "vCBS"]);
@@ -714,6 +719,90 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
           recommendation: "NF-e deve conter emit, det e total conforme layout padrão.",
         }),
         makeEvidence({ id: evId, type: "xml", label: "NF-e — estrutura incompleta", xpath: inferXpath("infNFe", docType), snippet: `<!-- Tags obrigatórias ausentes: ${missingNfe.join(", ")} -->` }),
+      );
+    }
+  }
+
+  // ── Rules NT 2025.002 V1.36: dPrevEntrega (Cartilha CGIBS item 1.1) ─────────
+  // Determina o período de apuração do IBS. Nenhum outro validador cobre essas regras.
+
+  if (isNfe) {
+    const freteVal = modFrete?.value ?? "";
+
+    // Rule: DPREV_ENTREGA_FRETE — Rejeição 1157 preventiva
+    if (dPrevEntrega && (freteVal === "1" || freteVal === "9")) {
+      const evId = makeEvidenceId("DPREV_ENTREGA_FRETE");
+      const freteLabel = freteVal === "1" ? "FOB" : "Sem Frete";
+      pushFindingAndEvidence(findings, evidences, evidenceById,
+        makeFinding({
+          id: "F_DPREV_ENTREGA_FRETE",
+          severity: "FATAL",
+          ruleId: "DPREV_ENTREGA_FRETE",
+          title: `Rejeição 1157 — dPrevEntrega inválido para modFrete=${freteVal} (${freteLabel})`,
+          field: "dPrevEntrega",
+          xpath: inferXpath("dPrevEntrega", docType),
+          snippet: dPrevEntrega.snippet,
+          evidenceId: evId,
+          recommendation:
+            `dPrevEntrega é permitido apenas em operações CIF. modFrete=${freteVal} (${freteLabel}) ` +
+            "causará Rejeição 1157 no SEFAZ. Remova o campo ou use frete CIF (NT 2025.002 V1.36).",
+        }),
+        makeEvidence({ id: evId, type: "xml", label: "dPrevEntrega — Rejeição 1157",
+          xpath: inferXpath("dPrevEntrega", docType), snippet: dPrevEntrega.snippet }),
+      );
+    }
+
+    // Rule: DPREV_ENTREGA_COMPETENCIA — divergência contabilização × apuração IBS ⭐
+    // Este é o maior diferenciador: nenhum sistema alerta sobre isso.
+    if (dPrevEntrega && dhEmi) {
+      const dprevMonth = dPrevEntrega.value.slice(0, 7);   // YYYY-MM
+      const demiMonth  = dhEmi.value.slice(0, 7);          // YYYY-MM (de YYYY-MM-DDTHH:...)
+      if (dprevMonth && demiMonth && dprevMonth !== demiMonth) {
+        const evId = makeEvidenceId("DPREV_ENTREGA_COMPETENCIA");
+        pushFindingAndEvidence(findings, evidences, evidenceById,
+          makeFinding({
+            id: "F_DPREV_ENTREGA_COMPETENCIA",
+            severity: "ALERT",
+            ruleId: "DPREV_ENTREGA_COMPETENCIA",
+            title: `Divergência de competência: IBS apurado em ${dprevMonth}, contabilização em ${demiMonth}`,
+            field: "dPrevEntrega",
+            xpath: inferXpath("dPrevEntrega", docType),
+            snippet: dPrevEntrega.snippet,
+            evidenceId: evId,
+            recommendation:
+              `dPrevEntrega (${dprevMonth}) difere do mês de emissão (${demiMonth}). ` +
+              `O débito de IBS será apurado em ${dprevMonth} (mês da entrega), mas o ICMS e a ` +
+              `contabilização ficam em ${demiMonth} (mês da emissão). ` +
+              "Verifique a alíquota vigente na data de entrega e alinhe com o contador. " +
+              "Use Evento 112150 para corrigir a data após a emissão (Cartilha CGIBS item 4.12).",
+          }),
+          makeEvidence({ id: evId, type: "xml", label: "dPrevEntrega — divergência de competência",
+            xpath: inferXpath("dPrevEntrega", docType), snippet: dPrevEntrega.snippet }),
+        );
+      }
+    }
+
+    // Rule: DPREV_ENTREGA_CIF_AUSENTE — CIF sem dPrevEntrega
+    if (!dPrevEntrega && freteVal === "0") {
+      const evId = makeEvidenceId("DPREV_ENTREGA_CIF_AUSENTE");
+      pushFindingAndEvidence(findings, evidences, evidenceById,
+        makeFinding({
+          id: "F_DPREV_ENTREGA_CIF_AUSENTE",
+          severity: "ALERT",
+          ruleId: "DPREV_ENTREGA_CIF_AUSENTE",
+          title: "Operação CIF sem dPrevEntrega — risco de IBS em período incorreto",
+          field: "dPrevEntrega",
+          xpath: inferXpath("ide", docType),
+          evidenceId: evId,
+          recommendation:
+            "Operação CIF (modFrete=0): o fato gerador do IBS ocorre na entrega ao destinatário. " +
+            "Sem dPrevEntrega, o sistema de Apuração Assistida usará a Data de Saída (dhSaiEnt). " +
+            "Se a entrega ocorrer em mês diferente, o IBS será lançado no período errado. " +
+            "Preencha dPrevEntrega com a data prevista de entrega " +
+            "(Cartilha CGIBS item 1.1 + NT 2025.002 V1.36).",
+        }),
+        makeEvidence({ id: evId, type: "xml", label: "dPrevEntrega — ausente em CIF",
+          xpath: inferXpath("ide", docType) }),
       );
     }
   }
