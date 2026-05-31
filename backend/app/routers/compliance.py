@@ -59,8 +59,8 @@ def _compute_score_realtime(tenant_id: str, period: str, db: Session) -> dict:
             FROM jobs
             WHERE tenant_id = CAST(:tid AS uuid)
               AND job_type IN ('validate_xml', 'task_a_validate_cbs_ibs', 'sped_validation')
-              AND created_at >= :start::date
-              AND created_at < (:start::date + INTERVAL '1 month')
+              AND created_at >= CAST(:start AS date)
+              AND created_at < (CAST(:start AS date) + INTERVAL '1 month')
         """),
         {"tid": tenant_id, "start": period_start},
     ).mappings().fetchone()
@@ -79,8 +79,8 @@ def _compute_score_realtime(tenant_id: str, period: str, db: Session) -> dict:
             FROM jobs
             WHERE tenant_id = CAST(:tid AS uuid)
               AND job_type IN ('validate_xml', 'task_a_validate_cbs_ibs')
-              AND created_at >= :start::date
-              AND created_at < (:start::date + INTERVAL '1 month')
+              AND created_at >= CAST(:start AS date)
+              AND created_at < (CAST(:start AS date) + INTERVAL '1 month')
         """),
         {"tid": tenant_id, "start": period_start},
     ).mappings().fetchone()
