@@ -32,8 +32,8 @@ def compute_monthly_scores() -> dict:
             text("""
                 SELECT DISTINCT tenant_id::text
                 FROM jobs
-                WHERE created_at >= :start::date
-                  AND created_at < (:start::date + INTERVAL '1 month')
+                WHERE created_at >= CAST(:start AS date)
+                  AND created_at < (CAST(:start AS date) + INTERVAL '1 month')
                   AND job_type IN ('validate_xml', 'task_a_validate_cbs_ibs', 'sped_validation')
             """),
             {"start": period_start},
@@ -113,8 +113,8 @@ def _upsert_score(db, tenant_id: str, period: str, period_start: str) -> None:
             FROM jobs
             WHERE tenant_id = CAST(:tid AS uuid)
               AND job_type IN ('validate_xml', 'task_a_validate_cbs_ibs', 'sped_validation')
-              AND created_at >= :start::date
-              AND created_at < (:start::date + INTERVAL '1 month')
+              AND created_at >= CAST(:start AS date)
+              AND created_at < (CAST(:start AS date) + INTERVAL '1 month')
         """),
         {"tid": tenant_id, "start": period_start},
     ).mappings().fetchone()
@@ -130,8 +130,8 @@ def _upsert_score(db, tenant_id: str, period: str, period_start: str) -> None:
             WHERE tenant_id = CAST(:tid AS uuid)
               AND job_type IN ('validate_xml', 'task_a_validate_cbs_ibs')
               AND status = 'FAILED'
-              AND created_at >= :start::date
-              AND created_at < (:start::date + INTERVAL '1 month')
+              AND created_at >= CAST(:start AS date)
+              AND created_at < (CAST(:start AS date) + INTERVAL '1 month')
         """),
         {"tid": tenant_id, "start": period_start},
     ).scalar_one_or_none()
