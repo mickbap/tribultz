@@ -1,5 +1,6 @@
 ﻿import type { Metadata } from "next";
 import { Montserrat, Source_Sans_3, Roboto_Mono } from "next/font/google";
+import Script from "next/script";
 import { AppShell } from "@/components/layout/AppShell";
 import "./globals.css";
 
@@ -71,6 +72,11 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className={`${montserrat.variable} ${sourceSans.variable} ${robotoMono.variable}`}>
         <AppShell>{children}</AppShell>
+        <Script
+          id="hs-script-loader"
+          src="//js.hs-scripts.com/49735644.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
