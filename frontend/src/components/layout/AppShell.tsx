@@ -22,6 +22,7 @@ const PUBLIC_ROUTES = [
   "/register",
   "/reset-password",
   "/select-mode",
+  "/simulador",
   "/terms",
   "/verify-email",
 ];
