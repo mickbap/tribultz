@@ -412,3 +412,68 @@ test("NF-e não valida CodigoServico (usa CFOP)", () => {
   });
   assert.equal(result.findings.find((f) => f.rule_id === "SERVICE_CODE_6_DIGITS"), undefined);
 });
+
+// ── NT 2025.002 V1.36 — dPrevEntrega rules (issue #286) ─────────────────────
+
+// NF-e helper: minimal valid NF-e skeleton
+function nfeWithFields(extra: string): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe><ide>
+  <dhEmi>2026-05-27T10:00:00-03:00</dhEmi>
+  <dhSaiEnt>2026-05-27T10:00:00-03:00</dhSaiEnt>
+  ${extra}
+</ide><emit><CNPJ>12345678000195</CNPJ></emit>
+<det nItem="1"><prod><NCM>84713012</NCM><CEST>2104900</CEST></prod>
+  <imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib>
+    <gIBSCBS><vBC>1000</vBC><gIBSUF><pIBSUF>0.9</pIBSUF><vIBSUF>9</vIBSUF></gIBSUF>
+    <gIBSMun><pIBSMun>0.1</pIBSMun><vIBSMun>1</vIBSMun></gIBSMun><vIBS>10</vIBS>
+    <gCBS><pCBS>0.1</pCBS><vCBS>1</vCBS></gCBS></gIBSCBS>
+  </IBSCBS></imposto></det>
+<total><emit/></total>
+</infNFe></NFe></nfeProc>`;
+}
+
+test("DPREV_ENTREGA_FRETE: dPrevEntrega + modFrete FOB(1) gera FATAL", () => {
+  const xml = nfeWithFields(`
+    <dPrevEntrega>2026-06-05</dPrevEntrega>
+    <transp><modFrete>1</modFrete></transp>
+  `).replace("</ide>", "</ide>");
+  // inject modFrete inside the XML
+  const xml2 = xml.replace("</nfeProc>", `<transp><modFrete>1</modFrete></transp></nfeProc>`)
+    .replace("<dhEmi>", "<dPrevEntrega>2026-06-05</dPrevEntrega><dhEmi>");
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml: xml2 });
+  const f = result.findings.find((f) => f.rule_id === "DPREV_ENTREGA_FRETE");
+  assert.ok(f, "DPREV_ENTREGA_FRETE finding expected when FOB with dPrevEntrega");
+  assert.equal(f!.severity, "FATAL");
+});
+
+test("DPREV_ENTREGA_COMPETENCIA: entrega em junho, emissão em maio gera ALERT", () => {
+  const xml = nfeWithFields(`<dPrevEntrega>2026-06-15</dPrevEntrega>`);
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "DPREV_ENTREGA_COMPETENCIA");
+  assert.ok(f, "DPREV_ENTREGA_COMPETENCIA expected when delivery in different month");
+  assert.equal(f!.severity, "ALERT");
+  assert.ok(f!.title.includes("2026-06"), "title should mention delivery month");
+  assert.ok(f!.title.includes("2026-05"), "title should mention emission month");
+});
+
+test("DPREV_ENTREGA_COMPETENCIA: mesmo mês não gera finding", () => {
+  const xml = nfeWithFields(`<dPrevEntrega>2026-05-31</dPrevEntrega>`);
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  assert.equal(result.findings.find((f) => f.rule_id === "DPREV_ENTREGA_COMPETENCIA"), undefined);
+});
+
+test("DPREV_ENTREGA_CIF_AUSENTE: modFrete=0 sem dPrevEntrega gera ALERT", () => {
+  const xml = nfeWithFields("").replace("</nfeProc>",
+    "<transp><modFrete>0</modFrete></transp></nfeProc>");
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "DPREV_ENTREGA_CIF_AUSENTE");
+  assert.ok(f, "DPREV_ENTREGA_CIF_AUSENTE expected for CIF without dPrevEntrega");
+  assert.equal(f!.severity, "ALERT");
+});
+
+test("DPREV_ENTREGA_CIF_AUSENTE: NFS-e não aciona regra", () => {
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFSE",
+    xml: fixture("nfse-ok.xml") });
+  assert.equal(result.findings.find((f) => f.rule_id === "DPREV_ENTREGA_CIF_AUSENTE"), undefined);
+});
