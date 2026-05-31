@@ -151,6 +151,15 @@ def _qp(v: Decimal) -> Decimal:
     return v.quantize(_QP, ROUND_HALF_UP)
 
 
+def _brl(v: Decimal) -> str:
+    """Formata Decimal como moeda pt-BR: R$ 198.500,00"""
+    abs_v = abs(v)
+    int_part = int(abs_v)
+    dec_part = int(round((abs_v - int_part) * 100))
+    int_str = f"{int_part:,}".replace(",", ".")
+    return f"R$ {int_str},{dec_part:02d}"
+
+
 def _simulate(req: SimulatorRequest) -> SimulatorResponse:
     fat = req.faturamento_anual
     pct_svc = Decimal(req.percentual_servicos) / Decimal(100)
@@ -218,14 +227,14 @@ def _simulate(req: SimulatorRequest) -> SimulatorResponse:
         insight = (
             f"No {regime_labels[req.regime_tributario]}, sua carga tributária sobre {setor_label} "
             f"deve aumentar de {aliq_atual}% para {aliq_novo}% com a Reforma Tributária — "
-            f"acréscimo de R$ {abs(delta_val):,.2f}/ano ({var_rel}% a mais). "
+            f"acréscimo de {_brl(delta_val)}/ano ({var_rel}% a mais). "
             f"Agosto/2026 inicia o período de penalidades."
         )
     elif direcao == "reducao":
         insight = (
             f"No {regime_labels[req.regime_tributario]}, sua carga tributária sobre {setor_label} "
             f"deve cair de {aliq_atual}% para {aliq_novo}% com a Reforma Tributária — "
-            f"economia de R$ {abs(delta_val):,.2f}/ano ({abs(var_rel)}% a menos). "
+            f"economia de {_brl(delta_val)}/ano ({abs(var_rel)}% a menos). "
             f"A não-cumulatividade plena do IBS pode ampliar o benefício."
         )
     else:
