@@ -29,6 +29,9 @@ export function PublicNavbar() {
           <Link href="/calculadora" className="font-medium text-slate-600 transition-colors hover:text-[#2956E3]">
             Calculadora CBS/IBS
           </Link>
+          <Link href="/simulador" className="font-medium text-slate-600 transition-colors hover:text-[#2956E3]">
+            Simulador de Impacto
+          </Link>
           <Link href="/pricing" className="font-medium text-slate-600 transition-colors hover:text-[#2956E3]">
             Planos
           </Link>
