@@ -25,6 +25,7 @@ class Tenant(Base):
     name = Column(String(200), nullable=False)
     slug = Column(String(100), nullable=False, unique=True)
     is_active = Column(Boolean, nullable=False, default=True)
+    pedagogical_mode_2026 = Column(Boolean, nullable=False, server_default="TRUE")
     # Using server_default=func.now() for creation
     # Using onupdate=func.now() to ensure python-side updates trigger the timestamp update
     # Schema just says DEFAULT now(), so DB side auto-update depends on triggers (not present in standard schema dump).

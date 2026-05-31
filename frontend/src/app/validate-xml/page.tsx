@@ -10,14 +10,15 @@ import { Finding, Job, ValidateXmlRequest, ValidationEvidence, ValidationResultV
 import { CST_TABLE, detectDocumentType } from "@/lib/validation/xmlRules";
 
 function severityClasses(severity: Finding["severity"]): string {
-  if (severity === "FATAL") {
-    return "border-red-300 bg-red-50 text-red-800";
-  }
+  if (severity === "FATAL") return "border-red-300 bg-red-50 text-red-800";
+  if (severity === "WARNING") return "border-blue-300 bg-blue-50 text-blue-800";
   return "border-amber-300 bg-amber-50 text-amber-800";
 }
 
 function severityLabel(severity: Finding["severity"]): string {
-  return severity === "FATAL" ? "FATAL (bloqueante)" : "ALERT";
+  if (severity === "FATAL") return "FATAL (bloqueante)";
+  if (severity === "WARNING") return "Período Pedagógico LC 227";
+  return "ALERT";
 }
 
 function shortSnippet(value?: string): string {
@@ -375,7 +376,14 @@ export default function ValidateXmlPage() {
                 <article key={finding.id} className={`rounded-xl border p-3 ${severityClasses(finding.severity)}`}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide">{severityLabel(finding.severity)}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide">{severityLabel(finding.severity)}</p>
+                        {finding.severity === "WARNING" && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-blue-300 bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800">
+                            ⚖️ LC 227 art. 348 — 60 dias para sanar
+                          </span>
+                        )}
+                      </div>
                       <h2 className="text-base font-semibold">{finding.title}</h2>
                       <p className="text-xs">
                         rule_id: <span className="font-mono">{finding.rule_id}</span> | finding_id:{" "}

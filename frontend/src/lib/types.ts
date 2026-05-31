@@ -14,7 +14,7 @@ export type Evidence = {
   payload?: Record<string, unknown> | null;
 };
 
-export type FindingSeverity = "FATAL" | "ALERT";
+export type FindingSeverity = "FATAL" | "ALERT" | "WARNING";
 
 export type FindingWhere = {
   field?: string;
