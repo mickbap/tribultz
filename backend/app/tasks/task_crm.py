@@ -76,7 +76,7 @@ def crm_sync(self, user_id: str, event_type: str) -> dict:
     Idempotent: HubSpot upsert_contact and upsert_deal are safe to re-run.
     Silently skips if HUBSPOT_ENABLED is False.
     """
-    from app.tools.hubspot_tool import upsert_contact, upsert_company, upsert_deal, log_note
+    from app.tools.hubspot_tool import upsert_contact, upsert_company, upsert_deal
     from app.config import settings
 
     db = SessionLocal()
@@ -88,16 +88,13 @@ def crm_sync(self, user_id: str, event_type: str) -> dict:
 
         user = ctx["user"]
         tenant = ctx["tenant"]
-        sub = ctx["subscription"]
         plan = ctx["plan"]
 
         email = str(user.email)
         full_name = str(user.full_name)
         company_name = str(tenant.name) if tenant else f"Empresa {email}"
         tenant_slug = str(tenant.slug) if tenant else ""
-        plan_slug = str(plan.slug) if plan else "trial"
         plan_price_cents = int(plan.price_cents) if plan else 0  # type: ignore[arg-type]
-        sub_status = str(sub.status) if sub else "unknown"
         deal_stage = DEAL_STAGE_MAP.get(event_type, "qualifiedtobuy")
 
         # 1. Upsert contact — apenas propriedades padrão HubSpot
@@ -110,9 +107,7 @@ def crm_sync(self, user_id: str, event_type: str) -> dict:
         )
 
         # 2. Upsert company — apenas propriedades padrão HubSpot
-        company_result = upsert_company(
-            name=company_name,
-        )
+        upsert_company(name=company_name)
 
         # 3. Upsert deal — stage codifica o ciclo de vida, sem custom props
         deal_name = f"Tribultz — {company_name} ({tenant_slug})"
@@ -122,19 +117,8 @@ def crm_sync(self, user_id: str, event_type: str) -> dict:
             amount=plan_price_cents / 100.0 if plan_price_cents else None,
         )
 
-        # 4. Log sync note to company
-        company_id = company_result.get("id", "") if isinstance(company_result, dict) else ""
-        if company_id and settings.HUBSPOT_ENABLED:
-            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-            log_note(
-                object_type="companies",
-                object_id=company_id,
-                body=(
-                    f"Tribultz CRM sync — {today}\n"
-                    f"Evento: {event_type}\n"
-                    f"Status: {sub_status} | Plano: {plan_slug} | Stage: {deal_stage}"
-                ),
-            )
+        # 4. Log sync note — desabilitado: scope crm.objects.notes.write
+        # não disponível no plano free do HubSpot.
 
         logger.info(
             "crm.sync ok event=%s user_id=%s deal_stage=%s hubspot=%s",

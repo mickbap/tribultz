@@ -123,7 +123,7 @@ def upsert_deal(
     properties: Optional[dict[str, Any]] = None,
     transaction_id: Optional[str] = None,
 ) -> dict:
-    """Create a HubSpot deal."""
+    """Create or update a HubSpot deal, deduplicating by dealname."""
     if not _enabled():
         return _noop("deal")
 
@@ -134,12 +134,40 @@ def upsert_deal(
         props.update(properties)
 
     try:
-        resp = httpx.post(
-            f"{BASE_URL}/crm/v3/objects/deals",
+        # Search for existing deal by name to avoid duplicates
+        search_resp = httpx.post(
+            f"{BASE_URL}/crm/v3/objects/deals/search",
             headers=_headers(),
-            json={"properties": props},
+            json={
+                "filterGroups": [{"filters": [{"propertyName": "dealname", "operator": "EQ", "value": deal_name}]}],
+                "properties": ["dealname", "dealstage"],
+                "limit": 1,
+            },
             timeout=15,
         )
+        existing_id = None
+        if search_resp.status_code == 200:
+            results = search_resp.json().get("results", [])
+            if results:
+                existing_id = results[0]["id"]
+
+        if existing_id:
+            # Update existing deal
+            resp = httpx.patch(
+                f"{BASE_URL}/crm/v3/objects/deals/{existing_id}",
+                headers=_headers(),
+                json={"properties": props},
+                timeout=15,
+            )
+        else:
+            # Create new deal
+            resp = httpx.post(
+                f"{BASE_URL}/crm/v3/objects/deals",
+                headers=_headers(),
+                json={"properties": props},
+                timeout=15,
+            )
+
         resp.raise_for_status()
         data = resp.json()
         if transaction_id:
