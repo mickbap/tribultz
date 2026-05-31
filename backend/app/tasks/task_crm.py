@@ -25,13 +25,14 @@ logger = logging.getLogger(__name__)
 # ── Deal stage mapping ─────────────────────────────────────────
 
 DEAL_STAGE_MAP: dict[str, str] = {
-    "register": "qualifiedtobuy",
-    "trial_expiring": "presentationscheduled",
-    "trial_expired": "closedlost",
-    "payment_confirmed": "closedwon",
-    "payment_overdue": "closedwon",       # was paying, now at risk → closedwon + at_risk flag
-    "subscription_cancelled": "closedlost",
-    "subscription_pending": "decisionmakerboughtin",
+    # Mapeado para o pipeline padrão do HubSpot (conta free — stages fixos)
+    "register":                "appointmentscheduled",   # Trial Iniciado       (20%)
+    "trial_expiring":          "qualifiedtobuy",         # Trial Expirando      (40%)
+    "trial_expired":           "closedlost",             # Cliente Perdido      (0%)
+    "payment_confirmed":       "closedwon",              # Cliente Ativo        (100%)
+    "payment_overdue":         "decisionmakerboughtin",  # Tomador de Decisão   (80%) — em risco
+    "subscription_cancelled":  "closedlost",             # Cliente Perdido      (0%)
+    "subscription_pending":    "presentationscheduled",  # Pagamento Pendente   (60%)
 }
 
 
