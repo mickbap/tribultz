@@ -3,7 +3,7 @@
 > Motor determinístico de validação CBS/IBS · Multi-tenant SaaS · LC 214 + LC 227
 
 [![CI Backend](https://github.com/mickbap/tribultz/actions/workflows/ci.yml/badge.svg)](https://github.com/mickbap/tribultz/actions/workflows/ci.yml)
-[![Testes](https://img.shields.io/badge/testes-401%20passing-brightgreen)](#ci--cd)
+[![Testes](https://img.shields.io/badge/testes-469%20passing-brightgreen)](#ci--cd)
 [![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org)
 [![Next.js](https://img.shields.io/badge/next.js-16-black)](https://nextjs.org)
 [![Licença](https://img.shields.io/badge/licença-proprietária-red)](#licença)
@@ -22,6 +22,9 @@ O motor determinístico aplica 14 regras de conformidade contra XML de NF-e, NFC
 
 **Diferenciais:**
 - Único validador que gera o snippet XML `<IBSCBS>` pronto para o ERP
+- **Simulador de Impacto** — compara carga tributária atual (ICMS+PIS/COFINS+ISS) vs CBS+IBS por regime e setor
+- **Modo Período Educativo LC 227** — downgrade automático de obrigações acessórias em 2026 (nenhum concorrente faz isso)
+- **dPrevEntrega** — único sistema que detecta divergência de competência entre contabilização e apuração IBS
 - Calculadora CBS/IBS pública como primeiro ponto de conversão freemium
 - Diagnóstico XML gratuito (3 findings) — captura o lead no momento da dor
 - Arquitetura multi-tenant pronta para contadores que gerenciam múltiplos CNPJs
@@ -36,6 +39,7 @@ O motor determinístico aplica 14 regras de conformidade contra XML de NF-e, NFC
 | Funcionalidade | Endpoint | Limite |
 |---|---|---|
 | Calculadora CBS/IBS | `GET /calculadora` | 20 cálculos/dia por IP |
+| **Simulador de Impacto** | `POST /api/v1/public/simulator/regime` | 30 req/min por IP |
 | Diagnóstico XML | `GET /diagnostico` | 3 findings por arquivo |
 | Validação pública | `POST /api/v1/public/validate-xml` | 20 req/dia por IP |
 
@@ -43,7 +47,9 @@ O motor determinístico aplica 14 regras de conformidade contra XML de NF-e, NFC
 
 | Funcionalidade | Descrição |
 |---|---|
-| **Validação XML** | Upload de NF-e, NFC-e e NFS-e; 14 regras NT 2025.002-RTC; resultado em <2s |
+| **Validação XML** | Upload de NF-e, NFC-e e NFS-e; 22 regras NT 2025.002-RTC v1.36; resultado em <2s |
+| **Modo Período Educativo** | Toggle LC 227/2026 art. 348: obrigações acessórias viram WARNING em vez de FATAL com badge legal |
+| **dPrevEntrega (NT V1.36)** | 3 regras: Rejeição 1157 preventiva, divergência competência CBS/IBS, CIF sem data entrega |
 | **Validação em lote** | Fila Celery; N arquivos em paralelo; relatório consolidado |
 | **Chat AI Fiscal** | CrewAI (Triager → Operator → Narrator); responde perguntas sobre conformidade com citação de regra |
 | **Relatório auditável** | PDF + Markdown; campos NF · BASE ICMS · VALOR ICMS · IBS · CBS · CEST · CLASSTRIB |
@@ -94,15 +100,15 @@ O motor determinístico aplica 14 regras de conformidade contra XML de NF-e, NFC
                        ▼
 ┌─────────────────────────────────────────────────────────┐
 │                   FASTAPI (api)                         │
-│   14 routers · JWT auth · multi-tenant · Pydantic v2    │
+│   16 routers · JWT auth · multi-tenant · Pydantic v2    │
 │   CrewAI crews · LiteLLM · OpenRouter                   │
 └──────┬──────────────────────────┬───────────────────────┘
        │ SQLAlchemy                │ Celery tasks
        ▼                          ▼
 ┌─────────────┐         ┌─────────────────────────┐
 │ PostgreSQL  │         │   CELERY (worker + beat) │
-│  16 (DBaaS) │         │   7 tasks · concurrency=2│
-│  15 tabelas │         │   Redis broker           │
+│  16 (DBaaS) │         │  10 tasks · concurrency=2│
+│  16 tabelas │         │   Redis broker           │
 │  multi-tenant│        └──────────┬──────────────┘
 └─────────────┘                    │
                           ┌────────┴────────┐
@@ -117,7 +123,7 @@ O motor determinístico aplica 14 regras de conformidade contra XML de NF-e, NFC
 │                  APIS EXTERNAS                          │
 │  Asaas (pagamentos)  ·  ClassTrib SVRS  ·  CNPJ.ws     │
 │  OpenRouter (LLM)   ·  Cloudflare Turnstile             │
-│  HubSpot CRM (HUBSPOT_ENABLED)                          │
+│  HubSpot CRM (ativo) · HubSpot Tracking (portal 49735644)│
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -191,6 +197,12 @@ As duas implementações são determinísticas e produzem o mesmo resultado para
 |---|---|---|---|
 | `POST` | `/api/v1/public/calculadora/regime-geral` | Calcular CBS/IBS por NCM/UF | — |
 | `POST` | `/api/v1/calculadora/regime-geral` | Calcular com alíquotas do tenant | JWT |
+
+### Simulador de Impacto
+
+| Método | Rota | Descrição | Auth |
+|---|---|---|---|
+| `POST` | `/api/v1/public/simulator/regime` | Simular impacto CBS/IBS por regime e setor | — |
 | `GET` | `/api/v1/calculadora/uf-rates` | Alíquotas por estado | JWT |
 
 ### Jobs & Tasks
@@ -253,6 +265,7 @@ As duas implementações são determinísticas e produzem o mesmo resultado para
 |---|---|---|
 | `/` | Pública | Landing page |
 | `/calculadora` | Pública | Calculadora CBS/IBS com snippet XML |
+| `/simulador` | Pública | Simulador de Impacto por Regime Tributário |
 | `/diagnostico` | Pública | Diagnóstico fiscal gratuito (3 findings) |
 | `/pricing` | Pública | Planos e preços |
 | `/register` | Pública | Cadastro (Turnstile + e-mail verification) |
@@ -307,7 +320,7 @@ tenants ──┬── users ──── user_tenants
 
 ---
 
-## Regras de Validação (NT 2025.002-RTC)
+## Regras de Validação (NT 2025.002-RTC v1.36)
 
 | # | Regra | Severidade | Descrição |
 |---|---|---|---|
@@ -318,10 +331,18 @@ tenants ──┬── users ──── user_tenants
 | 5 | `NCM_PLACEHOLDER` | ALERT | NCM não pode ser todos zeros |
 | 6 | `IBSCBS_MISSING` | FATAL | Grupo `<IBSCBS>` obrigatório para CSTs 000-550 |
 | 7 | `IBSCBS_CALC` | FATAL | Cálculo CBS/IBS deve conferir (tolerância ±R$0,01) |
-| 8 | `CEST_MISSING` | FATAL | CEST obrigatório para produtos com substituição tributária |
+| 8 | `CEST_MISSING` | ALERT | CEST obrigatório apenas para produtos com substituição tributária (ST) |
 | 9 | `CEST_FORMAT` | FATAL | CEST deve ter 7 dígitos no formato correto |
 | 10 | `LAYOUT_PORTAL` | FATAL | Estrutura do XML deve seguir o layout da NT |
 | 11–14 | Regras S11–S13 | WARNING | Validações complementares de alíquotas e créditos |
+| 15 | `NCM_FORMAT` / `NCM_VALID` | FATAL | NCM deve ter 8 dígitos e ser válido na TIPI |
+| 16 | `CLASSTRIB_VALID` | FATAL/ALERT | cClassTrib deve existir na tabela SVRS |
+| 17 | `CNPJ_ACTIVE` | FATAL | CNPJ emitente deve estar ativo na Receita Federal |
+| 18 | `DPREV_ENTREGA_FRETE` | **FATAL** | dPrevEntrega inválido para modFrete FOB/Sem Frete — Rejeição 1157 |
+| 19 | `DPREV_ENTREGA_COMPETENCIA` | **ALERT** | dPrevEntrega em mês diferente de dhEmi — divergência contabilização × apuração IBS |
+| 20 | `DPREV_ENTREGA_CIF_AUSENTE` | **ALERT** | Operação CIF sem dPrevEntrega — risco de IBS em período incorreto |
+
+**Modo Período Educativo (LC 227/2026 art. 348):** quando ativo, as regras de obrigação acessória (8 regras) são downgraded de FATAL para WARNING com badge ⚖️ e nota dos 60 dias para sanar sem multa.
 
 **CSTs suportados:** 000 · 001 · 002 · 070 · 200 · 410 · 510 · 515 · 550 · 620 · 800 · 810 · 811 · 830
 
@@ -468,7 +489,7 @@ Push / PR
     │       ├── ruff check app/ tests/
     │       ├── pyright (type check)
     │       ├── alembic upgrade head
-    │       ├── pytest tests/ -q  (401 testes)
+    │       ├── pytest tests/ -q  (469 testes)
     │       ├── crewai import sanity
     │       └── qa_gates/run_gates.py → artifact: qa_gates_report.md
     │
@@ -570,15 +591,26 @@ cd frontend && npm install && npm run dev
 | #268 | Monitoring contínuo · GitHub Actions uptime check 5min · alerta email |
 | #269 | Billing recorrente Asaas · notificações trial D-3/D-1/expirado · fix login pós-pagamento |
 | #270 | CRM Engagement Crew · HubSpot lifecycle automático · dunning e win-back via CrewAI |
+| #273 | Fix SQL syntax 500 no dashboard — `CAST(:param AS type)` em sqlalchemy.text() |
+| #274 | cClassTrib SVRS — migration 75 códigos · regulamentos 30/abr/2026 · `last_synced_at` |
+| #279 | Diff regulamentos IBS/CBS 30/abr/2026 × 22 regras · `docs/regulamentos_2026_diff.md` |
+| #280 | Deploy automático `alembic upgrade head` · `--no-deps` para zero-downtime Redis |
+| #282 | HubSpot tracking code — portal 49735644 · pageviews em todas as páginas |
+| #283–284 | HubSpot CRM sync · deal stages pipeline padrão · deduplicação via search API |
+| #285 | **Modo Período Educativo LC 227** · toggle tenant · badge ⚖️ · 14 regras acessórias |
+| #287 | **dPrevEntrega** · Rejeição 1157 preventiva · divergência competência CBS/IBS · CIF alert |
+| #288–289 | **Simulador de Impacto** · `/simulador` público · endpoint `POST /simulator/regime` |
 | Infra | Magalu Cloud · docker-compose.prod · rolling deploy · SecDevOps |
 
 ### Em andamento
 
 | Item | Descrição | Prioridade |
 |---|---|---|
-| HubSpot em prod | `HUBSPOT_ENABLED=true` + `HUBSPOT_PRIVATE_APP_TOKEN` na VM — crew e sync prontos, aguarda configuração | Alta |
 | `no-new-privileges` + `cap_drop` | Adicionar ao docker-compose.prod.yml | Alta |
 | `unattended-upgrades` | Patches automáticos de segurança na VM | Média |
+| CEST × tabela ST (#275) | Cruzar NCM com tabela CEST/CONFAZ para identificar produtos ST | P1 |
+| MONOFASICO_ZERO (#278) | CST 620 downstream deve ter vCBS=vIBS=0 | P2 |
+| Simulador Fase B | Regimes diferenciados, cashback, setor específico por NCM | P2 |
 
 ### Próximos sprints
 
