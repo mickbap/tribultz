@@ -12,11 +12,34 @@ export type ValidationInput = {
   tenantId: string;
   documentType: XmlDocumentType;
   xml: string;
+  /** LC 227/2026 art. 348: downgrade obrigações acessórias de FATAL → WARNING. Default: false */
+  pedagogicalMode?: boolean;
 };
 
 // ── CST table (NT 2025.002-RTC) ────────────────────────────────────────────
 // Maps valid CST codes to their required XML group and description.
 
+// ── LC 227/2026 — modo pedagógico ─────────────────────────────────────────
+const PEDAGOGICAL_ACCESSORY_RULES = new Set([
+  "CST_3_DIGITS", "CCLASSTRIB_6_DIGITS", "SERVICE_CODE_6_DIGITS",
+  "CST_VALID", "CST_GROUP_MATCH", "CST_SEMANTIC",
+  "IBSCBS_MISSING", "CEST_MISSING", "CEST_FORMAT",
+  "LAYOUT_NFE", "LAYOUT_PORTAL",
+]);
+
+const LC227_NOTE =
+  " — Período Pedagógico LC 227/2026 (art. 348 §§ 3º e 4º): " +
+  "se autuado exclusivamente por esta obrigação acessória, " +
+  "há 60 dias para regularizar sem aplicação de multa.";
+
+function pedagogicalSeverity(
+  ruleId: string,
+  pedagogicalMode: boolean,
+): "FATAL" | "WARNING" {
+  return pedagogicalMode && PEDAGOGICAL_ACCESSORY_RULES.has(ruleId) ? "WARNING" : "FATAL";
+}
+
+// ── CST table (NT 2025.002-RTC) ────────────────────────────────────────────
 export const CST_TABLE: Record<string, { group: string | null; description: string }> = {
   "000": { group: "gIBSCBS", description: "Tributação normal (ad valorem)" },
   "001": { group: "gIBSCBS", description: "Tributação normal com redução de base" },
@@ -165,6 +188,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
   const fingerprint = fnv1a32(`${input.documentType}|${xml}`);
   const jobId = `job_xml_${fingerprint}`;
   const auditId = `audit_xml_${fingerprint}`;
+  const pedMode = input.pedagogicalMode === true;
 
   const findings: Finding[] = [];
   const evidences: ValidationEvidence[] = [];
@@ -740,6 +764,17 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
       recommendation: "Documentar justificativa fiscal para benefícios e créditos utilizados.",
     }),
   );
+
+  // ── Modo Pedagógico LC 227/2026 — downgrade obrigações acessórias ─────────
+  if (pedMode) {
+    for (const f of findings) {
+      if (f.severity === "FATAL" && PEDAGOGICAL_ACCESSORY_RULES.has(f.rule_id)) {
+        (f as { severity: string }).severity = "WARNING";
+        (f as { recommendation: string }).recommendation =
+          (f.recommendation || "") + LC227_NOTE;
+      }
+    }
+  }
 
   // ── Build result ──────────────────────────────────────────────────────────
 

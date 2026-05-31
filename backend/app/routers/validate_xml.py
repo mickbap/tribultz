@@ -206,18 +206,46 @@ def _extract_regime_comparison(xml: str, has_ibscbs: bool) -> RegimeComparison |
 
 # ── Validation engine ───────────────────────────────────────────────────────
 
+# ── LC 227/2026 — regras de obrigação acessória ─────────────────────────────
+# Quando pedagogical_mode_2026=True, findings dessas regras são downgraded
+# de FATAL para WARNING com badge do período pedagógico.
+_PEDAGOGICAL_ACCESSORY_RULES = {
+    "CST_3_DIGITS", "CCLASSTRIB_6_DIGITS", "SERVICE_CODE_6_DIGITS",
+    "CST_VALID", "CST_GROUP_MATCH", "CST_SEMANTIC",
+    "IBSCBS_MISSING", "CEST_MISSING", "CEST_FORMAT",
+    "LAYOUT_NFE", "LAYOUT_PORTAL",
+    "NCM_FORMAT", "NCM_VALID", "CLASSTRIB_VALID",
+}
+
+_LC227_RECOMMENDATION = (
+    " — Período Pedagógico LC 227/2026 (art. 348 §§ 3º e 4º): "
+    "se autuado exclusivamente por esta obrigação acessória, "
+    "há 60 dias para regularizar sem aplicação de multa."
+)
+
+
+def _pedagogical_severity(rule_id: str, pedagogical_mode: bool) -> str:
+    """Return 'WARNING' for accessory rules in pedagogical mode, 'FATAL' otherwise."""
+    if pedagogical_mode and rule_id in _PEDAGOGICAL_ACCESSORY_RULES:
+        return "WARNING"
+    return "FATAL"
+
+
 def validate_xml(
     xml: str,
     doc_type: str | None = None,
     *,
     classtrib_results: dict[str, bool | None] | None = None,
     cnpj_result: tuple[bool, str] | None = None,
+    pedagogical_mode: bool = False,
 ) -> ValidationResult:
     """Apply deterministic validation rules to XML. Returns structured result.
 
     Optional enrichment parameters (pre-fetched by async caller):
       classtrib_results: {code: True/False/None} from ClassTrib API batch lookup
       cnpj_result: (is_active: bool, status: str) from CNPJ API lookup
+      pedagogical_mode: when True, accessory-rule FATALs become WARNINGs
+                        with LC 227/2026 art. 348 annotation
     """
     xml = xml.strip()
     if not doc_type:
@@ -281,9 +309,13 @@ def validate_xml(
         val = source["value"] if source else ""
         snip = source["snippet"] if source else f"<!-- Campo {field} não encontrado -->"
         xp = _xpath(source["tag"] if source else field, doc_type)
+        sev = _pedagogical_severity(rid, pedagogical_mode)
+        rec = "Corrigir no ERP e reemitir."
+        if sev == "WARNING":
+            rec += _LC227_RECOMMENDATION
         if not re.match(pattern, val):
             _add(
-                Finding(id=fid, severity="FATAL", rule_id=rid, title=title, where=FindingWhere(field=field, xpath=xp, snippet=snip), recommendation="Corrigir no ERP e reemitir.", evidence_ids=[ev_id]),
+                Finding(id=fid, severity=sev, rule_id=rid, title=title, where=FindingWhere(field=field, xpath=xp, snippet=snip), recommendation=rec, evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label=f"Trecho XML — {field}", xpath=xp, snippet=snip),
             )
 
@@ -291,8 +323,12 @@ def validate_xml(
 
     if has_ibscbs and cst and re.match(r"^\d{3}$", cst["value"]) and cst["value"] not in VALID_CST_CODES:
         ev_id = "E_XML_CST_VALID"
+        _sev = _pedagogical_severity("CST_VALID", pedagogical_mode)
+        _rec = f"CSTs válidos: {', '.join(sorted(VALID_CST_CODES))}."
+        if _sev == "WARNING":
+            _rec += _LC227_RECOMMENDATION
         _add(
-            Finding(id="F_CST_VALID", severity="FATAL", rule_id="CST_VALID", title=f'CST "{cst["value"]}" não é código válido conforme NT 2025.002-RTC', where=FindingWhere(field="CST", xpath=_xpath("CST", doc_type), snippet=cst["snippet"]), recommendation=f"CSTs válidos: {', '.join(sorted(VALID_CST_CODES))}.", evidence_ids=[ev_id]),
+            Finding(id="F_CST_VALID", severity=_sev, rule_id="CST_VALID", title=f'CST "{cst["value"]}" não é código válido conforme NT 2025.002-RTC', where=FindingWhere(field="CST", xpath=_xpath("CST", doc_type), snippet=cst["snippet"]), recommendation=_rec, evidence_ids=[ev_id]),
             Evidence(id=ev_id, type="xml", label="CST — código desconhecido", xpath=_xpath("CST", doc_type), snippet=cst["snippet"]),
         )
 
@@ -302,26 +338,37 @@ def validate_xml(
         expected_group = CST_TABLE[cst["value"]]["group"]
         if expected_group and not _first_tag(xml, [expected_group]):
             ev_id = "E_XML_CST_GROUP_MATCH"
+            _sev = _pedagogical_severity("CST_GROUP_MATCH", pedagogical_mode)
+            _rec = f'CST {cst["value"]} requer <{expected_group}>. Preencher conforme NT 2025.002.'
+            if _sev == "WARNING":
+                _rec += _LC227_RECOMMENDATION
             _add(
-                Finding(id="F_CST_GROUP_MATCH", severity="FATAL", rule_id="CST_GROUP_MATCH", title=f'CST {cst["value"]} exige grupo <{expected_group}>', where=FindingWhere(field="IBSCBS", xpath=_xpath("IBSCBS", doc_type)), recommendation=f'CST {cst["value"]} requer <{expected_group}>. Preencher conforme NT 2025.002.', evidence_ids=[ev_id]),
+                Finding(id="F_CST_GROUP_MATCH", severity=_sev, rule_id="CST_GROUP_MATCH", title=f'CST {cst["value"]} exige grupo <{expected_group}>', where=FindingWhere(field="IBSCBS", xpath=_xpath("IBSCBS", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label=f"CST {cst['value']} — grupo ausente", xpath=_xpath("IBSCBS", doc_type)),
             )
 
     # ── Rule 6: IBSCBS_MISSING ───────────────────────────────────────────────
 
+    _ibscbs_sev = _pedagogical_severity("IBSCBS_MISSING", pedagogical_mode)
     if has_ibscbs:
         if not ibscbs_block:
             ev_id = "E_XML_IBSCBS_MISSING"
+            _rec = "Informar grupo IBSCBS com CST, cClassTrib e campos de cálculo."
+            if _ibscbs_sev == "WARNING":
+                _rec += _LC227_RECOMMENDATION
             _add(
-                Finding(id="F_IBSCBS_MISSING", severity="FATAL", rule_id="IBSCBS_MISSING", title="Grupo IBSCBS ausente — obrigatório conforme NT 2025.002", where=FindingWhere(field="IBSCBS", xpath=_xpath("imposto", doc_type)), recommendation="Informar grupo IBSCBS com CST, cClassTrib e campos de cálculo.", evidence_ids=[ev_id]),
+                Finding(id="F_IBSCBS_MISSING", severity=_ibscbs_sev, rule_id="IBSCBS_MISSING", title="Grupo IBSCBS ausente — obrigatório conforme NT 2025.002", where=FindingWhere(field="IBSCBS", xpath=_xpath("imposto", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="IBSCBS — grupo ausente", xpath=_xpath("imposto", doc_type)),
             )
     else:
         has_legacy = all([valor_cbs, valor_ibs, aliq_cbs, aliq_ibs])
         if not has_legacy:
             ev_id = "E_XML_IBSCBS_MISSING"
+            _rec = "Informar alíquota e valor de IBS e CBS conforme LC 214."
+            if _ibscbs_sev == "WARNING":
+                _rec += _LC227_RECOMMENDATION
             _add(
-                Finding(id="F_IBSCBS_MISSING", severity="FATAL", rule_id="IBSCBS_MISSING", title="IBS/CBS ausentes na nota", where=FindingWhere(field="IBS/CBS", xpath=_xpath("Valores", doc_type)), recommendation="Informar alíquota e valor de IBS e CBS conforme LC 214.", evidence_ids=[ev_id]),
+                Finding(id="F_IBSCBS_MISSING", severity=_ibscbs_sev, rule_id="IBSCBS_MISSING", title="IBS/CBS ausentes na nota", where=FindingWhere(field="IBS/CBS", xpath=_xpath("Valores", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="IBS/CBS — campos ausentes", xpath=_xpath("Valores", doc_type)),
             )
 
@@ -376,14 +423,22 @@ def validate_xml(
 
     if not cest:
         ev_id = "E_XML_CEST_MISSING"
+        _sev = _pedagogical_severity("CEST_MISSING", pedagogical_mode)
+        _rec = "CEST obrigatório apenas para produtos com substituição tributária (ST)."
+        if _sev == "WARNING":
+            _rec += _LC227_RECOMMENDATION
         _add(
-            Finding(id="F_CEST_MISSING", severity="FATAL", rule_id="CEST_MISSING", title="CEST ausente", where=FindingWhere(field="CEST", xpath=_xpath("CEST", doc_type)), recommendation="Informar código CEST.", evidence_ids=[ev_id]),
+            Finding(id="F_CEST_MISSING", severity=_sev, rule_id="CEST_MISSING", title="CEST ausente — verificar se produto é ST", where=FindingWhere(field="CEST", xpath=_xpath("CEST", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),
             Evidence(id=ev_id, type="xml", label="CEST — ausente", xpath=_xpath("CEST", doc_type)),
         )
     elif not re.match(r"^\d{7}$", cest["value"]):
         ev_id = "E_XML_CEST_FORMAT"
+        _sev = _pedagogical_severity("CEST_FORMAT", pedagogical_mode)
+        _rec = "CEST deve ter 7 dígitos."
+        if _sev == "WARNING":
+            _rec += _LC227_RECOMMENDATION
         _add(
-            Finding(id="F_CEST_FORMAT", severity="FATAL", rule_id="CEST_FORMAT", title=f'CEST inválido (esperado 7 dígitos, encontrado "{cest["value"]}")', where=FindingWhere(field="CEST", xpath=_xpath(cest["tag"], doc_type), snippet=cest["snippet"]), recommendation="CEST deve ter 7 dígitos.", evidence_ids=[ev_id]),
+            Finding(id="F_CEST_FORMAT", severity=_sev, rule_id="CEST_FORMAT", title=f'CEST inválido (esperado 7 dígitos, encontrado "{cest["value"]}")', where=FindingWhere(field="CEST", xpath=_xpath(cest["tag"], doc_type), snippet=cest["snippet"]), recommendation=_rec, evidence_ids=[ev_id]),
             Evidence(id=ev_id, type="xml", label="CEST — formato inválido", xpath=_xpath(cest["tag"], doc_type), snippet=cest["snippet"]),
         )
 
@@ -393,16 +448,24 @@ def validate_xml(
         missing = [t for t in ["emit", "det", "total"] if not _first_tag(xml, [t])]
         if missing:
             ev_id = "E_XML_LAYOUT_NFE"
+            _sev = _pedagogical_severity("LAYOUT_NFE", pedagogical_mode)
+            _rec = "NF-e deve conter emit, det e total."
+            if _sev == "WARNING":
+                _rec += _LC227_RECOMMENDATION
             _add(
-                Finding(id="F_LAYOUT_NFE", severity="FATAL", rule_id="LAYOUT_NFE", title=f"Estrutura NF-e incompleta — faltam: {', '.join(missing)}", where=FindingWhere(field="Estrutura XML", xpath=_xpath("infNFe", doc_type)), recommendation="NF-e deve conter emit, det e total.", evidence_ids=[ev_id]),
+                Finding(id="F_LAYOUT_NFE", severity=_sev, rule_id="LAYOUT_NFE", title=f"Estrutura NF-e incompleta — faltam: {', '.join(missing)}", where=FindingWhere(field="Estrutura XML", xpath=_xpath("infNFe", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="NF-e — estrutura incompleta", xpath=_xpath("infNFe", doc_type)),
             )
     else:
         missing = [t for t in ["Valores", "PrestadorServico", "TomadorServico"] if not _first_tag(xml, [t])]
         if missing:
             ev_id = "E_XML_LAYOUT_PORTAL"
+            _sev = _pedagogical_severity("LAYOUT_PORTAL", pedagogical_mode)
+            _rec = "Seguir layout do Portal Nacional."
+            if _sev == "WARNING":
+                _rec += _LC227_RECOMMENDATION
             _add(
-                Finding(id="F_LAYOUT_PORTAL", severity="FATAL", rule_id="LAYOUT_PORTAL", title=f"Layout fora do padrão — faltam: {', '.join(missing)}", where=FindingWhere(field="Estrutura XML", xpath=_xpath("infNfse", doc_type)), recommendation="Seguir layout do Portal Nacional.", evidence_ids=[ev_id]),
+                Finding(id="F_LAYOUT_PORTAL", severity=_sev, rule_id="LAYOUT_PORTAL", title=f"Layout fora do padrão — faltam: {', '.join(missing)}", where=FindingWhere(field="Estrutura XML", xpath=_xpath("infNfse", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="Layout — tags ausentes", xpath=_xpath("infNfse", doc_type)),
             )
 
@@ -411,8 +474,12 @@ def validate_xml(
     if ncm:
         if not re.match(r"^\d{8}$", ncm["value"]):
             ev_id = "E_XML_NCM_FORMAT"
+            _sev = _pedagogical_severity("NCM_FORMAT", pedagogical_mode)
+            _rec = "NCM deve ter exatamente 8 dígitos conforme TIPI."
+            if _sev == "WARNING":
+                _rec += _LC227_RECOMMENDATION
             _add(
-                Finding(id="F_NCM_FORMAT", severity="FATAL", rule_id="NCM_FORMAT", title=f'NCM inválido (esperado 8 dígitos, encontrado "{ncm["value"]}")', where=FindingWhere(field="NCM", xpath=_xpath("NCM", doc_type), snippet=ncm["snippet"]), recommendation="NCM deve ter exatamente 8 dígitos conforme TIPI.", evidence_ids=[ev_id]),
+                Finding(id="F_NCM_FORMAT", severity=_sev, rule_id="NCM_FORMAT", title=f'NCM inválido (esperado 8 dígitos, encontrado "{ncm["value"]}")', where=FindingWhere(field="NCM", xpath=_xpath("NCM", doc_type), snippet=ncm["snippet"]), recommendation=_rec, evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="NCM — formato inválido", xpath=_xpath("NCM", doc_type), snippet=ncm["snippet"]),
             )
 
@@ -420,8 +487,12 @@ def validate_xml(
 
     if ncm and re.match(r"^\d{8}$", ncm["value"]) and ncm["value"] not in VALID_NCM_CODES:
         ev_id = "E_XML_NCM_VALID"
+        _sev = _pedagogical_severity("NCM_VALID", pedagogical_mode)
+        _rec = "Verificar código NCM conforme Tabela TIPI vigente."
+        if _sev == "WARNING":
+            _rec += _LC227_RECOMMENDATION
         _add(
-            Finding(id="F_NCM_VALID", severity="FATAL", rule_id="NCM_VALID", title=f'NCM "{ncm["value"]}" não encontrado na tabela TIPI', where=FindingWhere(field="NCM", xpath=_xpath("NCM", doc_type), snippet=ncm["snippet"]), recommendation="Verificar código NCM conforme Tabela TIPI vigente.", evidence_ids=[ev_id]),
+            Finding(id="F_NCM_VALID", severity=_sev, rule_id="NCM_VALID", title=f'NCM "{ncm["value"]}" não encontrado na tabela TIPI', where=FindingWhere(field="NCM", xpath=_xpath("NCM", doc_type), snippet=ncm["snippet"]), recommendation=_rec, evidence_ids=[ev_id]),
             Evidence(id=ev_id, type="xml", label="NCM — código desconhecido", xpath=_xpath("NCM", doc_type), snippet=ncm["snippet"]),
         )
 
@@ -432,8 +503,12 @@ def validate_xml(
         lookup = classtrib_results.get(code)
         if lookup is False:
             ev_id = "E_XML_CLASSTRIB_VALID"
+            _sev = _pedagogical_severity("CLASSTRIB_VALID", pedagogical_mode)
+            _rec = "Verificar código cClassTrib no portal Conformidade Fácil (SVRS)."
+            if _sev == "WARNING":
+                _rec += _LC227_RECOMMENDATION
             _add(
-                Finding(id="F_CLASSTRIB_VALID", severity="FATAL", rule_id="CLASSTRIB_VALID", title=f'cClassTrib "{code}" não encontrado no registro SVRS', where=FindingWhere(field="cClassTrib", xpath=_xpath("cClassTrib", doc_type), snippet=c_class_trib["snippet"]), recommendation="Verificar código cClassTrib no portal Conformidade Fácil (SVRS).", evidence_ids=[ev_id]),
+                Finding(id="F_CLASSTRIB_VALID", severity=_sev, rule_id="CLASSTRIB_VALID", title=f'cClassTrib "{code}" não encontrado no registro SVRS', where=FindingWhere(field="cClassTrib", xpath=_xpath("cClassTrib", doc_type), snippet=c_class_trib["snippet"]), recommendation=_rec, evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="cClassTrib — não encontrado", xpath=_xpath("cClassTrib", doc_type), snippet=c_class_trib["snippet"]),
             )
         elif lookup is None:
@@ -464,7 +539,7 @@ def validate_xml(
             )
 
     fatals = sum(1 for f in findings if f.severity == "FATAL")
-    alerts = sum(1 for f in findings if f.severity == "ALERT")
+    alerts = sum(1 for f in findings if f.severity in ("ALERT", "WARNING"))
     regime_comparison = _extract_regime_comparison(xml, has_ibscbs)
 
     return ValidationResult(
@@ -517,10 +592,16 @@ async def validate_xml_endpoint(
     classtrib_data = await _enrich_classtrib(xml)
     cnpj_data = await _enrich_cnpj(xml)
 
+    # Lê flag pedagógico do tenant
+    from app.models.auth import Tenant
+    tenant = db.get(Tenant, current_user.tenant_id)
+    pedagogical = bool(tenant.pedagogical_mode_2026) if tenant else True
+
     result = validate_xml(
         xml, doc_type,
         classtrib_results=classtrib_data,
         cnpj_result=cnpj_data,
+        pedagogical_mode=pedagogical,
     )
 
     tenant_id = str(current_user.tenant_id)

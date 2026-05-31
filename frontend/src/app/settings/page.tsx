@@ -10,11 +10,47 @@ export default function SettingsPage() {
   const [tenant, setTenant] = useState("");
   const [tokenDisplay, setTokenDisplay] = useState("");
   const [toast, setToast] = useState<{ tone: "error" | "success" | "info"; msg: string } | null>(null);
+  const [pedagogicalMode, setPedagogicalMode] = useState<boolean | null>(null);
+  const [pedagogicalLoading, setPedagogicalLoading] = useState(false);
 
   useEffect(() => {
     setTenant(getTenantId());
     setTokenDisplay(getToken() ? "••••••••" : "(não autenticado)");
+    // Carregar configuração do modo pedagógico
+    const tok = getToken();
+    if (tok) {
+      fetch(`${API_BASE}/api/v1/auth/settings/tenant`, {
+        headers: { Authorization: `Bearer ${tok}` },
+      })
+        .then((r) => r.json())
+        .then((d) => setPedagogicalMode(d.pedagogical_mode_2026 ?? true))
+        .catch(() => setPedagogicalMode(true));
+    }
   }, []);
+
+  async function togglePedagogicalMode() {
+    const tok = getToken();
+    if (!tok || pedagogicalMode === null) return;
+    const next = !pedagogicalMode;
+    setPedagogicalLoading(true);
+    try {
+      const r = await fetch(`${API_BASE}/api/v1/auth/settings/tenant`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ pedagogical_mode_2026: next }),
+      });
+      if (r.ok) {
+        setPedagogicalMode(next);
+        setToast({ tone: "success", msg: `Modo Pedagógico ${next ? "ativado" : "desativado"}.` });
+      } else {
+        setToast({ tone: "error", msg: "Falha ao atualizar configuração." });
+      }
+    } catch {
+      setToast({ tone: "error", msg: "Erro de conexão." });
+    } finally {
+      setPedagogicalLoading(false);
+    }
+  }
 
   return (
     <section className="space-y-4">
@@ -38,6 +74,46 @@ export default function SettingsPage() {
           <p className="text-sm font-medium text-slate-800">Token de sessão</p>
           <p className="mt-1 text-xs text-slate-500 font-mono">{tokenDisplay}</p>
         </div>
+      </section>
+
+      {/* ── Modo Período Educativo 2026 ── */}
+      <section className="rounded-xl border border-blue-200 bg-white p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Modo Período Educativo 2026
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Quando ativo, irregularidades em <strong>obrigações acessórias</strong> CBS/IBS
+              (formato CST, cClassTrib, layout XML) são sinalizadas como{" "}
+              <strong>Aviso</strong> em vez de bloqueio — conforme a{" "}
+              <strong>LC 227/2026 art. 348 §§ 3º e 4º</strong>: 60 dias para sanar sem multa.
+            </p>
+            <p className="mt-2 text-xs text-blue-700 font-medium">
+              ⚖️ Válido durante o período pedagógico de 2026. Recomendado manter ativo.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={togglePedagogicalMode}
+            disabled={pedagogicalLoading || pedagogicalMode === null}
+            className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+              pedagogicalMode ? "bg-blue-600" : "bg-slate-300"
+            } disabled:cursor-not-allowed disabled:opacity-60`}
+            aria-label="Toggle modo pedagógico"
+          >
+            <span
+              className={`inline-block h-6 w-6 rounded-full bg-white shadow ring-0 transition-transform duration-200 ${
+                pedagogicalMode ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+        {pedagogicalMode !== null && (
+          <p className="mt-2 text-xs text-slate-400">
+            Status atual: <strong>{pedagogicalMode ? "Ativo — avisos pedagógicos habilitados" : "Inativo — todos os erros são bloqueantes"}</strong>
+          </p>
+        )}
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-4">

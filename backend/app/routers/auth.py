@@ -22,6 +22,7 @@ from app.core.security import (
     create_password_reset_token,
     verify_password_reset_token,
 )
+from app.api.deps import get_current_user
 from app.services.captcha_service import verify_captcha
 from app.services.cnpj_validator import validate_cnpj
 from app.services.email_service import send_verification_email, send_password_reset_email
@@ -774,3 +775,44 @@ def auth_health(db: Session = Depends(get_db)):
     except Exception as exc:
         logger.error("auth_health_db_error: %s", exc)
         raise HTTPException(status_code=503, detail="Auth DB unavailable")
+
+
+# ── Tenant settings ──────────────────────────────────────────────────────────
+
+class TenantSettingsResponse(BaseModel):
+    pedagogical_mode_2026: bool
+
+
+class TenantSettingsUpdate(BaseModel):
+    pedagogical_mode_2026: bool
+
+
+@router.get("/settings/tenant", response_model=TenantSettingsResponse)
+def get_tenant_settings(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TenantSettingsResponse:
+    """Get tenant settings (pedagogical mode, etc.)."""
+    tenant = db.execute(select(Tenant).where(Tenant.id == current_user.tenant_id)).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant não encontrado.")
+    return TenantSettingsResponse(pedagogical_mode_2026=bool(tenant.pedagogical_mode_2026))
+
+
+@router.patch("/settings/tenant", response_model=TenantSettingsResponse)
+def patch_tenant_settings(
+    data: TenantSettingsUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TenantSettingsResponse:
+    """Update tenant settings."""
+    tenant = db.execute(select(Tenant).where(Tenant.id == current_user.tenant_id)).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant não encontrado.")
+    tenant.pedagogical_mode_2026 = data.pedagogical_mode_2026  # type: ignore[assignment]
+    db.commit()
+    logger.info(
+        "tenant_settings_updated tenant=%s pedagogical_mode_2026=%s",
+        current_user.tenant_id, data.pedagogical_mode_2026,
+    )
+    return TenantSettingsResponse(pedagogical_mode_2026=bool(tenant.pedagogical_mode_2026))
