@@ -99,44 +99,26 @@ def crm_sync(self, user_id: str, event_type: str) -> dict:
         sub_status = str(sub.status) if sub else "unknown"
         deal_stage = DEAL_STAGE_MAP.get(event_type, "qualifiedtobuy")
 
-        # 1. Upsert contact
+        # 1. Upsert contact — apenas propriedades padrão HubSpot
         first_name = full_name.split()[0] if full_name else full_name
         last_name = " ".join(full_name.split()[1:]) if len(full_name.split()) > 1 else ""
         upsert_contact(
             email=email,
             first_name=first_name,
             last_name=last_name,
-            properties={
-                "tribultz_status": sub_status,
-                "tribultz_plan": plan_slug,
-                "tribultz_event": event_type,
-            },
         )
 
-        # 2. Upsert company
+        # 2. Upsert company — apenas propriedades padrão HubSpot
         company_result = upsert_company(
             name=company_name,
-            properties={
-                "tribultz_tenant": tenant_slug,
-                "tribultz_status": sub_status,
-            },
         )
 
-        # 3. Upsert deal
+        # 3. Upsert deal — stage codifica o ciclo de vida, sem custom props
         deal_name = f"Tribultz — {company_name} ({tenant_slug})"
-        extra_props: dict = {}
-        if event_type == "payment_overdue":
-            extra_props["tribultz_at_risk"] = "true"
-
         upsert_deal(
             deal_name=deal_name,
             stage=deal_stage,
             amount=plan_price_cents / 100.0 if plan_price_cents else None,
-            properties={
-                "tribultz_plan": plan_slug,
-                "tribultz_event": event_type,
-                **extra_props,
-            },
         )
 
         # 4. Log sync note to company
