@@ -51,52 +51,82 @@ def compute_monthly_scores() -> dict:
 
 @celery.task(name="classtrib.sync_svrs", bind=False)
 def sync_classtrib_svrs() -> dict:
-    """Sincroniza tabela cClassTrib com a API SVRS. Roda semanalmente."""
+    """Sincroniza tabela cClassTrib com a API SVRS. Roda semanalmente.
+
+    A API SVRS exige credenciais institucionais (retorna 403 sem autenticação).
+    Enquanto não configuradas, mantém os dados da migration 0018
+    (regulamentos 30/abr/2026). Quando as credenciais forem obtidas, adicionar
+    o header Authorization abaixo.
+    """
     from app.database import SessionLocal
     from sqlalchemy import text
 
     SVRS_URL = "https://cff.svrs.rs.gov.br/api/v1/consultas/classTrib"
+    HEADERS = {
+        "User-Agent": "Tribultz/1.0 (contato@tribultz.com.br)",
+        "Accept": "application/json",
+    }
 
     try:
         import httpx
-        with httpx.Client(timeout=30) as client:
+        with httpx.Client(timeout=30, headers=HEADERS) as client:
             resp = client.get(SVRS_URL)
-            resp.raise_for_status()
-            items = resp.json()
+
+        if resp.status_code == 403:
+            logger.warning(
+                "classtrib.sync_svrs: SVRS retornou 403 — credenciais necessárias. "
+                "Dados locais (migration 0018) permanecem válidos."
+            )
+            return {"synced": 0, "reason": "svrs_auth_required", "status_code": 403}
+
+        if resp.status_code == 404:
+            logger.warning("classtrib.sync_svrs: endpoint SVRS não encontrado (404).")
+            return {"synced": 0, "reason": "endpoint_not_found", "status_code": 404}
+
+        resp.raise_for_status()
+        items = resp.json()
+
+    except httpx.HTTPStatusError as exc:
+        logger.warning("classtrib.sync_svrs: HTTP %s — %s", exc.response.status_code, exc)
+        return {"synced": 0, "error": str(exc), "status_code": exc.response.status_code}
     except Exception as exc:  # noqa: BLE001
-        logger.warning("classtrib.sync_svrs: falha ao buscar SVRS (%s) — mantendo dados locais", exc)
+        logger.warning("classtrib.sync_svrs: falha de rede (%s) — mantendo dados locais", exc)
         return {"synced": 0, "error": str(exc)}
 
     synced = 0
     with SessionLocal() as db:
         for item in items if isinstance(items, list) else []:
-            codigo = item.get("codigo") or item.get("code")
-            descricao = item.get("descricao") or item.get("description", "")
+            codigo = (item.get("codigo") or item.get("code") or "").strip()
+            descricao = (item.get("descricao") or item.get("description") or "").strip()
             if not codigo:
                 continue
             db.execute(
                 text("""
-                    INSERT INTO cclass_trib_items (codigo, descricao, p_cbs, p_ibs, vigencia_ini, synced_at)
-                    VALUES (:c, :d, :cbs, :ibs, :vi, now())
+                    INSERT INTO cclass_trib_items
+                        (codigo, descricao, p_cbs, p_ibs, regime_especial, vigencia_ini, synced_at, is_active)
+                    VALUES (:c, :d, :cbs, :ibs, :regime, :vi, now(), TRUE)
                     ON CONFLICT (codigo) DO UPDATE SET
-                        descricao   = EXCLUDED.descricao,
-                        p_cbs       = EXCLUDED.p_cbs,
-                        p_ibs       = EXCLUDED.p_ibs,
-                        synced_at   = now(),
-                        is_active   = TRUE
+                        descricao       = EXCLUDED.descricao,
+                        p_cbs           = EXCLUDED.p_cbs,
+                        p_ibs           = EXCLUDED.p_ibs,
+                        regime_especial = EXCLUDED.regime_especial,
+                        vigencia_ini    = EXCLUDED.vigencia_ini,
+                        synced_at       = now(),
+                        is_active       = TRUE
                 """),
                 {
-                    "c":   codigo,
-                    "d":   descricao,
-                    "cbs": item.get("aliquotaCBS", item.get("p_cbs", 0.88)),
-                    "ibs": item.get("aliquotaIBS", item.get("p_ibs", 0.17)),
-                    "vi":  item.get("vigenciaIni", item.get("vigencia_ini", "2026-01-01")),
+                    "c":      codigo,
+                    "d":      descricao,
+                    "cbs":    float(item.get("aliquotaCBS", item.get("p_cbs", 0.88))),
+                    "ibs":    float(item.get("aliquotaIBS", item.get("p_ibs", 0.176))),
+                    "regime": item.get("regimeEspecial", item.get("regime_especial")),
+                    "vi":     item.get("vigenciaIni", item.get("vigencia_ini", "2026-01-01")),
                 },
             )
             synced += 1
         db.commit()
 
-    logger.info("classtrib.sync_svrs synced=%d", synced)
+    logger.info("classtrib.sync_svrs synced=%d items from SVRS", synced)
     return {"synced": synced}
 
 

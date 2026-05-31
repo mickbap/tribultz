@@ -7,6 +7,7 @@ POST /api/v1/classtrib/validate             — valida NCM × cClassTrib (autent
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -29,9 +30,10 @@ class ClassTribItem(BaseModel):
     p_cbs: float
     p_ibs: float
     regime_especial: Optional[str]
-    vigencia_ini: Optional[str]
-    vigencia_fim: Optional[str]
+    vigencia_ini: Optional[date]
+    vigencia_fim: Optional[date]
     is_active: bool
+    last_synced_at: Optional[str] = None
 
 
 class ValidateClassTribRequest(BaseModel):
@@ -52,21 +54,6 @@ class ValidateClassTribResponse(BaseModel):
 
 
 # ── Endpoints públicos ─────────────────────────────────────────────────────────
-
-@router.get(
-    "/api/v1/public/classtrib/{codigo}",
-    response_model=ClassTribItem,
-    summary="Lookup cClassTrib por código (público)",
-)
-def get_classtrib(codigo: str, db: Session = Depends(get_db)) -> Any:
-    row = db.execute(
-        text("SELECT * FROM cclass_trib_items WHERE codigo = :c AND is_active = TRUE"),
-        {"c": codigo},
-    ).mappings().fetchone()
-    if row is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"cClassTrib '{codigo}' não encontrado.")
-    return dict(row)
-
 
 @router.get(
     "/api/v1/public/classtrib/search",
@@ -92,6 +79,25 @@ def search_classtrib(
         {"q": f"%{q}%", "q2": q, "lim": limit},
     ).mappings().all()
     return [dict(r) for r in rows]
+
+
+@router.get(
+    "/api/v1/public/classtrib/{codigo}",
+    response_model=ClassTribItem,
+    summary="Lookup cClassTrib por código (público)",
+)
+def get_classtrib(codigo: str, db: Session = Depends(get_db)) -> Any:
+    row = db.execute(
+        text("""
+            SELECT *, synced_at::text AS last_synced_at
+            FROM cclass_trib_items
+            WHERE codigo = :c AND is_active = TRUE
+        """),
+        {"c": codigo},
+    ).mappings().fetchone()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"cClassTrib '{codigo}' não encontrado.")
+    return dict(row)
 
 
 # ── Endpoint autenticado ──────────────────────────────────────────────────────
