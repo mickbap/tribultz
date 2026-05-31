@@ -18,14 +18,14 @@ test("NFSe com erros gera findings FATAL esperados", () => {
   });
 
   const fatalIds = result.findings.filter((f) => f.severity === "FATAL").map((f) => f.rule_id);
-  // Original 3 format rules + IBSCBS_MISSING + CEST_MISSING + LAYOUT_PORTAL
+  // Regulamento 30/abr/2026: CEST_MISSING downgraded to ALERT (apenas ST) — issue #275
+  // Original 3 format rules + IBSCBS_MISSING + LAYOUT_PORTAL
   assert.ok(fatalIds.includes("CST_3_DIGITS"), "expected CST_3_DIGITS");
   assert.ok(fatalIds.includes("CCLASSTRIB_6_DIGITS"), "expected CCLASSTRIB_6_DIGITS");
   assert.ok(fatalIds.includes("SERVICE_CODE_6_DIGITS"), "expected SERVICE_CODE_6_DIGITS");
   assert.ok(fatalIds.includes("IBSCBS_MISSING"), "expected IBSCBS_MISSING");
-  assert.ok(fatalIds.includes("CEST_MISSING"), "expected CEST_MISSING");
   assert.ok(fatalIds.includes("LAYOUT_PORTAL"), "expected LAYOUT_PORTAL");
-  assert.equal(fatalIds.length, 6);
+  assert.equal(fatalIds.length, 5);
 });
 
 test("NFSe ok não gera FATAL", () => {
@@ -159,7 +159,7 @@ test("IBSCBS_CALC: valores corretos não geram finding de cálculo", () => {
 
 // ── New rules (S7) — CEST_MISSING ───────────────────────────────────────────
 
-test("CEST_MISSING: nota sem CEST gera FATAL", () => {
+test("CEST_MISSING: nota sem CEST gera ALERT (regulamento 30/abr/2026 — apenas ST)", () => {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <NFS-e><infNfse>
   <PrestadorServico><RazaoSocial>X</RazaoSocial></PrestadorServico>
@@ -180,7 +180,7 @@ test("CEST_MISSING: nota sem CEST gera FATAL", () => {
   const result = validateXmlWithRules({ tenantId: "t", documentType: "NFSE", xml });
   const f = result.findings.find((f) => f.rule_id === "CEST_MISSING");
   assert.ok(f, "CEST_MISSING finding expected");
-  assert.equal(f!.severity, "FATAL");
+  assert.equal(f!.severity, "ALERT"); // downgraded per regulamento 30/abr/2026
 });
 
 // ── New rules (S7) — CEST_FORMAT ────────────────────────────────────────────

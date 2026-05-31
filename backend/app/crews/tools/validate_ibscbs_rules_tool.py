@@ -289,14 +289,20 @@ class ValidateIBSCBSRulesTool(BaseTool):
                 })
 
         # Rule 8: CEST_MISSING
+        # Regulamento 30/abr/2026: CEST é obrigatório apenas para produtos ST
+        # (substituição tributária). Produtos sem ST podem emitir sem CEST.
+        # Downgrade para WARNING até implementação do cruzamento ST (issue #275).
         if not cest:
             findings.append({
                 "rule_id": "CEST_MISSING",
-                "severity": "FATAL",
+                "severity": "ALERT",
                 "field": "CEST",
                 "xpath": f"{xpath_base}//prod/CEST",
                 "snippet": "(nao encontrado)",
-                "recommendation": "Informar codigo CEST conforme nova classificacao tributaria.",
+                "recommendation": (
+                    "CEST ausente. Necessario apenas para produtos com substituicao tributaria (ST). "
+                    "Se o produto nao e sujeito a ST, este aviso pode ser ignorado."
+                ),
             })
 
         # Rule 9: CEST_FORMAT

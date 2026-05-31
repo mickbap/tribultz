@@ -604,21 +604,25 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
 
   // ── Rule 8: CEST_MISSING — CEST must be present ──────────────────────────
 
+  // Rule 8: CEST_MISSING
+  // Regulamento 30/abr/2026: CEST é obrigatório apenas para produtos sujeitos à
+  // substituição tributária (ST). Produtos sem ST podem emitir sem CEST.
+  // Downgrade para ALERT até cruzamento com tabela ST (issue #275).
   if (!cest) {
     const evId = makeEvidenceId("CEST_MISSING");
     pushFindingAndEvidence(findings, evidences, evidenceById,
       makeFinding({
         id: "F_CEST_MISSING",
-        severity: "FATAL",
+        severity: "ALERT",
         ruleId: "CEST_MISSING",
-        title: "CEST ausente — código obrigatório conforme nova classificação",
+        title: "CEST ausente — verificar se produto é sujeito à substituição tributária",
         field: "CEST",
         xpath: inferXpath("CEST", docType),
         snippet: "<!-- Tag CEST não encontrada no XML -->",
         evidenceId: evId,
-        recommendation: "Informar código CEST conforme nova classificação tributária.",
+        recommendation: "CEST é obrigatório apenas para produtos com substituição tributária (ST). Se o produto não for sujeito a ST, este aviso pode ser desconsiderado.",
       }),
-      makeEvidence({ id: evId, type: "xml", label: "CEST — ausente", xpath: inferXpath("CEST", docType), snippet: "<!-- Tag CEST não encontrada no XML -->" }),
+      makeEvidence({ id: evId, type: "xml", label: "CEST — ausente (verificar ST)", xpath: inferXpath("CEST", docType), snippet: "<!-- Tag CEST não encontrada no XML -->" }),
     );
   }
 
