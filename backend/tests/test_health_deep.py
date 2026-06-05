@@ -17,13 +17,14 @@ client = TestClient(app)
 
 # ── Helper ────────────────────────────────────────────────────────────────────
 
-def _patch_probes(db="ok", redis="ok", asaas="unconfigured", ai="unconfigured"):
-    """Context manager that patches all four probe functions."""
+def _patch_probes(db="ok", redis="ok", asaas="unconfigured", ai="unconfigured", hubspot="unconfigured"):
+    """Context manager that patches all five probe functions."""
     return (
         patch("app.routers.health._probe_db",         return_value=db),
         patch("app.routers.health._probe_redis",       return_value=redis),
         patch("app.routers.health._probe_asaas",       return_value=asaas),
         patch("app.routers.health._probe_ai_engine",   return_value=ai),
+        patch("app.routers.health._probe_hubspot",     return_value=hubspot),
     )
 
 
@@ -52,6 +53,7 @@ class TestReadiness:
             patch("app.routers.health._probe_redis",       return_value="ok"),
             patch("app.routers.health._probe_asaas",       return_value="ok"),
             patch("app.routers.health._probe_ai_engine",   return_value="ok"),
+            patch("app.routers.health._probe_hubspot",     return_value="ok"),
         ):
             r = client.get("/health/ready")
         assert r.status_code == 200
@@ -61,6 +63,33 @@ class TestReadiness:
         assert body["redis"] == "ok"
         assert body["asaas_api"] == "ok"
         assert body["ai_engine"] == "ok"
+        assert body["hubspot"] == "ok"
+
+    def test_hubspot_unreachable_returns_degraded(self):
+        """HubSpot unreachable → degraded (optional service)."""
+        with (
+            patch("app.routers.health._probe_db",         return_value="ok"),
+            patch("app.routers.health._probe_redis",       return_value="ok"),
+            patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
+            patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
+            patch("app.routers.health._probe_hubspot",     return_value="unreachable"),
+        ):
+            r = client.get("/health/ready")
+        assert r.json()["status"] == "degraded"
+        assert r.json()["hubspot"] == "unreachable"
+
+    def test_hubspot_unconfigured_stays_ok(self):
+        """HubSpot unconfigured (flag off) must NOT degrade status."""
+        with (
+            patch("app.routers.health._probe_db",         return_value="ok"),
+            patch("app.routers.health._probe_redis",       return_value="ok"),
+            patch("app.routers.health._probe_asaas",       return_value="ok"),
+            patch("app.routers.health._probe_ai_engine",   return_value="ok"),
+            patch("app.routers.health._probe_hubspot",     return_value="unconfigured"),
+        ):
+            r = client.get("/health/ready")
+        assert r.json()["status"] == "ok"
+        assert r.json()["hubspot"] == "unconfigured"
 
     def test_unconfigured_optionals_still_ok(self):
         """Unconfigured optional services (Asaas, AI) must NOT degrade status."""
@@ -69,6 +98,7 @@ class TestReadiness:
             patch("app.routers.health._probe_redis",       return_value="ok"),
             patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
+            patch("app.routers.health._probe_hubspot",   return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         assert r.status_code == 200
@@ -80,6 +110,7 @@ class TestReadiness:
             patch("app.routers.health._probe_redis",       return_value="ok"),
             patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
+            patch("app.routers.health._probe_hubspot",   return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         assert r.status_code == 200  # HTTP always 200 — status field signals health
@@ -92,6 +123,7 @@ class TestReadiness:
             patch("app.routers.health._probe_redis",       return_value="unreachable"),
             patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
+            patch("app.routers.health._probe_hubspot",   return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         assert r.json()["status"] == "error"
@@ -104,6 +136,7 @@ class TestReadiness:
             patch("app.routers.health._probe_redis",       return_value="ok"),
             patch("app.routers.health._probe_asaas",       return_value="unreachable"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
+            patch("app.routers.health._probe_hubspot",   return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         assert r.json()["status"] == "degraded"
@@ -115,6 +148,7 @@ class TestReadiness:
             patch("app.routers.health._probe_redis",       return_value="ok"),
             patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
+            patch("app.routers.health._probe_hubspot",   return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         body = r.json()
@@ -133,6 +167,7 @@ class TestDeepAlias:
             patch("app.routers.health._probe_redis",       return_value="ok"),
             patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
+            patch("app.routers.health._probe_hubspot",   return_value="unconfigured"),
         ):
             r_ready = client.get("/health/ready")
             r_deep  = client.get("/health/deep")
@@ -271,3 +306,69 @@ class TestAIEngineProbe:
             from app.routers.health import _probe_ai_engine
             result = _probe_ai_engine()
         assert result == "unreachable"
+
+
+# ── HubSpot probe unit (#293) ────────────────────────────────────────────────
+
+class TestProbeHubspot:
+    def test_disabled_returns_unconfigured(self):
+        with patch("app.routers.health.settings") as mock_cfg:
+            mock_cfg.HUBSPOT_ENABLED = False
+            mock_cfg.HUBSPOT_PRIVATE_APP_TOKEN = "any-token"
+            from app.routers.health import _probe_hubspot
+            assert _probe_hubspot() == "unconfigured"
+
+    def test_no_token_returns_unconfigured(self):
+        with patch("app.routers.health.settings") as mock_cfg:
+            mock_cfg.HUBSPOT_ENABLED = True
+            mock_cfg.HUBSPOT_PRIVATE_APP_TOKEN = ""
+            from app.routers.health import _probe_hubspot
+            assert _probe_hubspot() == "unconfigured"
+
+    def test_200_returns_ok(self):
+        mock_resp = MagicMock(status_code=200)
+        with (
+            patch("app.routers.health.settings") as mock_cfg,
+            patch("app.routers.health.httpx.get", return_value=mock_resp),
+        ):
+            mock_cfg.HUBSPOT_ENABLED = True
+            mock_cfg.HUBSPOT_PRIVATE_APP_TOKEN = "test-token"
+            mock_cfg.HUBSPOT_API_BASE_URL = "https://api.hubapi.com"
+            from app.routers.health import _probe_hubspot
+            assert _probe_hubspot() == "ok"
+
+    def test_401_returns_ok_gateway_reachable(self):
+        """Token inválido mas API gateway respondeu — consideramos reachable."""
+        mock_resp = MagicMock(status_code=401)
+        with (
+            patch("app.routers.health.settings") as mock_cfg,
+            patch("app.routers.health.httpx.get", return_value=mock_resp),
+        ):
+            mock_cfg.HUBSPOT_ENABLED = True
+            mock_cfg.HUBSPOT_PRIVATE_APP_TOKEN = "bad-token"
+            mock_cfg.HUBSPOT_API_BASE_URL = "https://api.hubapi.com"
+            from app.routers.health import _probe_hubspot
+            assert _probe_hubspot() == "ok"
+
+    def test_500_returns_degraded(self):
+        mock_resp = MagicMock(status_code=500)
+        with (
+            patch("app.routers.health.settings") as mock_cfg,
+            patch("app.routers.health.httpx.get", return_value=mock_resp),
+        ):
+            mock_cfg.HUBSPOT_ENABLED = True
+            mock_cfg.HUBSPOT_PRIVATE_APP_TOKEN = "test-token"
+            mock_cfg.HUBSPOT_API_BASE_URL = "https://api.hubapi.com"
+            from app.routers.health import _probe_hubspot
+            assert _probe_hubspot() == "degraded"
+
+    def test_timeout_returns_unreachable(self):
+        with (
+            patch("app.routers.health.settings") as mock_cfg,
+            patch("app.routers.health.httpx.get", side_effect=Exception("timeout")),
+        ):
+            mock_cfg.HUBSPOT_ENABLED = True
+            mock_cfg.HUBSPOT_PRIVATE_APP_TOKEN = "test-token"
+            mock_cfg.HUBSPOT_API_BASE_URL = "https://api.hubapi.com"
+            from app.routers.health import _probe_hubspot
+            assert _probe_hubspot() == "unreachable"

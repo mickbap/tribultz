@@ -36,6 +36,7 @@ class DeepHealthResponse(BaseModel):
     redis: ServiceStatus
     asaas_api: ServiceStatus
     ai_engine: ServiceStatus
+    hubspot: ServiceStatus
     latency_ms: int
 
 
@@ -92,6 +93,34 @@ def _probe_asaas() -> ServiceStatus:
         return "unreachable"
 
 
+def _probe_hubspot() -> ServiceStatus:
+    """Hit HubSpot /crm/v3/objects/contacts?limit=1 (timeout 3s).
+
+    Returns 'unconfigured' when HUBSPOT_ENABLED=false or token is blank,
+    para evitar alertas falsos quando a integração está intencionalmente
+    desativada (ex: ambientes de staging sem CRM).
+    """
+    if not settings.HUBSPOT_ENABLED or not settings.HUBSPOT_PRIVATE_APP_TOKEN:
+        return "unconfigured"
+    try:
+        resp = httpx.get(
+            f"{settings.HUBSPOT_API_BASE_URL}/crm/v3/objects/contacts",
+            params={"limit": 1},
+            headers={
+                "Authorization": f"Bearer {settings.HUBSPOT_PRIVATE_APP_TOKEN}",
+            },
+            timeout=3.0,
+        )
+        # 200 OK ; 401/403 → token problema mas gateway responde (reachable)
+        if resp.status_code in (200, 401, 403):
+            return "ok"
+        logger.warning("Health: HubSpot returned HTTP %s", resp.status_code)
+        return "degraded"
+    except Exception as exc:
+        logger.warning("Health: HubSpot probe failed — %s", exc)
+        return "unreachable"
+
+
 def _probe_ai_engine() -> ServiceStatus:
     """GET OpenRouter /models (timeout 3s).
 
@@ -142,16 +171,20 @@ def readiness() -> DeepHealthResponse:
     """
     t0 = time.monotonic()
 
-    db_status    = _probe_db()
-    redis_status = _probe_redis()
-    asaas_status = _probe_asaas()
-    ai_status    = _probe_ai_engine()
+    db_status      = _probe_db()
+    redis_status   = _probe_redis()
+    asaas_status   = _probe_asaas()
+    ai_status      = _probe_ai_engine()
+    hubspot_status = _probe_hubspot()
 
     latency_ms = int((time.monotonic() - t0) * 1000)
 
     critical_ok = db_status == "ok" and redis_status == "ok"
-    optional_ok = asaas_status in ("ok", "unconfigured") and \
-                  ai_status in ("ok", "unconfigured")
+    optional_ok = (
+        asaas_status   in ("ok", "unconfigured") and
+        ai_status      in ("ok", "unconfigured") and
+        hubspot_status in ("ok", "unconfigured")
+    )
 
     if not critical_ok:
         overall: Literal["ok", "degraded", "error"] = "error"
@@ -166,6 +199,7 @@ def readiness() -> DeepHealthResponse:
         redis=redis_status,
         asaas_api=asaas_status,
         ai_engine=ai_status,
+        hubspot=hubspot_status,
         latency_ms=latency_ms,
     )
 
