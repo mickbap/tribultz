@@ -1,0 +1,332 @@
+---
+title: "Como classificar NCM corretamente em 2026: guia passo a passo"
+description: "Guia completo para classificar produtos na NCM usando TIPI, Regras Gerais de Interpretação e Soluções de Consulta. Inclui exemplos reais, erros comuns que geram multa e como o NCM virou ainda mais crítico com a Reforma Tributária de 2026."
+slug: "como-classificar-ncm-corretamente-2026"
+category: "Classificação Fiscal"
+author:
+  name: "Mickael Baptista"
+  jobTitle: "Especialista em Compliance Fiscal, CRC-SP 999.999/O-1"
+  credentials: "Especialista em Compliance Fiscal — Reforma Tributária CBS/IBS (LC 214/2024)"
+  url: "https://tribultz.com.br/sobre"
+publishedAt: "2026-06-05"
+updatedAt: "2026-06-05"
+tags:
+  - NCM
+  - TIPI
+  - "Classificação Fiscal"
+  - cClassTrib
+  - "Reforma Tributária"
+  - "Rejeição 1024"
+  - IPI
+coverImage: "https://tribultz.com.br/blog/og-como-classificar-ncm.png"
+legalRefs:
+  - instrumento: "Decreto 11.158/2022"
+    artigo: "Anexo — TIPI"
+    descricao: "Tabela de Incidência do IPI vigente. Base legal para a classificação NCM de todos os produtos industrializados no Brasil."
+    link: "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2022/decreto/d11158.htm"
+  - instrumento: "Convenção Internacional do Sistema Harmonizado"
+    artigo: "Regras Gerais 1–6"
+    descricao: "As seis Regras Gerais de Interpretação (RGI) do Sistema Harmonizado, vinculantes para classificação NCM."
+  - instrumento: "IN RFB 1.799/2018"
+    artigo: "Art. 1º–15"
+    descricao: "Disciplina o processo de Solução de Consulta sobre classificação fiscal de produtos perante a Receita Federal."
+  - instrumento: "LC 214/2024"
+    artigo: "Anexos I–VI"
+    descricao: "Os produtos listados nos Anexos têm regime tributário CBS/IBS diferenciado — o NCM é o critério de enquadramento."
+    link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
+  - instrumento: "NT 2025.002 V1.36"
+    artigo: "Seção 4.2"
+    descricao: "Define a obrigatoriedade do NCM correto como base para o cClassTrib na NF-e."
+---
+
+## O que é NCM e por que importa em 2026
+
+O **NCM** (Nomenclatura Comum do Mercosul) é o código de 8 dígitos que identifica a natureza de um produto para fins fiscais, aduaneiros e estatísticos. No Brasil, ele é a base para determinar a alíquota de IPI, as obrigações de ICMS, as alíquotas de PIS/COFINS e, a partir de 2026, o **regime tributário CBS/IBS**.
+
+O NCM sempre foi importante. Em 2026, tornou-se crítico.
+
+Com a Reforma Tributária (LC 214/2024), o NCM passou a ser o critério de enquadramento nos Anexos da lei — e o Anexo determina o **cClassTrib**, que determina se o produto paga alíquota padrão, reduzida, zero (monofásico), isenta ou imune de IBS/CBS. Um NCM incorreto agora significa não apenas uma multa de IPI, mas também:
+
+- cClassTrib errado na NF-e
+- [Rejeição 1024](/blog/rejeicao-1024-nfe-cbs-ibs-como-corrigir) ou 1025 na SEFAZ
+- Apuração incorreta de CBS/IBS (crédito a menor ou a maior)
+- Risco de auto de infração na fiscalização pós-reforma
+
+Este guia ensina como classificar corretamente um produto na NCM usando as ferramentas e os critérios técnicos corretos.
+
+---
+
+## As 3 ferramentas obrigatórias para classificar NCM
+
+### 1. TIPI — Tabela de Incidência do IPI
+
+A TIPI (Decreto 11.158/2022) é a versão brasileira do Sistema Harmonizado (SH) adaptada para uso nacional. Ela lista todos os NCMs válidos com a alíquota de IPI correspondente. Quatro pontos essenciais:
+
+- A TIPI é organizada em **21 Seções**, **97 Capítulos**, posições (4 dígitos), subposições (6 dígitos) e itens/subitens (7 e 8 dígitos).
+- NCMs com alíquota `NT` (não-tributado) não recolhem IPI, mas ainda precisam de NCM correto para CBS/IBS.
+- NCMs com alíquota `0%` são tributados — a diferença para `NT` importa para obrigações acessórias.
+- A TIPI é revisada periodicamente pela Receita Federal. Sempre use a versão vigente.
+
+### 2. Notas de Seção e de Capítulo
+
+As Notas de Seção e de Capítulo são parte integrante da TIPI e têm força legal vinculante. Elas **incluem, excluem ou redirecionam** produtos de uma posição NCM:
+
+> Exemplo: a Nota 2 do Capítulo 30 exclui da posição 3004 (medicamentos) os produtos que, embora em forma farmacêutica, são de uso cosmético (que vão para o Capítulo 33).
+
+Ignorar as Notas de Capítulo é o erro mais frequente em classificações incorretas. Antes de confirmar um NCM, leia as notas do Capítulo correspondente.
+
+### 3. Soluções de Consulta da Receita Federal
+
+Para produtos com classificação duvidosa ou disputada, a **Solução de Consulta** (IN RFB 1.799/2018) é o mecanismo oficial. A empresa submete uma consulta com a descrição técnica do produto, e a Receita Federal emite uma decisão vinculante sobre o NCM correto.
+
+Soluções de Consulta publicadas têm efeito vinculante para **todos os contribuintes** com produto de características idênticas — não apenas para quem consultou. Pesquise se já existe uma Solução de Consulta para o seu produto antes de iniciar uma nova.
+
+---
+
+## Passo a passo em 6 etapas para classificar um produto
+
+### Etapa 1: descreva o produto com precisão técnica
+
+A classificação começa com uma descrição detalhada do produto — não a descrição comercial, mas a descrição técnica:
+
+- Composição (matéria-prima predominante)
+- Função e uso principal
+- Estado (bruto, semiacabado, acabado)
+- Forma de apresentação (líquido, sólido, granulado, kit)
+- Destinação (uso industrial, doméstico, profissional)
+
+Exemplo ruim: "molho de tomate"
+Exemplo bom: "preparação alimentícia à base de tomate concentrado (80%), com vinagre, sal e açúcar, embalagem de vidro 500g, destinada ao consumo humano final"
+
+### Etapa 2: identifique a Seção e o Capítulo
+
+A TIPI tem 21 Seções. Cada Seção agrupa Capítulos por natureza do produto. O caminho mais rápido:
+
+| Seção | O que contém |
+|-------|-------------|
+| I | Animais vivos, produtos de origem animal |
+| II | Produtos de origem vegetal |
+| III | Gorduras e óleos animais ou vegetais |
+| IV | Produtos de indústrias alimentares, bebidas, tabaco |
+| V | Produtos minerais |
+| VI | Produtos das indústrias químicas |
+| VII | Plásticos e obras; borracha e obras |
+| XI | Matérias têxteis e suas obras |
+| XVI | Máquinas, aparelhos e materiais elétricos |
+| XVII | Material de transporte |
+
+Para o molho de tomate do exemplo: Seção IV, Capítulo 21 (preparações alimentícias diversas).
+
+### Etapa 3: leia as Notas do Capítulo
+
+Antes de avançar para as posições, leia as Notas do Capítulo escolhido. Verifique:
+
+- O produto está excluído por alguma nota?
+- Há nota de inclusão que define critérios específicos?
+- Alguma nota redireciona para outro Capítulo?
+
+Para o Capítulo 21: a Nota 1 exclui misturas de hortaliças (que vão para o Capítulo 7) e preparações para chás (Capítulo 21, mas posição específica). O molho de tomate não é excluído.
+
+### Etapa 4: localize a posição (4 dígitos)
+
+Dentro do Capítulo, compare a descrição do produto com as posições listadas. Para o molho de tomate, a posição `2103` cobre "preparações para molhos e molhos preparados; condimentos e temperos compostos; farinha de mostarda".
+
+O subitem `2103.20` é específico para "ketchup e outros molhos de tomate".
+
+### Etapa 5: aplique as Regras Gerais de Interpretação (RGI)
+
+As 6 RGIs determinam qual posição se aplica quando o produto:
+- Encaixa em mais de uma posição (RGI 2a/3a)
+- É um conjunto ou kit (RGI 3b — classificar pelo componente de maior valor)
+- É uma mistura (RGI 3c — posição mais específica)
+
+Para produtos simples e bem definidos, a RGI 1 (texto das posições e notas) resolve na maioria dos casos. Para kits, conjuntos e produtos multicomponente, as RGIs 2 e 3 são essenciais.
+
+| RGI | Quando aplica | Regra |
+|-----|--------------|-------|
+| 1 | Produto com texto de posição claro | Classificar pelo texto da posição + notas |
+| 2a | Produto incompleto/inacabado | Equiparar ao produto completo se tem caráter essencial |
+| 2b | Mistura de matérias | Aplicar RGI 3 |
+| 3a | Duas posições possíveis | Posição mais específica prevalece |
+| 3b | Kit/conjunto | Classifica pelo componente que dá o caráter essencial |
+| 3c | Empate após 3a e 3b | Posição de número mais elevado na nomenclatura |
+| 4 | Produto sem posição adequada | Posição do produto mais similar |
+| 5 | Estojo ou embalagem | Classifica com o produto se vendido junto e uso único |
+| 6 | Subposições | Aplica mesmas RGIs nas subposições do Capítulo |
+
+### Etapa 6: confirme na TIPI e registre a base legal
+
+Com o NCM identificado (ex: `2103.20.10`), confirme:
+- O NCM está ativo na TIPI vigente (Decreto 11.158/2022)?
+- A descrição da TIPI corresponde ao produto?
+- A alíquota de IPI indicada é compatível com o que foi recolhido?
+
+Registre a justificativa de classificação (referência às RGIs aplicadas, notas de capítulo lidas) em um documento interno. Essa justificativa protege a empresa em caso de auditoria.
+
+---
+
+## Como ler notas de seção e capítulo sem errar
+
+As Notas de Seção/Capítulo têm três funções:
+
+**1. Notas de exclusão** ("Excluem-se…"): definem o que não pertence ao capítulo/posição. São as mais importantes para evitar classificação errada.
+
+**2. Notas de definição** ("Para efeitos desta posição, entende-se por…"): estabelecem um significado técnico-fiscal para um termo, que pode diferir do uso comum. Ex: a TIPI define "medicamento" de forma diferente do uso cotidiano.
+
+**3. Notas de inclusão** ("Esta posição compreende também…"): ampliam o escopo da posição além do que o texto literalmente cobre.
+
+Um erro comum é ler apenas o texto da posição sem ler as notas — especialmente as notas de exclusão que redirecionam o produto para outro Capítulo.
+
+---
+
+## Exemplo complexo: kit com múltiplos itens (RGI 3b)
+
+Uma empresa vende um "kit de primeiros socorros" contendo:
+- 1 bandagem elástica (Capítulo 63 — têxteis)
+- 1 frasco de álcool 70° (Capítulo 22 — bebidas e vinagres, ou Capítulo 38 — produtos químicos)
+- 1 par de luvas descartáveis (Capítulo 40 — borracha)
+- 1 caixa de gaze estéril (Capítulo 30 — produtos farmacêuticos)
+
+Cada item isolado teria um NCM diferente. Como kit, a RGI 3b manda classificar pelo **componente que confere o caráter essencial** ao conjunto. Para um kit de primeiros socorros, o caráter essencial é médico/farmacêutico — a gaze estéril define o propósito.
+
+Resultado: o kit classifica como `3005.90.90` (ataduras e artigos semelhantes) ou na posição de produto médico mais representativo, na Seção VI (produtos farmacêuticos), e não nas posições individuais de têxtil ou borracha.
+
+Sem conhecer a RGI 3b, muitas empresas usam o NCM do item mais caro (embalagem, neste caso) — o que é errado e gera multa de classificação.
+
+Outro erro frequente em kits é classificar cada item separadamente e emitir uma NF-e por item. Se o kit é vendido como unidade indivisível (um único preço, uma única referência no catálogo), a RGI 3b manda classificar como conjunto. Emitir item a item pode ser interpretado como fracionamento artificial de produto, com implicações para IPI e, em 2026, para o cClassTrib — pois cada NCM gerado separadamente pode ter um regime tributário diferente do conjunto, alterando a apuração de CBS/IBS.
+
+---
+
+## Quando pedir Solução de Consulta à Receita Federal
+
+A Solução de Consulta é obrigatória (ou fortemente recomendada) quando:
+
+- O produto é novo no mercado e não existe precedente de classificação
+- A empresa tem dúvida genuína entre duas posições, ambas plausíveis
+- O produto passou por alteração na composição e o NCM anterior pode não ser mais válido
+- Existe Solução de Consulta divergente entre diferentes regiões fiscais para produto similar
+- O produto está em disputa judicial ou administrativa sobre a classificação correta
+
+A consulta é gratuita, mas demorada (prazo legal de 90 dias, na prática pode levar mais). O efeito vinculante protege a empresa de autuação retroativa — desde que o produto consultado seja idêntico ao descrito na consulta.
+
+Uma dica prática: ao redigir o pedido de Solução de Consulta, inclua a composição química completa, o processo de fabricação e o uso declarado. Consultas rejeitadas por falta de informação reiniciam o prazo. Quanto mais técnica e completa a descrição, maior a chance de uma decisão definitiva no primeiro pedido.
+
+Pesquise se já existe Solução de Consulta publicada (disponíveis no portal da RFB) antes de iniciar um processo novo.
+
+---
+
+## Por que o NCM ficou mais crítico em 2026 (vínculo com cClassTrib)
+
+Antes da Reforma, um NCM errado gerava multa de IPI, eventualmente problemas com ICMS-ST, mas o impacto era localizado. Em 2026, o NCM errado tem efeito cascata:
+
+```
+NCM incorreto
+      │
+      ▼
+Enquadramento errado
+no Anexo da LC 214
+      │
+      ▼
+cClassTrib incorreto
+na NF-e
+      │
+      ▼
+┌─────────────┬──────────────────┐
+│ Rejeição    │ Apuração CBS/IBS │
+│ 1024/1025   │ incorreta        │
+│ na SEFAZ    │ (crédito errado) │
+└─────────────┴──────────────────┘
+```
+
+Um produto classificado como "regime padrão" quando deveria ser "cesta básica" resulta em:
+- NF-e com CBS de 0,9% quando deveria ser a alíquota reduzida da cesta básica
+- Consumidor final pagando CBS/IBS a mais do que deveria (e sem direito ao cashback, se for beneficiário CadÚnico)
+- Risco de autuação por classificação incorreta retroativa em eventual fiscalização
+
+Leia mais sobre o vínculo NCM × cClassTrib em [cClassTrib 2026: como mapear o NCM ao regime correto](/blog/classtrib-2026-mapear-ncm-regime-ibs-cbs).
+
+---
+
+## Checklist de classificação NCM
+
+Antes de registrar um NCM no cadastro de produtos, verifique:
+
+- [ ] Produto descrito com composição, função, estado e destinação
+- [ ] Seção e Capítulo identificados na TIPI vigente (Decreto 11.158/2022)
+- [ ] Notas de Seção e de Capítulo lidas — produto não está excluído
+- [ ] RGI aplicada (qual das 6 regras foi usada?)
+- [ ] NCM de 8 dígitos localizado e ativo na TIPI
+- [ ] Descrição da TIPI confere com a descrição do produto
+- [ ] Verificado se existe Solução de Consulta para o produto ou similar
+- [ ] cClassTrib correspondente ao NCM consultado em [tribultz.com.br/classificacao](https://tribultz.com.br/classificacao)
+- [ ] Justificativa de classificação registrada em documento interno
+
+---
+
+## Erros comuns que geram multa
+
+| Erro | Consequência fiscal | Como evitar |
+|------|--------------------|-----------| 
+| Usar o NCM do fornecedor sem verificar | NCM pode estar errado na nota de entrada; você herda o erro na saída | Sempre confirme o NCM na TIPI para cada produto |
+| Classificar pelo material da embalagem | Produto classifica pelo conteúdo, não pela embalagem (RGI 5) | Leia a RGI 5 antes de usar NCM de embalagem |
+| Usar posição genérica "outros" sem justificativa | Multa por classificação imprecisa; IPI pode ser maior | Esgote as posições específicas antes de usar "outros" |
+| Não atualizar NCM após reformulação do produto | Produto alterado pode cair em posição diferente | Revisar NCM em cada alteração de composição |
+| Ignorar Soluções de Consulta divergentes | Autuação retroativa se a Receita adotar posição contrária | Pesquisar RFB antes de usar NCM disputado |
+| NCM correto, cClassTrib errado | Rejeição 1024 na SEFAZ + CBS/IBS calculado errado | Usar [classificador Tribultz](https://tribultz.com.br/classificacao) após confirmar NCM |
+
+A multa por classificação incorreta de NCM varia de **75% a 150% do IPI** não recolhido (Lei 9.430/1996), com acréscimo de juros SELIC. Em produtos com alíquota de IPI alta (bebidas, automóveis, cigarros), o passivo pode ser relevante.
+
+---
+
+## Como o Tribultz automatiza a classificação NCM → cClassTrib
+
+O [Classificador NCM → cClassTrib](https://tribultz.com.br/classificacao) da Tribultz parte do NCM já classificado e automatiza os passos seguintes:
+
+1. Consulta a tabela cClassTrib SVRS V1.36
+2. Retorna o cClassTrib correto para o NCM informado, considerando regime e tipo de operação
+3. Exibe o CST compatível e a base legal (qual Anexo da LC 214 se aplica)
+4. Disponibiliza o snippet XML pronto para inserção no ERP
+
+O classificador **não substitui a classificação do NCM em si** — essa ainda é responsabilidade do contador ou especialista fiscal. Mas ele elimina o passo manual e propenso a erro de mapear NCM → cClassTrib a partir da tabela SVRS.
+
+Para validação pré-emissão, o [Diagnóstico NF-e](https://tribultz.com.br/diagnostico) aplica as 18 regras da NT 2025.002 sobre o XML completo — incluindo a compatibilidade NCM × cClassTrib, cálculos de CBS/IBS e completude do grupo gIBSCBS.
+
+Planos pagos (a partir de R$ 49,90/mês) oferecem acesso à API autenticada com até 50.000 consultas/mês, ideal para equipes de compliance que precisam revisar catálogos grandes de produtos antes de auditorias ou mudanças de leiaute da NF-e.
+
+→ **[Classificar NCM gratuitamente](https://tribultz.com.br/classificacao)**
+
+---
+
+## Perguntas frequentes
+
+**O NCM de 8 dígitos é o mesmo no Brasil e nos outros países do Mercosul?**
+
+Os 6 primeiros dígitos são padronizados internacionalmente pelo Sistema Harmonizado (SH/HS). Os dígitos 7 e 8 são específicos de cada país ou bloco. No Mercosul, os 8 dígitos da NCM são harmonizados entre Brasil, Argentina, Uruguai e Paraguai — mas diferem dos 10 dígitos usados na União Europeia e dos 10 dígitos do código HTS dos EUA.
+
+**Posso usar o NCM da nota fiscal de compra do fornecedor sem verificar?**
+
+É um ponto de partida, mas não é suficiente. Fornecedores também erram na classificação. O NCM que você declara na saída é de sua responsabilidade — independentemente do que está na nota de entrada. Use o NCM do fornecedor como referência, mas valide na TIPI.
+
+**Qual é a diferença entre posição, subposição e item NCM?**
+
+A posição tem 4 dígitos (ex: 3004 = medicamentos). A subposição tem 6 dígitos (ex: 3004.90 = outros medicamentos). O item/subitem tem 7 ou 8 dígitos (ex: 3004.90.99 = outros, não especificados). Para fins de NF-e, o NCM obrigatório é sempre de 8 dígitos.
+
+**Meu produto é fabricado no exterior e importado. O NCM muda na importação?**
+
+Não. O NCM do produto importado é o mesmo que seria usado na produção nacional. A diferença está nos tributos incidentes na importação (II, IPI, PIS/COFINS importação, ICMS importação) — não no NCM em si. Ao emitir NF-e de saída do produto importado, use o mesmo NCM declarado na DI.
+
+**A Receita Federal pode contestar meu NCM mesmo com Solução de Consulta?**
+
+Não, se o produto consultado for idêntico ao descrito na Solução de Consulta em vigor. A Solução tem efeito vinculante para a RFB enquanto estiver vigente. Se a Receita mudar de entendimento, ela emite nova Solução de Consulta e notifica os contribuintes com prazo para adequação.
+
+**O NCM impacta o preenchimento do CEST?**
+
+Sim. O CEST (Código Especificador da Substituição Tributária) é obrigatório para NCMs listados no Convênio ICMS 142/2018. Se o NCM correto do produto estiver nessa lista, o CEST precisa ser preenchido — a ausência gera [Rejeição 1024 adjacente por CEST_MISSING](/blog/rejeicao-1024-nfe-cbs-ibs-como-corrigir) nas ferramentas de validação.
+
+---
+
+## Artigos relacionados
+
+- [Rejeição 1024 NF-e CBS/IBS: causas e como corrigir em 2026](/blog/rejeicao-1024-nfe-cbs-ibs-como-corrigir)
+- [cClassTrib 2026: como mapear o NCM ao regime correto de IBS/CBS](/blog/classtrib-2026-mapear-ncm-regime-ibs-cbs)
+- [cClassTrib 2026: mapeamento NCM × cClassTrib e como evitar a Rejeição 1024](/blog/classtrib-2026-ncm-mapeamento-completo)
