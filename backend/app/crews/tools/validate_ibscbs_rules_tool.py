@@ -71,6 +71,10 @@ class ValidateIBSCBSRulesTool(BaseTool):
         tot_vcbs = (fields.get("tot_vcbs") or "").strip()
         tot_vibs = (fields.get("tot_vibs") or "").strip()
         layout_tags = (fields.get("layout_tags") or "").strip()
+        indpag = (fields.get("indpag") or "").strip()
+
+        # CSTs que legitimamente não geram CBS/IBS (imunidade, suspensão, etc)
+        NO_TAX_CSTS = {"070", "410", "800", "810", "811", "830"}
 
         findings: list[dict[str, str]] = []
         xpath_base = "/nfeProc/NFe/infNFe"
@@ -336,6 +340,34 @@ class ValidateIBSCBSRulesTool(BaseTool):
                 "snippet": f"<CEST>{cest}</CEST>",
                 "recommendation": "CEST deve ter exatamente 7 digitos.",
             })
+
+        # Rule 9b: SPLIT_PAYMENT_INDPAG (#276)
+        # Regulamento IBS cap. 5: operações com pagamento eletrônico sujeito a
+        # split (indPag=3 Pix/TED, indPag=4 cartão) devem lançar CBS+IBS.
+        # Exceção: CSTs sem tributo (070 imunidade, 410 suspensão, etc).
+        if indpag in {"3", "4"}:
+            try:
+                v_cbs_num = float(vcbs or 0)
+                v_ibs_num = float(vibs or 0)
+            except ValueError:
+                v_cbs_num = v_ibs_num = 0.0
+
+            tax_total = v_cbs_num + v_ibs_num
+            if tax_total == 0 and cst not in NO_TAX_CSTS:
+                method = "Pix/TED" if indpag == "3" else "cartão"
+                findings.append({
+                    "rule_id": "SPLIT_PAYMENT_INDPAG",
+                    "severity": "FATAL",
+                    "field": "indPag",
+                    "xpath": f"{xpath_base}//cobr/dup/indPag",
+                    "snippet": f"<indPag>{indpag}</indPag> com vCBS=0 e vIBS=0",
+                    "recommendation": (
+                        f"Pagamento via {method} (indPag={indpag}) sujeito a split payment "
+                        f"(Regulamento IBS cap. 5), mas a NF-e não lança CBS nem IBS. "
+                        f"Confirme se o CST {cst or '(ausente)'} é apropriado ou ajuste "
+                        f"vCBS/vIBS."
+                    ),
+                })
 
         # Rule 10b: LAYOUT_NFE — required NF-e structure
         required = ["emit", "det", "total"]

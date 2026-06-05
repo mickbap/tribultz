@@ -241,6 +241,10 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
   const totVIBS = ibscbsTot ? firstTag(ibscbsTot.snippet, ["vIBS"]) : null;
   const totVCBS = ibscbsTot ? firstTag(ibscbsTot.snippet, ["vCBS"]) : null;
 
+  // Split payment (#276) — <cobr>/<dup>/<indPag>
+  const indPag = firstTag(xml, ["indPag"]);
+  const NO_TAX_CSTS = new Set(["070", "410", "800", "810", "811", "830"]);
+
   // ── Rules 1-3: field format checks ────────────────────────────────────────
 
   const formatFields = [
@@ -679,6 +683,39 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
           recommendation: `NCM ${ncmValue || "(não informado)"} não consta no subset ST conhecido (Convênio ICMS 142/2018). Se for sujeito a ST, informe o CEST; caso contrário, este aviso pode ser desconsiderado.`,
         }),
         makeEvidence({ id: evId, type: "xml", label: "CEST — ausente (verificar ST)", xpath: inferXpath("CEST", docType), snippet: "<!-- Tag CEST não encontrada no XML -->" }),
+      );
+    }
+  }
+
+  // ── Rule 9b: SPLIT_PAYMENT_INDPAG (#276) ─────────────────────────────────
+  // Regulamento IBS cap. 5: indPag=3 (Pix/TED) ou 4 (cartão) sujeito a split
+  // payment automático → CBS/IBS devem ser lançados, exceto CSTs sem tributo.
+  if (indPag && (indPag.value === "3" || indPag.value === "4")) {
+    const cstValue = firstTag(xml, ["CST"])?.value ?? "";
+    const vCbsNum = parseFloat(vCBS?.value ?? "0") || 0;
+    const vIbsNum = parseFloat(vIBS?.value ?? "0") || 0;
+    if (vCbsNum + vIbsNum === 0 && !NO_TAX_CSTS.has(cstValue)) {
+      const method = indPag.value === "3" ? "Pix/TED" : "cartão";
+      const evId = makeEvidenceId("SPLIT_PAYMENT_INDPAG");
+      pushFindingAndEvidence(findings, evidences, evidenceById,
+        makeFinding({
+          id: "F_SPLIT_PAYMENT_INDPAG",
+          severity: "FATAL",
+          ruleId: "SPLIT_PAYMENT_INDPAG",
+          title: `Pagamento via ${method} sujeito a split payment sem CBS/IBS lançados`,
+          field: "indPag",
+          xpath: inferXpath("indPag", docType),
+          snippet: indPag.snippet,
+          evidenceId: evId,
+          recommendation: `indPag=${indPag.value} (${method}) está sujeito a split payment automático (Regulamento IBS cap. 5), mas a NF-e não lança CBS nem IBS. Confirme se o CST ${cstValue || "(ausente)"} é apropriado ou ajuste vCBS/vIBS.`,
+        }),
+        makeEvidence({
+          id: evId,
+          type: "xml",
+          label: `Split payment sem tributo (indPag=${indPag.value})`,
+          xpath: inferXpath("indPag", docType),
+          snippet: indPag.snippet,
+        }),
       );
     }
   }

@@ -394,3 +394,73 @@ def test_validate_layout_nfe_missing_emit():
     result = _parse_and_validate(xml)
     rule_ids = [f["rule_id"] for f in result["findings"]]
     assert "LAYOUT_NFE" in rule_ids
+
+
+# ── SPLIT_PAYMENT_INDPAG (#276) ─────────────────────────────────────────────
+
+
+def _nfe_with_indpag(ind_pag: str, vcbs: str, vibs: str, cst: str = "000") -> str:
+    """Minimal NFe XML with indPag + IBSCBS group (for split payment tests)."""
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc versao="4.00">
+  <NFe><infNFe versao="4.00">
+    <ide><mod>55</mod></ide>
+    <emit><CNPJ>12345678000195</CNPJ></emit>
+    <det nItem="1">
+      <prod><NCM>22021000</NCM><CEST>0301400</CEST></prod>
+      <imposto>
+        <IBSCBS>
+          <gIBSCBS>
+            <CST>{cst}</CST><cClassTrib>100100</cClassTrib>
+            <vBC>1000.00</vBC>
+            <pCBS>0.0010</pCBS><vCBS>{vcbs}</vCBS>
+            <pIBSUF>0.0040</pIBSUF><vIBSUF>{float(vibs) / 2:.2f}</vIBSUF>
+            <pIBSMun>0.0050</pIBSMun><vIBSMun>{float(vibs) / 2:.2f}</vIBSMun>
+            <vIBS>{vibs}</vIBS>
+          </gIBSCBS>
+        </IBSCBS>
+      </imposto>
+    </det>
+    <total><IBSCBSTot><vCBS>{vcbs}</vCBS><vIBS>{vibs}</vIBS></IBSCBSTot></total>
+    <cobr><dup><indPag>{ind_pag}</indPag></dup></cobr>
+  </infNFe></NFe>
+</nfeProc>"""
+
+
+def test_split_payment_indpag_3_no_tax_is_fatal():
+    """indPag=3 (Pix/TED) sem CBS/IBS lançados → FATAL."""
+    result = _parse_and_validate(_nfe_with_indpag("3", "0.00", "0.00"))
+    f = next((f for f in result["findings"] if f["rule_id"] == "SPLIT_PAYMENT_INDPAG"), None)
+    assert f is not None
+    assert f["severity"] == "FATAL"
+    assert "Pix/TED" in f["recommendation"]
+
+
+def test_split_payment_indpag_4_no_tax_is_fatal():
+    """indPag=4 (cartão) sem CBS/IBS lançados → FATAL."""
+    result = _parse_and_validate(_nfe_with_indpag("4", "0.00", "0.00"))
+    f = next((f for f in result["findings"] if f["rule_id"] == "SPLIT_PAYMENT_INDPAG"), None)
+    assert f is not None
+    assert f["severity"] == "FATAL"
+    assert "cartão" in f["recommendation"]
+
+
+def test_split_payment_indpag_3_with_tax_no_finding():
+    """indPag=3 com CBS/IBS lançados → sem finding."""
+    result = _parse_and_validate(_nfe_with_indpag("3", "1.00", "9.00"))
+    rule_ids = [f["rule_id"] for f in result["findings"]]
+    assert "SPLIT_PAYMENT_INDPAG" not in rule_ids
+
+
+def test_split_payment_indpag_3_cst_070_no_finding():
+    """indPag=3 com CST 070 (imunidade) sem tributo → sem finding (exceção legítima)."""
+    result = _parse_and_validate(_nfe_with_indpag("3", "0.00", "0.00", cst="070"))
+    rule_ids = [f["rule_id"] for f in result["findings"]]
+    assert "SPLIT_PAYMENT_INDPAG" not in rule_ids
+
+
+def test_split_payment_indpag_0_no_finding():
+    """indPag=0 (à vista) sem tributo → sem finding (não sujeito a split)."""
+    result = _parse_and_validate(_nfe_with_indpag("0", "0.00", "0.00"))
+    rule_ids = [f["rule_id"] for f in result["findings"]]
+    assert "SPLIT_PAYMENT_INDPAG" not in rule_ids
