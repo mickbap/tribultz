@@ -41,6 +41,7 @@ export const metadata: Metadata = {
     "software reforma tributária", "validar NF-e CBS IBS",
   ],
   metadataBase: new URL(SITE_URL),
+  verification: { google: "dAKEEBuRAkAdRCW7conbkXNO0KCXA6Dab9PGMAfE5cw" },
   openGraph: {
     type: "website",
     locale: "pt_BR",
