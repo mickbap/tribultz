@@ -12,6 +12,7 @@ const PUBLIC_ROUTES = [
   "/",
   "/calculadora",
   "/changelog",
+  "/classificacao",
   "/cookies",
   "/diagnostico",
   "/forgot-password",
