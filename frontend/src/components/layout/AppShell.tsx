@@ -25,7 +25,6 @@ const PUBLIC_ROUTES = [
   "/reset-password",
   "/select-mode",
   "/simulador",
-  "/split-payment",
   "/terms",
   "/verify-email",
 ];
