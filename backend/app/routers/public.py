@@ -14,6 +14,11 @@ import logging
 from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Form
 from pydantic import BaseModel
 
+from app.data.cest_ncm import (
+    CEST_DATA_SOURCE,
+    CEST_DATA_VERSION,
+    lookup_ncm_st,
+)
 from app.routers.validate_xml import validate_xml, ValidationResult
 from app.services.rate_limit import RateLimiter
 
@@ -242,3 +247,47 @@ def public_data_policy():
 def public_health():
     """Public health check — useful for uptime monitoring."""
     return {"status": "ok", "service": "tribultz-public"}
+
+
+# ── CEST × NCM lookup (#275 fase 2) ──────────────────────────────────────────
+
+class CestNcmLookupResponse(BaseModel):
+    ncm: str
+    is_st: bool
+    matched_prefix: str | None
+    segments: list[str]
+    source: str
+    data_version: str
+
+
+@router.get(
+    "/cest/_meta",
+    summary="Metadados da base CEST (versão, fonte, prefixos cobertos)",
+)
+def get_cest_meta() -> dict:
+    # NOTE: este endpoint deve vir ANTES de /cest/{ncm} para não ser capturado
+    # pela rota dinâmica.
+    from app.data.cest_ncm import ST_NCM_PREFIXES
+    return {
+        "source": CEST_DATA_SOURCE,
+        "data_version": CEST_DATA_VERSION,
+        "segments_count": len(ST_NCM_PREFIXES),
+        "prefixes_count": sum(len(v) for v in ST_NCM_PREFIXES.values()),
+        "segments": list(ST_NCM_PREFIXES.keys()),
+    }
+
+
+@router.get(
+    "/cest/{ncm}",
+    response_model=CestNcmLookupResponse,
+    summary="Verifica se NCM está sujeito a Substituição Tributária (ST)",
+)
+def get_cest_for_ncm(ncm: str) -> CestNcmLookupResponse:
+    """Lookup NCM → ST (Convênio ICMS 142/2018, subset curado).
+
+    Quando `is_st=True`, o produto **deve** declarar `<CEST>` na NF-e.
+    Quando `is_st=False`, o NCM não consta no subset conhecido —
+    o cliente deve tratar a ausência de CEST como ALERT informativo,
+    não como erro fatal (subset não cobre 100% do Conv. 142).
+    """
+    return CestNcmLookupResponse(**lookup_ncm_st(ncm))

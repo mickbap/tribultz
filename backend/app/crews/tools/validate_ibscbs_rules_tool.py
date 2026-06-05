@@ -8,6 +8,7 @@ from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
 from app.crews.tools.parse_nfe_xml_tool import CST_TABLE
+from app.data.cest_ncm import lookup_ncm_st
 
 VALID_CST_CODES = set(CST_TABLE.keys())
 
@@ -288,22 +289,42 @@ class ValidateIBSCBSRulesTool(BaseTool):
                     ),
                 })
 
-        # Rule 8: CEST_MISSING
-        # Regulamento 30/abr/2026: CEST é obrigatório apenas para produtos ST
-        # (substituição tributária). Produtos sem ST podem emitir sem CEST.
-        # Downgrade para WARNING até implementação do cruzamento ST (issue #275).
+        # Rule 8: CEST_MISSING (#275 fase 2)
+        # Regulamento 30/abr/2026 + Convênio ICMS 142/2018: CEST é obrigatório
+        # apenas para produtos sujeitos a Substituição Tributária. Cruzamos o
+        # NCM declarado contra subset curado (app/data/cest_ncm.py):
+        #   - NCM em segmento ST conhecido → FATAL (CEST realmente obrigatório)
+        #   - NCM fora do subset → ALERT (subset não cobre 100% do Conv. 142,
+        #     então tratamos como incerto, não como erro)
         if not cest:
-            findings.append({
-                "rule_id": "CEST_MISSING",
-                "severity": "ALERT",
-                "field": "CEST",
-                "xpath": f"{xpath_base}//prod/CEST",
-                "snippet": "(nao encontrado)",
-                "recommendation": (
-                    "CEST ausente. Necessario apenas para produtos com substituicao tributaria (ST). "
-                    "Se o produto nao e sujeito a ST, este aviso pode ser ignorado."
-                ),
-            })
+            st_info = lookup_ncm_st(ncm)
+            if st_info["is_st"]:
+                segments_label = ", ".join(st_info["segments"]) or "ST"
+                findings.append({
+                    "rule_id": "CEST_MISSING",
+                    "severity": "FATAL",
+                    "field": "CEST",
+                    "xpath": f"{xpath_base}//prod/CEST",
+                    "snippet": f"NCM={ncm} (segmento ST: {segments_label}) sem CEST",
+                    "recommendation": (
+                        f"CEST obrigatório: NCM {ncm} pertence ao segmento de Substituição "
+                        f"Tributária ({segments_label}, Convênio ICMS 142/2018). Informe o "
+                        f"CEST correspondente em <prod/CEST>."
+                    ),
+                })
+            else:
+                findings.append({
+                    "rule_id": "CEST_MISSING",
+                    "severity": "ALERT",
+                    "field": "CEST",
+                    "xpath": f"{xpath_base}//prod/CEST",
+                    "snippet": "(nao encontrado)",
+                    "recommendation": (
+                        f"CEST ausente. NCM {ncm} não consta no subset ST conhecido "
+                        f"(Convênio ICMS 142/2018). Se o produto for sujeito a ST, informe "
+                        f"o CEST; se não for, este aviso pode ser desconsiderado."
+                    ),
+                })
 
         # Rule 9: CEST_FORMAT
         if cest and not re.fullmatch(r"\d{7}", cest):

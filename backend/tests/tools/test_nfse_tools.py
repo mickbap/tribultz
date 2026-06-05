@@ -190,12 +190,22 @@ class TestValidateFiscalRulesTool:
         calc_findings = [f for f in result["findings"] if f["rule_id"] == "IBSCBS_CALC"]
         assert calc_findings == []
 
-    def test_cest_missing_is_fatal(self):
+    def test_cest_missing_non_st_ncm_is_alert(self):
+        """NCM default (12345678) não é ST → ALERT (Convênio 142/2018, #275 fase 2)."""
         result = json.loads(self._tool()._run("inv-1", self._fields_json(cest="")))
-        rule_ids = [f["rule_id"] for f in result["findings"]]
-        assert "CEST_MISSING" in rule_ids
+        f = next(f for f in result["findings"] if f["rule_id"] == "CEST_MISSING")
+        assert f["severity"] == "ALERT"
+        assert "não consta no subset ST" in f["recommendation"]
+
+    def test_cest_missing_st_ncm_is_fatal(self):
+        """NCM 22020000 (refrigerantes) é ST → FATAL com segmento explícito."""
+        result = json.loads(self._tool()._run(
+            "inv-1", self._fields_json(cest="", ncm="22020000")
+        ))
         f = next(f for f in result["findings"] if f["rule_id"] == "CEST_MISSING")
         assert f["severity"] == "FATAL"
+        assert "bebidas_nao_alcoolicas" in f["snippet"]
+        assert "Convênio ICMS 142/2018" in f["recommendation"]
 
     def test_cest_format_wrong_is_fatal(self):
         result = json.loads(self._tool()._run("inv-1", self._fields_json(cest="21049")))

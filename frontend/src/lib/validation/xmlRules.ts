@@ -7,6 +7,7 @@ import type {
   ValidationResultV11,
   XmlDocumentType,
 } from "@/lib/types";
+import { lookupNcmSt } from "./cestNcm";
 
 export type ValidationInput = {
   tenantId: string;
@@ -631,28 +632,55 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
     }
   }
 
-  // ── Rule 8: CEST_MISSING — CEST must be present ──────────────────────────
-
-  // Rule 8: CEST_MISSING
-  // Regulamento 30/abr/2026: CEST é obrigatório apenas para produtos sujeitos à
-  // substituição tributária (ST). Produtos sem ST podem emitir sem CEST.
-  // Downgrade para ALERT até cruzamento com tabela ST (issue #275).
+  // ── Rule 8: CEST_MISSING — CEST must be present (#275 fase 2) ────────────
+  // Regulamento 30/abr/2026 + Convênio ICMS 142/2018: CEST é obrigatório
+  // apenas para produtos sujeitos a Substituição Tributária. Cruzamos o NCM
+  // declarado contra subset curado (lib/validation/cestNcm.ts):
+  //   - NCM em segmento ST conhecido → FATAL (CEST realmente obrigatório)
+  //   - NCM fora do subset → ALERT (subset não cobre 100% do Conv. 142)
   if (!cest) {
+    const ncmValue = ncm?.value ?? "";
+    const stLookup = lookupNcmSt(ncmValue);
     const evId = makeEvidenceId("CEST_MISSING");
-    pushFindingAndEvidence(findings, evidences, evidenceById,
-      makeFinding({
-        id: "F_CEST_MISSING",
-        severity: "ALERT",
-        ruleId: "CEST_MISSING",
-        title: "CEST ausente — verificar se produto é sujeito à substituição tributária",
-        field: "CEST",
-        xpath: inferXpath("CEST", docType),
-        snippet: "<!-- Tag CEST não encontrada no XML -->",
-        evidenceId: evId,
-        recommendation: "CEST é obrigatório apenas para produtos com substituição tributária (ST). Se o produto não for sujeito a ST, este aviso pode ser desconsiderado.",
-      }),
-      makeEvidence({ id: evId, type: "xml", label: "CEST — ausente (verificar ST)", xpath: inferXpath("CEST", docType), snippet: "<!-- Tag CEST não encontrada no XML -->" }),
-    );
+
+    if (stLookup.is_st) {
+      const segLabel = stLookup.segments.join(", ");
+      pushFindingAndEvidence(findings, evidences, evidenceById,
+        makeFinding({
+          id: "F_CEST_MISSING",
+          severity: "FATAL",
+          ruleId: "CEST_MISSING",
+          title: `CEST obrigatório — NCM ${ncmValue} pertence a segmento ST (${segLabel})`,
+          field: "CEST",
+          xpath: inferXpath("CEST", docType),
+          snippet: "<!-- Tag CEST não encontrada no XML -->",
+          evidenceId: evId,
+          recommendation: `NCM ${ncmValue} consta no Convênio ICMS 142/2018 (${segLabel}). Informe o CEST correspondente em <prod/CEST>.`,
+        }),
+        makeEvidence({
+          id: evId,
+          type: "xml",
+          label: `CEST obrigatório (segmento ST: ${segLabel})`,
+          xpath: inferXpath("CEST", docType),
+          snippet: "<!-- Tag CEST não encontrada no XML -->",
+        }),
+      );
+    } else {
+      pushFindingAndEvidence(findings, evidences, evidenceById,
+        makeFinding({
+          id: "F_CEST_MISSING",
+          severity: "ALERT",
+          ruleId: "CEST_MISSING",
+          title: "CEST ausente — verificar se produto é sujeito à substituição tributária",
+          field: "CEST",
+          xpath: inferXpath("CEST", docType),
+          snippet: "<!-- Tag CEST não encontrada no XML -->",
+          evidenceId: evId,
+          recommendation: `NCM ${ncmValue || "(não informado)"} não consta no subset ST conhecido (Convênio ICMS 142/2018). Se for sujeito a ST, informe o CEST; caso contrário, este aviso pode ser desconsiderado.`,
+        }),
+        makeEvidence({ id: evId, type: "xml", label: "CEST — ausente (verificar ST)", xpath: inferXpath("CEST", docType), snippet: "<!-- Tag CEST não encontrada no XML -->" }),
+      );
+    }
   }
 
   // ── Rule 9: CEST_FORMAT — CEST must be exactly 7 digits ──────────────────
