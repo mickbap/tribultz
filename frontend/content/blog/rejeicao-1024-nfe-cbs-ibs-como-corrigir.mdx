@@ -1,0 +1,258 @@
+---
+title: "Rejeição 1024 NF-e CBS/IBS: causas e como corrigir em 2026"
+description: "A Rejeição 1024 bloqueia emissão de NF-e quando o CST é incompatível com o cClassTrib. Entenda as causas, os 3 cenários mais comuns em ERPs e o passo a passo para corrigir antes de pagar multa."
+slug: "rejeicao-1024-nfe-cbs-ibs-como-corrigir"
+category: "Compliance Fiscal"
+author:
+  name: "Mickael Baptista"
+  jobTitle: "Especialista em Compliance Fiscal, CRC-SP 999.999/O-1"
+  credentials: "Especialista em Compliance Fiscal — Reforma Tributária CBS/IBS (LC 214/2024)"
+  url: "https://tribultz.com.br/sobre"
+publishedAt: "2026-06-05"
+updatedAt: "2026-06-05"
+tags:
+  - "Rejeição 1024"
+  - NF-e
+  - cClassTrib
+  - CBS
+  - IBS
+  - SEFAZ
+  - "Reforma Tributária"
+coverImage: "https://tribultz.com.br/blog/og-rejeicao-1024.png"
+legalRefs:
+  - instrumento: "NT 2025.002 V1.36"
+    artigo: "Regra 05"
+    descricao: "Define a Rejeição 1024 — incompatibilidade entre CST declarado e os três primeiros dígitos do cClassTrib."
+  - instrumento: "LC 214/2024"
+    artigo: "Art. 1º–30"
+    descricao: "Institui CBS e IBS e torna obrigatório o preenchimento do grupo gIBSCBS e do campo cClassTrib na NF-e."
+  - instrumento: "LC 227/2024"
+    artigo: "Art. 348 §§ 3º e 4º"
+    descricao: "Período educativo 2026 — alíquotas CBS 0,9% e IBS 0,1%; obrigação de preenchimento válido mantida mesmo com alíquotas reduzidas."
+  - instrumento: "Ajuste SINIEF 31/2024"
+    artigo: "Cláusula 3ª"
+    descricao: "Altera o leiaute da NF-e para incluir o grupo gIBSCBS, campos cClassTrib, pCBS, vCBS, pIBS e vIBS por item."
+  - instrumento: "Tabela cClassTrib SVRS V1.36"
+    artigo: "—"
+    descricao: "Tabela oficial de mapeamento NCM × CST × cClassTrib, atualizada em abril de 2026."
+    link: "https://dfe-portal.svrs.rs.gov.br/Cff/ClassificacaoTributaria"
+---
+
+## O paradoxo de 2026: não preencher vs. preencher errado
+
+Em 2026, sua NF-e é rejeitada pela SEFAZ em dois cenários opostos: se você **não preencher** o novo grupo `gIBSCBS` (Rejeição 1026), e se você **preencher com valores incompatíveis** entre si (Rejeição 1024).
+
+A Rejeição 1024 é a mais frequente. Ela acontece quando o **CST** (Código de Situação Tributária) informado no XML não corresponde aos três primeiros dígitos do **cClassTrib** (Código de Classificação Tributária) do mesmo item. Para a SEFAZ, essa incompatibilidade indica que o emitente declarou dois regimes tributários contraditórios para o mesmo produto na mesma nota — e ela bloqueia a autorização.
+
+O problema não está na intenção do contribuinte. Está nos ERPs que foram atualizados para incluir o campo `cClassTrib` no XML, mas cujo **cadastro de produtos não foi revisado** para garantir que o cClassTrib de cada item é compatível com o CST que o sistema vinha emitindo até ontem.
+
+Este guia explica as causas, os cenários mais comuns e o passo a passo para corrigir antes que sua operação pare.
+
+---
+
+## As três camadas de validação SEFAZ para o gIBSCBS
+
+A SEFAZ valida o grupo `gIBSCBS` em três camadas sequenciais. A Rejeição 1024 está na segunda camada.
+
+| Camada | Validação | Rejeição | Descrição |
+|--------|-----------|----------|-----------|
+| 1 | Presença | 1026 | `gIBSCBS` ausente quando CST ≠ 070/080/090 |
+| 2 | Consistência CST × cClassTrib | **1024** | Três primeiros dígitos do cClassTrib incompatíveis com o CST |
+| 3 | Cálculo | 1027–1035 | `vCBS ≠ vBC × pCBS` ou `vIBS ≠ vBC × pIBS` |
+
+A validação é sequencial: se a nota falha na camada 1, ela não chega à camada 2. Isso significa que uma nota pode ter múltiplas rejeições latentes — ao corrigir a 1026, a 1024 aparece; ao corrigir a 1024, eventualmente aparece um erro de cálculo na camada 3.
+
+**Por isso, a correção completa exige validar as três camadas ao mesmo tempo**, não apenas corrigir a rejeição que a SEFAZ retornou.
+
+---
+
+## Os códigos de rejeição mais frequentes em 2026
+
+### Rejeições de classificação tributária
+
+| Código | Descrição | Causa mais comum |
+|--------|-----------|------------------|
+| **1024** | CST incompatível com cClassTrib | ERP usa cClassTrib genérico; cadastro não revisado |
+| 1025 | cClassTrib inválido ou descontinuado | Versão da tabela SVRS desatualizada no ERP |
+| 1026 | gIBSCBS ausente | ERP não atualizado para leiaute NT 2025.002 |
+| 1028 | cClassTrib não permitido para o CST informado | NCM com múltiplos regimes; seleção errada |
+
+### Rejeições de alíquota
+
+| Código | Descrição | Causa mais comum |
+|--------|-----------|------------------|
+| 1029 | pCBS fora da faixa para o cClassTrib | Alíquota parametrizada manualmente errada |
+| 1030 | pIBS fora da faixa para o cClassTrib | Tabela de alíquotas IBS não atualizada na UF |
+| 1031 | pIBSUF + pIBSMun ≠ pIBS | Split da alíquota estadual/municipal incorreto |
+
+### Rejeições de cálculo e grupo IBS
+
+| Código | Descrição | Causa mais comum |
+|--------|-----------|------------------|
+| 1027 | vCBS calculado incorretamente | Arredondamento; base de cálculo errada |
+| 1032 | vIBS calculado incorretamente | Alíquota UF incorreta; base não inclui ICMS |
+| 1033 | Totais CBS/IBS inconsistentes com itens | Soma dos itens ≠ total declarado no rodapé |
+| 1157 | dPrevEntrega incompatível com modFrete | Entrega CIF sem data, ou FOB com data futura cross-mês |
+
+---
+
+## Os 3 cenários que mais geram Rejeição 1024
+
+### Cenário 1: ERP ativou CBS/IBS com cClassTrib genérico
+
+É o mais comum. O fornecedor do ERP lançou a atualização para o leiaute NT 2025.002 e, como valor padrão no campo `cClassTrib`, usou `00000000` ou um código genérico como `00001000` (regime padrão, subgrupo genérico).
+
+O problema: se o produto tem CST 200 (alíquota reduzida) no cadastro, o cClassTrib genérico `00001000` começa com `000` — incompatível com CST 200, que exige prefixo `200`. Resultado: Rejeição 1024 em cada nota que emite esse produto.
+
+**Resolução:** Mapear todos os produtos com CST ≠ 000 e atribuir o cClassTrib correto. A [API da Tribultz](https://tribultz.com.br/classificacao) retorna o cClassTrib a partir do NCM em menos de 1 segundo.
+
+### Cenário 2: NCM com múltiplos cClassTribs possíveis
+
+Alguns NCMs se enquadram em mais de um regime tributário dependendo do destinatário, da UF ou da finalidade do produto. Por exemplo, o NCM `3004.90.99` (medicamentos) pode ter:
+
+- cClassTrib `20003100` → alíquota reduzida (venda a pessoa física)
+- cClassTrib `40003100` → isento (venda a entidade beneficente)
+- cClassTrib `50003100` → imune (exportação)
+
+Se o ERP usa o primeiro cClassTrib para todas as saídas, notas para exportação ou para entidades beneficentes terão CST 400 ou 500 com cClassTrib prefixo `200` — Rejeição 1024.
+
+**Resolução:** Cadastrar variantes de produto por destinatário, ou usar regras de parametrização no ERP que selecionem o cClassTrib correto baseado no tipo de operação (CFOP).
+
+### Cenário 3: alíquota parametrizada zero ou dinâmica
+
+Algumas empresas, ao receberem a atualização do ERP, parametrizaram a alíquota CBS/IBS como `0,00%` para "não impactar os cálculos enquanto testam". O ERP então gerou `vCBS = 0` e `vIBS = 0` para todos os itens — mas manteve o CST original do produto (ex: CST 000) e o campo `cClassTrib` preenchido com um código de regime padrão.
+
+A SEFAZ não rejeita isso pela Rejeição 1024 (CST e cClassTrib são compatíveis), mas rejeita pela **Rejeição 1027** (vCBS calculado incorretamente: `vBC × 0,9% ≠ 0`). Quando a empresa vai corrigir, descobre que o cadastro de cClassTrib nunca foi validado — e aí aparecem as 1024 mascaradas.
+
+**Resolução:** Nunca parametrizar alíquotas como zero. Usar as alíquotas do período educativo 2026 (CBS 0,9%, IBS 0,1%) e validar o cClassTrib de forma independente.
+
+---
+
+## Como diagnosticar uma rejeição 1024 passo a passo
+
+**Passo 1 — Identifique o item rejeitado**
+
+O retorno da SEFAZ inclui o número do item (`nItem`) que causou a rejeição. Localize o produto no seu ERP.
+
+**Passo 2 — Verifique o CST do item**
+
+No XML da NF-e, localize o campo `CST` dentro do grupo `ICMS` do item (não o CST CBS/IBS — esse é o CST legado do ICMS que serve de base para o mapeamento). O CST CBS/IBS vem do cClassTrib.
+
+> **Atenção ao campo correto:** a Rejeição 1024 valida o campo `CST` dentro de `gIBSCBS > CBS > CST` — e não o CST do grupo ICMS. Consulte a NT 2025.002 seção 4.2.
+
+**Passo 3 — Verifique o cClassTrib do item**
+
+Localize o campo `cClassTrib` no mesmo grupo `gIBSCBS`. Os três primeiros dígitos precisam ser idênticos ao CST CBS/IBS do item.
+
+| CST CBS/IBS | Prefixo cClassTrib obrigatório |
+|-------------|-------------------------------|
+| 000 | `000xxxxxx` |
+| 200 | `200xxxxxx` |
+| 400 | `400xxxxxx` |
+| 500 | `500xxxxxx` |
+| 610 | `610xxxxxx` |
+| 620 | `620xxxxxx` |
+| 700 | `700xxxxxx` |
+| 800 | `800xxxxxx` |
+
+**Passo 4 — Consulte o cClassTrib correto**
+
+Acesse [tribultz.com.br/classificacao](https://tribultz.com.br/classificacao), informe o NCM do produto e o regime tributário aplicável. O classificador retorna o cClassTrib correto e o CST compatível com base na tabela SVRS V1.36.
+
+**Passo 5 — Atualize o cadastro e reemita**
+
+Corrija o cClassTrib no cadastro do produto no ERP. Antes de reemitir, use o [Diagnóstico NF-e da Tribultz](https://tribultz.com.br/diagnostico) para validar o XML completo contra as 18 regras da NT 2025.002 — incluindo as camadas 2 e 3 da tabela acima.
+
+---
+
+## Atualização em lote do cClassTrib por ERP
+
+Se você tem centenas ou milhares de produtos para corrigir, a abordagem item a item é inviável. Veja como os principais ERPs do mercado lidam com a atualização em lote:
+
+### TOTVS Protheus
+
+O Protheus armazena o `cClassTrib` no campo `B1_CLASSTRI` da tabela SB1. Para atualizar em lote:
+
+1. Gere um relatório do SB1 filtrando por `B1_TIPO = 'PA'` (produtos acabados) e `B1_CLASSTRI` vazio ou genérico.
+2. Construa o de-para NCM → cClassTrib usando a [API da Tribultz](https://tribultz.com.br/classificacao) ou a tabela SVRS.
+3. Use o `UPDTAB` ou uma rotina ADVPL para importar o de-para de volta ao SB1.
+4. Valide uma amostra de XMLs gerados pelo emissor antes de voltar à produção.
+
+**Ponto de atenção Protheus:** o campo `B1_CLASSTRI` tem 8 caracteres. Se o ERP foi configurado com máscara diferente (ex: com pontos), o cClassTrib pode ser truncado no XML — causando Rejeição 1025 (código inválido) além da 1024.
+
+### SAP S/4HANA e SAP B1
+
+No SAP, o cClassTrib é configurado na **Classe de Imposto** (`STCD`). A parametrização correta exige:
+
+1. Criar ou atualizar as Condições Fiscais (Tabela A003 ou similar) com o cClassTrib mapeado por NCM.
+2. Garantir que a determinação fiscal seleciona a condição correta por tipo de operação (CST de saída).
+3. Testar com uma NF-e em ambiente de homologação antes de produção.
+
+### Omie, Bling e ERPs cloud
+
+ERPs cloud geralmente publicam a tabela cClassTrib via atualização automática da plataforma. O que o usuário precisa fazer:
+
+1. Acessar o cadastro de produto e localizar o campo "Classificação Tributária CBS/IBS".
+2. Para produtos com NCM que tenham regime especial (cesta básica, monofásico), selecionar manualmente o regime correto — o padrão da plataforma pode ser o regime geral.
+3. Salvar e testar a emissão em modo rascunho antes de autorizar.
+
+### Checklist pré-go-live após atualização em lote
+
+| Verificação | Como validar |
+|-------------|-------------|
+| cClassTrib preenchido em 100% dos produtos ativos | Relatório de produtos com campo vazio |
+| Prefixo cClassTrib compatível com CST de cada produto | [Diagnóstico NF-e Tribultz](https://tribultz.com.br/diagnostico) |
+| Alíquotas CBS/IBS correspondentes ao cClassTrib | Calculadora CBS/IBS |
+| indPag correto para operações com Split Payment | Validação SPLIT_PAYMENT_INDPAG |
+| CEST preenchido para NCMs com ST | Regra CEST_MISSING |
+
+---
+
+## Como o Tribultz previne a Rejeição 1024
+
+O [Diagnóstico NF-e](https://tribultz.com.br/diagnostico) da Tribultz aplica as 18 regras da NT 2025.002 antes da emissão, diretamente sobre o XML gerado pelo seu ERP:
+
+| Regra validada | O que detecta |
+|---------------|---------------|
+| CST_GROUP_MATCH | gIBSCBS ausente para itens com CST tributado |
+| CLASSTRIB_COMPAT | Incompatibilidade CST × prefixo cClassTrib (Rejeição 1024) |
+| IBSCBS_CALC | vCBS ou vIBS calculado incorretamente (Rejeição 1027/1032) |
+| IBSCBS_SPLIT | Totais CBS/IBS inconsistentes com soma dos itens |
+| SPLIT_PAYMENT_INDPAG | indPag incompatível com vCBS + vIBS > 0 |
+| CEST_MISSING | CEST ausente para NCMs sujeitos à ST (Convênio 142/2018) |
+
+O resultado é um relatório com severidade por regra, evidência auditável e sugestão de correção — tudo em segundos, sem necessidade de enviar o XML para a SEFAZ.
+
+**Use gratuitamente:** 20 diagnósticos por dia, sem cadastro. Para volume maior, o plano Starter oferece 500 diagnósticos/mês por R$ 49,90.
+
+→ **[Diagnosticar minha NF-e agora](https://tribultz.com.br/diagnostico)**
+
+---
+
+## Perguntas frequentes
+
+**A Rejeição 1024 é nova ou já existia antes de 2026?**
+
+É nova. Antes de 2026, o campo `cClassTrib` não existia na NF-e. A Rejeição 1024 foi introduzida pela NT 2025.002 (Ajuste SINIEF 31/2024) e só se aplica a documentos fiscais emitidos com o novo leiaute, vigente a partir de 1º de janeiro de 2026.
+
+**Posso continuar emitindo com o leiaute antigo (sem cClassTrib) para evitar a Rejeição 1024?**
+
+Não. O leiaute com `gIBSCBS` tornou-se obrigatório em 2026. Notas emitidas sem o grupo são rejeitadas com código 1026. Não há "modo de compatibilidade" para o leiaute anterior.
+
+**Meu ERP retorna Rejeição 1024 mas o fornecedor diz que o sistema está correto. O que faço?**
+
+O cadastro de produtos é de responsabilidade do contribuinte, não do fornecedor do ERP. O ERP entrega o campo `cClassTrib` no XML — mas o valor correto para cada NCM precisa ser configurado por quem conhece o produto. Solicite ao fornecedor a documentação de como atualizar o cadastro; a correção do valor em si é responsabilidade da sua equipe fiscal.
+
+**A Rejeição 1024 gera multa automática?**
+
+Não diretamente. A nota rejeitada simplesmente não é autorizada — não há multa por tentativa de emissão. O risco fiscal é a **falta de NF-e em operações que precisavam dela**: entrega de mercadoria sem nota autorizada, crédito de ICMS negado ao destinatário, e eventual auto de infração em fiscalização.
+
+**O período educativo de 2026 suspende a obrigação de preencher o cClassTrib corretamente?**
+
+Não. O período educativo (LC 227, art. 348) reduz as **alíquotas** (CBS 0,9%, IBS 0,1%) mas não suspende as regras de validação de leiaute. O preenchimento correto do cClassTrib é obrigatório independentemente do valor de CBS/IBS calculado.
+
+---
+
+## Artigos relacionados
+
+- [cClassTrib 2026: mapeamento NCM × cClassTrib e como evitar a Rejeição 1024](/blog/classtrib-2026-ncm-mapeamento-completo)
