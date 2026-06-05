@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { PRICING_SCHEMA } from "@/components/seo/schemas";
 
 export const metadata: Metadata = {
   title: "Planos e Preços — Compliance CBS/IBS a partir de R$ 49,90",
@@ -19,5 +21,10 @@ export const metadata: Metadata = {
 };
 
 export default function PricingLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <JsonLd data={PRICING_SCHEMA} />
+      {children}
+    </>
+  );
 }

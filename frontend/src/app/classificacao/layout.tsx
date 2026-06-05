@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { PublicFooter } from "@/components/public/PublicFooter";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { CLASSIFICACAO_SCHEMA } from "@/components/seo/schemas";
 
 export const metadata: Metadata = {
   title: "Classificar NCM → cClassTrib CBS/IBS — Evite a Rejeição 1024",
@@ -25,6 +27,7 @@ export const metadata: Metadata = {
 export default function ClassificacaoLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
+      <JsonLd data={CLASSIFICACAO_SCHEMA} />
       <PublicNavbar />
       <main className="flex-1">{children}</main>
       <PublicFooter />
