@@ -95,6 +95,8 @@ class ParseNFeXMLTool(BaseTool):
             # Totals from IBSCBSTot
             "tot_vcbs": "",
             "tot_vibs": "",
+            # Split payment (#276) — <cobr>/<dup>/<indPag>
+            "indpag": "",
         }
         parse_error: str | None = None
 
@@ -188,6 +190,8 @@ class ParseNFeXMLTool(BaseTool):
                     fields["ncm"] = text
                 elif tag == "CEST" and not fields["cest"]:
                     fields["cest"] = text
+                elif tag == "indPag" and not fields["indpag"]:
+                    fields["indpag"] = text
 
         except ET.ParseError as exc:
             parse_error = str(exc)

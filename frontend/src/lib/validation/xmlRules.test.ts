@@ -502,3 +502,60 @@ test("DPREV_ENTREGA_CIF_AUSENTE: NFS-e não aciona regra", () => {
     xml: fixture("nfse-ok.xml") });
   assert.equal(result.findings.find((f) => f.rule_id === "DPREV_ENTREGA_CIF_AUSENTE"), undefined);
 });
+
+// ── SPLIT_PAYMENT_INDPAG (#276) ─────────────────────────────────────────────
+
+function nfeWithIndPag(opts: { indPag: string; vCBS: string; vIBS: string; cst?: string }): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <emit><CNPJ>11111111000111</CNPJ></emit>
+  <det><prod><NCM>22021000</NCM></prod>
+    <IBSCBS>
+      <CST>${opts.cst ?? "000"}</CST><cClassTrib>100100</cClassTrib>
+      <vBC>1000.00</vBC>
+      <pCBS>0.0010</pCBS><vCBS>${opts.vCBS}</vCBS>
+      <pIBSUF>0.0040</pIBSUF><vIBSUF>${(parseFloat(opts.vIBS) / 2).toFixed(2)}</vIBSUF>
+      <pIBSMun>0.0050</pIBSMun><vIBSMun>${(parseFloat(opts.vIBS) / 2).toFixed(2)}</vIBSMun>
+      <vIBS>${opts.vIBS}</vIBS>
+    </IBSCBS>
+  </det>
+  <total><IBSCBSTot><vCBS>${opts.vCBS}</vCBS><vIBS>${opts.vIBS}</vIBS></IBSCBSTot></total>
+  <cobr><dup><indPag>${opts.indPag}</indPag></dup></cobr>
+</infNFe></NFe></nfeProc>`;
+}
+
+test("SPLIT_PAYMENT_INDPAG: indPag=3 (Pix) sem CBS/IBS gera FATAL", () => {
+  const xml = nfeWithIndPag({ indPag: "3", vCBS: "0.00", vIBS: "0.00" });
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "SPLIT_PAYMENT_INDPAG");
+  assert.ok(f, "SPLIT_PAYMENT_INDPAG expected");
+  assert.equal(f!.severity, "FATAL");
+  assert.match(f!.title, /Pix\/TED/);
+});
+
+test("SPLIT_PAYMENT_INDPAG: indPag=4 (cartão) sem CBS/IBS gera FATAL", () => {
+  const xml = nfeWithIndPag({ indPag: "4", vCBS: "0.00", vIBS: "0.00" });
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "SPLIT_PAYMENT_INDPAG");
+  assert.ok(f, "SPLIT_PAYMENT_INDPAG expected");
+  assert.equal(f!.severity, "FATAL");
+  assert.match(f!.title, /cartão/);
+});
+
+test("SPLIT_PAYMENT_INDPAG: indPag=3 com CBS/IBS lançados não gera finding", () => {
+  const xml = nfeWithIndPag({ indPag: "3", vCBS: "1.00", vIBS: "9.00" });
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  assert.equal(result.findings.find((f) => f.rule_id === "SPLIT_PAYMENT_INDPAG"), undefined);
+});
+
+test("SPLIT_PAYMENT_INDPAG: indPag=3 com CST 070 (imunidade) não gera finding", () => {
+  const xml = nfeWithIndPag({ indPag: "3", vCBS: "0.00", vIBS: "0.00", cst: "070" });
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  assert.equal(result.findings.find((f) => f.rule_id === "SPLIT_PAYMENT_INDPAG"), undefined);
+});
+
+test("SPLIT_PAYMENT_INDPAG: indPag=0 (à vista) sem CBS/IBS não gera finding", () => {
+  const xml = nfeWithIndPag({ indPag: "0", vCBS: "0.00", vIBS: "0.00" });
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  assert.equal(result.findings.find((f) => f.rule_id === "SPLIT_PAYMENT_INDPAG"), undefined);
+});
