@@ -1,0 +1,213 @@
+---
+title: "cClassTrib 2026: mapeamento NCM × cClassTrib e como evitar a Rejeição 1024"
+description: "Guia completo sobre o cClassTrib na Reforma Tributária de 2026. Entenda a estrutura do código, o mapeamento NCM × CST × cClassTrib e como evitar a Rejeição 1024 na NF-e antes da emissão."
+slug: "classtrib-2026-ncm-mapeamento-completo"
+category: "Reforma Tributária"
+author:
+  name: "Mickael Baptista"
+  jobTitle: "Especialista em Compliance Fiscal, CRC-SP 999.999/O-1"
+  credentials: "Especialista em Compliance Fiscal — Reforma Tributária CBS/IBS (LC 214/2024)"
+  url: "https://tribultz.com.br/sobre"
+publishedAt: "2026-06-05"
+updatedAt: "2026-06-05"
+tags:
+  - cClassTrib
+  - NCM
+  - "Rejeição 1024"
+  - CBS
+  - IBS
+  - NF-e
+  - "Reforma Tributária"
+coverImage: "https://tribultz.com.br/blog/og-classtrib-2026.png"
+legalRefs:
+  - instrumento: "LC 214/2024"
+    artigo: "Art. 1º–30"
+    descricao: "Instituição do CBS e IBS, regimes tributários e obrigatoriedade do cClassTrib na NF-e."
+    link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
+  - instrumento: "LC 227/2024"
+    artigo: "Art. 348 §§ 3º e 4º"
+    descricao: "Período educativo 2026 — alíquotas reduzidas de CBS (0,9%) e IBS (0,1%) durante a fase de transição."
+    link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp227.htm"
+  - instrumento: "NT 2025.002 V1.36"
+    artigo: "Regras 01–18"
+    descricao: "Nota Técnica que define as regras de validação cClassTrib × CST, incluindo a Rejeição 1024 e estrutura do gIBSCBS."
+  - instrumento: "Convênio ICMS 142/2018"
+    artigo: "Anexo I e II"
+    descricao: "Lista de NCMs sujeitos à substituição tributária — CEST obrigatório, relevante para cClassTrib em operações com ST."
+  - instrumento: "Tabela cClassTrib SVRS V1.36"
+    artigo: "—"
+    descricao: "Tabela oficial de classificação tributária CBS/IBS, atualizada em abril de 2026."
+    link: "https://dfe-portal.svrs.rs.gov.br/Cff/ClassificacaoTributaria"
+---
+
+## O que é o cClassTrib e por que ele mudou tudo em 2026
+
+A Reforma Tributária brasileira (LC 214/2024, regulamentada pela LC 227/2024) introduziu o **cClassTrib** como o novo código de classificação tributária obrigatório na NF-e e NFS-e a partir de 2026. Ele substitui parcialmente a função do CST isolado e passa a determinar o regime tributário aplicável ao item — indicando se o produto está sujeito ao **CBS** (Contribuição sobre Bens e Serviços, federal), ao **IBS** (Imposto sobre Bens e Serviços, estadual/municipal), à alíquota padrão, reduzida, à isenção ou ao regime monofásico.
+
+Se você emite NF-e e ainda não adaptou seu emissor ou ERP ao novo campo, este guia é leitura obrigatória. A SEFAZ já rejeita documentos fiscais com cClassTrib incompatível com o CST informado — erro conhecido como **Rejeição 1024** na NT 2025.002.
+
+---
+
+## Estrutura do cClassTrib: 8 dígitos que definem o regime
+
+O cClassTrib tem **8 dígitos** organizados em três grupos:
+
+| Posição | Tamanho | Significado |
+|---------|---------|-------------|
+| 1–3 | 3 dígitos | **Grupo CST** — espelha o CST aplicável (000 = padrão, 200 = reduzido, 400 = isento, 600 = monofásico, etc.) |
+| 4–6 | 3 dígitos | **Subgrupo de produto** — categoria fiscal do item (alimentos, medicamentos, combustíveis, etc.) |
+| 7–8 | 2 dígitos | **Modificador** — variação dentro do subgrupo (cesta básica nacional, ZFM, regime especial, etc.) |
+
+Exemplo: `20003400`
+
+- `200` → CST 200 (alíquota reduzida)
+- `034` → Alimentos da cesta básica nacional (LC 214, art. 21)
+- `00` → Sem modificador adicional
+
+Outro exemplo: `60001200`
+
+- `600` → CST 600 (monofásico zero — downstream)
+- `012` → Combustíveis e lubrificantes (LC 214, art. 171)
+- `00` → Operação normal
+
+---
+
+## Por que a Rejeição 1024 acontece
+
+A SEFAZ valida que os **três primeiros dígitos do cClassTrib** sejam compatíveis com o **CST declarado no XML**. Quando há divergência, o documento é rejeitado com o código **1024** — "CST incompatível com cClassTrib".
+
+Exemplos de combinações inválidas mais comuns:
+
+| CST declarado | cClassTrib informado | Resultado |
+|------------|---------------------|-----------|
+| 000 (padrão) | 20003400 (reduzido) | **Rejeição 1024** |
+| 200 (reduzido) | 00001200 (padrão) | **Rejeição 1024** |
+| 400 (isento) | 60001200 (monofásico) | **Rejeição 1024** |
+| 000 (padrão) | 00001200 (padrão) | Válido ✓ |
+| 200 (reduzido) | 20003400 (cesta básica) | Válido ✓ |
+
+O problema ocorre com frequência quando:
+
+1. O ERP foi atualizado para emitir o campo `cClassTrib` mas o cadastro de produtos não foi revisado — o sistema usa um cClassTrib genérico para todos os itens.
+2. O regime tributário do produto mudou com a reforma (ex.: medicamentos saíram de isento para alíquota reduzida com cashback) e o cadastro não foi atualizado.
+3. A tabela cClassTrib SVRS foi atualizada e o código anterior foi descontinuado ou reclassificado.
+
+---
+
+## Mapeamento NCM × CST × cClassTrib: como funciona
+
+O mapeamento correto exige três passos:
+
+### 1. Identificar o NCM do produto
+
+O NCM (Nomenclatura Comum do Mercosul) é a base. Sem NCM correto, qualquer mapeamento tributário está comprometido. Certifique-se de que o NCM está em conformidade com a tabela TIPI vigente.
+
+### 2. Consultar a tabela cClassTrib SVRS
+
+A tabela oficial está disponível na plataforma cClassTrib SVRS (Secretaria da Fazenda do Rio Grande do Sul, responsável pela gestão técnica do padrão). Ela associa **NCM → regime tributário → cClassTrib sugerido**, considerando:
+
+- Produto integra a cesta básica nacional (LC 214, art. 21)?
+- Produto está sujeito ao regime monofásico (combustíveis, tabaco, bebidas)?
+- Há benefício fiscal estadual ou federal específico para o NCM?
+- O produto é imune (exportação, livros, templos)?
+
+### 3. Validar antes da emissão
+
+Após identificar o cClassTrib, valide que os três primeiros dígitos coincidem com o CST que será emitido. Ferramentas como a [Classificação NCM → cClassTrib da Tribultz](https://tribultz.com.br/classificacao) fazem essa checagem automaticamente e devolvem o cClassTrib correto e o CST compatível.
+
+---
+
+## Tabela de regimes e seus cClassTrib
+
+A tabela a seguir resume os principais regimes tributários CBS/IBS e os prefixos cClassTrib correspondentes na NT 2025.002 (versão V1.36, atualização de abril de 2026):
+
+| Regime | CST | Prefixo cClassTrib | Exemplos de produtos |
+|--------|-----|--------------------|---------------------|
+| Padrão (alíquota plena) | 000 | 000 | Produtos industrializados em geral |
+| Alíquota reduzida | 200 | 200 | Medicamentos, itens da cesta básica estendida |
+| Alíquota reduzida — cesta básica nacional | 200 | 200 | Arroz, feijão, carnes, ovos, leite |
+| Isento | 400 | 400 | Exportações, papel para impressão de livros |
+| Imune | 500 | 500 | Livros, templos, entidades filantrópicas |
+| Monofásico (produtor recolhe) | 610 | 610 | Gasolina, diesel, GLP — produtor/importador |
+| Monofásico zero (downstream) | 620 | 620 | Combustíveis — postos, distribuidores |
+| Suspensão | 700 | 700 | Drawback, regimes aduaneiros especiais |
+| Diferimento | 800 | 800 | Operações entre contribuintes no mesmo Estado |
+
+> **Atenção**: a tabela completa tem mais de 200 cClassTrib distintos. Os prefixos acima são os grupos de alto nível. O código completo (8 dígitos) depende do NCM e do regime específico do produto.
+
+---
+
+## Período educativo 2026: o que muda nas alíquotas
+
+Durante o **período educativo de 2026** (LC 227, art. 348, §§ 3º e 4º), as alíquotas CBS e IBS são reduzidas:
+
+- **CBS**: 0,90% (referência plena será ~8,8% após transição completa)
+- **IBS**: 0,10% (referência plena será ~9,2%)
+
+Isso significa que mesmo que o cClassTrib aponte para alíquota "padrão", os valores absolutos de CBS/IBS na NF-e serão muito menores que os definitivos. A mecânica de cálculo, no entanto, é idêntica: `vBC × pCBS = vCBS` e `vBC × pIBS = vIBS`.
+
+Outro ponto importante: durante 2026, **ICMS e PIS/COFINS continuam coexistindo** com CBS/IBS no mesmo documento. O split payment aplica-se apenas ao CBS/IBS; ICMS e PIS/COFINS continuam sendo recolhidos pelos regimes anteriores.
+
+---
+
+## Como o Split Payment afeta o cClassTrib
+
+O **Split Payment** (LC 214, art. 28) determina que o CBS/IBS destacado na NF-e seja retido automaticamente pelo banco quando do pagamento — o comprador paga o vendedor líquido de imposto. Para que o split payment funcione corretamente, o campo `indPag` deve ser preenchido com `1` (operação sujeita a split) quando `vCBS + vIBS > 0`.
+
+A Tribultz detecta inconsistências como:
+- `indPag = 0` com `vCBS > 0` → erro SPLIT_PAYMENT_INDPAG
+- `vCBS = 0` com cClassTrib de alíquota padrão → suspeito de omissão
+
+---
+
+## Passo a passo: como corrigir o cadastro de produtos no seu ERP
+
+Se você identificou que o cadastro de produtos do ERP precisa ser revisado para o cClassTrib, siga este roteiro:
+
+**1. Exporte o cadastro atual**
+Gere um relatório com: NCM, CST atual, cClassTrib atual (se já preenchido), descrição do produto.
+
+**2. Identifique os NCMs com maior volume de emissão**
+Priorize os 20% de NCMs que representam 80% das notas. Uma abordagem de pareto reduz o risco operacional rapidamente.
+
+**3. Consulte o cClassTrib correto para cada NCM**
+Use a API pública da Tribultz (`POST /api/v1/public/classtrib/{ncm}`) ou a interface web em [tribultz.com.br/classificacao](https://tribultz.com.br/classificacao). A resposta retorna o cClassTrib sugerido, o CST compatível e a base legal.
+
+**4. Atualize o cadastro em lote**
+Importe o de-para (NCM → cClassTrib) pelo módulo de importação do seu ERP. ERPs como TOTVS, SAP e Omie já possuem campos específicos para cClassTrib na tabela de produtos.
+
+**5. Execute uma validação pré-emissão**
+Antes de voltar para produção, valide uma amostra de XMLs pelo [Diagnóstico NF-e da Tribultz](https://tribultz.com.br/diagnostico). O diagnóstico aplica as 18 regras da NT 2025.002 e destaca incompatibilidades cClassTrib × CST.
+
+---
+
+## Atenção: versões da tabela cClassTrib
+
+A tabela cClassTrib é atualizada periodicamente pela SVRS. A versão vigente em junho de 2026 é a **V1.36**, publicada em abril de 2026. Mudanças relevantes nessa versão:
+
+- Inclusão de novos cClassTrib para dispositivos médicos com benefício fiscal (LC 214, art. 53)
+- Revisão dos cClassTrib para veículos elétricos (CST 200, alíquota reduzida)
+- Novos modificadores para operações em Zona Franca de Manaus
+
+Se seu sistema foi configurado com uma versão anterior da tabela, alguns cClassTrib podem ter sido descontinuados, causando rejeição mesmo que a combinação CST × prefixo seja válida formalmente.
+
+---
+
+## Ferramentas de validação disponíveis
+
+| Ferramenta | O que valida | Limite gratuito |
+|------------|-------------|-----------------|
+| [Diagnóstico NF-e](https://tribultz.com.br/diagnostico) | 18 regras NT 2025.002 + cClassTrib | 20/dia |
+| [Classificador NCM](https://tribultz.com.br/classificacao) | NCM → cClassTrib + CST | 100/dia |
+| [Calculadora CBS/IBS](https://tribultz.com.br/calculadora) | Cálculo vCBS/vIBS por NCM + UF | 100/dia |
+| API pública `/classtrib/{ncm}` | Consulta programática | 100 req/dia |
+
+---
+
+## Conclusão
+
+O cClassTrib é o código central da Reforma Tributária de 2026. Errar nele significa Rejeição 1024 na SEFAZ — o que paralisa emissão de notas. A boa notícia: o problema é 100% prevenível com um mapeamento correto NCM → cClassTrib mais validação pré-emissão.
+
+Use as ferramentas gratuitas da Tribultz para checar seu cadastro antes que a Receita Federal ou a SEFAZ rejeite seus documentos em produção. Quanto antes você corrigir, menor o impacto operacional.
+
+Tem dúvidas sobre um NCM específico? Acesse o [Classificador NCM → cClassTrib](https://tribultz.com.br/classificacao) ou fale com nosso time de suporte.

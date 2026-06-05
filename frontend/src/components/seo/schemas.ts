@@ -192,6 +192,92 @@ export const DIAGNOSTICO_SCHEMA: SchemaObject[] = [
 
 const CLASSIFICACAO_URL = `${SITE_URL}/classificacao`;
 
+// ── Blog helpers (Article / BreadcrumbList / Person) ────────────────────────
+
+export function articleSchema({
+  url,
+  title,
+  description,
+  publishedAt,
+  updatedAt,
+  author,
+  coverImage,
+}: {
+  url: string;
+  title: string;
+  description: string;
+  publishedAt: string;
+  updatedAt?: string;
+  author: { name: string; url: string; jobTitle: string; credentials?: string };
+  coverImage?: string;
+}): SchemaObject {
+  return {
+    "@type": "Article",
+    "@id": `${url}#article`,
+    "headline": title,
+    "description": description,
+    "url": url,
+    "datePublished": publishedAt,
+    ...(updatedAt ? { "dateModified": updatedAt } : {}),
+    "inLanguage": "pt-BR",
+    "author": {
+      "@type": "Person",
+      "@id": `${author.url}#person`,
+      "name": author.name,
+      "jobTitle": author.jobTitle,
+      ...(author.credentials ? { "description": author.credentials } : {}),
+      "worksFor": { "@id": ORG_ID },
+    },
+    "publisher": { "@id": ORG_ID },
+    ...(coverImage ? { "image": coverImage } : {}),
+  };
+}
+
+export function breadcrumbsSchema(
+  items: { name: string; url: string }[],
+): SchemaObject {
+  return {
+    "@type": "BreadcrumbList",
+    "@id": `${items[items.length - 1]?.url ?? ""}#breadcrumb`,
+    "itemListElement": items.map((item, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "name": item.name,
+      "item": item.url,
+    })),
+  };
+}
+
+export function personSchema({
+  name,
+  url,
+  jobTitle,
+  credentials,
+  worksFor,
+}: {
+  name: string;
+  url: string;
+  jobTitle: string;
+  credentials?: string;
+  worksFor?: string;
+}): SchemaObject {
+  return {
+    "@type": "Person",
+    "@id": `${url}#person`,
+    "name": name,
+    "url": url,
+    "jobTitle": jobTitle,
+    ...(credentials ? { "description": credentials } : {}),
+    "worksFor": {
+      "@type": "Organization",
+      "name": worksFor ?? "Tribultz",
+      "@id": ORG_ID,
+    },
+  };
+}
+
+// ── /classificacao ──────────────────────────────────────────────────────────
+
 export const CLASSIFICACAO_SCHEMA: SchemaObject[] = [
   ORGANIZATION,
   {
