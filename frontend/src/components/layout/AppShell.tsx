@@ -10,6 +10,7 @@ import { getToken } from "@/lib/storage";
 
 const PUBLIC_ROUTES = [
   "/",
+  "/blog",
   "/calculadora",
   "/changelog",
   "/classificacao",
@@ -24,6 +25,7 @@ const PUBLIC_ROUTES = [
   "/reset-password",
   "/select-mode",
   "/simulador",
+  "/split-payment",
   "/terms",
   "/verify-email",
 ];
@@ -35,7 +37,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [stateVersion, setStateVersion] = useState(0);
   const [authChecked, setAuthChecked] = useState(false);
 
-  const isPublic = useMemo(() => PUBLIC_ROUTES.includes(pathname), [pathname]);
+  const isPublic = useMemo(
+    () => PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/")),
+    [pathname],
+  );
 
   useEffect(() => {
     setMobileOpen(false);
