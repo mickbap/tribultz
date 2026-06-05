@@ -159,7 +159,7 @@ test("IBSCBS_CALC: valores corretos não geram finding de cálculo", () => {
 
 // ── New rules (S7) — CEST_MISSING ───────────────────────────────────────────
 
-test("CEST_MISSING: nota sem CEST gera ALERT (regulamento 30/abr/2026 — apenas ST)", () => {
+test("CEST_MISSING: NCM não-ST sem CEST gera ALERT (Conv. 142/2018, #275)", () => {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <NFS-e><infNfse>
   <PrestadorServico><RazaoSocial>X</RazaoSocial></PrestadorServico>
@@ -180,7 +180,32 @@ test("CEST_MISSING: nota sem CEST gera ALERT (regulamento 30/abr/2026 — apenas
   const result = validateXmlWithRules({ tenantId: "t", documentType: "NFSE", xml });
   const f = result.findings.find((f) => f.rule_id === "CEST_MISSING");
   assert.ok(f, "CEST_MISSING finding expected");
-  assert.equal(f!.severity, "ALERT"); // downgraded per regulamento 30/abr/2026
+  assert.equal(f!.severity, "ALERT"); // NCM 84713012 fora do subset ST
+});
+
+test("CEST_MISSING: NCM ST sem CEST gera FATAL com segmento (#275 fase 2)", () => {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<NFS-e><infNfse>
+  <PrestadorServico><RazaoSocial>X</RazaoSocial></PrestadorServico>
+  <TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>
+  <PrestacaoServico>
+    <Servico>
+      <CodigoServico>123456</CodigoServico>
+      <cClassTrib>654321</cClassTrib>
+      <CST>090</CST><NCM>22021000</NCM>
+    </Servico>
+    <Valores>
+      <BaseCalculo>10000.00</BaseCalculo>
+      <AliquotaCBS>0.0010</AliquotaCBS><ValorCBS>10.00</ValorCBS>
+      <AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>90.00</ValorIBS>
+    </Valores>
+  </PrestacaoServico>
+</infNfse></NFS-e>`;
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFSE", xml });
+  const f = result.findings.find((f) => f.rule_id === "CEST_MISSING");
+  assert.ok(f, "CEST_MISSING finding expected");
+  assert.equal(f!.severity, "FATAL"); // NCM 22021000 (refrigerante) é ST
+  assert.match(f!.title, /bebidas_nao_alcoolicas/);
 });
 
 // ── New rules (S7) — CEST_FORMAT ────────────────────────────────────────────

@@ -7,6 +7,8 @@ from typing import Type
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
+from app.data.cest_ncm import lookup_ncm_st
+
 
 class ValidateFiscalInput(BaseModel):
     invoice_id: str = Field(description="Invoice ID returned by parse_nfse_xml")
@@ -165,16 +167,37 @@ class ValidateFiscalRulesTool(BaseTool):
             except ValueError:
                 pass  # non-numeric values — skip calc check
 
-        # Rule 8: CEST_MISSING — CEST must be present
+        # Rule 8: CEST_MISSING (#275 fase 2)
+        # CEST obrigatório só para produtos em Substituição Tributária
+        # (Convênio ICMS 142/2018). Cruza NCM declarado com subset curado.
         if not cest:
-            findings.append({
-                "rule_id": "CEST_MISSING",
-                "severity": "FATAL",
-                "field": "CEST",
-                "xpath": "/NFS-e/infNfse//CEST",
-                "snippet": "(não encontrado)",
-                "recommendation": "Informar código CEST conforme nova classificação tributária.",
-            })
+            st_info = lookup_ncm_st(ncm)
+            if st_info["is_st"]:
+                seg_label = ", ".join(st_info["segments"]) or "ST"
+                findings.append({
+                    "rule_id": "CEST_MISSING",
+                    "severity": "FATAL",
+                    "field": "CEST",
+                    "xpath": "/NFS-e/infNfse//CEST",
+                    "snippet": f"NCM={ncm} (segmento ST: {seg_label}) sem CEST",
+                    "recommendation": (
+                        f"CEST obrigatório: NCM {ncm} pertence ao segmento de Substituição "
+                        f"Tributária ({seg_label}, Convênio ICMS 142/2018)."
+                    ),
+                })
+            else:
+                findings.append({
+                    "rule_id": "CEST_MISSING",
+                    "severity": "ALERT",
+                    "field": "CEST",
+                    "xpath": "/NFS-e/infNfse//CEST",
+                    "snippet": "(não encontrado)",
+                    "recommendation": (
+                        f"CEST ausente. NCM {ncm} não consta no subset ST conhecido "
+                        f"(Convênio ICMS 142/2018). Se o produto for sujeito a ST, "
+                        f"informe o CEST; caso contrário, este aviso pode ser desconsiderado."
+                    ),
+                })
 
         # Rule 9: CEST_FORMAT — CEST must be exactly 7 digits
         if cest and not re.fullmatch(r"\d{7}", cest):
