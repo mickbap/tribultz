@@ -171,6 +171,24 @@ class ValidateIBSCBSRulesTool(BaseTool):
                     ),
                 })
 
+        # Rule 5c: MONOFASICO_ZERO — CST 620 downstream should not have tax > 0 (#277)
+        if cst == "620":
+            tax_val = _safe_float(vcbs)
+            ibs_tax_val = _safe_float(vibs)
+            if tax_val > 0 or ibs_tax_val > 0:
+                findings.append({
+                    "rule_id": "MONOFASICO_ZERO",
+                    "severity": "FATAL",
+                    "field": "IBS/CBS",
+                    "xpath": f"{xpath_base}//IBSCBS",
+                    "snippet": f"<CST>{cst}</CST> vCBS={vcbs} vIBS={vibs}",
+                    "recommendation": (
+                        "CST 620 (regime monofasico): o IBS/CBS e recolhido integralmente "
+                        "pelo fabricante/importador. Operacoes downstream devem ter vCBS=0 e vIBS=0 "
+                        "(Reg. CBS cap. 8 / Reg. IBS cap. 6). Valor > 0 indica duplo recolhimento."
+                    ),
+                })
+
         # Rule 6: IBSCBS_MISSING
         has_ibscbs = "IBSCBS" in (layout_tags.split(",") if layout_tags else [])
         if not has_ibscbs:

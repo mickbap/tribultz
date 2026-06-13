@@ -399,6 +399,56 @@ test("CST_GROUP_MATCH: NF-e with CST 000 but no gIBSCBS gera FATAL", () => {
   assert.ok(f, "CST_GROUP_MATCH finding expected — CST 000 requires gIBSCBS");
 });
 
+// ── S22 (#277): MONOFASICO_ZERO — CST 620 downstream deve ter vCBS=vIBS=0 ────
+
+test("MONOFASICO_ZERO: NF-e com CST 620 e vCBS>0 gera FATAL", () => {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod></ide>
+  <emit><CNPJ>12345678000195</CNPJ></emit>
+  <det nItem="1">
+    <prod><NCM>27101259</NCM><vProd>100</vProd></prod>
+    <imposto><IBSCBS>
+      <CST>620</CST>
+      <cClassTrib>620001</cClassTrib>
+      <gIBSCBSMono>
+        <vBC>1000.00</vBC>
+        <vIBS>1.00</vIBS>
+        <vCBS>9.00</vCBS>
+      </gIBSCBSMono>
+    </IBSCBS></imposto>
+  </det>
+  <total><IBSCBSTot><vIBS>1.00</vIBS><vCBS>9.00</vCBS></IBSCBSTot></total>
+</infNFe></NFe></nfeProc>`;
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "MONOFASICO_ZERO");
+  assert.ok(f, "MONOFASICO_ZERO finding expected — CST 620 downstream com valor > 0");
+  assert.equal(f!.severity, "FATAL");
+});
+
+test("MONOFASICO_ZERO: NF-e com CST 620 e vCBS=vIBS=0 não gera finding", () => {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod></ide>
+  <emit><CNPJ>12345678000195</CNPJ></emit>
+  <det nItem="1">
+    <prod><NCM>27101259</NCM><vProd>100</vProd></prod>
+    <imposto><IBSCBS>
+      <CST>620</CST>
+      <cClassTrib>620001</cClassTrib>
+      <gIBSCBSMono>
+        <vBC>1000.00</vBC>
+        <vIBS>0.00</vIBS>
+        <vCBS>0.00</vCBS>
+      </gIBSCBSMono>
+    </IBSCBS></imposto>
+  </det>
+  <total><IBSCBSTot><vIBS>0.00</vIBS><vCBS>0.00</vCBS></IBSCBSTot></total>
+</infNFe></NFe></nfeProc>`;
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  assert.equal(result.findings.find((f) => f.rule_id === "MONOFASICO_ZERO"), undefined);
+});
+
 // ── S11: LAYOUT_NFE — NF-e structure check ──────────────────────────────────
 
 test("LAYOUT_NFE: NF-e sem emit gera FATAL", () => {

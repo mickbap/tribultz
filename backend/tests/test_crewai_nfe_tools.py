@@ -329,6 +329,72 @@ def test_validate_cst_semantic_070():
     assert "CST_SEMANTIC" in rule_ids
 
 
+def test_validate_monofasico_zero_620():
+    """CST 620 (monofásico) downstream com vCBS > 0 deve disparar MONOFASICO_ZERO."""
+    xml = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc versao="4.00">
+  <NFe>
+    <infNFe versao="4.00">
+      <ide><mod>55</mod></ide>
+      <emit><CNPJ>12345678000195</CNPJ></emit>
+      <det nItem="1">
+        <prod><NCM>84713012</NCM><CEST>2104900</CEST></prod>
+        <imposto>
+          <IBSCBS>
+            <CST>620</CST>
+            <cClassTrib>620001</cClassTrib>
+            <gIBSCBS>
+              <vBC>1000.00</vBC>
+              <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+              <vIBS>1.00</vIBS>
+              <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+            </gIBSCBS>
+          </IBSCBS>
+        </imposto>
+      </det>
+      <total><IBSCBSTot><vCBS>9.00</vCBS><vIBS>1.00</vIBS></IBSCBSTot></total>
+    </infNFe>
+  </NFe>
+</nfeProc>"""
+    result = _parse_and_validate(xml)
+    rule_ids = [f["rule_id"] for f in result["findings"]]
+    assert "MONOFASICO_ZERO" in rule_ids
+
+
+def test_validate_monofasico_zero_620_ok():
+    """CST 620 com vCBS=vIBS=0 (downstream correto) não deve disparar MONOFASICO_ZERO."""
+    xml = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc versao="4.00">
+  <NFe>
+    <infNFe versao="4.00">
+      <ide><mod>55</mod></ide>
+      <emit><CNPJ>12345678000195</CNPJ></emit>
+      <det nItem="1">
+        <prod><NCM>84713012</NCM><CEST>2104900</CEST></prod>
+        <imposto>
+          <IBSCBS>
+            <CST>620</CST>
+            <cClassTrib>620001</cClassTrib>
+            <gIBSCBS>
+              <vBC>0.00</vBC>
+              <vIBS>0.00</vIBS>
+              <gCBS><pCBS>0.0000</pCBS><vCBS>0.00</vCBS></gCBS>
+            </gIBSCBS>
+          </IBSCBS>
+        </imposto>
+      </det>
+      <total><IBSCBSTot><vCBS>0.00</vCBS><vIBS>0.00</vIBS></IBSCBSTot></total>
+    </infNFe>
+  </NFe>
+</nfeProc>"""
+    result = _parse_and_validate(xml)
+    rule_ids = [f["rule_id"] for f in result["findings"]]
+    assert "MONOFASICO_ZERO" not in rule_ids
+
+
 def test_validate_cbs_calc_error():
     """vCBS wrong calculation should trigger IBSCBS_CALC."""
     xml = """\

@@ -248,6 +248,18 @@ FISCAL_JUSTIFICATIONS: dict[str, FiscalJustification] = {
             "Se houver tributação, corrija o CST para o código correspondente ao regime efetivo."
         ),
     },
+    "MONOFASICO_ZERO": {
+        "base_legal": "LC 214/2025 — Regime monofásico (Reg. CBS cap. 8 / Reg. IBS cap. 6)",
+        "explicacao": (
+            "O CST 620 indica regime monofásico, no qual o IBS/CBS é recolhido integralmente "
+            "pelo fabricante ou importador. Operações posteriores (distribuição, varejo) devem "
+            "declarar vCBS e vIBS iguais a zero. Valores maiores que zero indicam duplo recolhimento."
+        ),
+        "correcao": (
+            "Em operações downstream com CST 620, zere os campos vCBS, vIBS, vIBSUF e vIBSMun. "
+            "O tributo já foi recolhido na origem da cadeia monofásica."
+        ),
+    },
     "LAYOUT_PORTAL": {
         "base_legal": (
             "NT 2025.002-RTC, Seção 4 — Requisitos de Leiaute para Nota Nacional "
