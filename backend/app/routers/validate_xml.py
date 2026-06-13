@@ -285,6 +285,9 @@ def validate_xml(
     v_ibs_mun = _first_tag(xml, ["vIBSMun"])
     v_ibs = _first_tag(xml, ["vIBS"])
 
+    # CRT do emitente (NT 2025.002 v1.40 #311): 1/2=Simples Nacional, 3=Regime Normal, 4=MEI
+    crt = _first_tag(xml, ["CRT"])
+
     # dPrevEntrega fields (NT 2025.002 V1.36 + Cartilha CGIBS item 1.1)
     d_prev_entrega = _first_tag(xml, ["dPrevEntrega"])
     dh_emi = _first_tag(xml, ["dhEmi"])
@@ -354,12 +357,20 @@ def validate_xml(
 
     # ── Rule 6: IBSCBS_MISSING ───────────────────────────────────────────────
 
-    _ibscbs_sev = _pedagogical_severity("IBSCBS_MISSING", pedagogical_mode)
+    # NT 2025.002 v1.40 (#311): obrigatoriedade de IBS/CBS é faseada por regime —
+    # Simples/MEI (CRT 1/2/4) só a partir de 04/01/2027. Não emitir FATAL por ausência
+    # nesses regimes; Regime Normal (CRT 3) segue o cronograma (03/08/2026).
+    _crt_val = crt["value"].strip() if crt else ""
+    _is_simples_mei = _crt_val in ("1", "2", "4")
+    _ibscbs_sev = "WARNING" if _is_simples_mei else _pedagogical_severity("IBSCBS_MISSING", pedagogical_mode)
+    _simples_note = " Simples Nacional/MEI: obrigatório a partir de 04/01/2027 (NT 2025.002 v1.40)."
     if has_ibscbs:
         if not ibscbs_block:
             ev_id = "E_XML_IBSCBS_MISSING"
             _rec = "Informar grupo IBSCBS com CST, cClassTrib e campos de cálculo."
-            if _ibscbs_sev == "WARNING":
+            if _is_simples_mei:
+                _rec += _simples_note
+            elif _ibscbs_sev == "WARNING":
                 _rec += _LC227_RECOMMENDATION
             _add(
                 Finding(id="F_IBSCBS_MISSING", severity=_ibscbs_sev, rule_id="IBSCBS_MISSING", title="Grupo IBSCBS ausente — obrigatório conforme NT 2025.002", where=FindingWhere(field="IBSCBS", xpath=_xpath("imposto", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),
@@ -370,7 +381,9 @@ def validate_xml(
         if not has_legacy:
             ev_id = "E_XML_IBSCBS_MISSING"
             _rec = "Informar alíquota e valor de IBS e CBS conforme LC 214."
-            if _ibscbs_sev == "WARNING":
+            if _is_simples_mei:
+                _rec += _simples_note
+            elif _ibscbs_sev == "WARNING":
                 _rec += _LC227_RECOMMENDATION
             _add(
                 Finding(id="F_IBSCBS_MISSING", severity=_ibscbs_sev, rule_id="IBSCBS_MISSING", title="IBS/CBS ausentes na nota", where=FindingWhere(field="IBS/CBS", xpath=_xpath("Valores", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),

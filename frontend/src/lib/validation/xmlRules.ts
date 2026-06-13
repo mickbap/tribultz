@@ -244,6 +244,18 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
   const vIBSMun = firstTag(xml, ["vIBSMun"]);
   const vIBS = firstTag(xml, ["vIBS"]);
 
+  // CRT do emitente (NT 2025.002 v1.40 #311): 1/2=Simples Nacional, 3=Regime Normal, 4=MEI.
+  // Obrigatoriedade de IBS/CBS é faseada: Simples/MEI só a partir de 04/01/2027 → WARNING,
+  // não FATAL (evita falso-rejeitar); Regime Normal (CRT 3) segue o cronograma (03/08/2026).
+  const crt = firstTag(xml, ["CRT"]);
+  const crtVal = crt?.value?.trim() ?? "";
+  const isSimplesOrMei = crtVal === "1" || crtVal === "2" || crtVal === "4";
+  const ibsCbsMissingSev: FindingSeverity = isSimplesOrMei
+    ? "WARNING"
+    : pedagogicalSeverity("IBSCBS_MISSING", pedMode);
+  const SIMPLES_MEI_NOTE =
+    " Simples Nacional/MEI: obrigatório a partir de 04/01/2027 (NT 2025.002 v1.40).";
+
   // NF-e totals
   const ibscbsTot = firstTag(xml, ["IBSCBSTot"]);
   const totVIBS = ibscbsTot ? firstTag(ibscbsTot.snippet, ["vIBS"]) : null;
@@ -412,14 +424,16 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
       pushFindingAndEvidence(findings, evidences, evidenceById,
         makeFinding({
           id: "F_IBSCBS_MISSING",
-          severity: "FATAL",
+          severity: ibsCbsMissingSev,
           ruleId: "IBSCBS_MISSING",
           title: "Grupo IBSCBS ausente — obrigatório conforme NT 2025.002",
           field: "IBSCBS",
           xpath: inferXpath("imposto", docType),
           snippet: "<!-- Grupo <IBSCBS> não encontrado em <imposto> -->",
           evidenceId: evId,
-          recommendation: "Informar grupo IBSCBS com CST, cClassTrib e campos de cálculo conforme NT 2025.002.",
+          recommendation:
+            "Informar grupo IBSCBS com CST, cClassTrib e campos de cálculo conforme NT 2025.002." +
+            (isSimplesOrMei ? SIMPLES_MEI_NOTE : ""),
         }),
         makeEvidence({ id: evId, type: "xml", label: "IBSCBS — grupo ausente", xpath: inferXpath("imposto", docType), snippet: "<!-- Grupo <IBSCBS> não encontrado -->" }),
       );
@@ -432,14 +446,16 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
       pushFindingAndEvidence(findings, evidences, evidenceById,
         makeFinding({
           id: "F_IBSCBS_MISSING",
-          severity: "FATAL",
+          severity: ibsCbsMissingSev,
           ruleId: "IBSCBS_MISSING",
           title: "IBS/CBS ausentes na nota — obrigatório informar percentual e valor",
           field: "IBS/CBS",
           xpath: inferXpath("Valores", docType),
           snippet: "<!-- Tags ValorCBS, ValorIBS, AliquotaCBS, AliquotaIBS não encontradas -->",
           evidenceId: evId,
-          recommendation: "Informar alíquota e valor de IBS (0,90%) e CBS (0,10%) conforme LC 214.",
+          recommendation:
+            "Informar alíquota e valor de IBS (0,90%) e CBS (0,10%) conforme LC 214." +
+            (isSimplesOrMei ? SIMPLES_MEI_NOTE : ""),
         }),
         makeEvidence({ id: evId, type: "xml", label: "IBS/CBS — campos ausentes", xpath: inferXpath("Valores", docType), snippet: "<!-- Tags ValorCBS, ValorIBS, AliquotaCBS, AliquotaIBS não encontradas -->" }),
       );

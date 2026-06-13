@@ -166,6 +166,41 @@ class TestNfeValidation:
         rules = [f.rule_id for f in result.findings if f.severity == "FATAL"]
         assert "IBSCBS_CALC" in rules
 
+    # NT 2025.002 v1.40 (#311): obrigatoriedade de IBS/CBS é faseada por regime —
+    # CRT 3 (Regime Normal) 03/08/2026; CRT 1/2/4 (Simples/MEI) só 04/01/2027.
+    _NFE_SEM_IBSCBS = """<nfeProc><NFe><infNFe>
+      <ide><mod>55</mod></ide>
+      <emit><CNPJ>12345678000195</CNPJ><CRT>{crt}</CRT></emit>
+      <det nItem="1">
+        <prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>
+        <imposto><ICMS><ICMSSN101><CST>101</CST></ICMSSN101></ICMS></imposto>
+      </det>
+      <total></total>
+    </infNFe></NFe></nfeProc>"""
+
+    def test_ibscbs_missing_simples_crt1_is_warning(self):
+        """Simples Nacional (CRT 1) sem IBS/CBS → WARNING, não FATAL (obrigatório só 04/01/2027)."""
+        result = validate_xml(self._NFE_SEM_IBSCBS.format(crt="1"), "NFE")
+        missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
+        assert missing, "IBSCBS_MISSING esperado"
+        assert all(f.severity == "WARNING" for f in missing), \
+            f"CRT 1 (Simples) deve ser WARNING: {[f.severity for f in missing]}"
+
+    def test_ibscbs_missing_mei_crt4_is_warning(self):
+        """MEI (CRT 4) sem IBS/CBS → WARNING (obrigatório só 04/01/2027)."""
+        result = validate_xml(self._NFE_SEM_IBSCBS.format(crt="4"), "NFE")
+        missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
+        assert missing and all(f.severity == "WARNING" for f in missing), \
+            f"CRT 4 (MEI) deve ser WARNING: {[f.severity for f in missing]}"
+
+    def test_ibscbs_missing_regime_normal_crt3_is_fatal(self):
+        """Regime Normal (CRT 3) sem IBS/CBS → FATAL (obrigatório 03/08/2026)."""
+        result = validate_xml(self._NFE_SEM_IBSCBS.format(crt="3"), "NFE")
+        missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
+        assert missing, "IBSCBS_MISSING esperado"
+        assert all(f.severity == "FATAL" for f in missing), \
+            f"CRT 3 (Regime Normal) deve ser FATAL: {[f.severity for f in missing]}"
+
 
 # ── NFC-e validation ─────────────────────────────────────────────────────────
 
