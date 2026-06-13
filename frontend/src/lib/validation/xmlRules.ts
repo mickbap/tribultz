@@ -369,6 +369,29 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
         );
       }
     }
+
+    // CST 620 (monofásico): operações downstream devem ter vCBS = vIBS = 0 (#277)
+    if (cst.value === "620") {
+      const taxVal = parseFloat(vCBS?.value ?? valorCbs?.value ?? "0");
+      const ibsTaxVal = parseFloat(vIBS?.value ?? valorIbs?.value ?? "0");
+      if (taxVal > 0 || ibsTaxVal > 0) {
+        const evId = makeEvidenceId("MONOFASICO_ZERO");
+        pushFindingAndEvidence(findings, evidences, evidenceById,
+          makeFinding({
+            id: "F_MONOFASICO_ZERO",
+            severity: "FATAL",
+            ruleId: "MONOFASICO_ZERO",
+            title: `CST 620 (Monofásico) não deve ter valores tributários > 0 — recolhimento é do fabricante/importador`,
+            field: "IBS/CBS",
+            xpath: inferXpath("IBSCBS", docType),
+            snippet: cst.snippet,
+            evidenceId: evId,
+            recommendation: `CST 620 (regime monofásico): o IBS/CBS é recolhido integralmente pelo fabricante/importador. Operações downstream devem ter vCBS=0 e vIBS=0 (Reg. CBS cap. 8 / Reg. IBS cap. 6). Valor > 0 indica duplo recolhimento.`,
+          }),
+          makeEvidence({ id: evId, type: "xml", label: `CST 620 — valor monofásico incoerente`, xpath: inferXpath("IBSCBS", docType), snippet: cst.snippet }),
+        );
+      }
+    }
   }
 
   // ── Rule 6: IBSCBS_MISSING — IBS/CBS fields must be present ──────────────
