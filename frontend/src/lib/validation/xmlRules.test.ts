@@ -327,6 +327,41 @@ test("NF-e v1.40 (campos/grupos novos) não gera FATAL", () => {
   );
 });
 
+// ── S22 (#311): IBS/CBS obrigatório ciente do CRT (NT v1.40) ─────────────────
+// CRT 3 (Regime Normal): obrigatório 03/08/2026 → FATAL.
+// CRT 1/2/4 (Simples/MEI): obrigatório só 04/01/2027 → WARNING (não falso-rejeitar).
+
+const nfeSemIbscbs = (crt: string) => `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod></ide>
+  <emit><CNPJ>12345678000195</CNPJ><CRT>${crt}</CRT></emit>
+  <det nItem="1">
+    <prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>
+    <imposto><ICMS><ICMSSN101><CST>101</CST></ICMSSN101></ICMS></imposto>
+  </det>
+  <total></total>
+</infNFe></NFe></nfeProc>`;
+
+test("IBSCBS_MISSING: CRT 1 (Simples) sem IBS/CBS → WARNING (#311)", () => {
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml: nfeSemIbscbs("1") });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
+  assert.ok(f, "IBSCBS_MISSING esperado");
+  assert.equal(f!.severity, "WARNING");
+});
+
+test("IBSCBS_MISSING: CRT 4 (MEI) sem IBS/CBS → WARNING (#311)", () => {
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml: nfeSemIbscbs("4") });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
+  assert.equal(f?.severity, "WARNING");
+});
+
+test("IBSCBS_MISSING: CRT 3 (Regime Normal) sem IBS/CBS → FATAL (#311)", () => {
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml: nfeSemIbscbs("3") });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
+  assert.ok(f, "IBSCBS_MISSING esperado");
+  assert.equal(f!.severity, "FATAL");
+});
+
 // ── S11: NFC-e ok — no FATALs ──────────────────────────────────────────────
 
 test("NFC-e ok não gera FATAL", () => {
