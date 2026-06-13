@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateXmlWithRules, detectDocumentType, CST_TABLE } from "./xmlRules";
+import { validateXmlWithRules, detectDocumentType, CST_TABLE, NT_VERSION } from "./xmlRules";
 
 function fixture(name: string): string {
   return readFileSync(join(process.cwd(), "src/lib/validation/fixtures", name), "utf-8");
@@ -305,6 +305,26 @@ test("NF-e ok não gera FATAL", () => {
   const fatals = result.findings.filter((f) => f.severity === "FATAL");
   assert.equal(fatals.length, 0, `Unexpected FATALs: ${fatals.map((f) => f.rule_id).join(", ")}`);
   assert.ok(result.findings.some((f) => f.severity === "ALERT"), "Should have ALERT findings");
+});
+
+// ── S22 (#310): NT 2025.002-RTC v1.40 — versão alvo + tolerância de leiaute ──
+
+test("NT_VERSION declara v1.40", () => {
+  assert.equal(NT_VERSION, "1.40");
+});
+
+test("NF-e v1.40 (campos/grupos novos) não gera FATAL", () => {
+  const result = validateXmlWithRules({
+    tenantId: "tenant-a",
+    documentType: "NFE",
+    xml: fixture("nfe-v140-ok.xml"),
+  });
+  const fatals = result.findings.filter((f) => f.severity === "FATAL");
+  assert.equal(
+    fatals.length,
+    0,
+    `v1.40 não deve gerar FATAL — campos novos (cIndOp, ISUFEmit, gALCZFMCBS, refDFeAnt, gDevTrib) devem ser tolerados. FATALs: ${fatals.map((f) => f.rule_id).join(", ")}`,
+  );
 });
 
 // ── S11: NFC-e ok — no FATALs ──────────────────────────────────────────────

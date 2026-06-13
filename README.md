@@ -47,7 +47,7 @@ O motor determinístico aplica 14 regras de conformidade contra XML de NF-e, NFC
 
 | Funcionalidade | Descrição |
 |---|---|
-| **Validação XML** | Upload de NF-e, NFC-e e NFS-e; 22 regras NT 2025.002-RTC v1.36; resultado em <2s |
+| **Validação XML** | Upload de NF-e, NFC-e e NFS-e; 22 regras NT 2025.002-RTC v1.40; resultado em <2s |
 | **Modo Período Educativo** | Toggle LC 227/2026 art. 348: obrigações acessórias viram WARNING em vez de FATAL com badge legal |
 | **dPrevEntrega (NT V1.36)** | 3 regras: Rejeição 1157 preventiva, divergência competência CBS/IBS, CIF sem data entrega |
 | **Validação em lote** | Fila Celery; N arquivos em paralelo; relatório consolidado |
@@ -320,7 +320,7 @@ tenants ──┬── users ──── user_tenants
 
 ---
 
-## Regras de Validação (NT 2025.002-RTC v1.36)
+## Regras de Validação (NT 2025.002-RTC v1.40)
 
 | # | Regra | Severidade | Descrição |
 |---|---|---|---|
