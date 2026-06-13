@@ -9,6 +9,14 @@ import type {
 } from "@/lib/types";
 import { lookupNcmSt } from "./cestNcm";
 
+/**
+ * Versão da NT 2025.002-RTC que o motor tem como alvo.
+ * v1.40 (20/05/2026): novos campos/grupos no IBSCBS (cIndOp, ISUFEmit, gALCZFMCBS,
+ * refDFeAnt, gDevTrib ampliado) — tolerados pelo parser. As novas regras de rejeição
+ * da v1.40 (B25d-*, BB05-*, C22-*, UB66*…) são rastreadas na issue #311.
+ */
+export const NT_VERSION = "1.40";
+
 export type ValidationInput = {
   tenantId: string;
   documentType: XmlDocumentType;
