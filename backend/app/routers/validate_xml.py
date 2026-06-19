@@ -231,6 +231,35 @@ def _pedagogical_severity(rule_id: str, pedagogical_mode: bool) -> str:
     return "FATAL"
 
 
+# ── Ato Conjunto RFB/CGIBS nº 1/2025 — janela sem penalidades ────────────────
+# Art. 3º: penalidades por descumprimento de obrigações acessórias de IBS/CBS
+# suspensas até o 1º dia do 4º mês subsequente à publicação da parte comum dos
+# regulamentos (Decreto 12.955/2026 + Resolução CGIBS 6/2026, publicados em
+# 30/04/2026). Sem multa para fatos geradores até 31/07/2026; a partir de
+# 01/08/2026 a penalidade volta a ser aplicável → FATAL. Distinto e combinável
+# com o pedagogical_mode (LC 227/2026 art. 348), que é override manual.
+_NO_PENALTY_WINDOW_START = "2026-01-01"
+_NO_PENALTY_WINDOW_END = "2026-08-01"  # exclusivo: notas a partir desta data são penalizáveis
+
+_ATO_CONJUNTO_RECOMMENDATION = (
+    " — Período sem penalidades (Ato Conjunto RFB/CGIBS nº 1/2025, art. 3º): "
+    "obrigação acessória de IBS/CBS sem multa para fatos geradores até 31/07/2026 "
+    "(parte comum dos regulamentos publicada em 30/04/2026). "
+    "A partir de 01/08/2026 a penalidade é aplicável."
+)
+
+
+def _within_no_penalty_window(emission_date: dict | None) -> bool:
+    """True se a data de emissão (dhEmi/NFS-e) cai na janela sem penalidades do Ato Conjunto 1/25."""
+    if not emission_date:
+        return False
+    date_part = emission_date["value"][:10]  # YYYY-MM-DD
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_part):
+        return False
+    # Comparação lexicográfica é válida para datas ISO YYYY-MM-DD.
+    return _NO_PENALTY_WINDOW_START <= date_part < _NO_PENALTY_WINDOW_END
+
+
 def validate_xml(
     xml: str,
     doc_type: str | None = None,
@@ -292,6 +321,10 @@ def validate_xml(
     d_prev_entrega = _first_tag(xml, ["dPrevEntrega"])
     dh_emi = _first_tag(xml, ["dhEmi"])
     mod_frete = _first_tag(xml, ["modFrete"])
+
+    # Data de emissão para a janela sem penalidades (Ato Conjunto 1/25): NF-e usa
+    # dhEmi; NFS-e legado usa DataEmissao/dhEmissao/dhProc/dEmi.
+    emission_date = dh_emi or _first_tag(xml, ["DataEmissao", "dhEmissao", "dhProc", "dEmi"])
 
     # NFS-e legacy fields
     valor_cbs = _first_tag(xml, ["ValorCBS", "vCBS"])
@@ -653,6 +686,16 @@ def validate_xml(
                 Finding(id="F_CNPJ_UNAVAIL", severity="ALERT", rule_id="CNPJ_ACTIVE", title="Verificação de CNPJ indisponível — API fora do ar", where=FindingWhere(field="CNPJ", xpath=_xpath("CNPJ", doc_type)), recommendation="APIs de consulta CNPJ temporariamente indisponíveis. Verifique manualmente.", evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="CNPJ — API indisponível", xpath=_xpath("CNPJ", doc_type)),
             )
+
+    # ── Janela sem penalidades (Ato Conjunto RFB/CGIBS 1/25) — passe final ────
+    # Downgrade automático FATAL → WARNING das obrigações acessórias quando a
+    # nota cai na janela (por dhEmi). O pedagogical_mode (LC 227) já foi aplicado
+    # inline acima; esta passada cobre o caso automático por data.
+    if _within_no_penalty_window(emission_date):
+        for f in findings:
+            if f.severity == "FATAL" and f.rule_id in _PEDAGOGICAL_ACCESSORY_RULES:
+                f.severity = "WARNING"
+                f.recommendation = (f.recommendation or "") + _ATO_CONJUNTO_RECOMMENDATION
 
     fatals = sum(1 for f in findings if f.severity == "FATAL")
     alerts = sum(1 for f in findings if f.severity in ("ALERT", "WARNING"))

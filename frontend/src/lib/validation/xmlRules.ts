@@ -41,11 +41,30 @@ const LC227_NOTE =
   "se autuado exclusivamente por esta obrigação acessória, " +
   "há 60 dias para regularizar sem aplicação de multa.";
 
-function pedagogicalSeverity(
-  ruleId: string,
-  pedagogicalMode: boolean,
-): "FATAL" | "WARNING" {
-  return pedagogicalMode && PEDAGOGICAL_ACCESSORY_RULES.has(ruleId) ? "WARNING" : "FATAL";
+// ── Ato Conjunto RFB/CGIBS nº 1/2025 — janela sem penalidades ─────────────────
+// Art. 3º: penalidades por descumprimento de obrigações acessórias de IBS/CBS
+// ficam suspensas até o 1º dia do 4º mês subsequente à publicação da parte comum
+// dos regulamentos (Decreto 12.955/2026 + Resolução CGIBS 6/2026, publicados em
+// 30/04/2026). Logo: sem multa para fatos geradores até 31/07/2026; a partir de
+// 01/08/2026 a penalidade volta a ser aplicável → severidade FATAL.
+// A dispensa de *recolhimento* (pagamento) cobre 2026 inteiro, mas aqui tratamos
+// apenas a suspensão de *multa* por obrigação acessória (o que o motor valida).
+const NO_PENALTY_WINDOW_START = "2026-01-01";
+const NO_PENALTY_WINDOW_END = "2026-08-01"; // exclusivo: notas a partir desta data são penalizáveis
+
+const ATO_CONJUNTO_NOTE =
+  " — Período sem penalidades (Ato Conjunto RFB/CGIBS nº 1/2025, art. 3º): " +
+  "obrigação acessória de IBS/CBS sem multa para fatos geradores até 31/07/2026 " +
+  "(parte comum dos regulamentos publicada em 30/04/2026). " +
+  "A partir de 01/08/2026 a penalidade é aplicável.";
+
+/** Data de emissão (dhEmi/NFS-e) dentro da janela sem penalidades do Ato Conjunto 1/25. */
+function isWithinNoPenaltyWindow(emissionDate: string | undefined): boolean {
+  if (!emissionDate) return false;
+  const datePart = emissionDate.slice(0, 10); // YYYY-MM-DD
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return false;
+  // Comparação lexicográfica é válida para datas ISO YYYY-MM-DD.
+  return datePart >= NO_PENALTY_WINDOW_START && datePart < NO_PENALTY_WINDOW_END;
 }
 
 // ── CST table (NT 2025.002-RTC) ────────────────────────────────────────────
@@ -226,6 +245,11 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
   const dhEmi = firstTag(xml, ["dhEmi"]);
   const modFrete = firstTag(xml, ["modFrete"]);
 
+  // Data de emissão para a janela sem penalidades (Ato Conjunto 1/25): NF-e usa
+  // dhEmi; NFS-e legado usa DataEmissao/dhEmissao/dhProc/dEmi. Mantemos dhEmi
+  // separado para as regras de competência (dPrevEntrega).
+  const emissionDate = dhEmi ?? firstTag(xml, ["DataEmissao", "dhEmissao", "dhProc", "dEmi"]);
+
   // NFS-e legacy fields
   const serviceCode = firstTag(xml, ["CodigoServico", "cServ", "codigoServico"]);
   const valorCbs = firstTag(xml, ["ValorCBS", "vCBS"]);
@@ -250,9 +274,10 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
   const crt = firstTag(xml, ["CRT"]);
   const crtVal = crt?.value?.trim() ?? "";
   const isSimplesOrMei = crtVal === "1" || crtVal === "2" || crtVal === "4";
-  const ibsCbsMissingSev: FindingSeverity = isSimplesOrMei
-    ? "WARNING"
-    : pedagogicalSeverity("IBSCBS_MISSING", pedMode);
+  // Simples/MEI: WARNING por faseamento (obrigatório só 04/01/2027). Demais: FATAL —
+  // o downgrade por pedagogicalMode (LC 227) e pela janela sem penalidades (Ato
+  // Conjunto 1/25) é centralizado no passe final, como nas outras regras acessórias.
+  const ibsCbsMissingSev: FindingSeverity = isSimplesOrMei ? "WARNING" : "FATAL";
   const SIMPLES_MEI_NOTE =
     " Simples Nacional/MEI: obrigatório a partir de 04/01/2027 (NT 2025.002 v1.40).";
 
@@ -966,13 +991,20 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
     }),
   );
 
-  // ── Modo Pedagógico LC 227/2026 — downgrade obrigações acessórias ─────────
-  if (pedMode) {
+  // ── Downgrade de obrigações acessórias FATAL → WARNING ────────────────────
+  // Duas bases legais independentes e combináveis:
+  //  - pedagogicalMode (LC 227/2026 art. 348): flag manual, 60 dias p/ regularizar;
+  //  - janela sem penalidades (Ato Conjunto RFB/CGIBS 1/25): automática por dhEmi,
+  //    fatos geradores até 31/07/2026.
+  const noPenaltyWindow = isWithinNoPenaltyWindow(emissionDate?.value);
+  if (pedMode || noPenaltyWindow) {
     for (const f of findings) {
       if (f.severity === "FATAL" && PEDAGOGICAL_ACCESSORY_RULES.has(f.rule_id)) {
         (f as { severity: string }).severity = "WARNING";
-        (f as { recommendation: string }).recommendation =
-          (f.recommendation || "") + LC227_NOTE;
+        let note = "";
+        if (pedMode) note += LC227_NOTE;
+        if (noPenaltyWindow) note += ATO_CONJUNTO_NOTE;
+        (f as { recommendation: string }).recommendation = (f.recommendation || "") + note;
       }
     }
   }

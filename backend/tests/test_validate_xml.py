@@ -221,3 +221,61 @@ class TestRouterRegistered:
         from app.main import app
         paths = [getattr(r, "path", "") for r in app.routes]
         assert "/api/v1/validate/xml" in paths
+
+
+# ── Item 1: janela sem penalidades — Ato Conjunto RFB/CGIBS nº 1/2025 art. 3º ──
+
+
+class TestNoPenaltyWindow:
+    """Multas por obrigação acessória suspensas para fatos geradores até 31/07/2026.
+    A partir de 01/08/2026 a penalidade volta a ser FATAL. pedagogical_mode (LC 227)
+    permanece como override manual independente da data."""
+
+    _NFE = """<nfeProc><NFe><infNFe>
+      <ide><mod>55</mod>{dh}</ide>
+      <emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>
+      <det nItem="1">
+        <prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>
+        <imposto><ICMS><ICMSSN101><CST>101</CST></ICMSSN101></ICMS></imposto>
+      </det>
+      <total></total>
+    </infNFe></NFe></nfeProc>"""
+
+    def _nfe(self, dh=None):
+        return self._NFE.format(dh=f"<dhEmi>{dh}</dhEmi>" if dh else "")
+
+    def test_dentro_da_janela_downgrade_para_warning(self):
+        result = validate_xml(self._nfe("2026-07-31T10:00:00-03:00"), "NFE")
+        missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
+        assert missing, "IBSCBS_MISSING esperado"
+        assert all(f.severity == "WARNING" for f in missing)
+        assert any("Ato Conjunto RFB/CGIBS" in (f.recommendation or "") for f in missing)
+
+    def test_limite_01_08_2026_volta_a_fatal(self):
+        result = validate_xml(self._nfe("2026-08-01T10:00:00-03:00"), "NFE")
+        missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
+        assert missing and all(f.severity == "FATAL" for f in missing)
+
+    def test_fora_da_janela_fatal(self):
+        result = validate_xml(self._nfe("2026-08-15T10:00:00-03:00"), "NFE")
+        missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
+        assert missing and all(f.severity == "FATAL" for f in missing)
+
+    def test_sem_dhemi_preserva_fatal(self):
+        result = validate_xml(self._nfe(), "NFE")
+        missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
+        assert missing and all(f.severity == "FATAL" for f in missing)
+
+    def test_pedagogical_mode_fora_da_janela_warning(self):
+        result = validate_xml(self._nfe("2026-09-10T10:00:00-03:00"), "NFE", pedagogical_mode=True)
+        missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
+        assert missing and all(f.severity == "WARNING" for f in missing)
+        assert any("LC 227/2026" in (f.recommendation or "") for f in missing)
+
+    def test_regra_nao_acessoria_permanece_fatal_na_janela(self):
+        # IBSCBS_SPLIT é regra de cálculo, não obrigação acessória → não entra na janela.
+        xml = NFE_OK.replace("<mod>55</mod>", "<mod>55</mod><dhEmi>2026-05-10T10:00:00-03:00</dhEmi>", 1)
+        xml = xml.replace("<vIBS>1.00</vIBS>", "<vIBS>1.50</vIBS>", 1)
+        result = validate_xml(xml, "NFE")
+        split = [f for f in result.findings if f.rule_id == "IBSCBS_SPLIT"]
+        assert split and all(f.severity == "FATAL" for f in split)
