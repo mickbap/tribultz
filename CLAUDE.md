@@ -43,7 +43,7 @@ docs/sprints/      Histórico de sprints e relatórios de entrega
 - **Commits**: Conventional Commits — `feat(s8):`, `fix(s8):`, `docs(s8):`
 - **Branch**: uma branch por issue, PR único por issue
 - **Testes frontend**: `cd frontend && npm test --silent`
-- **Testes backend**: `cd backend && source .venv/Scripts/activate && python -m pytest tests/ -q`
+- **Testes backend**: `cd backend && source .venv/bin/activate && python -m pytest tests/ -q`
 - **Lint backend**: `ruff check app/ tests/`
 - **Build frontend**: `cd frontend && npm run build`
 - **Type check backend**: `npx pyright@1.1.386`
@@ -55,7 +55,7 @@ docs/sprints/      Histórico de sprints e relatórios de entrega
 cd frontend && npm test --silent && npm run build
 
 # Backend
-cd backend && source .venv/Scripts/activate && python -m pytest tests/ -q && ruff check app/ tests/
+cd backend && source .venv/bin/activate && python -m pytest tests/ -q && ruff check app/ tests/
 ```
 
 ## Regras de domínio
