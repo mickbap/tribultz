@@ -279,3 +279,67 @@ class TestNoPenaltyWindow:
         result = validate_xml(xml, "NFE")
         split = [f for f in result.findings if f.rule_id == "IBSCBS_SPLIT"]
         assert split and all(f.severity == "FATAL" for f in split)
+
+
+# ── Item 2: IMPORT_IBSCBS_REQUIRED — incidência na importação (Decreto 12.955/2026) ──
+
+
+class TestImportIbscbsRequired:
+    """Importação (CFOP 3xxx ou grupo DI/DUIMP) é tributável por IBS/CBS independente
+    de importador habitual (art. 65). Escopo: grupo IBSCBS presente porém zerado com
+    CST tributável. Export (7xxx) e internas ficam fora."""
+
+    def _nfe(self, cfop="3102", cst="000", dh=None, vcbs="0.00", vibs="0.00", di=False, no_ibscbs=False):
+        di_xml = "<DI><nDI>2603001234</nDI></DI>" if di else ""
+        ibscbs = "" if no_ibscbs else (
+            f'<IBSCBS><CST>{cst}</CST><cClassTrib>000001</cClassTrib>'
+            f'<gIBSCBS><vBC>1000.00</vBC>'
+            f'<gIBSUF><pIBSUF>0</pIBSUF><vIBSUF>0.00</vIBSUF></gIBSUF>'
+            f'<gIBSMun><pIBSMun>0</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun>'
+            f'<vIBS>{vibs}</vIBS><gCBS><pCBS>0</pCBS><vCBS>{vcbs}</vCBS></gCBS>'
+            f'</gIBSCBS></IBSCBS>'
+        )
+        dh_xml = f"<dhEmi>{dh}</dhEmi>" if dh else ""
+        return (
+            f'<nfeProc><NFe><infNFe><ide><mod>55</mod>{dh_xml}</ide>'
+            f'<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            f'<det nItem="1"><prod><CFOP>{cfop}</CFOP><NCM>84713012</NCM><CEST>2104900</CEST>'
+            f'<vProd>1000.00</vProd>{di_xml}</prod><imposto>{ibscbs}</imposto></det>'
+            f'<total><IBSCBSTot><vIBS>{vibs}</vIBS><vCBS>{vcbs}</vCBS></IBSCBSTot></total>'
+            f'</infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml):
+        r = validate_xml(xml, "NFE")
+        return [f for f in r.findings if f.rule_id == "IMPORT_IBSCBS_REQUIRED"]
+
+    def test_cfop_3xxx_zerado_fora_da_janela_fatal(self):
+        f = self._find(self._nfe(cfop="3102", dh="2026-09-10T10:00:00-03:00"))
+        assert f and f[0].severity == "FATAL"
+        assert "Decreto 12.955/2026" in f[0].recommendation
+
+    def test_deteccao_via_di_com_cfop_interno(self):
+        f = self._find(self._nfe(cfop="1102", di=True, dh="2026-09-10T10:00:00-03:00"))
+        assert f and f[0].severity == "FATAL"
+
+    def test_importacao_tributada_sem_finding(self):
+        assert self._find(self._nfe(cfop="3102", vcbs="9.00", vibs="1.00")) == []
+
+    def test_cst_070_imunidade_sem_finding(self):
+        assert self._find(self._nfe(cfop="3102", cst="070")) == []
+
+    def test_cst_200_diferimento_sem_finding(self):
+        assert self._find(self._nfe(cfop="3102", cst="200")) == []
+
+    def test_interna_5102_sem_finding(self):
+        assert self._find(self._nfe(cfop="5102")) == []
+
+    def test_exportacao_7101_sem_finding(self):
+        assert self._find(self._nfe(cfop="7101")) == []
+
+    def test_dentro_da_janela_warning(self):
+        f = self._find(self._nfe(cfop="3102", dh="2026-05-10T10:00:00-03:00"))
+        assert f and f[0].severity == "WARNING"
+
+    def test_sem_grupo_ibscbs_nao_dispara(self):
+        assert self._find(self._nfe(cfop="3102", no_ibscbs=True)) == []
