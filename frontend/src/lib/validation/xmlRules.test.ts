@@ -664,3 +664,86 @@ test("SPLIT_PAYMENT_INDPAG: indPag=0 (à vista) sem CBS/IBS não gera finding", 
   const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
   assert.equal(result.findings.find((f) => f.rule_id === "SPLIT_PAYMENT_INDPAG"), undefined);
 });
+
+// ── Item 1: janela sem penalidades — Ato Conjunto RFB/CGIBS nº 1/2025 art. 3º ──
+// Multas por obrigação acessória de IBS/CBS suspensas para fatos geradores até
+// 31/07/2026 (regulamentos publicados 30/04/2026). A partir de 01/08/2026 a
+// penalidade volta a ser aplicável → severidade FATAL. pedagogicalMode (LC 227)
+// permanece como override manual independente da data.
+
+const nfeAcessoriaErr = (crt: string, dhEmi?: string) => `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod>${dhEmi ? `<dhEmi>${dhEmi}</dhEmi>` : ""}</ide>
+  <emit><CNPJ>12345678000195</CNPJ><CRT>${crt}</CRT></emit>
+  <det nItem="1">
+    <prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>
+    <imposto><ICMS><ICMSSN101><CST>101</CST></ICMSSN101></ICMS></imposto>
+  </det>
+  <total></total>
+</infNFe></NFe></nfeProc>`;
+
+test("janela: CRT 3 com dhEmi 2026-07-31 → IBSCBS_MISSING WARNING (sem penalidade)", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t", documentType: "NFE", xml: nfeAcessoriaErr("3", "2026-07-31T10:00:00-03:00"),
+  });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
+  assert.ok(f, "IBSCBS_MISSING esperado");
+  assert.equal(f!.severity, "WARNING");
+  assert.match(f!.recommendation ?? "", /Ato Conjunto RFB\/CGIBS/);
+});
+
+test("janela: CRT 3 com dhEmi 2026-08-01 → IBSCBS_MISSING FATAL (janela fechada)", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t", documentType: "NFE", xml: nfeAcessoriaErr("3", "2026-08-01T10:00:00-03:00"),
+  });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
+  assert.equal(f?.severity, "FATAL");
+});
+
+test("janela: CRT 3 com dhEmi 2026-08-15 → IBSCBS_MISSING FATAL", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t", documentType: "NFE", xml: nfeAcessoriaErr("3", "2026-08-15T10:00:00-03:00"),
+  });
+  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBS_MISSING")?.severity, "FATAL");
+});
+
+test("janela: CRT 3 sem dhEmi → IBSCBS_MISSING FATAL (comportamento preservado)", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t", documentType: "NFE", xml: nfeAcessoriaErr("3"),
+  });
+  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBS_MISSING")?.severity, "FATAL");
+});
+
+test("janela: fora da janela + pedagogicalMode → WARNING com nota LC 227", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t", documentType: "NFE", xml: nfeAcessoriaErr("3", "2026-09-10T10:00:00-03:00"),
+    pedagogicalMode: true,
+  });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
+  assert.equal(f?.severity, "WARNING");
+  assert.match(f!.recommendation ?? "", /LC 227\/2026/);
+});
+
+test("janela: regra de formato (CST_3_DIGITS) dentro da janela → WARNING", () => {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod><dhEmi>2026-05-10T10:00:00-03:00</dhEmi></ide>
+  <emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>
+  <det nItem="1">
+    <prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>
+    <imposto><IBSCBS><CST>00</CST><cClassTrib>000001</cClassTrib></IBSCBS></imposto>
+  </det>
+  <total></total>
+</infNFe></NFe></nfeProc>`;
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  assert.equal(result.findings.find((f) => f.rule_id === "CST_3_DIGITS")?.severity, "WARNING");
+});
+
+test("janela: regra NÃO-acessória (IBSCBS_SPLIT) dentro da janela permanece FATAL", () => {
+  // fixture nfe-ibs-split-error.xml tem dhEmi 2026-03-23 (dentro da janela)
+  const result = validateXmlWithRules({
+    tenantId: "t", documentType: "NFE", xml: fixture("nfe-ibs-split-error.xml"),
+  });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBS_SPLIT");
+  assert.equal(f?.severity, "FATAL", "regra de cálculo não é obrigação acessória — não entra na janela");
+});
