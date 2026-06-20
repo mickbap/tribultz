@@ -41,6 +41,18 @@ const LC227_NOTE =
   "se autuado exclusivamente por esta obrigação acessória, " +
   "há 60 dias para regularizar sem aplicação de multa.";
 
+// ── NT 2025.002 v1.40 — códigos de rejeição SEFAZ (#311) ─────────────────────
+// Anota o código oficial de rejeição nas detecções que o antecipam (NF-e/NFC-e),
+// para o usuário saber exatamente como a SEFAZ rejeitará. Precedente: Rejeição 1157.
+const REJECTION_CODES: Record<string, string> = {
+  IBSCBS_MISSING:
+    " — SEFAZ: Rejeição 1115 (regra UB12-10): preenchimento de IBS/CBS obrigatório — " +
+    "produção a partir de 03/08/2026 (Regime Normal/CRT 3) e 04/01/2027 (Simples/MEI), NT 2025.002 v1.40.",
+  CCLASSTRIB_6_DIGITS:
+    " — SEFAZ: Rejeição 1106 (regra LA01-30) / 960 (regra N12-110): cClassTrib obrigatório " +
+    "e com classificação tributária adequada (NT 2025.002 v1.40).",
+};
+
 // ── Ato Conjunto RFB/CGIBS nº 1/2025 — janela sem penalidades ─────────────────
 // Art. 3º: penalidades por descumprimento de obrigações acessórias de IBS/CBS
 // ficam suspensas até o 1º dia do 4º mês subsequente à publicação da parte comum
@@ -1077,6 +1089,17 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
       recommendation: "Documentar justificativa fiscal para benefícios e créditos utilizados.",
     }),
   );
+
+  // ── NT v1.40 — anotar código de rejeição SEFAZ nas detecções (#311) ───────
+  // Apenas NF-e/NFC-e (rejeições da SEFAZ NF-e; NFS-e tem regras próprias).
+  if (isNfe) {
+    for (const f of findings) {
+      const code = REJECTION_CODES[f.rule_id];
+      if (code) {
+        (f as { recommendation: string }).recommendation = (f.recommendation || "") + code;
+      }
+    }
+  }
 
   // ── Downgrade de obrigações acessórias FATAL → WARNING ────────────────────
   // Duas bases legais independentes e combináveis:

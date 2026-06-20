@@ -882,3 +882,47 @@ test("PF_CNPJ: NFS-e prestador CPF + DataEmissao ≥ 01/07/2026 → ALERT", () =
   assert.ok(f, "PF_CONTRIB_CNPJ esperado em NFS-e");
   assert.equal(f!.severity, "ALERT");
 });
+
+// ── Item #311: códigos de rejeição da NT v1.40 (1115, 1106, 960) ─────────────
+// Anota o código oficial SEFAZ na recomendação das detecções que os antecipam
+// (NF-e/NFC-e apenas). Precedente: Rejeição 1157 em DPREV_ENTREGA_FRETE.
+
+test("#311: IBSCBS_MISSING (NF-e) cita Rejeição 1115 (UB12-10)", () => {
+  const r = validateXmlWithRules({ tenantId: "t", documentType: "NFE",
+    xml: nfeAcessoriaErr("3", "2026-09-10T10:00:00-03:00") });
+  const f = r.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
+  assert.ok(f, "IBSCBS_MISSING esperado");
+  assert.match(f!.recommendation ?? "", /Rejeição 1115/);
+});
+
+const nfeNoClassTrib = `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod><dhEmi>2026-09-10T10:00:00-03:00</dhEmi></ide>
+  <emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>
+  <det nItem="1"><prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>
+    <imposto><IBSCBS><CST>000</CST></IBSCBS></imposto></det>
+  <total></total>
+</infNFe></NFe></nfeProc>`;
+
+test("#311: CCLASSTRIB_6_DIGITS (NF-e) cita Rejeição 1106 e 960", () => {
+  const r = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml: nfeNoClassTrib });
+  const f = r.findings.find((f) => f.rule_id === "CCLASSTRIB_6_DIGITS");
+  assert.ok(f, "CCLASSTRIB_6_DIGITS esperado");
+  assert.match(f!.recommendation ?? "", /1106/);
+  assert.match(f!.recommendation ?? "", /960/);
+});
+
+test("#311: NFS-e NÃO recebe código de rejeição NF-e (1106)", () => {
+  const xml = `<NFS-e><infNfse>
+    <PrestadorServico><RazaoSocial>X</RazaoSocial></PrestadorServico>
+    <TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>
+    <PrestacaoServico><Servico><CodigoServico>123456</CodigoServico>
+      <CST>090</CST><NCM>84713012</NCM><CEST>2104900</CEST></Servico>
+      <Valores><BaseCalculo>1000.00</BaseCalculo><AliquotaCBS>0.0010</AliquotaCBS><ValorCBS>1.00</ValorCBS>
+      <AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>9.00</ValorIBS></Valores></PrestacaoServico>
+  </infNfse></NFS-e>`;
+  const r = validateXmlWithRules({ tenantId: "t", documentType: "NFSE", xml });
+  const f = r.findings.find((f) => f.rule_id === "CCLASSTRIB_6_DIGITS");
+  assert.ok(f, "CCLASSTRIB_6_DIGITS esperado em NFS-e");
+  assert.doesNotMatch(f!.recommendation ?? "", /1106/);
+});

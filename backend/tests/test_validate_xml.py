@@ -397,3 +397,48 @@ class TestPfContribCnpj:
         )
         f = self._find(xml, "NFSE")
         assert f and f[0].severity == "ALERT"
+
+
+# ── Item #311: códigos de rejeição da NT v1.40 (1115, 1106, 960) ─────────────
+
+
+class TestRejectionCodesV140:
+    """Anota o código oficial SEFAZ na recomendação das detecções (NF-e/NFC-e)."""
+
+    _NFE_NO_CLASSTRIB = (
+        '<nfeProc><NFe><infNFe><ide><mod>55</mod><dhEmi>2026-09-10T10:00:00-03:00</dhEmi></ide>'
+        '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+        '<det nItem="1"><prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>'
+        '<imposto><IBSCBS><CST>000</CST></IBSCBS></imposto></det><total></total></infNFe></NFe></nfeProc>'
+    )
+    _NFE_NO_IBSCBS = (
+        '<nfeProc><NFe><infNFe><ide><mod>55</mod><dhEmi>2026-09-10T10:00:00-03:00</dhEmi></ide>'
+        '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+        '<det nItem="1"><prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>'
+        '<imposto><ICMS><ICMSSN101><CST>101</CST></ICMSSN101></ICMS></imposto></det><total></total>'
+        '</infNFe></NFe></nfeProc>'
+    )
+
+    def test_ibscbs_missing_cita_1115(self):
+        r = validate_xml(self._NFE_NO_IBSCBS, "NFE")
+        f = [x for x in r.findings if x.rule_id == "IBSCBS_MISSING"]
+        assert f and "Rejeição 1115" in f[0].recommendation
+
+    def test_cclasstrib_cita_1106_e_960(self):
+        r = validate_xml(self._NFE_NO_CLASSTRIB, "NFE")
+        f = [x for x in r.findings if x.rule_id == "CCLASSTRIB_6_DIGITS"]
+        assert f and "1106" in f[0].recommendation and "960" in f[0].recommendation
+
+    def test_nfse_nao_recebe_codigo_nfe(self):
+        xml = (
+            '<NFS-e><infNfse><PrestadorServico><RazaoSocial>X</RazaoSocial></PrestadorServico>'
+            '<TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>'
+            '<PrestacaoServico><Servico><CodigoServico>123456</CodigoServico>'
+            '<CST>090</CST><NCM>84713012</NCM><CEST>2104900</CEST></Servico>'
+            '<Valores><BaseCalculo>1000.00</BaseCalculo><AliquotaCBS>0.0010</AliquotaCBS><ValorCBS>1.00</ValorCBS>'
+            '<AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>9.00</ValorIBS></Valores></PrestacaoServico>'
+            '</infNfse></NFS-e>'
+        )
+        r = validate_xml(xml, "NFSE")
+        f = [x for x in r.findings if x.rule_id == "CCLASSTRIB_6_DIGITS"]
+        assert f and "1106" not in f[0].recommendation

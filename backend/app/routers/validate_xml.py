@@ -238,6 +238,20 @@ _LC227_RECOMMENDATION = (
     "há 60 dias para regularizar sem aplicação de multa."
 )
 
+# ── NT 2025.002 v1.40 — códigos de rejeição SEFAZ (#311) ─────────────────────
+# Anota o código oficial de rejeição nas detecções que o antecipam (NF-e/NFC-e),
+# para o usuário saber como a SEFAZ rejeitará. Precedente: Rejeição 1157.
+_REJECTION_CODES = {
+    "IBSCBS_MISSING": (
+        " — SEFAZ: Rejeição 1115 (regra UB12-10): preenchimento de IBS/CBS obrigatório — "
+        "produção a partir de 03/08/2026 (Regime Normal/CRT 3) e 04/01/2027 (Simples/MEI), NT 2025.002 v1.40."
+    ),
+    "CCLASSTRIB_6_DIGITS": (
+        " — SEFAZ: Rejeição 1106 (regra LA01-30) / 960 (regra N12-110): cClassTrib obrigatório "
+        "e com classificação tributária adequada (NT 2025.002 v1.40)."
+    ),
+}
+
 
 def _pedagogical_severity(rule_id: str, pedagogical_mode: bool) -> str:
     """Return 'WARNING' for accessory rules in pedagogical mode, 'FATAL' otherwise."""
@@ -779,6 +793,14 @@ def validate_xml(
                     ),
                     Evidence(id=ev_id, type="xml", label="Emitente PF (CPF) — verificar CNPJ", xpath=_xpath("CPF", doc_type), snippet=emit_cpf["snippet"]),
                 )
+
+    # ── NT v1.40 — anotar código de rejeição SEFAZ nas detecções (#311) ───────
+    # Apenas NF-e/NFC-e (rejeições da SEFAZ NF-e; NFS-e tem regras próprias).
+    if is_nfe:
+        for f in findings:
+            code = _REJECTION_CODES.get(f.rule_id)
+            if code:
+                f.recommendation = (f.recommendation or "") + code
 
     # ── Janela sem penalidades (Ato Conjunto RFB/CGIBS 1/25) — passe final ────
     # Downgrade automático FATAL → WARNING das obrigações acessórias quando a
