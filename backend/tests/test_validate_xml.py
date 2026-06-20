@@ -343,3 +343,57 @@ class TestImportIbscbsRequired:
 
     def test_sem_grupo_ibscbs_nao_dispara(self):
         assert self._find(self._nfe(cfop="3102", no_ibscbs=True)) == []
+
+
+# ── Item 3: PF_CONTRIB_CNPJ — PF contribuinte deve ter CNPJ (Comunicado CGIBS/RFB 01/2025) ──
+
+
+class TestPfContribCnpj:
+    """A partir de 01/07/2026 a PF contribuinte de IBS/CBS deve ter CNPJ (emissão por CPF
+    não permitida, LC 214 art. 251). Enquadramento não verificável do XML → ALERT:
+    emitente CPF + data ≥ 01/07/2026."""
+
+    def _nfe(self, ident, dh=None):
+        dh_xml = f"<dhEmi>{dh}</dhEmi>" if dh else ""
+        return (
+            f'<nfeProc><NFe><infNFe><ide><mod>55</mod>{dh_xml}</ide>'
+            f'<emit>{ident}<CRT>1</CRT></emit><dest><CPF>11122233344</CPF></dest>'
+            f'<det nItem="1"><prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>100.00</vProd></prod>'
+            f'<imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib></IBSCBS></imposto></det>'
+            f'<total></total></infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml, doc="NFE"):
+        return [f for f in validate_xml(xml, doc).findings if f.rule_id == "PF_CONTRIB_CNPJ"]
+
+    def test_emit_cpf_apos_01_07_2026_alert(self):
+        f = self._find(self._nfe("<CPF>12345678909</CPF>", "2026-07-01T10:00:00-03:00"))
+        assert f and f[0].severity == "ALERT"
+        assert "Comunicado Conjunto CGIBS/RFB" in f[0].recommendation
+
+    def test_emit_cpf_antes_de_01_07_2026_sem_finding(self):
+        assert self._find(self._nfe("<CPF>12345678909</CPF>", "2026-06-30T10:00:00-03:00")) == []
+
+    def test_emit_cnpj_sem_finding(self):
+        assert self._find(self._nfe("<CNPJ>12345678000195</CNPJ>", "2026-08-10T10:00:00-03:00")) == []
+
+    def test_emit_cpf_sem_data_sem_finding(self):
+        assert self._find(self._nfe("<CPF>12345678909</CPF>")) == []
+
+    def test_dest_cpf_emit_cnpj_sem_finding(self):
+        # destinatário é CPF mas emitente é CNPJ → só o emitente importa
+        assert self._find(self._nfe("<CNPJ>12345678000195</CNPJ>", "2026-09-01T10:00:00-03:00")) == []
+
+    def test_nfse_prestador_cpf_alert(self):
+        xml = (
+            '<NFS-e><infNfse><DataEmissao>2026-07-15T10:00:00</DataEmissao>'
+            '<PrestadorServico><RazaoSocial>X</RazaoSocial><CPF>98765432100</CPF></PrestadorServico>'
+            '<TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>'
+            '<PrestacaoServico><Servico><CodigoServico>123456</CodigoServico><cClassTrib>654321</cClassTrib>'
+            '<CST>090</CST><NCM>84713012</NCM><CEST>2104900</CEST></Servico>'
+            '<Valores><BaseCalculo>1000.00</BaseCalculo><AliquotaCBS>0.0010</AliquotaCBS><ValorCBS>1.00</ValorCBS>'
+            '<AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>9.00</ValorIBS></Valores></PrestacaoServico>'
+            '</infNfse></NFS-e>'
+        )
+        f = self._find(xml, "NFSE")
+        assert f and f[0].severity == "ALERT"

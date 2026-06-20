@@ -825,3 +825,60 @@ test("IMPORT: dentro da janela sem penalidades → WARNING", () => {
 test("IMPORT: sem grupo IBSCBS → IMPORT não dispara (coberto por IBSCBS_MISSING)", () => {
   assert.equal(importFinding(nfeImport({ cfop: "3102", noIbscbs: true })), undefined);
 });
+
+// ── Item 3: PF_CONTRIB_CNPJ — PF contribuinte deve ter CNPJ (Comunicado CGIBS/RFB 01/2025) ──
+// A partir de 01/07/2026 a PF contribuinte de IBS/CBS deve se inscrever no CNPJ e
+// não pode emitir por CPF (LC 214 art. 251). Como o enquadramento não é verificável
+// do XML, a regra é ALERT informativo: emitente CPF + data ≥ 01/07/2026.
+
+const nfeEmit = (ident: string, dhEmi?: string) => `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod>${dhEmi ? `<dhEmi>${dhEmi}</dhEmi>` : ""}</ide>
+  <emit>${ident}<CRT>1</CRT></emit>
+  <dest><CPF>11122233344</CPF></dest>
+  <det nItem="1"><prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>100.00</vProd></prod>
+    <imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib></IBSCBS></imposto></det>
+  <total></total>
+</infNFe></NFe></nfeProc>`;
+
+const pfFinding = (xml: string, doc: "NFE" | "NFSE" = "NFE") =>
+  validateXmlWithRules({ tenantId: "t", documentType: doc, xml }).findings
+    .find((f) => f.rule_id === "PF_CONTRIB_CNPJ");
+
+test("PF_CNPJ: emitente CPF + data ≥ 01/07/2026 → ALERT", () => {
+  const f = pfFinding(nfeEmit("<CPF>12345678909</CPF>", "2026-07-01T10:00:00-03:00"));
+  assert.ok(f, "PF_CONTRIB_CNPJ esperado");
+  assert.equal(f!.severity, "ALERT");
+  assert.match(f!.recommendation ?? "", /Comunicado Conjunto CGIBS\/RFB/);
+});
+
+test("PF_CNPJ: emitente CPF antes de 01/07/2026 → sem finding", () => {
+  assert.equal(pfFinding(nfeEmit("<CPF>12345678909</CPF>", "2026-06-30T10:00:00-03:00")), undefined);
+});
+
+test("PF_CNPJ: emitente CNPJ (PJ) → sem finding", () => {
+  assert.equal(pfFinding(nfeEmit("<CNPJ>12345678000195</CNPJ>", "2026-08-10T10:00:00-03:00")), undefined);
+});
+
+test("PF_CNPJ: emitente CPF sem data → sem finding (conservador)", () => {
+  assert.equal(pfFinding(nfeEmit("<CPF>12345678909</CPF>")), undefined);
+});
+
+test("PF_CNPJ: destinatário CPF mas emitente CNPJ → sem finding (só emitente importa)", () => {
+  assert.equal(pfFinding(nfeEmit("<CNPJ>12345678000195</CNPJ>", "2026-09-01T10:00:00-03:00")), undefined);
+});
+
+test("PF_CNPJ: NFS-e prestador CPF + DataEmissao ≥ 01/07/2026 → ALERT", () => {
+  const xml = `<NFS-e><infNfse>
+    <DataEmissao>2026-07-15T10:00:00</DataEmissao>
+    <PrestadorServico><RazaoSocial>X</RazaoSocial><CPF>98765432100</CPF></PrestadorServico>
+    <TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>
+    <PrestacaoServico><Servico><CodigoServico>123456</CodigoServico><cClassTrib>654321</cClassTrib>
+      <CST>090</CST><NCM>84713012</NCM><CEST>2104900</CEST></Servico>
+      <Valores><BaseCalculo>1000.00</BaseCalculo><AliquotaCBS>0.0010</AliquotaCBS><ValorCBS>1.00</ValorCBS>
+      <AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>9.00</ValorIBS></Valores></PrestacaoServico>
+  </infNfse></NFS-e>`;
+  const f = pfFinding(xml, "NFSE");
+  assert.ok(f, "PF_CONTRIB_CNPJ esperado em NFS-e");
+  assert.equal(f!.severity, "ALERT");
+});
