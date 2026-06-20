@@ -54,22 +54,20 @@ def sync_classtrib_svrs() -> dict:
     """Sincroniza tabela cClassTrib com a API SVRS. Roda semanalmente.
 
     A API SVRS exige credenciais institucionais (retorna 403 sem autenticação).
-    Enquanto não configuradas, mantém os dados da migration 0018
-    (regulamentos 30/abr/2026). Quando as credenciais forem obtidas, adicionar
-    o header Authorization abaixo.
+    Configure CLASSTRIB_API_TOKEN (env/secret) para enviar o header Authorization
+    Bearer; sem token, a API responde 403 e mantemos os dados da migration 0018
+    (regulamentos 30/abr/2026).
     """
+    from app.config import settings
     from app.database import SessionLocal
+    from app.services.classtrib_service import svrs_auth_headers
     from sqlalchemy import text
 
-    SVRS_URL = "https://cff.svrs.rs.gov.br/api/v1/consultas/classTrib"
-    HEADERS = {
-        "User-Agent": "Tribultz/1.0 (contato@tribultz.com.br)",
-        "Accept": "application/json",
-    }
+    SVRS_URL = settings.CLASSTRIB_API_URL
 
     try:
         import httpx
-        with httpx.Client(timeout=30, headers=HEADERS) as client:
+        with httpx.Client(timeout=30, headers=svrs_auth_headers()) as client:
             resp = client.get(SVRS_URL)
 
         if resp.status_code == 403:

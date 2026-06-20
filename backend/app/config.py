@@ -79,6 +79,10 @@ class Settings(BaseSettings):
 
     # ── External APIs ─────────────────────────────────────────
     CLASSTRIB_API_URL: str = "https://cff.svrs.rs.gov.br/api/v1/consultas/classTrib"
+    # Token institucional da SVRS Conformidade Fácil (#313). Vazio = sem auth
+    # (mantém o comportamento atual: API responde 403 e usamos os dados locais).
+    # Quando provisionado, vai como secret/env e habilita a sincronização real.
+    CLASSTRIB_API_TOKEN: str = ""
     CNPJ_PRIMARY_URL: str = "https://brasilapi.com.br/api/cnpj/v1/{cnpj}"
     CNPJ_FALLBACK_URL: str = "https://receitaws.com.br/v1/cnpj/{cnpj}"
 
