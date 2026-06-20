@@ -747,3 +747,81 @@ test("janela: regra NÃO-acessória (IBSCBS_SPLIT) dentro da janela permanece FA
   const f = result.findings.find((f) => f.rule_id === "IBSCBS_SPLIT");
   assert.equal(f?.severity, "FATAL", "regra de cálculo não é obrigação acessória — não entra na janela");
 });
+
+// ── Item 2: IMPORT_IBSCBS_REQUIRED — incidência na importação (Decreto 12.955/2026) ──
+// Importação (CFOP 3xxx ou grupo DI/DUIMP) é tributável por IBS/CBS independente
+// de importador habitual (art. 65). Escopo: grupo IBSCBS presente porém zerado com
+// CST tributável. Export (7xxx) e internas (1/2/5/6xxx) ficam fora.
+
+const nfeImport = (o: {
+  cfop?: string; cst?: string; dhEmi?: string; vCBS?: string; vIBS?: string;
+  di?: boolean; noIbscbs?: boolean;
+} = {}) => {
+  const cfop = o.cfop ?? "3102";
+  const cst = o.cst ?? "000";
+  const vCBS = o.vCBS ?? "0.00";
+  const vIBS = o.vIBS ?? "0.00";
+  const di = o.di ? "<DI><nDI>2603001234</nDI></DI>" : "";
+  const ibscbs = o.noIbscbs ? "" : `<IBSCBS><CST>${cst}</CST><cClassTrib>000001</cClassTrib>
+        <gIBSCBS><vBC>1000.00</vBC>
+          <gIBSUF><pIBSUF>0</pIBSUF><vIBSUF>0.00</vIBSUF></gIBSUF>
+          <gIBSMun><pIBSMun>0</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun>
+          <vIBS>${vIBS}</vIBS><gCBS><pCBS>0</pCBS><vCBS>${vCBS}</vCBS></gCBS>
+        </gIBSCBS></IBSCBS>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod>${o.dhEmi ? `<dhEmi>${o.dhEmi}</dhEmi>` : ""}</ide>
+  <emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>
+  <det nItem="1">
+    <prod><CFOP>${cfop}</CFOP><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd>${di}</prod>
+    <imposto>${ibscbs}</imposto>
+  </det>
+  <total><IBSCBSTot><vIBS>${vIBS}</vIBS><vCBS>${vCBS}</vCBS></IBSCBSTot></total>
+</infNFe></NFe></nfeProc>`;
+};
+
+const importFinding = (xml: string) =>
+  validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml })
+    .findings.find((f) => f.rule_id === "IMPORT_IBSCBS_REQUIRED");
+
+test("IMPORT: CFOP 3xxx zerado + CST tributável (fora da janela) → FATAL", () => {
+  const f = importFinding(nfeImport({ cfop: "3102", dhEmi: "2026-09-10T10:00:00-03:00" }));
+  assert.ok(f, "IMPORT_IBSCBS_REQUIRED esperado");
+  assert.equal(f!.severity, "FATAL");
+  assert.match(f!.recommendation ?? "", /Decreto 12\.955\/2026/);
+});
+
+test("IMPORT: detecção via grupo DI mesmo com CFOP interno → FATAL", () => {
+  const f = importFinding(nfeImport({ cfop: "1102", di: true, dhEmi: "2026-09-10T10:00:00-03:00" }));
+  assert.ok(f, "IMPORT_IBSCBS_REQUIRED esperado (DI presente)");
+  assert.equal(f!.severity, "FATAL");
+});
+
+test("IMPORT: importação tributada (vCBS/vIBS > 0) → sem finding", () => {
+  assert.equal(importFinding(nfeImport({ cfop: "3102", vCBS: "9.00", vIBS: "1.00" })), undefined);
+});
+
+test("IMPORT: CST 070 (imunidade) zerado → sem finding", () => {
+  assert.equal(importFinding(nfeImport({ cfop: "3102", cst: "070" })), undefined);
+});
+
+test("IMPORT: CST 200 (diferimento) zerado → sem finding (tributo postergado)", () => {
+  assert.equal(importFinding(nfeImport({ cfop: "3102", cst: "200" })), undefined);
+});
+
+test("IMPORT: operação interna (CFOP 5102) zerada → sem finding", () => {
+  assert.equal(importFinding(nfeImport({ cfop: "5102" })), undefined);
+});
+
+test("IMPORT: exportação (CFOP 7101) zerada → sem finding (imune)", () => {
+  assert.equal(importFinding(nfeImport({ cfop: "7101" })), undefined);
+});
+
+test("IMPORT: dentro da janela sem penalidades → WARNING", () => {
+  const f = importFinding(nfeImport({ cfop: "3102", dhEmi: "2026-05-10T10:00:00-03:00" }));
+  assert.equal(f?.severity, "WARNING");
+});
+
+test("IMPORT: sem grupo IBSCBS → IMPORT não dispara (coberto por IBSCBS_MISSING)", () => {
+  assert.equal(importFinding(nfeImport({ cfop: "3102", noIbscbs: true })), undefined);
+});

@@ -33,7 +33,7 @@ const PEDAGOGICAL_ACCESSORY_RULES = new Set([
   "CST_3_DIGITS", "CCLASSTRIB_6_DIGITS", "SERVICE_CODE_6_DIGITS",
   "CST_VALID", "CST_GROUP_MATCH", "CST_SEMANTIC",
   "IBSCBS_MISSING", "CEST_MISSING", "CEST_FORMAT",
-  "LAYOUT_NFE", "LAYOUT_PORTAL",
+  "LAYOUT_NFE", "LAYOUT_PORTAL", "IMPORT_IBSCBS_REQUIRED",
 ]);
 
 const LC227_NOTE =
@@ -288,7 +288,10 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
 
   // Split payment (#276) — <cobr>/<dup>/<indPag>
   const indPag = firstTag(xml, ["indPag"]);
-  const NO_TAX_CSTS = new Set(["070", "410", "800", "810", "811", "830"]);
+  // CSTs que legitimamente não destacam IBS/CBS no estágio atual: imunidade/isenção
+  // (070), diferimento (200), suspensão (410) e transferência/ressarcimento/ajuste/
+  // estorno de crédito (800/810/811/830).
+  const NO_TAX_CSTS = new Set(["070", "200", "410", "800", "810", "811", "830"]);
 
   // ── Rules 1-3: field format checks ────────────────────────────────────────
 
@@ -788,6 +791,45 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
           xpath: inferXpath("indPag", docType),
           snippet: indPag.snippet,
         }),
+      );
+    }
+  }
+
+  // ── Rule: IMPORT_IBSCBS_REQUIRED — incidência na importação (#item2) ──────
+  // Decreto 12.955/2026 art. 65 (LC 214 art. 63): IBS/CBS incidem sobre a
+  // importação de bens e serviços independentemente de o importador ser habitual.
+  // Detecção: CFOP iniciando em "3" (entrada do exterior) OU grupo de importação
+  // (<DI>/<DUIMP>). Export (CFOP 7xxx, imune) e internas ficam de fora.
+  // Escopo: grupo IBSCBS presente porém zerado com CST tributável — o grupo ausente
+  // já é coberto por IBSCBS_MISSING (evita duplo apontamento).
+  if (hasIbscbsGroup && ibscbsBlock) {
+    const isImport =
+      allTags(xml, "CFOP").some((c) => c.value.trim().startsWith("3")) ||
+      /<DI(?=[\s>])/i.test(xml) ||
+      /<DUIMP(?=[\s>])/i.test(xml);
+    const cstValue = cst?.value ?? "";
+    const vCbsNum = parseFloat(vCBS?.value ?? "0") || 0;
+    const vIbsNum = parseFloat(vIBS?.value ?? "0") || 0;
+    if (isImport && vCbsNum + vIbsNum === 0 && !NO_TAX_CSTS.has(cstValue)) {
+      const evId = makeEvidenceId("IMPORT_IBSCBS_REQUIRED");
+      pushFindingAndEvidence(findings, evidences, evidenceById,
+        makeFinding({
+          id: "F_IMPORT_IBSCBS_REQUIRED",
+          severity: "FATAL",
+          ruleId: "IMPORT_IBSCBS_REQUIRED",
+          title: "Importação tributável sem IBS/CBS destacado — incidência obrigatória",
+          field: "IBS/CBS",
+          xpath: inferXpath("IBSCBS", docType),
+          snippet: ibscbsBlock.snippet,
+          evidenceId: evId,
+          recommendation:
+            `Operação de importação (CFOP 3xxx ou grupo DI/DUIMP) com IBS/CBS zerado e ` +
+            `CST ${cstValue || "(ausente)"} tributável. O IBS e a CBS incidem sobre a importação ` +
+            `de bens e serviços independentemente de o importador ser habitual ` +
+            `(Decreto 12.955/2026 art. 65 / LC 214 art. 63). A alíquota deve corresponder à da ` +
+            `operação interna com o mesmo bem/serviço (art. 469-470). Informe vCBS/vIBS ou ajuste o CST.`,
+        }),
+        makeEvidence({ id: evId, type: "xml", label: "Importação — IBS/CBS ausente", xpath: inferXpath("IBSCBS", docType), snippet: ibscbsBlock.snippet }),
       );
     }
   }

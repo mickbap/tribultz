@@ -120,6 +120,14 @@ def _first_tag(xml: str, tags: list[str]) -> dict[str, Any] | None:
     return None
 
 
+def _to_float(value: str | None) -> float:
+    """Parse a numeric string to float; returns 0.0 on missing/invalid input."""
+    try:
+        return float(value) if value is not None else 0.0
+    except (ValueError, TypeError):
+        return 0.0
+
+
 def _all_tags(xml: str, tag: str) -> list[dict[str, Any]]:
     """Return all occurrences of a tag."""
     results = []
@@ -214,9 +222,15 @@ _PEDAGOGICAL_ACCESSORY_RULES = {
     "CST_3_DIGITS", "CCLASSTRIB_6_DIGITS", "SERVICE_CODE_6_DIGITS",
     "CST_VALID", "CST_GROUP_MATCH", "CST_SEMANTIC",
     "IBSCBS_MISSING", "CEST_MISSING", "CEST_FORMAT",
-    "LAYOUT_NFE", "LAYOUT_PORTAL",
+    "LAYOUT_NFE", "LAYOUT_PORTAL", "IMPORT_IBSCBS_REQUIRED",
     "NCM_FORMAT", "NCM_VALID", "CLASSTRIB_VALID",
 }
+
+# CSTs que legitimamente não destacam IBS/CBS no estágio atual — imunidade/isenção
+# (070), suspensão (410), diferimento (200, tributo postergado p/ operação seguinte)
+# e transferência/ressarcimento/ajuste/estorno de crédito (800/810/811/830).
+# Não exigem IBS/CBS destacado, inclusive em importação.
+_NO_TAX_CSTS = {"070", "200", "410", "800", "810", "811", "830"}
 
 _LC227_RECOMMENDATION = (
     " — Período Pedagógico LC 227/2026 (art. 348 §§ 3º e 4º): "
@@ -692,6 +706,40 @@ def validate_xml(
             _add(
                 Finding(id="F_CNPJ_UNAVAIL", severity="ALERT", rule_id="CNPJ_ACTIVE", title="Verificação de CNPJ indisponível — API fora do ar", where=FindingWhere(field="CNPJ", xpath=_xpath("CNPJ", doc_type)), recommendation="APIs de consulta CNPJ temporariamente indisponíveis. Verifique manualmente.", evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="CNPJ — API indisponível", xpath=_xpath("CNPJ", doc_type)),
+            )
+
+    # ── Rule: IMPORT_IBSCBS_REQUIRED — incidência na importação (#item2) ──────
+    # Decreto 12.955/2026 art. 65 (LC 214 art. 63): IBS/CBS incidem sobre a importação
+    # de bens e serviços independentemente de o importador ser habitual. Detecção:
+    # CFOP iniciando em "3" (entrada do exterior) OU grupo de importação (<DI>/<DUIMP>).
+    # Export (CFOP 7xxx, imune) e internas ficam de fora. Escopo: grupo IBSCBS presente
+    # porém zerado com CST tributável — grupo ausente já é coberto por IBSCBS_MISSING.
+    if has_ibscbs and ibscbs_block:
+        is_import = (
+            any(c["value"].strip().startswith("3") for c in _all_tags(xml, "CFOP"))
+            or re.search(r"<DI(?=[\s>])", xml, re.IGNORECASE) is not None
+            or re.search(r"<DUIMP(?=[\s>])", xml, re.IGNORECASE) is not None
+        )
+        cst_value = cst["value"] if cst else ""
+        v_cbs_num = _to_float(v_cbs["value"]) if v_cbs else 0.0
+        v_ibs_num = _to_float(v_ibs["value"]) if v_ibs else 0.0
+        if is_import and v_cbs_num + v_ibs_num == 0 and cst_value not in _NO_TAX_CSTS:
+            ev_id = "E_XML_IMPORT_IBSCBS_REQUIRED"
+            _add(
+                Finding(
+                    id="F_IMPORT_IBSCBS_REQUIRED", severity="FATAL", rule_id="IMPORT_IBSCBS_REQUIRED",
+                    title="Importação tributável sem IBS/CBS destacado — incidência obrigatória",
+                    where=FindingWhere(field="IBS/CBS", xpath=_xpath("IBSCBS", doc_type), snippet=ibscbs_block["snippet"]),
+                    recommendation=(
+                        f'Operação de importação (CFOP 3xxx ou grupo DI/DUIMP) com IBS/CBS zerado e '
+                        f'CST {cst_value or "(ausente)"} tributável. O IBS e a CBS incidem sobre a importação '
+                        f'de bens e serviços independentemente de o importador ser habitual '
+                        f'(Decreto 12.955/2026 art. 65 / LC 214 art. 63). A alíquota deve corresponder à da '
+                        f'operação interna com o mesmo bem/serviço (art. 469-470). Informe vCBS/vIBS ou ajuste o CST.'
+                    ),
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label="Importação — IBS/CBS ausente", xpath=_xpath("IBSCBS", doc_type), snippet=ibscbs_block["snippet"]),
             )
 
     # ── Janela sem penalidades (Ato Conjunto RFB/CGIBS 1/25) — passe final ────
