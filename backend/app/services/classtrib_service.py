@@ -48,6 +48,23 @@ class _LRUCache:
         self._store.clear()
 
 
+def svrs_auth_headers() -> dict[str, str]:
+    """Headers para a API SVRS Conformidade Fácil (#313).
+
+    Inclui Authorization: Bearer <token> quando CLASSTRIB_API_TOKEN está configurado
+    (token institucional da SVRS). Sem token, retorna apenas headers base — a API
+    responde 403 e mantemos os dados locais (migration 0018).
+    """
+    headers = {
+        "User-Agent": "Tribultz/1.0 (contato@tribultz.com.br)",
+        "Accept": "application/json",
+    }
+    token = (settings.CLASSTRIB_API_TOKEN or "").strip()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
 class ClassTribService:
     """Client for the Conformidade Fácil ClassTrib API."""
 
@@ -66,7 +83,7 @@ class ClassTribService:
             return cached
 
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
+            async with httpx.AsyncClient(timeout=self.timeout, headers=svrs_auth_headers()) as client:
                 resp = await client.get(f"{self.base_url}/{code}")
                 if resp.status_code == 200:
                     data = resp.json()

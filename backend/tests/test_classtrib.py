@@ -232,3 +232,42 @@ class TestSyncClasstribSvrs:
 
         assert result["synced"] == 0
         assert "error" in result
+
+
+class TestSvrsAuthHeaders:
+    """#313 credential-ready: Authorization Bearer só quando CLASSTRIB_API_TOKEN setado."""
+
+    def test_sem_token_sem_authorization(self, monkeypatch):
+        from app.config import settings
+        from app.services.classtrib_service import svrs_auth_headers
+        monkeypatch.setattr(settings, "CLASSTRIB_API_TOKEN", "")
+        h = svrs_auth_headers()
+        assert "Authorization" not in h
+        assert h["Accept"] == "application/json"
+        assert "Tribultz" in h["User-Agent"]
+
+    def test_com_token_envia_bearer(self, monkeypatch):
+        from app.config import settings
+        from app.services.classtrib_service import svrs_auth_headers
+        monkeypatch.setattr(settings, "CLASSTRIB_API_TOKEN", "  tok-abc  ")
+        h = svrs_auth_headers()
+        assert h["Authorization"] == "Bearer tok-abc"  # trim aplicado
+
+    def test_sync_task_envia_authorization_quando_token(self, monkeypatch):
+        """O sync task injeta o header Authorization quando o token está configurado."""
+        from app.config import settings
+        from app.tasks.task_i_compliance import sync_classtrib_svrs
+        monkeypatch.setattr(settings, "CLASSTRIB_API_TOKEN", "tok-xyz")
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 403
+        with patch("httpx.Client") as mock_client_cls:
+            mock_client = MagicMock()
+            mock_client.__enter__ = MagicMock(return_value=mock_client)
+            mock_client.__exit__ = MagicMock(return_value=False)
+            mock_client.get.return_value = mock_resp
+            mock_client_cls.return_value = mock_client
+            sync_classtrib_svrs()
+
+        _, kwargs = mock_client_cls.call_args
+        assert kwargs["headers"]["Authorization"] == "Bearer tok-xyz"
