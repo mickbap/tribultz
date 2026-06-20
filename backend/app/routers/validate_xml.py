@@ -29,6 +29,7 @@ from app.tools import s3_tool, postgres_tool
 from app.services.xml_correction_service import correct_xml
 from app.api.plan_gate import require_plan, check_usage_limit, increment_usage
 from app.data.ncm_codes import VALID_NCM_CODES
+from app.data.cest_ncm import lookup_ncm_st
 
 logger = logging.getLogger(__name__)
 
@@ -474,14 +475,20 @@ def validate_xml(
 
     if not cest:
         ev_id = "E_XML_CEST_MISSING"
-        _sev = _pedagogical_severity("CEST_MISSING", pedagogical_mode)
-        _rec = "CEST obrigatório apenas para produtos com substituição tributária (ST)."
-        if _sev == "WARNING":
-            _rec += _LC227_RECOMMENDATION
-        _add(
-            Finding(id="F_CEST_MISSING", severity=_sev, rule_id="CEST_MISSING", title="CEST ausente — verificar se produto é ST", where=FindingWhere(field="CEST", xpath=_xpath("CEST", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),
-            Evidence(id=ev_id, type="xml", label="CEST — ausente", xpath=_xpath("CEST", doc_type)),
-        )
+        ncm_val = ncm["value"] if ncm else ""
+        st_lookup = lookup_ncm_st(ncm_val)
+
+        if st_lookup["is_st"]:
+            seg_label = ", ".join(st_lookup["segments"])
+            _add(
+                Finding(id="F_CEST_MISSING", severity="FATAL", rule_id="CEST_MISSING", title=f"CEST obrigatório — NCM {ncm_val} pertence a segmento ST ({seg_label})", where=FindingWhere(field="CEST", xpath=_xpath("CEST", doc_type)), recommendation=f"NCM {ncm_val} consta no Convênio ICMS 142/2018 ({seg_label}). Informe o CEST correspondente em <prod/CEST>.", evidence_ids=[ev_id]),
+                Evidence(id=ev_id, type="xml", label=f"CEST obrigatório (segmento ST: {seg_label})", xpath=_xpath("CEST", doc_type)),
+            )
+        else:
+            _add(
+                Finding(id="F_CEST_MISSING", severity="ALERT", rule_id="CEST_MISSING", title="CEST ausente — verificar se produto é sujeito à substituição tributária", where=FindingWhere(field="CEST", xpath=_xpath("CEST", doc_type)), recommendation=f"NCM {ncm_val or '(não informado)'} não consta no subset ST conhecido (Convênio ICMS 142/2018). Se for sujeito a ST, informe o CEST; caso contrário, este aviso pode ser desconsiderado.", evidence_ids=[ev_id]),
+                Evidence(id=ev_id, type="xml", label="CEST — ausente (verificar ST)", xpath=_xpath("CEST", doc_type)),
+            )
     elif not re.match(r"^\d{7}$", cest["value"]):
         ev_id = "E_XML_CEST_FORMAT"
         _sev = _pedagogical_severity("CEST_FORMAT", pedagogical_mode)
