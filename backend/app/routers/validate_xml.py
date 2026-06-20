@@ -275,6 +275,13 @@ def _within_no_penalty_window(emission_date: dict | None) -> bool:
     return _NO_PENALTY_WINDOW_START <= date_part < _NO_PENALTY_WINDOW_END
 
 
+# ── Comunicado Conjunto CGIBS/RFB nº 01/2025 — CNPJ p/ PF contribuinte ───────
+# A partir de 01/07/2026, a PF contribuinte de IBS/CBS deve se inscrever no CNPJ e não
+# pode emitir documento fiscal por CPF (LC 214 art. 251). O enquadramento como
+# contribuinte não é verificável do XML → ALERT informativo (verificar enquadramento).
+_PF_CNPJ_REQUIRED_DATE = "2026-07-01"
+
+
 def validate_xml(
     xml: str,
     doc_type: str | None = None,
@@ -741,6 +748,37 @@ def validate_xml(
                 ),
                 Evidence(id=ev_id, type="xml", label="Importação — IBS/CBS ausente", xpath=_xpath("IBSCBS", doc_type), snippet=ibscbs_block["snippet"]),
             )
+
+    # ── Rule: PF_CONTRIB_CNPJ — PF contribuinte deve se inscrever no CNPJ (#item3) ──
+    # Comunicado Conjunto CGIBS/RFB nº 01/2025 + LC 214 art. 251: a partir de 01/07/2026
+    # a PF contribuinte de IBS/CBS deve ter CNPJ (emissão por CPF não é permitida).
+    # Verificável do XML: emitente identificado por CPF + data ≥ 01/07/2026. O enquadramento
+    # como contribuinte não é verificável → ALERT informativo.
+    em_date = emission_date["value"][:10] if emission_date else ""
+    if re.match(r"^\d{4}-\d{2}-\d{2}$", em_date) and em_date >= _PF_CNPJ_REQUIRED_DATE:
+        emit_block = _first_tag(xml, ["emit", "PrestadorServico", "prest", "Prestador"])
+        if emit_block:
+            emit_cpf = _first_tag(emit_block["snippet"], ["CPF"])
+            emit_cnpj = _first_tag(emit_block["snippet"], ["CNPJ"])
+            if emit_cpf and not emit_cnpj:
+                ev_id = "E_XML_PF_CONTRIB_CNPJ"
+                _add(
+                    Finding(
+                        id="F_PF_CONTRIB_CNPJ", severity="ALERT", rule_id="PF_CONTRIB_CNPJ",
+                        title="Emitente pessoa física (CPF) — verificar obrigação de inscrição no CNPJ",
+                        where=FindingWhere(field="emit/CPF", xpath=_xpath("CPF", doc_type), snippet=emit_cpf["snippet"]),
+                        recommendation=(
+                            "Emitente identificado por CPF. A partir de 01/07/2026, a pessoa física "
+                            "contribuinte de IBS/CBS deve se inscrever no CNPJ e não pode emitir documento "
+                            "fiscal por CPF (Comunicado Conjunto CGIBS/RFB nº 01/2025; LC 214 art. 251). "
+                            "Verifique o enquadramento como contribuinte (atividade econômica habitual; "
+                            "locação com mais de 3 imóveis e renda anual acima de R$ 240 mil) e, se for o "
+                            "caso, providencie a inscrição no CNPJ. A inscrição não transforma a PF em PJ."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="Emitente PF (CPF) — verificar CNPJ", xpath=_xpath("CPF", doc_type), snippet=emit_cpf["snippet"]),
+                )
 
     # ── Janela sem penalidades (Ato Conjunto RFB/CGIBS 1/25) — passe final ────
     # Downgrade automático FATAL → WARNING das obrigações acessórias quando a
