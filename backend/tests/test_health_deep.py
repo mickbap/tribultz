@@ -17,14 +17,15 @@ client = TestClient(app)
 
 # ── Helper ────────────────────────────────────────────────────────────────────
 
-def _patch_probes(db="ok", redis="ok", asaas="unconfigured", ai="unconfigured", hubspot="unconfigured"):
-    """Context manager that patches all five probe functions."""
+def _patch_probes(db="ok", redis="ok", asaas="unconfigured", ai="unconfigured", hubspot="unconfigured", email="unconfigured"):
+    """Context manager that patches all six probe functions."""
     return (
         patch("app.routers.health._probe_db",         return_value=db),
         patch("app.routers.health._probe_redis",       return_value=redis),
         patch("app.routers.health._probe_asaas",       return_value=asaas),
         patch("app.routers.health._probe_ai_engine",   return_value=ai),
         patch("app.routers.health._probe_hubspot",     return_value=hubspot),
+        patch("app.routers.health._probe_email",       return_value=email),
     )
 
 
@@ -54,6 +55,7 @@ class TestReadiness:
             patch("app.routers.health._probe_asaas",       return_value="ok"),
             patch("app.routers.health._probe_ai_engine",   return_value="ok"),
             patch("app.routers.health._probe_hubspot",     return_value="ok"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         assert r.status_code == 200
@@ -73,6 +75,7 @@ class TestReadiness:
             patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
             patch("app.routers.health._probe_hubspot",     return_value="unreachable"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         assert r.json()["status"] == "degraded"
@@ -86,6 +89,7 @@ class TestReadiness:
             patch("app.routers.health._probe_asaas",       return_value="ok"),
             patch("app.routers.health._probe_ai_engine",   return_value="ok"),
             patch("app.routers.health._probe_hubspot",     return_value="unconfigured"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         assert r.json()["status"] == "ok"
@@ -99,6 +103,7 @@ class TestReadiness:
             patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
             patch("app.routers.health._probe_hubspot",   return_value="unconfigured"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         assert r.status_code == 200
@@ -111,6 +116,7 @@ class TestReadiness:
             patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
             patch("app.routers.health._probe_hubspot",   return_value="unconfigured"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         assert r.status_code == 200  # HTTP always 200 — status field signals health
@@ -124,6 +130,7 @@ class TestReadiness:
             patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
             patch("app.routers.health._probe_hubspot",   return_value="unconfigured"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         assert r.json()["status"] == "error"
@@ -137,6 +144,7 @@ class TestReadiness:
             patch("app.routers.health._probe_asaas",       return_value="unreachable"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
             patch("app.routers.health._probe_hubspot",   return_value="unconfigured"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         assert r.json()["status"] == "degraded"
@@ -149,6 +157,7 @@ class TestReadiness:
             patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
             patch("app.routers.health._probe_hubspot",   return_value="unconfigured"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
         ):
             r = client.get("/health/ready")
         body = r.json()
@@ -168,6 +177,7 @@ class TestDeepAlias:
             patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
             patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
             patch("app.routers.health._probe_hubspot",   return_value="unconfigured"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
         ):
             r_ready = client.get("/health/ready")
             r_deep  = client.get("/health/deep")
@@ -372,3 +382,78 @@ class TestProbeHubspot:
             mock_cfg.HUBSPOT_API_BASE_URL = "https://api.hubapi.com"
             from app.routers.health import _probe_hubspot
             assert _probe_hubspot() == "unreachable"
+
+
+# ── Email/Resend readiness (#293) ─────────────────────────────────────────────
+
+class TestEmailReadiness:
+    def test_email_unreachable_returns_degraded(self):
+        with (
+            patch("app.routers.health._probe_db",         return_value="ok"),
+            patch("app.routers.health._probe_redis",       return_value="ok"),
+            patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
+            patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
+            patch("app.routers.health._probe_hubspot",     return_value="unconfigured"),
+            patch("app.routers.health._probe_email",       return_value="unreachable"),
+        ):
+            r = client.get("/health/ready")
+        assert r.json()["status"] == "degraded"
+        assert r.json()["email"] == "unreachable"
+
+    def test_email_unconfigured_stays_ok(self):
+        with (
+            patch("app.routers.health._probe_db",         return_value="ok"),
+            patch("app.routers.health._probe_redis",       return_value="ok"),
+            patch("app.routers.health._probe_asaas",       return_value="ok"),
+            patch("app.routers.health._probe_ai_engine",   return_value="ok"),
+            patch("app.routers.health._probe_hubspot",     return_value="ok"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
+        ):
+            r = client.get("/health/ready")
+        assert r.json()["status"] == "ok"
+        assert r.json()["email"] == "unconfigured"
+
+
+# ── Email probe unit (#293) ───────────────────────────────────────────────────
+
+class TestProbeEmail:
+    def test_disabled_returns_unconfigured(self):
+        with patch("app.routers.health.settings") as cfg:
+            cfg.EMAIL_VERIFICATION_ENABLED = False
+            cfg.SMTP_HOST = "smtp.resend.com"
+            from app.routers.health import _probe_email
+            assert _probe_email() == "unconfigured"
+
+    def test_no_host_returns_unconfigured(self):
+        with patch("app.routers.health.settings") as cfg:
+            cfg.EMAIL_VERIFICATION_ENABLED = True
+            cfg.SMTP_HOST = ""
+            from app.routers.health import _probe_email
+            assert _probe_email() == "unconfigured"
+
+    def test_ehlo_ok_returns_ok(self):
+        mock_server = MagicMock()
+        mock_smtp = MagicMock()
+        mock_smtp.__enter__ = MagicMock(return_value=mock_server)
+        mock_smtp.__exit__ = MagicMock(return_value=False)
+        with (
+            patch("app.routers.health.settings") as cfg,
+            patch("app.routers.health.smtplib.SMTP", return_value=mock_smtp),
+        ):
+            cfg.EMAIL_VERIFICATION_ENABLED = True
+            cfg.SMTP_HOST = "smtp.resend.com"
+            cfg.SMTP_PORT = 587
+            from app.routers.health import _probe_email
+            assert _probe_email() == "ok"
+        mock_server.ehlo.assert_called_once()
+
+    def test_connection_error_returns_unreachable(self):
+        with (
+            patch("app.routers.health.settings") as cfg,
+            patch("app.routers.health.smtplib.SMTP", side_effect=OSError("connection refused")),
+        ):
+            cfg.EMAIL_VERIFICATION_ENABLED = True
+            cfg.SMTP_HOST = "smtp.resend.com"
+            cfg.SMTP_PORT = 587
+            from app.routers.health import _probe_email
+            assert _probe_email() == "unreachable"

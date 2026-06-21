@@ -8,6 +8,7 @@ GET /health/deep     → alias de /health/ready (convenção Magalu Cloud)
 from __future__ import annotations
 
 import logging
+import smtplib
 import time
 from typing import Literal
 
@@ -37,6 +38,7 @@ class DeepHealthResponse(BaseModel):
     asaas_api: ServiceStatus
     ai_engine: ServiceStatus
     hubspot: ServiceStatus
+    email: ServiceStatus
     latency_ms: int
 
 
@@ -121,6 +123,24 @@ def _probe_hubspot() -> ServiceStatus:
         return "unreachable"
 
 
+def _probe_email() -> ServiceStatus:
+    """Conecta no relay SMTP (Resend em produção) e faz EHLO (timeout 3s).
+
+    Mesma condição de no-op do email_service: 'unconfigured' quando
+    EMAIL_VERIFICATION_ENABLED=false ou SMTP_HOST vazio. Não autentica nem
+    envia — apenas valida que o gateway SMTP está alcançável.
+    """
+    if not settings.EMAIL_VERIFICATION_ENABLED or not settings.SMTP_HOST:
+        return "unconfigured"
+    try:
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=3.0) as server:
+            server.ehlo()
+        return "ok"
+    except Exception as exc:
+        logger.warning("Health: SMTP/email probe failed — %s", exc)
+        return "unreachable"
+
+
 def _probe_ai_engine() -> ServiceStatus:
     """GET OpenRouter /models (timeout 3s).
 
@@ -176,6 +196,7 @@ def readiness() -> DeepHealthResponse:
     asaas_status   = _probe_asaas()
     ai_status      = _probe_ai_engine()
     hubspot_status = _probe_hubspot()
+    email_status   = _probe_email()
 
     latency_ms = int((time.monotonic() - t0) * 1000)
 
@@ -183,7 +204,8 @@ def readiness() -> DeepHealthResponse:
     optional_ok = (
         asaas_status   in ("ok", "unconfigured") and
         ai_status      in ("ok", "unconfigured") and
-        hubspot_status in ("ok", "unconfigured")
+        hubspot_status in ("ok", "unconfigured") and
+        email_status   in ("ok", "unconfigured")
     )
 
     if not critical_ok:
@@ -200,6 +222,7 @@ def readiness() -> DeepHealthResponse:
         asaas_api=asaas_status,
         ai_engine=ai_status,
         hubspot=hubspot_status,
+        email=email_status,
         latency_ms=latency_ms,
     )
 
