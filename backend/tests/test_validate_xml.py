@@ -442,3 +442,51 @@ class TestRejectionCodesV140:
         r = validate_xml(xml, "NFSE")
         f = [x for x in r.findings if x.rule_id == "CCLASSTRIB_6_DIGITS"]
         assert f and "1106" not in f[0].recommendation
+
+
+# ── Item #278: ALIQUOTA_CLASSTRIB — slice alíquota-zero ──────────────────────
+
+
+class TestAliquotaClasstrib:
+    """cClassTrib isento/imune (CST 400/410) ou redução ≥100% deve ter IBS/CBS = 0.
+    pCBS/pIBS > 0 nesse caso → FATAL. Independente das alíquotas de referência."""
+
+    def _nfe(self, code, pcbs="0", pibsuf="0", pibsmun="0"):
+        return (
+            '<nfeProc><NFe><infNFe><ide><mod>55</mod></ide>'
+            '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            '<det nItem="1"><prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>'
+            f'<imposto><IBSCBS><CST>000</CST><cClassTrib>{code}</cClassTrib>'
+            '<gIBSCBS><vBC>1000.00</vBC>'
+            f'<gIBSUF><pIBSUF>{pibsuf}</pIBSUF><vIBSUF>0.00</vIBSUF></gIBSUF>'
+            f'<gIBSMun><pIBSMun>{pibsmun}</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun>'
+            f'<vIBS>0.00</vIBS><gCBS><pCBS>{pcbs}</pCBS><vCBS>0.00</vCBS></gCBS>'
+            '</gIBSCBS></IBSCBS></imposto></det>'
+            '<total><IBSCBSTot><vIBS>0.00</vIBS><vCBS>0.00</vCBS></IBSCBSTot></total>'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml):
+        return [f for f in validate_xml(xml, "NFE").findings if f.rule_id == "ALIQUOTA_CLASSTRIB"]
+
+    def test_isento_400_com_cbs_declarado_fatal(self):
+        f = self._find(self._nfe("400001", pcbs="0.009"))
+        assert any(x.id == "F_ALIQUOTA_CLASSTRIB_CBS" for x in f)
+        assert all(x.severity == "FATAL" for x in f)
+
+    def test_isento_zerado_sem_finding(self):
+        assert self._find(self._nfe("400001")) == []
+
+    def test_tributado_000_com_cbs_sem_finding(self):
+        assert self._find(self._nfe("000001", pcbs="0.009")) == []
+
+    def test_imune_410_com_ibs_declarado_fatal(self):
+        f = self._find(self._nfe("410001", pibsuf="0.0005"))
+        assert any(x.id == "F_ALIQUOTA_CLASSTRIB_IBS" for x in f)
+
+    def test_reducao_100_com_cbs_fatal(self):
+        f = self._find(self._nfe("200001", pcbs="0.009"))
+        assert any(x.id == "F_ALIQUOTA_CLASSTRIB_CBS" for x in f)
+
+    def test_codigo_desconhecido_sem_finding(self):
+        assert self._find(self._nfe("999999", pcbs="0.009")) == []

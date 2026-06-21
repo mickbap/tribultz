@@ -29,6 +29,7 @@ from app.tools import s3_tool, postgres_tool
 from app.services.xml_correction_service import correct_xml
 from app.api.plan_gate import require_plan, check_usage_limit, increment_usage
 from app.data.ncm_codes import VALID_NCM_CODES
+from app.data.classtrib_table import classtrib_expected_zero
 from app.data.cest_ncm import lookup_ncm_st
 
 logger = logging.getLogger(__name__)
@@ -728,6 +729,53 @@ def validate_xml(
                 Finding(id="F_CNPJ_UNAVAIL", severity="ALERT", rule_id="CNPJ_ACTIVE", title="Verificação de CNPJ indisponível — API fora do ar", where=FindingWhere(field="CNPJ", xpath=_xpath("CNPJ", doc_type)), recommendation="APIs de consulta CNPJ temporariamente indisponíveis. Verifique manualmente.", evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="CNPJ — API indisponível", xpath=_xpath("CNPJ", doc_type)),
             )
+
+    # ── Rule 19: ALIQUOTA_CLASSTRIB — alíquota-zero coerente com o cClassTrib (#278) ──
+    # Slice de alíquota-zero (independente das alíquotas de referência 2026, que ainda
+    # têm ambiguidade — #315): se o cClassTrib é isento/imune (CST 400/410) ou tem
+    # redução ≥ 100% (ex.: cesta básica), o IBS/CBS declarado DEVE ser 0. pCBS/pIBS > 0
+    # nesse caso é FATAL. Dados da tabela oficial SVRS (classtrib.json, #328).
+    # A comparação absoluta (alíquota não-zero vs esperada) fica para fase 2 (depende #315).
+    if has_ibscbs and c_class_trib and re.match(r"^\d{6}$", c_class_trib["value"]):
+        _exp = classtrib_expected_zero(c_class_trib["value"])
+        if _exp is not None:
+            _cbs_zero, _ibs_zero = _exp
+            _TOL = 0.0001  # 0,01%
+            _pcbs = _to_float(p_cbs["value"]) if p_cbs else 0.0
+            _pibs_total = (
+                (_to_float(p_ibs_uf["value"]) if p_ibs_uf else 0.0)
+                + (_to_float(p_ibs_mun["value"]) if p_ibs_mun else 0.0)
+            )
+            if _cbs_zero and _pcbs > _TOL:
+                ev_id = "E_XML_ALIQUOTA_CLASSTRIB_CBS"
+                _add(
+                    Finding(
+                        id="F_ALIQUOTA_CLASSTRIB_CBS", severity="FATAL", rule_id="ALIQUOTA_CLASSTRIB",
+                        title=f'cClassTrib {c_class_trib["value"]} é alíquota-zero de CBS, mas pCBS={_pcbs} foi declarado',
+                        where=FindingWhere(field="pCBS", xpath=_xpath("pCBS", doc_type), snippet=p_cbs["snippet"] if p_cbs else None),
+                        recommendation=(
+                            f'O cClassTrib {c_class_trib["value"]} é isento/imune ou tem redução de 100% — '
+                            "a CBS deve ser zero. Ajuste pCBS para 0 ou corrija o cClassTrib (tabela oficial SVRS)."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="CBS — alíquota-zero incoerente", xpath=_xpath("pCBS", doc_type), snippet=p_cbs["snippet"] if p_cbs else None),
+                )
+            if _ibs_zero and _pibs_total > _TOL:
+                ev_id = "E_XML_ALIQUOTA_CLASSTRIB_IBS"
+                _add(
+                    Finding(
+                        id="F_ALIQUOTA_CLASSTRIB_IBS", severity="FATAL", rule_id="ALIQUOTA_CLASSTRIB",
+                        title=f'cClassTrib {c_class_trib["value"]} é alíquota-zero de IBS, mas pIBSUF+pIBSMun={_pibs_total} foi declarado',
+                        where=FindingWhere(field="pIBS", xpath=_xpath("pIBSUF", doc_type), snippet=p_ibs_uf["snippet"] if p_ibs_uf else None),
+                        recommendation=(
+                            f'O cClassTrib {c_class_trib["value"]} é isento/imune ou tem redução de 100% — '
+                            "o IBS deve ser zero. Ajuste pIBSUF/pIBSMun para 0 ou corrija o cClassTrib (tabela oficial SVRS)."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="IBS — alíquota-zero incoerente", xpath=_xpath("pIBSUF", doc_type), snippet=p_ibs_uf["snippet"] if p_ibs_uf else None),
+                )
 
     # ── Rule: IMPORT_IBSCBS_REQUIRED — incidência na importação (#item2) ──────
     # Decreto 12.955/2026 art. 65 (LC 214 art. 63): IBS/CBS incidem sobre a importação
