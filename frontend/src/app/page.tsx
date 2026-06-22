@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { NewsFeed } from "@/components/public/NewsFeed";
-import { RULES_COUNT } from "@/lib/validation/rulesMeta";
+import { RULES_COUNT, CLASSTRIB_COUNT } from "@/lib/validation/rulesMeta";
 
 export const metadata: Metadata = {
   title: "IBS e CBS sem Rejeição de NF-e — Compliance LC 214",
@@ -323,7 +323,7 @@ export default function HomePage() {
                 {
                   badge: "SPED FISCAL",
                   preview: [
-                    { l: "EFD-ICMS/IPI · catálogo completo", r: "✓", ok: true },
+                    { l: "EFD-ICMS/IPI · validação CBS/IBS", r: "✓", ok: true },
                     { l: "Catálogo CBS/IBS", r: "100%", ok: true },
                     { l: "Export TOTVS / SAP / Omie", r: "↓", ok: false },
                   ],
@@ -466,7 +466,7 @@ export default function HomePage() {
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { n: String(RULES_COUNT), l: "Regras CBS/IBS validadas" },
-                  { n: "156", l: "Classificações cClassTrib (SVRS)" },
+                  { n: String(CLASSTRIB_COUNT), l: "Classificações cClassTrib mapeadas (SVRS)" },
                   { n: "100", l: "Créditos API grátis" },
                   { n: "5 min", l: "Monitoramento contínuo" },
                 ].map((s) => (
