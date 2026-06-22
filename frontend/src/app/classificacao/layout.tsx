@@ -8,7 +8,7 @@ import { CLASSIFICACAO_SCHEMA } from "@/components/seo/schemas";
 export const metadata: Metadata = {
   title: "Classificar NCM → cClassTrib CBS/IBS — Evite a Rejeição 1024",
   description:
-    "Classifique o NCM correto para o cClassTrib da Reforma Tributária automaticamente. " +
+    "Classifique o NCM e entenda o cClassTrib aplicável na Reforma Tributária (sugestão a validar). " +
     "Evite a Rejeição 1024 em NF-e antes das penalidades CBS/IBS de agosto/2026. " +
     "Ferramenta gratuita — 10 classificações por dia.",
   keywords: [
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Classificar NCM → cClassTrib | Tribultz",
     description:
-      "Evite a Rejeição 1024 — classifique NCM → cClassTrib automaticamente e calcule CBS/IBS antes das penalidades de agosto/2026.",
+      "Evite a Rejeição 1024 — classifique o NCM, entenda o cClassTrib aplicável (a validar) e calcule CBS/IBS antes das penalidades de agosto/2026.",
     type: "website",
   },
 };
