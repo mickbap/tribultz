@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { API_BASE, createTransactionId } from "@/lib/api";
+import { RULES_COUNT } from "@/lib/validation/rulesMeta";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -120,7 +121,7 @@ export default function DiagnosticoPage() {
           Faça o diagnóstico gratuito agora.
         </p>
         <div className="mx-auto mt-2 flex items-center justify-center gap-4 text-sm text-slate-500">
-          <span>18 regras verificadas</span>
+          <span>{RULES_COUNT} regras verificadas</span>
           <span>NF-e, NFC-e e NFS-e</span>
           <span>NT 2025.002-RTC</span>
         </div>

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { apiFetch } from "@/lib/api";
 import { getToken } from "@/lib/storage";
+import { RULES_COUNT } from "@/lib/validation/rulesMeta";
 
 // ── Plan definitions ────────────────────────────────────────────
 
@@ -29,7 +30,7 @@ const PLANS: Plan[] = [
     tagline: "Comece agora, sem cartão",
     features: [
       "5 validações XML por mês",
-      "18 regras CBS/IBS",
+      `${RULES_COUNT} regras CBS/IBS`,
       "Diagnóstico gratuito",
       "Calculadora CBS/IBS",
     ],
@@ -45,7 +46,7 @@ const PLANS: Plan[] = [
     tagline: "Para autônomos e MEIs",
     features: [
       "10 validações XML por mês",
-      "18 regras CBS/IBS",
+      `${RULES_COUNT} regras CBS/IBS`,
       "Dashboard de conformidade",
       "Histórico de validações",
     ],
@@ -428,7 +429,7 @@ export default function PricingPage() {
                     values: [false, false, true, true, true],
                   },
                   {
-                    label: "18 regras CBS/IBS",
+                    label: `${RULES_COUNT} regras CBS/IBS`,
                     values: [true, true, true, true, true],
                   },
                   {
@@ -520,7 +521,7 @@ export default function PricingPage() {
         <section className="border-t border-slate-200 bg-tribultz-700 py-16 text-center text-white">
           <h2 className="mb-4 text-3xl font-extrabold">Pronto para estar em conformidade?</h2>
           <p className="mb-8 text-tribultz-200">
-            18 regras determinísticas. Evidências auditáveis. Reforma tributária descomplicada.
+            {RULES_COUNT} regras determinísticas. Evidências auditáveis. Reforma tributária descomplicada.
           </p>
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link

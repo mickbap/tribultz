@@ -2,6 +2,7 @@
 import { Montserrat, Source_Sans_3, Roboto_Mono } from "next/font/google";
 import Script from "next/script";
 import { AppShell } from "@/components/layout/AppShell";
+import { RULES_COUNT } from "@/lib/validation/rulesMeta";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -25,7 +26,7 @@ const robotoMono = Roboto_Mono({
 const SITE_URL = "https://tribultz.com.br";
 const SITE_NAME = "Tribultz";
 const DEFAULT_DESCRIPTION =
-  "Evite Rejeição 1024 e penalidades CBS/IBS. Classifique NCM → cClassTrib, valide 18 regras LC 214 e exporte para TOTVS, SAP, Omie e Linx. Compliance auditável para a Reforma Tributária.";
+  `Evite Rejeição 1024 e penalidades CBS/IBS. Classifique NCM → cClassTrib, valide ${RULES_COUNT} regras LC 214 e exporte para TOTVS, SAP, Omie e Linx. Compliance auditável para a Reforma Tributária.`;
 
 export const metadata: Metadata = {
   title: {
