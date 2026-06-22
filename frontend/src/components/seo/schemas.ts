@@ -10,6 +10,7 @@
  */
 
 import type { SchemaObject } from "./JsonLd";
+import { RULES_COUNT } from "@/lib/validation/rulesMeta";
 
 const SITE_URL = "https://tribultz.com.br";
 const ORG_ID = `${SITE_URL}/#org`;
@@ -157,14 +158,14 @@ export const DIAGNOSTICO_SCHEMA: SchemaObject[] = [
     "isAccessibleForFree": true,
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
     "description":
-      "Valide sua NF-e, NFC-e ou NFS-e contra as 18 regras da NT 2025.002-RTC. " +
+      `Valide sua NF-e, NFC-e ou NFS-e contra as ${RULES_COUNT} regras da NT 2025.002-RTC. ` +
       "Diagnóstico instantâneo, sem cadastro, evidência auditável.",
   },
   faqPage(DIAGNOSTICO_URL, [
     {
       q: "O que é validado no diagnóstico gratuito?",
       a:
-        "São aplicadas 18 regras determinísticas: formato CST/cClassTrib/NCM, " +
+        `São aplicadas ${RULES_COUNT} regras determinísticas: formato CST/cClassTrib/NCM, ` +
         "compatibilidade CST × cClassTrib (Rejeição 1024), cálculo CBS/IBS, " +
         "totais, CEST × ST (Convênio 142/2018), split payment indPag e estrutura XML.",
     },

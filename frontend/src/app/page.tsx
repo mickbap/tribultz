@@ -3,10 +3,11 @@ import Link from "next/link";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { NewsFeed } from "@/components/public/NewsFeed";
+import { RULES_COUNT } from "@/lib/validation/rulesMeta";
 
 export const metadata: Metadata = {
   title: "IBS e CBS sem Rejeição de NF-e — Compliance LC 214",
-  description: "Rejeição 1024 por cClassTrib errado? Penalidades CBS/IBS a partir de agosto/2026. Classifique NCM → cClassTrib, valide 18 regras da Reforma e exporte para TOTVS/SAP/Omie/Linx. 100 créditos API grátis.",
+  description: `Rejeição 1024 por cClassTrib errado? Penalidades CBS/IBS a partir de agosto/2026. Classifique NCM → cClassTrib, valide ${RULES_COUNT} regras da Reforma e exporte para TOTVS/SAP/Omie/Linx. 100 créditos API grátis.`,
   keywords: [
     "Rejeição 1024 NF-e", "cClassTrib CBS IBS", "NCM cClassTrib LC 214",
     "penalidades CBS IBS 2026", "validação NF-e reform tributária",
@@ -119,7 +120,7 @@ function HeroVisual() {
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E8F0FE] text-[#2956E3]">
           <Check color="#2956E3" />
         </span>
-        18 regras validadas
+        {RULES_COUNT} regras validadas
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6" style={{ boxShadow: "0 24px 60px -20px rgba(41,86,227,0.18), 0 4px 12px rgba(36,41,46,0.04)" }}>
@@ -244,7 +245,7 @@ export default function HomePage() {
             {[
               { icon: "🛡", label: "Tabela oficial SVRS" },
               { icon: "🔌", label: "API NCM → cClassTrib" },
-              { icon: "✅", label: "18 regras CBS/IBS LC 214" },
+              { icon: "✅", label: `${RULES_COUNT} regras CBS/IBS LC 214` },
               { icon: "🔗", label: "TOTVS · SAP · Omie · Linx" },
               { icon: "📄", label: "Auditável (PDF + JSON)" },
               { icon: "🔔", label: "Trial gerenciado · avisos D-3 e D-1" },
@@ -269,7 +270,7 @@ export default function HomePage() {
                 </h2>
               </div>
               <p className="text-base leading-relaxed text-[#334155]">
-                Seu ERP envia o XML, nosso motor valida contra as 18 regras da LC 214, você emite com a evidência auditável.
+                Seu ERP envia o XML, nosso motor valida contra as {RULES_COUNT} regras da LC 214, você emite com a evidência auditável.
               </p>
             </div>
 
@@ -322,7 +323,7 @@ export default function HomePage() {
                 {
                   badge: "SPED FISCAL",
                   preview: [
-                    { l: "EFD-ICMS/IPI · 12.430 itens", r: "✓", ok: true },
+                    { l: "EFD-ICMS/IPI · catálogo completo", r: "✓", ok: true },
                     { l: "Catálogo CBS/IBS", r: "100%", ok: true },
                     { l: "Export TOTVS / SAP / Omie", r: "↓", ok: false },
                   ],
@@ -338,8 +339,8 @@ export default function HomePage() {
                     { l: "0030005 · Cesta básica", r: "0%", ok: true },
                   ],
                   title: "cClassTrib LC 214",
-                  body: "Valide a nova classificação tributária da Reforma. Alíquotas CBS/IBS sincronizadas com a tabela oficial SVRS.",
-                  meta: "Sincronização semanal · 1.247 códigos",
+                  body: "Valide a nova classificação tributária da Reforma. Alíquotas CBS/IBS conforme a tabela oficial SVRS.",
+                  meta: "Tabela oficial SVRS · NT 2025.002-RTC v1.40",
                 },
                 {
                   badge: "COMPLIANCE SCORE",
@@ -445,7 +446,7 @@ export default function HomePage() {
                   Reforma chega em 2026.
                 </h2>
                 <p className="mb-8 text-lg leading-relaxed" style={{ color: "rgba(255,255,255,0.8)" }}>
-                  5 validações de cortesia, 18 regras CBS/IBS, diagnóstico imediato. Sem cartão de crédito.
+                  5 validações de cortesia, {RULES_COUNT} regras CBS/IBS, diagnóstico imediato. Sem cartão de crédito.
                 </p>
                 <div className="flex flex-wrap items-center gap-4">
                   <Link
@@ -464,8 +465,8 @@ export default function HomePage() {
 
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { n: "18", l: "Regras CBS/IBS validadas" },
-                  { n: "1.247", l: "Códigos cClassTrib ativos" },
+                  { n: String(RULES_COUNT), l: "Regras CBS/IBS validadas" },
+                  { n: "156", l: "Classificações cClassTrib (SVRS)" },
                   { n: "100", l: "Créditos API grátis" },
                   { n: "5 min", l: "Monitoramento contínuo" },
                 ].map((s) => (

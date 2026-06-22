@@ -9,11 +9,12 @@
 
 import { Classifier } from "./Classifier";
 import { FundamentacaoLegal } from "@/components/seo/FundamentacaoLegal";
+import { RULES_COUNT } from "@/lib/validation/rulesMeta";
 
 const FAQ = [
   {
     q: "O que é cClassTrib e por que ele causa rejeições de NF-e?",
-    a: "O cClassTrib é um código de 7 dígitos da LC 214/2025 que define o regime tributário de CBS e IBS de cada produto. Quando ele é incompatível com o CST informado no XML, a SEFAZ rejeita a nota com o código 1024. A classificação correta exige mapear o NCM do produto para o regime aplicável (padrão, reduzido, cesta básica, monofásico, imune, etc).",
+    a: "O cClassTrib é um código de 6 dígitos da LC 214/2025 que define o regime tributário de CBS e IBS de cada produto. Quando ele é incompatível com o CST informado no XML, a SEFAZ rejeita a nota com o código 1024. A classificação correta exige mapear o NCM do produto para o regime aplicável (padrão, reduzido, cesta básica, monofásico, imune, etc).",
   },
   {
     q: "Quando começam as penalidades por cClassTrib incorreto?",
@@ -21,15 +22,15 @@ const FAQ = [
   },
   {
     q: "Como funciona a classificação automática NCM → cClassTrib?",
-    a: "Nossa IA analisa a descrição do produto e sugere o NCM mais adequado conforme a TIPI (Decreto 11.158/2022). A partir do capítulo NCM, mapeamos o cClassTrib disponível na tabela oficial SVRS atualizada em 15/abr/2026. O resultado inclui um indicador de confiança — valores abaixo de 70% devem ser confirmados com o contador.",
+    a: "Nossa IA analisa a descrição do produto e sugere o NCM mais adequado conforme a TIPI (Decreto 11.158/2022). A partir do capítulo NCM, mapeamos o cClassTrib conforme a tabela oficial da SVRS (NT 2025.002-RTC v1.40). O resultado inclui um indicador de confiança — valores abaixo de 70% devem ser confirmados com o contador.",
   },
   {
     q: "Posso usar o NCM sugerido diretamente na NF-e?",
-    a: "O NCM sugerido é referência baseada em IA para agilizar a classificação. Confiança acima de 85% indica alta probabilidade de acerto, mas recomendamos sempre validar com o contador responsável pelo SPED antes de usar em produção. A Tribultz oferece validação completa das 18 regras CBS/IBS para confirmação.",
+    a: `O NCM sugerido é referência baseada em IA para agilizar a classificação. Confiança acima de 85% indica alta probabilidade de acerto, mas recomendamos sempre validar com o contador responsável pelo SPED antes de usar em produção. A Tribultz oferece validação completa das ${RULES_COUNT} regras CBS/IBS para confirmação.`,
   },
   {
     q: "Qual a diferença entre NCM e cClassTrib?",
-    a: "NCM é o código de 8 dígitos que identifica o produto na Nomenclatura Comum do Mercosul (tabela TIPI). cClassTrib é o código de 7 dígitos da LC 214 que define como esse produto é tributado pelo IBS e CBS na Reforma Tributária. Um mesmo NCM pode ter diferentes cClassTrib dependendo do regime fiscal aplicável (padrão, reduzido, cesta básica, monofásico, imune).",
+    a: "NCM é o código de 8 dígitos que identifica o produto na Nomenclatura Comum do Mercosul (tabela TIPI). cClassTrib é o código de 6 dígitos da LC 214 que define como esse produto é tributado pelo IBS e CBS na Reforma Tributária. Um mesmo NCM pode ter diferentes cClassTrib dependendo do regime fiscal aplicável (padrão, reduzido, cesta básica, monofásico, imune).",
   },
   {
     q: "O cClassTrib muda com base no destinatário ou na operação?",
@@ -112,7 +113,7 @@ export default function ClassificacaoPage() {
             <h2 className="mb-3 text-2xl font-bold text-slate-900">O que é o cClassTrib</h2>
             <p className="text-slate-700">
               O <strong>cClassTrib</strong> (Código de Classificação Tributária) é um código numérico
-              de 7 dígitos introduzido pela <strong>Lei Complementar 214/2025</strong> e detalhado pela
+              de 6 dígitos introduzido pela <strong>Lei Complementar 214/2025</strong> e detalhado pela
               <strong> Nota Técnica 2025.002-RTC</strong>. Ele define o regime tributário de IBS e CBS
               aplicável a cada item da NF-e — informa à SEFAZ se o produto é normalmente tributado,
               tem alíquota reduzida, integra a cesta básica, está sujeito a monofásico, é imune ou
@@ -129,7 +130,7 @@ export default function ClassificacaoPage() {
           <div>
             <h2 className="mb-3 text-2xl font-bold text-slate-900">Estrutura do código cClassTrib</h2>
             <p className="text-slate-700">
-              Os 7 dígitos do cClassTrib têm semântica posicional. Os três primeiros dígitos batem
+              Os 6 dígitos do cClassTrib têm semântica posicional. Os três primeiros dígitos batem
               obrigatoriamente com o CST informado — esta é a fonte mais comum de Rejeição 1024:
             </p>
             <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
@@ -215,7 +216,7 @@ export default function ClassificacaoPage() {
               A Tribultz combina três fontes para sugerir o cClassTrib correto:
             </p>
             <ul className="mt-3 list-disc space-y-2 pl-6 text-slate-700">
-              <li>Base oficial cClassTrib SVRS (atualização 15/abr/2026, ~1.500 códigos vigentes)</li>
+              <li>Base oficial cClassTrib da SVRS (tabela da NT 2025.002-RTC v1.40)</li>
               <li>Anexos da LC 214 com regime, alíquota referência e vigência por NCM</li>
               <li>Modelo de IA treinado sobre descrições reais de NF-e para resolver ambiguidade do NCM a partir da descrição em linguagem natural</li>
             </ul>
