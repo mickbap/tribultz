@@ -5,7 +5,7 @@ import { useState } from "react";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { apiFetch } from "@/lib/api";
 import { getToken } from "@/lib/storage";
-import { RULES_COUNT } from "@/lib/validation/rulesMeta";
+import { RULES_COUNT, RULES_LABEL } from "@/lib/validation/rulesMeta";
 
 // ── Plan definitions ────────────────────────────────────────────
 
@@ -521,7 +521,7 @@ export default function PricingPage() {
         <section className="border-t border-slate-200 bg-tribultz-700 py-16 text-center text-white">
           <h2 className="mb-4 text-3xl font-extrabold">Pronto para estar em conformidade?</h2>
           <p className="mb-8 text-tribultz-200">
-            {RULES_COUNT} regras determinísticas. Evidências auditáveis. Reforma tributária descomplicada.
+            {RULES_LABEL}. Evidências auditáveis. Reforma tributária descomplicada.
           </p>
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link

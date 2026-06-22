@@ -19,3 +19,12 @@ export const RULES_COUNT = 20;
 
 /** Rótulo padrão ancorado à autoridade externa (a NT define o conjunto de regras). */
 export const RULES_LABEL = `${RULES_COUNT} regras determinísticas alinhadas à NT 2025.002-RTC v1.40`;
+
+/**
+ * Quantidade de classificações cClassTrib carregadas da tabela oficial SVRS
+ * (backend/app/data/classtrib.json, sincronizada na NT 2025.002-RTC v1.40 — #328).
+ * Apresentar SEMPRE como escopo ("classificações mapeadas"), nunca como total/completo:
+ * a tabela oficial cobre múltiplos DF-e; este é o conjunto carregado. Não derivado
+ * automaticamente porque o arquivo-fonte vive no backend (fora do build do frontend).
+ */
+export const CLASSTRIB_COUNT = 156;
