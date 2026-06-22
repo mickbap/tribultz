@@ -17,13 +17,10 @@ from typing import Optional, cast
 
 import litellm
 from litellm.types.utils import Choices as LiteLLMChoices
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, field_validator
-from sqlalchemy.orm import Session
-from sqlalchemy.sql import text
 
 from app.data.ncm_codes import is_valid_ncm
-from app.database import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -83,11 +80,24 @@ class SuggestRequest(BaseModel):
         return v
 
 
+class CClassTribCandidato(BaseModel):
+    """Candidato de cClassTrib (6 dígitos) para uma NCM, com base legal (RF-A2)."""
+    codigo: str          # 6 dígitos, tabela oficial SVRS
+    descricao: str
+    base_legal: str      # Anexo/artigo da LC 214/2025
+
+
 class SuggestResponse(BaseModel):
     ncm: str
     ncm_descricao: str
     confidence: float
-    cClassTrib: Optional[str]
+    # cClassTrib: NUNCA taxonomia de produto (RF-A1). null quando não há mapeamento
+    # 6-díg confiável — usar candidatos/status em vez de palpite único (RF-A2/A3).
+    cClassTrib: Optional[str] = None
+    cclasstrib_candidatos: list[CClassTribCandidato] = []
+    # "requer_validacao" (sem mapeamento confiável) | "multiplos" (NCM admite vários)
+    # | "unico" (1:1). Resposta de cClassTrib é sempre SUGESTÃO a validar, não veredito.
+    cclasstrib_status: str = "requer_validacao"
     cest: None = None
     rate_source: str = "ncm_ai"
     aviso: Optional[str] = None
@@ -192,14 +202,13 @@ def _llm_classify(descricao: str) -> dict:
 def suggest_ncm(
     payload: SuggestRequest,
     request: Request,
-    db: Session = Depends(get_db),
 ) -> SuggestResponse:
     client_ip = (request.client.host if request.client else "unknown")
     _rate_check(client_ip)
 
     # Cache key: SHA-256 de descrição normalizada (case-insensitive, espaços colapsados)
     normalized = " ".join(payload.descricao.lower().split())
-    cache_key = f"ncm_suggest:{hashlib.sha256(normalized.encode()).hexdigest()[:24]}"
+    cache_key = f"ncm_suggest:v2:{hashlib.sha256(normalized.encode()).hexdigest()[:24]}"
 
     cached = _cache_get(cache_key)
     if cached:
@@ -217,19 +226,11 @@ def suggest_ncm(
         confidence = min(confidence, 0.50)
         logger.warning("ncm_suggest: NCM %s not in TIPI table — confidence capped at 0.50", ncm)
 
-    # Buscar cClassTrib pelo capítulo (2 primeiros dígitos)
-    ncm_prefix = ncm[:2]
-    row = db.execute(
-        text("""
-            SELECT codigo FROM cclass_trib_items
-            WHERE codigo LIKE :prefix AND is_active = TRUE
-            ORDER BY codigo
-            LIMIT 1
-        """),
-        {"prefix": f"{ncm_prefix}.%"},
-    ).mappings().fetchone()
-    classtrib: str | None = dict(row)["codigo"] if row else None
-
+    # cClassTrib: NÃO derivar do DB cclass_trib_items (taxonomia de produto, defasada — #313).
+    # Sem mapeamento NCM→cClassTrib 6-díg confiável no repo, retornamos fallback honesto
+    # (RF-A1/A3): nunca um código inválido nem palpite único confiante (que gera Rejeição
+    # 1024). Os candidatos (RF-A2) serão populados quando o mapeamento oficial estiver
+    # disponível (lado dado — #313).
     aviso: str | None = None
     if confidence < 0.70:
         aviso = "Confiança baixa — confirme o NCM com seu contador antes de usar em NF-e."
@@ -238,7 +239,9 @@ def suggest_ncm(
         "ncm": ncm,
         "ncm_descricao": ncm_descricao,
         "confidence": round(confidence, 2),
-        "cClassTrib": classtrib,
+        "cClassTrib": None,
+        "cclasstrib_candidatos": [],
+        "cclasstrib_status": "requer_validacao",
         "cest": None,
         "rate_source": "ncm_ai",
         "aviso": aviso,
