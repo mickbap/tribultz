@@ -110,11 +110,12 @@ export function Classifier() {
                 <ConfidenceBadge value={result.confidence} />
               </div>
               <p className="mt-0.5 text-sm text-slate-600">{result.ncm_descricao}</p>
-              {result.cClassTrib && (
-                <p className="mt-1 text-xs font-mono text-blue-700">
-                  cClassTrib LC 214: <strong>{result.cClassTrib}</strong>
-                </p>
-              )}
+              {/* FIX-1 (#313): o cClassTrib do lookup ainda vem da taxonomia de produto
+                  do DB (em reconciliação para os códigos 6-díg da NT). Não exibir como
+                  autoritativo até o re-seed; apontar para a tabela oficial. */}
+              <p className="mt-1 text-xs text-slate-500">
+                cClassTrib: confira na tabela oficial SVRS (NT 2025.002-RTC v1.40).
+              </p>
             </div>
             <Link
               href={`/calculadora?ncm=${result.ncm}`}
