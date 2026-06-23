@@ -17,7 +17,6 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, field_validator
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import text
 
 from app.api.deps import get_current_user
 from app.data.ncm_codes import is_valid_ncm
@@ -79,7 +78,11 @@ class ClassifyRequest(BaseModel):
 
 class ClassifyResponse(BaseModel):
     ncm: str
-    cClassTrib: Optional[str]
+    # cClassTrib: NUNCA taxonomia de produto (RF-A1). null + status até o mapeamento
+    # oficial NCM→cClassTrib existir (#313); candidatos populados quando houver.
+    cClassTrib: Optional[str] = None
+    cclasstrib_candidatos: list = []
+    cclasstrib_status: str = "requer_validacao"
     cest: None = None
     cst: str
     vBC: str
@@ -153,18 +156,10 @@ def classify(
     api_key: ApiKey = Depends(_resolve_api_key),
     db: Session = Depends(get_db),
 ) -> ClassifyResponse:
-    # 1. Buscar cClassTrib pelo capítulo NCM (2 primeiros dígitos)
-    ncm_prefix = payload.ncm[:2]
-    row = db.execute(
-        text("""
-            SELECT codigo FROM cclass_trib_items
-            WHERE codigo LIKE :prefix AND is_active = TRUE
-            ORDER BY codigo
-            LIMIT 1
-        """),
-        {"prefix": f"{ncm_prefix}.%"},
-    ).mappings().fetchone()
-    classtrib_codigo: str | None = dict(row)["codigo"] if row else None
+    # 1. cClassTrib: NÃO derivar do DB cclass_trib_items (taxonomia de produto, defasada
+    #    — #313). Sem mapeamento NCM→cClassTrib 6-díg, retorna fallback honesto (RF-A1/A3):
+    #    nunca código inválido. Candidatos serão populados quando o mapeamento existir (#313).
+    classtrib_codigo: str | None = None
 
     # 2. Calcular CBS/IBS
     result = calculate_full(
@@ -174,8 +169,11 @@ def classify(
         cst=payload.cst,
     )
 
-    # 3. Debitar 1 crédito e registrar last_used_at
-    new_balance = cast(int, api_key.credits_balance) - 1
+    # 3. Debitar 1 crédito SOMENTE quando há classificação entregue (cClassTrib != None).
+    #    Enquanto o mapeamento não existe, cClassTrib é sempre None → NÃO cobra (o cliente
+    #    não paga por classificação que ainda não acende). last_used_at é registrado.
+    charge = classtrib_codigo is not None
+    new_balance = cast(int, api_key.credits_balance) - (1 if charge else 0)
     db.execute(
         update(ApiKey)
         .where(ApiKey.id == api_key.id)
@@ -196,7 +194,7 @@ def classify(
         total_tributos=str(result.total_tributos),
         aliquota_efetiva_pct=str((result.aliquota_efetiva * 100).quantize(Decimal("0.01"))),
         xml_snippet=result.xml_snippet,
-        credits_used=1,
+        credits_used=1 if charge else 0,
         credits_remaining=new_balance,
     )
 
