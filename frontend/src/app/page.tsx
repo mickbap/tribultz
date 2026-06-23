@@ -7,7 +7,7 @@ import { RULES_COUNT, CLASSTRIB_COUNT } from "@/lib/validation/rulesMeta";
 
 export const metadata: Metadata = {
   title: "IBS e CBS sem Rejeição de NF-e — Compliance LC 214",
-  description: `Rejeição 1024 por cClassTrib errado? Penalidades CBS/IBS a partir de agosto/2026. Classifique NCM → cClassTrib, valide ${RULES_COUNT} regras da Reforma e exporte para TOTVS/SAP/Omie/Linx. 100 créditos API grátis.`,
+  description: `Rejeição 1024 por cClassTrib errado? Penalidades CBS/IBS a partir de agosto/2026. Valide CST × cClassTrib e ${RULES_COUNT} regras da Reforma, calcule CBS/IBS e exporte para TOTVS/SAP/Omie/Linx. 100 créditos API grátis.`,
   keywords: [
     "Rejeição 1024 NF-e", "cClassTrib CBS IBS", "NCM cClassTrib LC 214",
     "penalidades CBS IBS 2026", "validação NF-e reform tributária",
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "IBS e CBS sem Rejeição de NF-e | Tribultz",
-    description: "Evite a Rejeição 1024. Classifique NCM → cClassTrib e valide CBS/IBS antes das penalidades de agosto/2026.",
+    description: "Evite a Rejeição 1024. Valide CST × cClassTrib e calcule CBS/IBS antes das penalidades de agosto/2026.",
   },
 };
 
@@ -42,7 +42,7 @@ const JSON_LD = {
       "applicationCategory": "BusinessApplication",
       "operatingSystem": "Web",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL", "description": "100 créditos API grátis" },
-      "description": "Plataforma de validação CBS/IBS, classificação NCM → cClassTrib e compliance para a Reforma Tributária brasileira (LC 214).",
+      "description": "Plataforma de validação CBS/IBS e compliance para a Reforma Tributária brasileira (LC 214): cálculo CBS/IBS e validação de CST × cClassTrib.",
     },
     {
       "@type": "FAQPage",
@@ -60,7 +60,7 @@ const JSON_LD = {
         {
           "@type": "Question",
           "name": "Como classificar o NCM correto para o cClassTrib na Reforma Tributária?",
-          "acceptedAnswer": { "@type": "Answer", "text": "O cClassTrib é determinado pelo capítulo NCM e pelo regime tributário aplicável (padrão, reduzido, cesta básica, imune, etc). A Tribultz oferece classificação automática NCM → cClassTrib via API pay-per-call ou pelo validador gratuito, com evidência auditável da base legal." },
+          "acceptedAnswer": { "@type": "Answer", "text": "O cClassTrib é determinado pelo capítulo NCM e pelo regime tributário aplicável (padrão, reduzido, cesta básica, imune, etc). A Tribultz valida a compatibilidade CST × cClassTrib (a fonte da Rejeição 1024) e calcula CBS/IBS com evidência auditável da base legal; a sugestão automática de cClassTrib a partir do NCM está em ativação e deve ser validada." },
         },
         {
           "@type": "Question",
@@ -244,7 +244,7 @@ export default function HomePage() {
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-10 px-4 md:px-6">
             {[
               { icon: "🛡", label: "Tabela oficial SVRS" },
-              { icon: "🔌", label: "API NCM → cClassTrib" },
+              { icon: "🔌", label: "API de cálculo CBS/IBS" },
               { icon: "✅", label: `${RULES_COUNT} regras CBS/IBS LC 214` },
               { icon: "🔗", label: "TOTVS · SAP · Omie · Linx" },
               { icon: "📄", label: "Auditável (PDF + JSON)" },
@@ -356,12 +356,12 @@ export default function HomePage() {
                 {
                   badge: "API · PAY-PER-CALL",
                   preview: [
-                    { l: "POST /classify", r: "NCM → cClassTrib", ok: true },
-                    { l: "CBS 8,80% + IBS 17,70%", r: "26,50%", ok: true },
+                    { l: "POST /classify", r: "CBS/IBS calculado", ok: true },
+                    { l: "CBS 8,80% + IBS 17,70% (ref. plena)", r: "26,50%", ok: true },
                     { l: "1 crédito / chamada", r: "100 grátis", ok: false },
                   ],
                   title: "API Classify",
-                  body: "Classifique NCM e calcule CBS/IBS direto no seu ERP via API. 100 créditos grátis. Sem contrato — pague só o que usar.",
+                  body: "Calcule CBS/IBS direto no seu ERP via API. Classificação NCM→cClassTrib em ativação (sugestão a validar). 100 créditos grátis. Sem contrato — pague só o que usar.",
                   meta: "X-API-Key · REST · JSON",
                 },
               ].map((f) => (

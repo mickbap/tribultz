@@ -1,14 +1,16 @@
 """
 Reference CBS/IBS tax rates by Brazilian state (UF).
 
-Rates based on LC 214/2025 (Reforma Tributária) reference values.
-The IBS rate is split between state (UF) and municipality (Mun) components.
+Estes são os valores de REFERÊNCIA PLENA (carga cheia da Reforma, LC 214/2025),
+usados para projeção/planejamento de longo prazo. NÃO são as alíquotas reduzidas
+da fase de teste de 2026 (CBS 0,9% / IBS 0,1%): durante a transição 2026-2032 as
+alíquotas efetivas de emissão são frações destas. Os valores abaixo NÃO devem ser
+lidos como a alíquota vigente de emissão em 2026 (ver #315).
 
+The IBS rate is split between state (UF) and municipality (Mun) components.
 CBS (federal): uniform national rate.
 IBS UF (state): varies by state — transition period 2026-2032.
 IBS Mun (municipal): varies by municipality — uses state average as default.
-
-Reference period: 2026 (first year of dual system).
 """
 
 from decimal import Decimal

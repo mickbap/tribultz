@@ -39,7 +39,7 @@ const LEGAL_REFS = [
   {
     instrumento: "LC 214/2025",
     artigo: "arts. 8º a 22, 156-A",
-    descricao: "Base legal da CBS e IBS, definição de base de cálculo, alíquotas referência (CBS 0,9% / IBS 0,1% em 2026).",
+    descricao: "Base legal da CBS e IBS e definição de base de cálculo. Alíquotas de referência do regime cheio: CBS ~8,8% / IBS ~17,7%; fase de teste de 2026: CBS 0,9% / IBS 0,1%.",
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm",
   },
   {
@@ -78,7 +78,7 @@ export default function CalculadoraPage() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="text-xs font-semibold text-emerald-700">Alíquotas LC 214 atualizadas — 2026</span>
+            <span className="text-xs font-semibold text-emerald-700">Alíquota de referência (regime cheio · LC 214)</span>
           </div>
           <h1 className="text-3xl font-extrabold leading-tight text-slate-900 md:text-4xl">
             Calculadora CBS/IBS<br />

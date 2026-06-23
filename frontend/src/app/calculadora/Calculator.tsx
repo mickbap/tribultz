@@ -429,6 +429,10 @@ function CalculadoraInner() {
                   </div>
                   <span className="font-mono text-lg font-bold text-slate-900">{brlFmt(result.total_tributos)}</span>
                 </div>
+
+                <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Alíquota de <strong>referência plena</strong> (regime cheio da Reforma). Na <strong>fase de teste de 2026</strong> as alíquotas de emissão são reduzidas — CBS 0,9% / IBS 0,1%. Use este resultado para projeção; confira a tabela de 2026 antes de emitir.
+                </p>
               </div>
 
               {/* Visual bar */}
@@ -538,7 +542,8 @@ function CalculadoraInner() {
         <div className="mx-auto max-w-4xl rounded-xl border border-tribultz-100 bg-tribultz-50 p-5">
           <h3 className="text-base font-semibold text-slate-900">Como funciona a calculadora</h3>
           <p className="mt-2 text-sm text-slate-700">
-            A calculadora aplica as alíquotas de referência da LC 214/2025 (Reforma Tributária) para
+            A calculadora aplica as alíquotas de <strong>referência plena</strong> (regime cheio) da
+            LC 214/2025 — não as alíquotas reduzidas da fase de teste de 2026 (CBS 0,9% / IBS 0,1%) — para
             CBS (federal) e IBS (estadual + municipal). Para NCMs de alimentos da Cesta Básica Nacional,
             farmacêuticos e educação, aplica automaticamente as reduções previstas nos Anexos da lei.
             O XML gerado segue o leiaute da NT 2025.002-RTC.

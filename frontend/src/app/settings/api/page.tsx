@@ -102,6 +102,7 @@ export default function ApiSettingsPage() {
         <p className="text-sm text-slate-500 mt-1">
           Autentique integrações ERP e sistemas externos com a API pay-per-call.
           Cada chamada a <code className="bg-slate-100 px-1 rounded text-xs">/classify</code> consome 1 crédito.
+          O cálculo CBS/IBS é completo; a classificação NCM→cClassTrib está em ativação e é retornada como sugestão a validar.
         </p>
       </header>
 
