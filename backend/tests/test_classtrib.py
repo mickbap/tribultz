@@ -54,141 +54,106 @@ def auth_client():
     app.dependency_overrides.pop(get_current_user, None)
 
 
-# ── Testes de dados — via API (migration 0018) ────────────────────────────────
+# ── Testes de dados — via API (migration 0020: 156 cClassTrib de 6 dígitos) ───
 
 class TestClassTribData:
-    """Verifica que a migration 0018 populou os códigos corretamente — via endpoint."""
+    """A migration 0020 re-seedou os 156 cClassTrib de 6 dígitos (fonte pública SVRS)."""
 
-    @pytest.mark.parametrize("codigo,expected_regime,zero_rated", [
-        ("01.01.001", "cesta_basica", True),
-        ("02.01.001", "cesta_basica", True),
-        ("04.01.001", "cesta_basica", True),
-        ("10.01.001", "cesta_basica", True),
-        ("30.01.001", "reduzido_60",  False),
-        ("99.01.002", "reduzido_60",  False),
-        ("48.01.002", "imune",        True),
-        ("84.01.002", "imune",        True),
-        ("99.01.001", "padrao",       False),
-        ("39.01.001", "padrao",       False),
-        ("85.17.001", "padrao",       False),
+    @pytest.mark.parametrize("codigo,regime,zero", [
+        ("000001", "padrao", False),
+        ("200001", "reducao_integral", True),
+        ("400001", "isencao", True),
+        ("410001", "imunidade", True),
+        ("011001", "reducao_60", False),
     ])
-    def test_regime_e_aliquota(self, codigo, expected_regime, zero_rated):
+    def test_regime_e_aliquota(self, codigo, regime, zero):
         resp = client.get(f"/api/v1/public/classtrib/{codigo}")
-        assert resp.status_code == 200, f"Código {codigo} não encontrado (migration 0018?)"
+        assert resp.status_code == 200, f"{codigo} não encontrado (migration 0020?)"
         data = resp.json()
-        assert data["regime_especial"] == expected_regime, (
-            f"{codigo}: regime esperado={expected_regime}, obtido={data['regime_especial']}"
-        )
-        if zero_rated:
-            assert float(data["p_cbs"]) == 0.0, f"{codigo}: p_cbs deveria ser 0"
-            assert float(data["p_ibs"]) == 0.0, f"{codigo}: p_ibs deveria ser 0"
+        assert data["regime_especial"] == regime
+        if zero:
+            assert float(data["p_cbs"]) == 0.0 and float(data["p_ibs"]) == 0.0
         else:
-            assert float(data["p_cbs"]) > 0.0, f"{codigo}: p_cbs deveria ser > 0"
+            assert float(data["p_cbs"]) > 0.0
 
-    def test_capitulos_representados(self):
-        """Verifica que os principais capítulos NCM respondem via search."""
-        amostras = {
-            "bovino":      "01.",  # matches "bovinos"
-            "arroz":       "10.",  # matches "Cereais — arroz"
-            "medicamento": "30.",  # matches "Medicamentos"
-            "televisore":  "85.",  # matches "Televisores"
-        }
-        for termo, prefixo in amostras.items():
-            resp = client.get(f"/api/v1/public/classtrib/search?q={termo}")
-            assert resp.status_code == 200
-            results = resp.json()
-            assert any(r["codigo"].startswith(prefixo) for r in results), (
-                f"Termo '{termo}' não retornou código do capítulo {prefixo}"
-            )
+    def test_padrao_usa_aliquota_de_referencia_plena(self):
+        """000001 (padrão) → alíquota de REFERÊNCIA PLENA (8,8 / 17,7), não a de teste 2026."""
+        data = client.get("/api/v1/public/classtrib/000001").json()
+        assert float(data["p_cbs"]) == 8.8
+        assert float(data["p_ibs"]) == 17.7
+
+    def test_search_por_termo_da_descricao(self):
+        resp = client.get("/api/v1/public/classtrib/search?q=serviços")
+        assert resp.status_code == 200
+        assert len(resp.json()) >= 1
 
 
 # ── Testes de endpoint público ────────────────────────────────────────────────
 
 class TestClassTribEndpoint:
-    def test_lookup_cesta_basica(self):
-        resp = client.get("/api/v1/public/classtrib/10.01.001")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["codigo"] == "10.01.001"
+    def test_lookup_isencao(self):
+        data = client.get("/api/v1/public/classtrib/400001").json()
+        assert data["codigo"] == "400001"
         assert float(data["p_cbs"]) == 0.0
-        assert float(data["p_ibs"]) == 0.0
-        assert data["regime_especial"] == "cesta_basica"
+        assert data["regime_especial"] == "isencao"
 
-    def test_lookup_servico_padrao(self):
-        resp = client.get("/api/v1/public/classtrib/99.01.001")
-        assert resp.status_code == 200
-        data = resp.json()
+    def test_lookup_padrao(self):
+        data = client.get("/api/v1/public/classtrib/000001").json()
         assert float(data["p_cbs"]) > 0
         assert data["regime_especial"] == "padrao"
 
     def test_lookup_retorna_last_synced_at(self):
         """Acceptance criteria #264: endpoint deve retornar last_synced_at."""
-        resp = client.get("/api/v1/public/classtrib/99.01.001")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "last_synced_at" in data, "Campo last_synced_at ausente na resposta"
-        assert data["last_synced_at"] is not None
+        data = client.get("/api/v1/public/classtrib/000001").json()
+        assert "last_synced_at" in data and data["last_synced_at"] is not None
 
     def test_lookup_nao_encontrado(self):
-        resp = client.get("/api/v1/public/classtrib/99.99.999")
-        assert resp.status_code == 404
+        assert client.get("/api/v1/public/classtrib/999999").status_code == 404
 
-    def test_search_cereais(self):
-        resp = client.get("/api/v1/public/classtrib/search?q=arroz")
-        assert resp.status_code == 200
-        results = resp.json()
-        assert len(results) >= 1
-        codigos = [r["codigo"] for r in results]
-        assert any(c.startswith("10.") for c in codigos)
-
-    def test_search_medicamento(self):
-        resp = client.get("/api/v1/public/classtrib/search?q=medicamento")
-        assert resp.status_code == 200
-        results = resp.json()
-        assert len(results) >= 1
+    def test_taxonomia_de_produto_aposentada(self):
+        """Código no formato antigo de produto (01.01.001) não deve mais existir."""
+        assert client.get("/api/v1/public/classtrib/10.01.001").status_code == 404
 
     def test_search_min_length(self):
-        resp = client.get("/api/v1/public/classtrib/search?q=a")
-        assert resp.status_code == 422
+        assert client.get("/api/v1/public/classtrib/search?q=a").status_code == 422
 
 
-# ── Testes de validação autenticada ───────────────────────────────────────────
+# ── Testes de validação autenticada (NCM × cClassTrib via mapeamento) ──────────
 
 class TestClassTribValidate:
-    def test_validate_ok(self, auth_client):
+    def test_validate_ok_candidato_oficial(self, auth_client):
+        # NCM 0201.10.00 → candidato oficial 200003 (mapeamento de anexos SVRS)
         resp = auth_client.post(
             "/api/v1/classtrib/validate",
-            json={"ncm": "1001000", "classtrib_informado": "10.01.001"},
+            json={"ncm": "02011000", "classtrib_informado": "200003"},
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] in ("OK", "DIVERGENTE", "NAO_ENCONTRADO")
+        assert data["status"] == "OK" and not data["divergencia"]
+
+    def test_validate_divergente(self, auth_client):
+        # 000001 existe mas NÃO é candidato da NCM 0201.10.00 → DIVERGENTE
+        resp = auth_client.post(
+            "/api/v1/classtrib/validate",
+            json={"ncm": "02011000", "classtrib_informado": "000001"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "DIVERGENTE" and data["divergencia"]
+        assert data["classtrib_sugerido"] == "200003"
 
     def test_validate_nao_encontrado(self, auth_client):
         resp = auth_client.post(
             "/api/v1/classtrib/validate",
-            json={"ncm": "9999999", "classtrib_informado": "99.99.999"},
+            json={"ncm": "02011000", "classtrib_informado": "999999"},
         )
         assert resp.status_code == 200
         assert resp.json()["status"] == "NAO_ENCONTRADO"
 
-    def test_validate_cesta_basica_correto(self, auth_client):
-        """NCM 01 (bovinos) com cClassTrib 01.01.001 — deve ser OK e alíquotas zero."""
-        resp = auth_client.post(
-            "/api/v1/classtrib/validate",
-            json={"ncm": "0102900000", "classtrib_informado": "01.01.001"},
-        )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["status"] == "OK"
-        assert not data["divergencia"]
-        assert data["p_cbs_correto"] == 0.0
-        assert data["p_ibs_correto"] == 0.0
-
     def test_validate_sem_auth(self):
         resp = client.post(
             "/api/v1/classtrib/validate",
-            json={"ncm": "1001000", "classtrib_informado": "10.01.001"},
+            json={"ncm": "02011000", "classtrib_informado": "200003"},
         )
         assert resp.status_code == 401
 

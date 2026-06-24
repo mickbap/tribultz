@@ -16,6 +16,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.data.ncm_cclasstrib_table import ncm_candidatos
 from app.database import get_db
 from app.models.auth import User
 
@@ -132,28 +133,24 @@ def validate_classtrib(
 
     item = dict(item)
 
-    # Buscar sugestão pelo NCM (prefixo dos 2 primeiros dígitos → capítulo SH)
-    ncm_prefix = payload.ncm[:2] if len(payload.ncm) >= 2 else ""
-    sugestao = db.execute(
-        text("""
-            SELECT codigo FROM cclass_trib_items
-            WHERE codigo LIKE :prefix AND is_active = TRUE
-            ORDER BY codigo LIMIT 1
-        """),
-        {"prefix": f"{ncm_prefix}.%"},
-    ).scalar_one_or_none()
+    # Sugestão pelo mapeamento oficial NCM→cClassTrib (anexos SVRS) — NÃO mais por prefixo
+    # de capítulo na taxonomia de produto (#313 Part 2). A mesma NCM pode admitir vários
+    # cClassTrib: divergência só quando o informado NÃO consta entre os candidatos.
+    candidatos = [c["codigo"] for c in ncm_candidatos(payload.ncm)]
+    sugestao = candidatos[0] if candidatos else None
 
-    divergente = sugestao is not None and sugestao != payload.classtrib_informado
+    divergente = bool(candidatos) and payload.classtrib_informado not in candidatos
 
     finding = None
     if divergente:
+        opcoes = ", ".join(candidatos)
         finding = {
             "id":             f"classtrib-{payload.ncm}-{payload.classtrib_informado}",
             "severity":       "ERROR",
             "rule_id":        "CBS-011",
             "title":          "cClassTrib divergente do NCM informado",
             "where":          {"field": "cClassTrib", "snippet": payload.classtrib_informado},
-            "recommendation": f"Substituir '{payload.classtrib_informado}' por '{sugestao}' conforme mapeamento NCM × cClassTrib da LC 214.",
+            "recommendation": f"cClassTrib '{payload.classtrib_informado}' não consta entre os candidatos da NCM {payload.ncm} ({opcoes}), conforme os Anexos da LC 214. Validar a classificação.",
             "evidence_ids":   [],
         }
 
