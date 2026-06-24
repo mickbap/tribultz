@@ -86,6 +86,10 @@ function isWithinNoPenaltyWindow(emissionDate: string | undefined): boolean {
 // não é verificável do XML — por isso a regra é ALERT informativo (verificar enquadramento).
 const PF_CNPJ_REQUIRED_DATE = "2026-07-01";
 
+// NF-e de devolução (finNFe=4): a partir de 01/09/2026 referencia a nota original por item,
+// exclusivamente via grupo DFeReferenciado (v1.40, Rejeição 321 — VC02-14/VC03-20).
+const DEVOLUCAO_DFEREF_DATE = "2026-09-01";
+
 // ── CST table (NT 2025.002-RTC) ────────────────────────────────────────────
 export const CST_TABLE: Record<string, { group: string | null; description: string }> = {
   "000": { group: "gIBSCBS", description: "Tributação normal (ad valorem)" },
@@ -886,6 +890,42 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
               `caso, providencie a inscrição no CNPJ. A inscrição não transforma a PF em PJ.`,
           }),
           makeEvidence({ id: evId, type: "xml", label: "Emitente PF (CPF) — verificar CNPJ", xpath: inferXpath("CPF", docType), snippet: emitCpf.snippet }),
+        );
+      }
+    }
+  }
+
+  // ── Rule: DEVOLUCAO_DFEREF — devolução referencia a nota original por item (#312) ──
+  // v1.40: NF-e de devolução (finNFe=4) deve referenciar a nota original POR ITEM,
+  // exclusivamente via grupo DFeReferenciado. Antes de 01/09/2026 → WARNING (antecipação);
+  // a partir da vigência → FATAL. pedagogicalMode mantém WARNING.
+  if (isNfe) {
+    const fin = firstTag(xml, ["finNFe"]);
+    if (fin && fin.value.trim() === "4") {
+      const nItems = (xml.match(/<det\b/g) ?? []).length;
+      const nRef = (xml.match(/<DFeReferenciado\b/g) ?? []).length;
+      if (nRef < Math.max(nItems, 1)) {
+        const emDate = emissionDate?.value?.slice(0, 10) ?? "";
+        const vigente = /^\d{4}-\d{2}-\d{2}$/.test(emDate) && emDate >= DEVOLUCAO_DFEREF_DATE;
+        const sev: FindingSeverity = vigente && !pedMode ? "FATAL" : "WARNING";
+        const falta = nRef === 0 ? "nenhum item referencia" : `só ${nRef} de ${nItems} itens referenciam`;
+        const evId = makeEvidenceId("DEVOLUCAO_DFEREF");
+        pushFindingAndEvidence(findings, evidences, evidenceById,
+          makeFinding({
+            id: "F_DEVOLUCAO_DFEREF",
+            severity: sev,
+            ruleId: "DEVOLUCAO_DFEREF",
+            title: `NF-e de devolução sem DFeReferenciado por item (${falta} a nota original)`,
+            field: "DFeReferenciado",
+            xpath: inferXpath("DFeReferenciado", docType),
+            snippet: fin.snippet,
+            evidenceId: evId,
+            recommendation:
+              "NF-e de devolução (finNFe=4) deve referenciar a nota original POR ITEM, " +
+              "exclusivamente via grupo DFeReferenciado (NT 2025.002-RTC v1.40, vigência 01/09/2026). " +
+              "Inclua um DFeReferenciado para cada item devolvido. SEFAZ: Rejeição 321 (regras VC02-14 / VC03-20).",
+          }),
+          makeEvidence({ id: evId, type: "xml", label: "Devolução sem DFeReferenciado por item", xpath: inferXpath("DFeReferenciado", docType), snippet: fin.snippet }),
         );
       }
     }
