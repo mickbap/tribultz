@@ -537,3 +537,45 @@ class TestCredPres:
 
     def test_classtrib_desconhecido_sem_finding(self):
         assert self._find(self._nfe("999999")) == []
+
+
+class TestClassTribDocType:
+    """#311 — cClassTrib deve ser aplicável ao modelo do documento (fonte SVRS dfe_allowed).
+    Usar um cClassTrib fora dos seus modelos publicados tende à rejeição (família 1106/960)."""
+
+    def _nfe(self, code, mod="55"):
+        return (
+            f'<nfeProc><NFe><infNFe><ide><mod>{mod}</mod></ide>'
+            '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            '<det nItem="1"><prod><NCM>84713012</NCM><vProd>1000.00</vProd></prod>'
+            f'<imposto><IBSCBS><CST>000</CST><cClassTrib>{code}</cClassTrib>'
+            '<gIBSCBS><vBC>1000.00</vBC>'
+            '<gIBSUF><pIBSUF>0</pIBSUF><vIBSUF>0.00</vIBSUF></gIBSUF>'
+            '<gIBSMun><pIBSMun>0</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun>'
+            '<vIBS>0.00</vIBS><gCBS><pCBS>0</pCBS><vCBS>0.00</vCBS></gCBS>'
+            '</gIBSCBS></IBSCBS></imposto></det>'
+            '<total><IBSCBSTot><vIBS>0.00</vIBS><vCBS>0.00</vCBS></IBSCBSTot></total>'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml, dt):
+        return [f for f in validate_xml(xml, dt).findings if f.rule_id == "CLASSTRIB_DOC_TYPE"]
+
+    def test_classtrib_de_outro_modelo_em_nfe_warning(self):
+        # 000002 só vale p/ NFSVIA → em NF-e gera WARNING
+        f = self._find(self._nfe("000002"), "NFE")
+        assert any(x.id == "F_CLASSTRIB_DOC_TYPE" and x.severity == "WARNING" for x in f)
+
+    def test_classtrib_universal_em_nfe_sem_finding(self):
+        # 000001 vale p/ NFE e NFCE → sem finding
+        assert self._find(self._nfe("000001"), "NFE") == []
+
+    def test_classtrib_nfe_only_em_nfce_warning(self):
+        # 000003 só vale p/ NFE → em NFC-e gera WARNING
+        assert any(x.id == "F_CLASSTRIB_DOC_TYPE" for x in self._find(self._nfe("000003", mod="65"), "NFCE"))
+
+    def test_classtrib_nfe_only_em_nfe_sem_finding(self):
+        assert self._find(self._nfe("000003"), "NFE") == []
+
+    def test_desconhecido_sem_finding(self):
+        assert self._find(self._nfe("999999"), "NFE") == []

@@ -46,3 +46,16 @@ def classtrib_permite_cred_pres(code: str) -> bool | None:
     if item is None:
         return None
     return bool(item.get("permite_cred_pres", False))
+
+
+def classtrib_dfe_allowed(code: str) -> list[str] | None:
+    """Modelos de DFe em que o cClassTrib é aplicável (ex.: ['NFE','NFCE']) — #311.
+
+    Retorna a lista (fonte SVRS: IndNfe/IndNfce/IndNfse/…) ou None se o código for
+    desconhecido. Usar um cClassTrib fora dos seus modelos publicados tende à rejeição
+    (cClassTrib inválido para o modelo — família 1106/960).
+    """
+    item = CLASSTRIB_BY_CODE.get(code)
+    if item is None:
+        return None
+    return list(item.get("dfe_allowed") or [])
