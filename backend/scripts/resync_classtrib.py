@@ -124,6 +124,42 @@ def normalize(groups: list[dict]) -> dict:
     }
 
 
+def normalize_ncm_mapping(groups: list[dict]) -> dict:
+    """Mapeia NCM/NBS → candidatos cClassTrib (6-díg) + base legal, dos anexos (RF-A2 / Order A).
+
+    Cada classificação traz uma lista `Anexos` com `CodNcmNbs` (NCM 8-díg ou NBS 9-díg).
+    A mesma NCM pode aparecer em vários cClassTrib → candidatos (a validar, não veredito).
+    """
+    mapping: dict[str, list[dict]] = {}
+    for grp in groups:
+        for c in grp.get("ClassificacoesTributarias") or []:
+            cod = str(c.get("CodClassTrib", "")).strip()
+            leg = c.get("TexUrlLegislacao") or ""
+            for ax in c.get("Anexos") or []:
+                ncm = str(ax.get("CodNcmNbs") or "").strip()
+                if not ncm or not cod:
+                    continue
+                base = f"Anexo {ax.get('NroAnexo')}"
+                desc = (ax.get("DescAnexo") or "").strip()
+                if desc:
+                    base += f" — {desc}"
+                mapping.setdefault(ncm, [])
+                if not any(e["codigo"] == cod for e in mapping[ncm]):
+                    mapping[ncm].append({"codigo": cod, "base_legal": base, "legislacao": leg})
+    for ncm in mapping:
+        mapping[ncm].sort(key=lambda e: e["codigo"])
+    return {
+        "meta": {
+            "source": "SVRS Conformidade Fácil — consulta pública (anexos NCM/NBS → cClassTrib)",
+            "source_url": SOURCE_URL,
+            "date": dt.date.today().isoformat(),
+            "total_ncm": len(mapping),
+            "total_pares": sum(len(v) for v in mapping.values()),
+        },
+        "by_ncm": dict(sorted(mapping.items())),
+    }
+
+
 def print_diff(old: dict, new: dict) -> None:
     old_codes = set(old.get("by_code", {}))
     new_codes = set(new["by_code"])
@@ -166,6 +202,14 @@ def main() -> int:
 
     out_path.write_text(json.dumps(new, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"\n✓ gravado {out_path} ({len(new['by_code'])} códigos)")
+
+    # Mapeamento NCM→cClassTrib (anexos) — candidatos do ncm/suggest e /classify (RF-A2, Order A).
+    ncm_map = normalize_ncm_mapping(groups)
+    if ncm_map["meta"]["total_ncm"] < 500:
+        raise SystemExit(f"ERRO: só {ncm_map['meta']['total_ncm']} NCMs mapeadas (< 500) — abortando.")
+    ncm_path = out_path.parent / "ncm_cclasstrib.json"
+    ncm_path.write_text(json.dumps(ncm_map, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"✓ gravado {ncm_path} ({ncm_map['meta']['total_ncm']} NCMs, {ncm_map['meta']['total_pares']} pares)")
     return 0
 
 
