@@ -29,7 +29,11 @@ from app.tools import s3_tool, postgres_tool
 from app.services.xml_correction_service import correct_xml
 from app.api.plan_gate import require_plan, check_usage_limit, increment_usage
 from app.data.ncm_codes import VALID_NCM_CODES
-from app.data.classtrib_table import classtrib_expected_zero, classtrib_permite_cred_pres
+from app.data.classtrib_table import (
+    classtrib_dfe_allowed,
+    classtrib_expected_zero,
+    classtrib_permite_cred_pres,
+)
 from app.data.cest_ncm import lookup_ncm_st
 
 logger = logging.getLogger(__name__)
@@ -825,6 +829,31 @@ def validate_xml(
                     evidence_ids=[ev_id],
                 ),
                 Evidence(id=ev_id, type="xml", label="cCredPres incoerente com cClassTrib", xpath=_xpath("cCredPres", doc_type), snippet=_ccp["snippet"] if _ccp else None),
+            )
+
+    # ── Rule 21: CLASSTRIB_DOC_TYPE — cClassTrib aplicável ao modelo do documento (#311) ──
+    # Fonte SVRS (dfe_allowed): cada cClassTrib é publicado para modelos específicos
+    # (NF-e/NFC-e/NFS-e/…). Usar um cClassTrib fora dos seus modelos tende à rejeição da
+    # SEFAZ (cClassTrib inválido para o modelo — família 1106/960). Confiança alta na tabela,
+    # mas o código de rejeição exato não é citável aqui → WARNING (não FATAL).
+    if doc_type and c_class_trib and re.match(r"^\d{6}$", c_class_trib["value"]):
+        _allowed = classtrib_dfe_allowed(c_class_trib["value"])
+        if _allowed and doc_type not in _allowed:
+            ev_id = "E_XML_CLASSTRIB_DOC_TYPE"
+            _modelos = ", ".join(_allowed)
+            _add(
+                Finding(
+                    id="F_CLASSTRIB_DOC_TYPE", severity="WARNING", rule_id="CLASSTRIB_DOC_TYPE",
+                    title=f'cClassTrib {c_class_trib["value"]} não é aplicável a {doc_type} (válido para: {_modelos})',
+                    where=FindingWhere(field="cClassTrib", xpath=_xpath("cClassTrib", doc_type), snippet=c_class_trib["snippet"]),
+                    recommendation=(
+                        f'O cClassTrib {c_class_trib["value"]} é publicado apenas para {_modelos} (tabela oficial SVRS). '
+                        f"Usá-lo em {doc_type} tende à rejeição da SEFAZ (cClassTrib inválido para o modelo — família 1106/960). "
+                        "Revise o cClassTrib do item."
+                    ),
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label="cClassTrib — modelo de documento incompatível", xpath=_xpath("cClassTrib", doc_type), snippet=c_class_trib["snippet"]),
             )
 
     # ── Rule: IMPORT_IBSCBS_REQUIRED — incidência na importação (#item2) ──────
