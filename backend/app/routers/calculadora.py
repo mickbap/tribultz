@@ -50,6 +50,17 @@ class CalculadoraRequest(BaseModel):
     base_value: Decimal
     quantity: Decimal = Decimal("1")
     cst: str = "000"
+    # "teste_2026" (default): alíquotas reduzidas de emissão de 2026 (CBS 0,9% / IBS 0,1%)
+    # — o que vai na NF-e agora. "regime_cheio": carga plena (8,8 / 17,7) p/ projeção.
+    periodo: str = "teste_2026"
+
+    @field_validator("periodo")
+    @classmethod
+    def validate_periodo(cls, v: str) -> str:
+        v = v.strip()
+        if v not in ("teste_2026", "regime_cheio"):
+            raise ValueError("periodo deve ser 'teste_2026' ou 'regime_cheio'")
+        return v
 
     @field_validator("uf_destino")
     @classmethod
@@ -116,6 +127,7 @@ class CalculadoraResponse(BaseModel):
     rate_source: str
     cst: str
     cst_desc: str
+    periodo: str
     xml_snippet: str
     data_policy: str
     upgrade_cta: str
@@ -128,7 +140,7 @@ DATA_POLICY = (
 
 UPGRADE_CTA = (
     "Crie sua conta gratuita para salvar cálculos, gerar relatórios PDF "
-    "e validar XMLs completos com 18 regras de conformidade."
+    "e validar XMLs completos com 20 regras de conformidade."
 )
 
 
@@ -156,6 +168,7 @@ async def public_calculadora(request: Request, body: CalculadoraRequest):
         ncm=body.ncm_code,
         uf=body.uf_destino,
         cst=body.cst,
+        periodo=body.periodo,
     )
 
     return CalculadoraResponse(
@@ -169,6 +182,7 @@ async def public_calculadora(request: Request, body: CalculadoraRequest):
         rate_source=result.rate_source,
         cst=result.cst,
         cst_desc=result.cst_desc,
+        periodo=body.periodo,
         xml_snippet=result.xml_snippet,
         data_policy=DATA_POLICY,
         upgrade_cta=UPGRADE_CTA,

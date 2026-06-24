@@ -38,6 +38,7 @@ class TestPublicCalculadora:
             json={
                 "uf_destino": "SP",
                 "base_value": "1000.00",
+                "periodo": "regime_cheio",
             },
         )
         assert resp.status_code == 200
@@ -56,6 +57,7 @@ class TestPublicCalculadora:
             json={
                 "uf_destino": "RJ",
                 "base_value": "500.00",
+                "periodo": "regime_cheio",
                 "ncm_code": "84713012",
             },
         )
@@ -70,6 +72,7 @@ class TestPublicCalculadora:
             json={
                 "uf_destino": "SP",
                 "base_value": "100.00",
+                "periodo": "regime_cheio",
                 "ncm_code": "02011000",  # Meat — cesta básica
             },
         )
@@ -85,6 +88,7 @@ class TestPublicCalculadora:
             json={
                 "uf_destino": "MG",
                 "base_value": "1000.00",
+                "periodo": "regime_cheio",
                 "cst": "070",
             },
         )
@@ -100,6 +104,7 @@ class TestPublicCalculadora:
             json={
                 "uf_destino": "SP",
                 "base_value": "1000.00",
+                "periodo": "regime_cheio",
                 "cst": "001",
             },
         )
@@ -114,6 +119,7 @@ class TestPublicCalculadora:
             json={
                 "uf_destino": "SP",
                 "base_value": "200.00",
+                "periodo": "regime_cheio",
                 "quantity": "3",
             },
         )
@@ -127,6 +133,7 @@ class TestPublicCalculadora:
             json={
                 "uf_destino": "XX",
                 "base_value": "1000.00",
+                "periodo": "regime_cheio",
             },
         )
         assert resp.status_code == 422
@@ -137,6 +144,7 @@ class TestPublicCalculadora:
             json={
                 "uf_destino": "SP",
                 "base_value": "-100.00",
+                "periodo": "regime_cheio",
             },
         )
         assert resp.status_code == 422
@@ -147,6 +155,7 @@ class TestPublicCalculadora:
             json={
                 "uf_destino": "SP",
                 "base_value": "100.00",
+                "periodo": "regime_cheio",
                 "ncm_code": "1234",
             },
         )
@@ -158,6 +167,7 @@ class TestPublicCalculadora:
             json={
                 "uf_destino": "SP",
                 "base_value": "100.00",
+                "periodo": "regime_cheio",
                 "cst": "999",
             },
         )
@@ -192,6 +202,7 @@ class TestPublicCalculadora:
             json={
                 "uf_destino": uf,
                 "base_value": "1000.00",
+                "periodo": "regime_cheio",
                 "quantity": "1",
                 "cst": "000",
             },
@@ -250,3 +261,36 @@ class TestCstListEndpoint:
         codes = {item["code"] for item in data}
         assert "000" in codes
         assert "070" in codes
+
+
+class TestCalculadoraPeriodo:
+    """#315 lado-valor: período de emissão (default 2026) vs regime cheio (projeção)."""
+
+    def _post(self, **extra):
+        body = {"uf_destino": "SP", "base_value": "1000.00", **extra}
+        return client.post("/api/v1/public/calculadora/regime-geral", json=body)
+
+    def test_default_e_emissao_2026(self):
+        """Sem 'periodo' → default emissão 2026: CBS 0,9% / IBS 0,1% (1% efetivo)."""
+        data = self._post().json()
+        assert data["periodo"] == "teste_2026"
+        assert float(data["pCBS"]) == 0.0090
+        assert float(data["vCBS"]) == 9.00          # 1000 × 0,009
+        assert float(data["aliquota_efetiva"]) == 0.0100  # CBS 0,9% + IBS 0,1%
+        assert float(data["vIBS"]) == 1.00          # 1000 × 0,001
+
+    def test_regime_cheio_e_plena(self):
+        """'periodo'=regime_cheio → carga plena: CBS 8,8% / IBS 17,7% (26,5%)."""
+        data = self._post(periodo="regime_cheio").json()
+        assert data["periodo"] == "regime_cheio"
+        assert float(data["pCBS"]) == 0.0880
+        assert float(data["vCBS"]) == 88.00
+        assert float(data["aliquota_efetiva"]) == 0.2650
+
+    def test_periodo_invalido_422(self):
+        assert self._post(periodo="2025").status_code == 422
+
+    def test_xml_snippet_reflete_periodo_2026(self):
+        """O XML snippet de 2026 traz a alíquota reduzida (não a plena)."""
+        data = self._post().json()
+        assert "0.0090" in data["xml_snippet"] or "0.009" in data["xml_snippet"]

@@ -31,6 +31,7 @@ type CalculadoraResult = {
   rate_source: string;
   cst: string;
   cst_desc: string;
+  periodo: string;
   xml_snippet: string;
   data_policy: string;
   upgrade_cta: string;
@@ -50,6 +51,7 @@ function CalculadoraInner() {
   const [ncm, setNcm] = useState(searchParams.get("ncm") ?? "");
   const [cst, setCst] = useState(searchParams.get("cst") ?? "000");
   const [quantity, setQuantity] = useState(searchParams.get("qty") ?? "1");
+  const [periodo, setPeriodo] = useState(searchParams.get("periodo") ?? "teste_2026");
 
   const [state, setState] = useState<CalcState>("idle");
   const [result, setResult] = useState<CalculadoraResult | null>(null);
@@ -73,6 +75,7 @@ function CalculadoraInner() {
         base_value: baseValue,
         quantity,
         cst,
+        periodo,
       };
       if (ncm.trim()) body.ncm_code = ncm.trim();
 
@@ -124,12 +127,13 @@ function CalculadoraInner() {
       if (ncm.trim()) params.set("ncm", ncm.trim());
       if (cst !== "000") params.set("cst", cst);
       if (quantity !== "1") params.set("qty", quantity);
+      if (periodo !== "teste_2026") params.set("periodo", periodo);
       router.replace(`/calculadora?${params.toString()}`, { scroll: false });
     } catch {
       setError("Erro de conexão. Verifique se o servidor está acessível.");
       setState("error");
     }
-  }, [uf, baseValue, ncm, cst, quantity, router]);
+  }, [uf, baseValue, ncm, cst, quantity, periodo, router]);
 
   const handleSuggestNcm = useCallback(async () => {
     if (!suggestDesc.trim()) return;
@@ -331,6 +335,21 @@ function CalculadoraInner() {
               </select>
             </div>
 
+            {/* Período */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Período
+              </label>
+              <select
+                value={periodo}
+                onChange={(e) => setPeriodo(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-tribultz-500 focus:outline-none focus:ring-1 focus:ring-tribultz-500"
+              >
+                <option value="teste_2026">Emissão 2026 (CBS 0,9% / IBS 0,1%)</option>
+                <option value="regime_cheio">Regime cheio — projeção (CBS 8,8% / IBS 17,7%)</option>
+              </select>
+            </div>
+
             {/* Quantity */}
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
@@ -430,9 +449,15 @@ function CalculadoraInner() {
                   <span className="font-mono text-lg font-bold text-slate-900">{brlFmt(result.total_tributos)}</span>
                 </div>
 
-                <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                  Alíquota de <strong>referência plena</strong> (regime cheio da Reforma). Na <strong>fase de teste de 2026</strong> as alíquotas de emissão são reduzidas — CBS 0,9% / IBS 0,1%. Use este resultado para projeção; confira a tabela de 2026 antes de emitir.
-                </p>
+                {result.periodo === "regime_cheio" ? (
+                  <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    Alíquota de <strong>referência plena</strong> (regime cheio da Reforma) — use para <strong>projeção</strong>. Na <strong>emissão de 2026</strong> as alíquotas são reduzidas (CBS 0,9% / IBS 0,1%): selecione <strong>“Emissão 2026”</strong> para o valor que vai na NF-e.
+                  </p>
+                ) : (
+                  <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                    Alíquotas de <strong>emissão de 2026</strong> (CBS 0,9% / IBS 0,1%) — o XML abaixo já reflete a fase de teste. Para projetar a <strong>carga cheia</strong> da Reforma, selecione <strong>“Regime cheio”</strong>.
+                  </p>
+                )}
               </div>
 
               {/* Visual bar */}
@@ -542,11 +567,12 @@ function CalculadoraInner() {
         <div className="mx-auto max-w-4xl rounded-xl border border-tribultz-100 bg-tribultz-50 p-5">
           <h3 className="text-base font-semibold text-slate-900">Como funciona a calculadora</h3>
           <p className="mt-2 text-sm text-slate-700">
-            A calculadora aplica as alíquotas de <strong>referência plena</strong> (regime cheio) da
-            LC 214/2025 — não as alíquotas reduzidas da fase de teste de 2026 (CBS 0,9% / IBS 0,1%) — para
-            CBS (federal) e IBS (estadual + municipal). Para NCMs de alimentos da Cesta Básica Nacional,
-            farmacêuticos e educação, aplica automaticamente as reduções previstas nos Anexos da lei.
-            O XML gerado segue o leiaute da NT 2025.002-RTC.
+            Por padrão, a calculadora usa as alíquotas de <strong>emissão de 2026</strong> (CBS 0,9% /
+            IBS 0,1%) — o que efetivamente vai na NF-e na fase de teste. Selecione <strong>“Regime cheio”</strong>
+            no campo Período para projetar a <strong>carga plena</strong> da Reforma (CBS 8,8% / IBS 17,7%),
+            da LC 214/2025. Para NCMs de alimentos da Cesta Básica Nacional, farmacêuticos e educação, aplica
+            automaticamente as reduções previstas nos Anexos da lei. O XML gerado segue o leiaute da NT
+            2025.002-RTC e reflete o período selecionado.
           </p>
         </div>
       </section>

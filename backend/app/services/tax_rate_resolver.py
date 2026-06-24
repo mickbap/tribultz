@@ -21,6 +21,7 @@ from pydantic import BaseModel
 
 from app.data.uf_rates import (
     UF_RATES, CBS_NATIONAL_RATE, IBS_UF_DEFAULT, IBS_MUN_DEFAULT,
+    CBS_TESTE_2026, IBS_2026_FACTOR,
 )
 from app.data.cst_regimes import get_rate_modifier, get_cst_regime, generates_tax
 from app.data.ncm_rates import get_ncm_modifier
@@ -64,6 +65,7 @@ def resolve_rates(
     ncm: str | None = None,
     uf: str | None = None,
     cst: str = "000",
+    periodo: str = "regime_cheio",
 ) -> TaxRateResult:
     """Resolve CBS/IBS rates from the hierarchy: NCM → UF → National.
 
@@ -88,6 +90,15 @@ def resolve_rates(
             ibs_uf_rate = uf_data["ibs_uf_rate"]
             ibs_mun_rate = uf_data["ibs_mun_rate"]
             rate_source = "uf_default"
+
+    # Período de emissão: "teste_2026" (default) aplica as alíquotas reduzidas de 2026
+    # (CBS 0,9% / IBS 0,1% total — o que vai na NF-e agora); "regime_cheio" mantém as
+    # plenas resolvidas acima (projeção). O split IBS UF/Mun de 2026 escala o split plena.
+    if periodo == "teste_2026":
+        cbs_rate = CBS_TESTE_2026
+        ibs_uf_rate = ibs_uf_rate * IBS_2026_FACTOR
+        ibs_mun_rate = ibs_mun_rate * IBS_2026_FACTOR
+        rate_source = f"{rate_source}_2026"
 
     # Step 2: NCM modifier (chapter-based overrides)
     ncm_mod = get_ncm_modifier(ncm or "")
@@ -184,6 +195,7 @@ def calculate_full(
     ncm: str | None = None,
     uf: str | None = None,
     cst: str = "000",
+    periodo: str = "regime_cheio",
 ) -> CalculationResult:
     """Convenience: resolve rates + calculate in one call.
 
@@ -197,7 +209,7 @@ def calculate_full(
     Returns:
         Full CalculationResult.
     """
-    rates = resolve_rates(ncm=ncm, uf=uf, cst=cst)
+    rates = resolve_rates(ncm=ncm, uf=uf, cst=cst, periodo=periodo)
     result = calculate(vBC, quantity, rates)
 
     # Override CST in the result
