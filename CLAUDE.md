@@ -60,10 +60,10 @@ cd backend && source .venv/bin/activate && python -m pytest tests/ -q && ruff ch
 
 ## Regras de domínio
 
-- **CBS**: Contribuição sobre Bens e Serviços (federal) — alíquota referência 0,10%
-- **IBS**: Imposto sobre Bens e Serviços (estadual/municipal) — alíquota referência 0,90%
+- **CBS**: Contribuição sobre Bens e Serviços (federal) — fase de teste 2026: **0,9%**; referência plena (regime cheio, ~2033): **8,8%**
+- **IBS**: Imposto sobre Bens e Serviços (estadual/municipal) — fase de teste 2026: **0,1%**; referência plena (regime cheio, ~2033): **17,7%** (UF + Município)
 - **Base legal**: LC 214 (reforma tributária) + LC 227 (regulamentação)
-- **10 regras determinísticas** com evidência auditável no formato Findings/Evidence v1.1
+- **20 regras determinísticas** no engine (`frontend/src/lib/validation/xmlRules.ts`, fonte canônica `RULES_COUNT`; 22 ruleIds − 2 placeholders) com evidência auditável no formato Findings/Evidence v1.1
 - **Vocabulário fiscal**: CEST, ClassTrib, IBS, CBS, Nota Nacional, ISS, ICMS, Split Payment, Cashback
 
 ## Validação

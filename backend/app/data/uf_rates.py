@@ -15,11 +15,19 @@ IBS Mun (municipal): varies by municipality — uses state average as default.
 
 from decimal import Decimal
 
-# National reference rates (LC 214 Art. 9)
+# Reference (plena / regime cheio, ~2033) rates (LC 214 Art. 9)
 CBS_NATIONAL_RATE = Decimal("0.0880")       # 8.80% CBS federal
 IBS_NATIONAL_RATE = Decimal("0.1770")       # 17.70% IBS total (UF + Mun)
 IBS_UF_DEFAULT = Decimal("0.1130")          # ~11.30% state share (avg)
 IBS_MUN_DEFAULT = Decimal("0.0640")         # ~6.40% municipal share (avg)
+
+# Fase de teste 2026 (LC 214 — transição). Alíquotas EFETIVAS de emissão em 2026:
+# CBS 0,9% (federal, uniforme) e IBS 0,1% (total UF+Mun). O split UF/Mun de 2026 é
+# obtido escalando o split plena por-UF proporcionalmente ao total de 2026 (preserva
+# a estrutura estadual/municipal). Estas são as alíquotas que vão na NF-e em 2026.
+CBS_TESTE_2026 = Decimal("0.0090")          # 0,9% CBS federal (teste 2026)
+IBS_TESTE_2026_TOTAL = Decimal("0.0010")    # 0,1% IBS total (teste 2026)
+IBS_2026_FACTOR = IBS_TESTE_2026_TOTAL / IBS_NATIONAL_RATE  # escala plena → 2026
 
 
 UF_RATES: dict[str, dict] = {
