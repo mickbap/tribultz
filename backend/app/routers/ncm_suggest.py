@@ -21,6 +21,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, field_validator
 
 from app.data.ncm_codes import is_valid_ncm
+from app.data.ncm_cclasstrib_table import resolve_cclasstrib
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,8 @@ class CClassTribCandidato(BaseModel):
     """Candidato de cClassTrib (6 dígitos) para uma NCM, com base legal (RF-A2)."""
     codigo: str          # 6 dígitos, tabela oficial SVRS
     descricao: str
-    base_legal: str      # Anexo/artigo da LC 214/2025
+    base_legal: str      # Anexo da tabela oficial (LC 214/2025)
+    legislacao: str = ""  # link da legislação (planalto)
 
 
 class SuggestResponse(BaseModel):
@@ -208,7 +210,7 @@ def suggest_ncm(
 
     # Cache key: SHA-256 de descrição normalizada (case-insensitive, espaços colapsados)
     normalized = " ".join(payload.descricao.lower().split())
-    cache_key = f"ncm_suggest:v2:{hashlib.sha256(normalized.encode()).hexdigest()[:24]}"
+    cache_key = f"ncm_suggest:v3:{hashlib.sha256(normalized.encode()).hexdigest()[:24]}"
 
     cached = _cache_get(cache_key)
     if cached:
@@ -226,11 +228,12 @@ def suggest_ncm(
         confidence = min(confidence, 0.50)
         logger.warning("ncm_suggest: NCM %s not in TIPI table — confidence capped at 0.50", ncm)
 
-    # cClassTrib: NÃO derivar do DB cclass_trib_items (taxonomia de produto, defasada — #313).
-    # Sem mapeamento NCM→cClassTrib 6-díg confiável no repo, retornamos fallback honesto
-    # (RF-A1/A3): nunca um código inválido nem palpite único confiante (que gera Rejeição
-    # 1024). Os candidatos (RF-A2) serão populados quando o mapeamento oficial estiver
-    # disponível (lado dado — #313).
+    # cClassTrib via mapeamento oficial NCM→cClassTrib (anexos SVRS, app/data/ncm_cclasstrib.json).
+    # NUNCA taxonomia de produto (RF-A1); candidatos a validar, não veredito (RF-A2);
+    # null honesto quando não há mapeamento (RF-A3). Para NCM multi-mapeada, cClassTrib
+    # fica null e os candidatos vêm na lista (palpite único confiante é o que gera a 1024).
+    cclasstrib, cc_candidatos, cc_status = resolve_cclasstrib(ncm)
+
     aviso: str | None = None
     if confidence < 0.70:
         aviso = "Confiança baixa — confirme o NCM com seu contador antes de usar em NF-e."
@@ -239,9 +242,9 @@ def suggest_ncm(
         "ncm": ncm,
         "ncm_descricao": ncm_descricao,
         "confidence": round(confidence, 2),
-        "cClassTrib": None,
-        "cclasstrib_candidatos": [],
-        "cclasstrib_status": "requer_validacao",
+        "cClassTrib": cclasstrib,
+        "cclasstrib_candidatos": cc_candidatos,
+        "cclasstrib_status": cc_status,
         "cest": None,
         "rate_source": "ncm_ai",
         "aviso": aviso,

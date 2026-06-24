@@ -1,4 +1,4 @@
-"""POST /api/v1/public-api/classify (pago) — nunca taxonomia de produto + não debita no fallback."""
+"""POST /api/v1/public-api/classify (pago) — candidatos + cobra só quando classifica (Order A)."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ def _fake_result():
     return r
 
 
-class TestClassifyPagoCClassTrib:
+class TestClassifyPago:
     def setup_method(self):
         app.dependency_overrides[_resolve_api_key] = lambda: _fake_key(100)
         app.dependency_overrides[get_db] = lambda: MagicMock()
@@ -43,28 +43,34 @@ class TestClassifyPagoCClassTrib:
     def teardown_method(self):
         app.dependency_overrides.clear()
 
-    def _post(self):
+    def _post(self, ncm):
         with patch("app.routers.public_api.calculate_full", return_value=_fake_result()):
             return client.post(
                 "/api/v1/public-api/classify",
                 headers={"X-API-Key": "x"},
-                json={"ncm": "01012100", "uf_destino": "SP", "cst": "000", "base_value": "100.00"},
+                json={"ncm": ncm, "uf_destino": "SP", "cst": "000", "base_value": "100.00"},
             )
 
-    def test_cclasstrib_null_fallback(self):
-        body = self._post().json()
-        assert body["cClassTrib"] is None
-        assert body["cclasstrib_status"] == "requer_validacao"
-        assert body["cclasstrib_candidatos"] == []
+    def test_multi_cobra_e_retorna_candidatos(self):
+        b = self._post("01022110").json()  # multi-mapeada, TIPI-válida
+        assert b["cclasstrib_status"] == "multiplos"
+        assert len(b["cclasstrib_candidatos"]) >= 2
+        assert b["credits_used"] == 1 and b["credits_remaining"] == 99
+
+    def test_unico_cobra(self):
+        b = self._post("02011000").json()
+        assert b["cClassTrib"] == "200003"
+        assert b["credits_used"] == 1
+
+    def test_sem_mapeamento_nao_cobra(self):
+        b = self._post("84713012").json()  # notebook — sem mapeamento de anexo
+        assert b["cClassTrib"] is None
+        assert b["cclasstrib_status"] == "requer_validacao"
+        assert b["credits_used"] == 0 and b["credits_remaining"] == 100
 
     def test_nunca_taxonomia_de_produto(self):
-        assert not PRODUCT_TAX.search(self._post().text)
+        assert not PRODUCT_TAX.search(self._post("01022110").text)
 
-    def test_nao_debita_credito_no_fallback(self):
-        body = self._post().json()
-        assert body["credits_used"] == 0
-        assert body["credits_remaining"] == 100  # saldo intacto
-
-    def test_calculo_cbs_ibs_ainda_entregue(self):
-        body = self._post().json()
-        assert body["vCBS"] == "8.80" and body["vIBS"] == "17.70"
+    def test_calculo_cbs_ibs_entregue(self):
+        b = self._post("84713012").json()
+        assert b["vCBS"] == "8.80" and b["vIBS"] == "17.70"

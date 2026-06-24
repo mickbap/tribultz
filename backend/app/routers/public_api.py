@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.data.ncm_codes import is_valid_ncm
+from app.data.ncm_cclasstrib_table import resolve_cclasstrib
 from app.data.uf_rates import VALID_UF_CODES
 from app.database import get_db
 from app.models.api_key import ApiKey
@@ -156,10 +157,10 @@ def classify(
     api_key: ApiKey = Depends(_resolve_api_key),
     db: Session = Depends(get_db),
 ) -> ClassifyResponse:
-    # 1. cClassTrib: NÃO derivar do DB cclass_trib_items (taxonomia de produto, defasada
-    #    — #313). Sem mapeamento NCM→cClassTrib 6-díg, retorna fallback honesto (RF-A1/A3):
-    #    nunca código inválido. Candidatos serão populados quando o mapeamento existir (#313).
-    classtrib_codigo: str | None = None
+    # 1. cClassTrib via mapeamento oficial NCM→cClassTrib (anexos SVRS). NUNCA taxonomia
+    #    de produto (RF-A1); candidatos a validar, não veredito (RF-A2); null honesto sem
+    #    mapeamento (RF-A3). Multi-mapeada → cClassTrib null, candidatos na lista.
+    classtrib_codigo, cc_candidatos, cc_status = resolve_cclasstrib(payload.ncm)
 
     # 2. Calcular CBS/IBS
     result = calculate_full(
@@ -169,10 +170,10 @@ def classify(
         cst=payload.cst,
     )
 
-    # 3. Debitar 1 crédito SOMENTE quando há classificação entregue (cClassTrib != None).
-    #    Enquanto o mapeamento não existe, cClassTrib é sempre None → NÃO cobra (o cliente
-    #    não paga por classificação que ainda não acende). last_used_at é registrado.
-    charge = classtrib_codigo is not None
+    # 3. Debitar 1 crédito SOMENTE quando há classificação entregue (>= 1 candidato).
+    #    Sem mapeamento (requer_validacao) → NÃO cobra: o cliente não paga por
+    #    classificação que não acendeu. last_used_at é registrado.
+    charge = bool(cc_candidatos)
     new_balance = cast(int, api_key.credits_balance) - (1 if charge else 0)
     db.execute(
         update(ApiKey)
@@ -187,6 +188,8 @@ def classify(
     return ClassifyResponse(
         ncm=payload.ncm,
         cClassTrib=classtrib_codigo,
+        cclasstrib_candidatos=cc_candidatos,
+        cclasstrib_status=cc_status,
         cst=result.cst,
         vBC=str(result.vBC),
         vCBS=str(result.vCBS),
