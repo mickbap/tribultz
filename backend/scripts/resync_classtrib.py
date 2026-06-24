@@ -100,6 +100,9 @@ def normalize(groups: list[dict]) -> dict:
                 "reduction_ibs_pct": float(c.get("PercRedIbs") or 0.0),
                 "reduction_cbs_pct": float(c.get("PercRedCbs") or 0.0),
                 "tipo_aliquota": c.get("TipoAliq"),
+                # Crédito presumido IBS/CBS: se True, a operação pode carregar a tag cCredPres
+                # (#339). Só alguns cClassTrib permitem — fonte SVRS: IndPermiteCredPres.
+                "permite_cred_pres": bool(c.get("IndPermiteCredPres")),
                 "dfe_allowed": dfe,
                 "vigencia_ini": (c.get("DthIniVig") or "")[:10],
                 "legislacao": c.get("TexUrlLegislacao") or "",

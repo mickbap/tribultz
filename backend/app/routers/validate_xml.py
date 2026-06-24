@@ -29,7 +29,7 @@ from app.tools import s3_tool, postgres_tool
 from app.services.xml_correction_service import correct_xml
 from app.api.plan_gate import require_plan, check_usage_limit, increment_usage
 from app.data.ncm_codes import VALID_NCM_CODES
-from app.data.classtrib_table import classtrib_expected_zero
+from app.data.classtrib_table import classtrib_expected_zero, classtrib_permite_cred_pres
 from app.data.cest_ncm import lookup_ncm_st
 
 logger = logging.getLogger(__name__)
@@ -776,6 +776,56 @@ def validate_xml(
                     ),
                     Evidence(id=ev_id, type="xml", label="IBS — alíquota-zero incoerente", xpath=_xpath("pIBSUF", doc_type), snippet=p_ibs_uf["snippet"] if p_ibs_uf else None),
                 )
+
+    # ── Rule 20: CRED_PRES — crédito presumido coerente com o cClassTrib (#339) ──
+    # Fonte SVRS (IndPermiteCredPres): só alguns cClassTrib admitem crédito presumido.
+    # Se o cClassTrib admite e a tag cCredPres não veio, a operação corre risco de rejeição
+    # e PERDA do crédito (prejuízo direto). Severidade conservadora (janela 2026, educativa):
+    # WARNING/ALERT, nunca FATAL — a geração efetiva do crédito depende de mais que o
+    # cClassTrib (princípio: só FATAL com confiança; incerto → ALERT/fallback honesto).
+    if has_ibscbs and ibscbs_block and c_class_trib and re.match(r"^\d{6}$", c_class_trib["value"]):
+        _permite = classtrib_permite_cred_pres(c_class_trib["value"])
+        _ccp = _first_tag(ibscbs_block["snippet"], ["cCredPres"])
+        _ccp_val = _ccp["value"].strip() if _ccp and _ccp["value"] else ""
+        if _permite is True and not _ccp_val:
+            ev_id = "E_XML_CREDPRES_MISSING"
+            _add(
+                Finding(
+                    id="F_CREDPRES_MISSING", severity="WARNING", rule_id="CRED_PRES",
+                    title=f'cClassTrib {c_class_trib["value"]} admite crédito presumido, mas cCredPres não foi informado',
+                    where=FindingWhere(field="cCredPres", xpath=_xpath("cCredPres", doc_type), snippet=c_class_trib["snippet"]),
+                    recommendation=(
+                        "Se a operação gera crédito presumido de IBS/CBS, informe o código cCredPres (6 dígitos) "
+                        "no grupo IBSCBS. A ausência pode causar rejeição da NF-e e a perda do crédito (Tabela cCredPres, IT 2025.002)."
+                    ),
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label="cCredPres ausente — cClassTrib admite crédito presumido", xpath=_xpath("cCredPres", doc_type), snippet=c_class_trib["snippet"]),
+            )
+        elif _ccp_val and not re.match(r"^\d{6}$", _ccp_val):
+            ev_id = "E_XML_CREDPRES_INVALID"
+            _add(
+                Finding(
+                    id="F_CREDPRES_INVALID", severity="ALERT", rule_id="CRED_PRES",
+                    title=f'cCredPres "{_ccp_val}" com formato inválido (esperado 6 dígitos)',
+                    where=FindingWhere(field="cCredPres", xpath=_xpath("cCredPres", doc_type), snippet=_ccp["snippet"] if _ccp else None),
+                    recommendation="O código de crédito presumido (cCredPres) deve ter 6 dígitos numéricos (Tabela cCredPres, IT 2025.002).",
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label="cCredPres — formato inválido", xpath=_xpath("cCredPres", doc_type), snippet=_ccp["snippet"] if _ccp else None),
+            )
+        elif _ccp_val and _permite is False:
+            ev_id = "E_XML_CREDPRES_INCONSISTENT"
+            _add(
+                Finding(
+                    id="F_CREDPRES_INCONSISTENT", severity="ALERT", rule_id="CRED_PRES",
+                    title=f'cCredPres informado, mas o cClassTrib {c_class_trib["value"]} não admite crédito presumido',
+                    where=FindingWhere(field="cCredPres", xpath=_xpath("cCredPres", doc_type), snippet=_ccp["snippet"] if _ccp else None),
+                    recommendation="Reveja a classificação: este cClassTrib não admite crédito presumido (fonte SVRS). Verifique o cClassTrib ou remova o cCredPres.",
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label="cCredPres incoerente com cClassTrib", xpath=_xpath("cCredPres", doc_type), snippet=_ccp["snippet"] if _ccp else None),
+            )
 
     # ── Rule: IMPORT_IBSCBS_REQUIRED — incidência na importação (#item2) ──────
     # Decreto 12.955/2026 art. 65 (LC 214 art. 63): IBS/CBS incidem sobre a importação

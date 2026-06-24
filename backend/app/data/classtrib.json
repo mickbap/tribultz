@@ -3,7 +3,7 @@
     "source": "SVRS Conformidade Fácil — consulta pública classTrib (sem credencial)",
     "source_url": "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria",
     "extraction_method": "JSON embutido na página /CFF/ClassificacaoTributaria",
-    "date": "2026-06-20",
+    "date": "2026-06-24",
     "total_codes": 156,
     "total_cst_groups": 18
   },
@@ -15,6 +15,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "BPE",
         "BPETA",
@@ -39,6 +40,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSVIA"
       ],
@@ -52,6 +54,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": true,
       "dfe_allowed": [
         "NFE"
       ],
@@ -65,6 +68,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": true,
       "dfe_allowed": [
         "NFE"
       ],
@@ -78,6 +82,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -91,6 +96,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 5,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -104,6 +110,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 5,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -117,6 +124,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 4,
+      "permite_cred_pres": false,
       "dfe_allowed": [],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art236"
@@ -128,6 +136,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 4,
+      "permite_cred_pres": false,
       "dfe_allowed": [],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art237"
@@ -139,6 +148,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 4,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -152,6 +162,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 4,
+      "permite_cred_pres": false,
       "dfe_allowed": [],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art246"
@@ -163,6 +174,7 @@
       "reduction_ibs_pct": 30.0,
       "reduction_cbs_pct": 30.0,
       "tipo_aliquota": 4,
+      "permite_cred_pres": false,
       "dfe_allowed": [],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art243"
@@ -174,6 +186,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "CTE",
         "CTEOS",
@@ -189,6 +202,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -203,6 +217,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -217,6 +232,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE",
@@ -232,6 +248,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE",
         "NFSE"
@@ -246,6 +263,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE",
@@ -261,6 +279,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE",
@@ -276,6 +295,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE",
         "NFSE"
@@ -290,6 +310,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -304,6 +325,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -318,6 +340,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -331,6 +354,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -345,6 +369,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -359,6 +384,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -373,6 +399,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -387,6 +414,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -400,6 +428,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -413,6 +442,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art223"
@@ -424,6 +454,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -437,6 +468,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NF3E",
         "NFCE",
@@ -453,6 +485,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "BPETM",
         "NFSE"
@@ -467,6 +500,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -480,6 +514,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -493,6 +528,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -506,6 +542,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -519,6 +556,7 @@
       "reduction_ibs_pct": 80.0,
       "reduction_cbs_pct": 80.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -532,6 +570,7 @@
       "reduction_ibs_pct": 70.0,
       "reduction_cbs_pct": 70.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -545,6 +584,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -558,6 +598,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -571,6 +612,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE",
@@ -586,6 +628,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE",
@@ -601,6 +644,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -615,6 +659,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -629,6 +674,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -643,6 +689,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -657,6 +704,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -671,6 +719,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -684,6 +733,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE",
@@ -699,6 +749,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE",
         "NFSE"
@@ -713,6 +764,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -726,6 +778,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -739,6 +792,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -752,6 +806,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCOM",
         "NFE",
@@ -767,6 +822,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCOM",
         "NFSE"
@@ -781,6 +837,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI",
         "NFSE"
@@ -795,6 +852,7 @@
       "reduction_ibs_pct": 50.0,
       "reduction_cbs_pct": 50.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI",
         "NFSE"
@@ -809,6 +867,7 @@
       "reduction_ibs_pct": 40.0,
       "reduction_cbs_pct": 40.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -823,6 +882,7 @@
       "reduction_ibs_pct": 40.0,
       "reduction_cbs_pct": 40.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -836,6 +896,7 @@
       "reduction_ibs_pct": 40.0,
       "reduction_cbs_pct": 40.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "BPE"
       ],
@@ -849,6 +910,7 @@
       "reduction_ibs_pct": 40.0,
       "reduction_cbs_pct": 40.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "BPETA",
         "CTE",
@@ -864,6 +926,7 @@
       "reduction_ibs_pct": 40.0,
       "reduction_cbs_pct": 40.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -877,6 +940,7 @@
       "reduction_ibs_pct": 30.0,
       "reduction_cbs_pct": 30.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -890,6 +954,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -904,6 +969,7 @@
       "reduction_ibs_pct": 100.0,
       "reduction_cbs_pct": 100.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE",
@@ -919,6 +985,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 1,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI"
       ],
@@ -932,6 +999,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 1,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI"
       ],
@@ -945,6 +1013,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 1,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI"
       ],
@@ -958,6 +1027,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 1,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -971,6 +1041,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "BPE",
         "BPETA",
@@ -986,6 +1057,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "BPE",
         "BPETM",
@@ -1001,6 +1073,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "CTEOS"
       ],
@@ -1014,6 +1087,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "BPE",
         "BPETA",
@@ -1039,6 +1113,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1052,6 +1127,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "BPE",
         "BPETA",
@@ -1078,6 +1154,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "BPE",
         "BPETA",
@@ -1098,6 +1175,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFAG",
         "NFCE",
@@ -1114,6 +1192,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE",
@@ -1129,6 +1208,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE",
@@ -1144,6 +1224,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFCOM",
@@ -1160,6 +1241,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFCOM",
@@ -1176,6 +1258,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCOM",
         "NFSE"
@@ -1190,6 +1273,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art9"
@@ -1201,6 +1285,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE",
@@ -1216,6 +1301,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1229,6 +1315,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": true,
       "dfe_allowed": [
         "NFCE",
         "NFE",
@@ -1244,6 +1331,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "CTE",
         "NFSE"
@@ -1258,6 +1346,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": true,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1271,6 +1360,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1284,6 +1374,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI"
       ],
@@ -1297,6 +1388,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -1311,6 +1403,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -1325,6 +1418,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NF3E"
       ],
@@ -1338,6 +1432,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI"
       ],
@@ -1351,6 +1446,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI"
       ],
@@ -1364,6 +1460,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI"
       ],
@@ -1377,6 +1474,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI"
       ],
@@ -1390,6 +1488,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "BPE",
         "BPETA",
@@ -1416,6 +1515,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "CTE",
         "CTEOS",
@@ -1432,6 +1532,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI",
         "NFSE"
@@ -1446,6 +1547,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -1460,6 +1562,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1473,6 +1576,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NF3E",
         "NFAG",
@@ -1490,6 +1594,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NF3E",
         "NFAG",
@@ -1506,6 +1611,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI",
         "NFSE"
@@ -1520,6 +1626,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -1533,6 +1640,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "CTE",
         "CTEOS",
@@ -1550,6 +1658,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "BPE",
         "BPETA",
@@ -1575,6 +1684,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NF3E",
         "NFE"
@@ -1589,6 +1699,7 @@
       "reduction_ibs_pct": 60.0,
       "reduction_cbs_pct": 60.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE",
         "NFSE"
@@ -1603,6 +1714,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1616,6 +1728,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1629,6 +1742,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1642,6 +1756,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1655,6 +1770,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1668,6 +1784,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1681,6 +1798,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1694,6 +1812,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1707,6 +1826,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1720,6 +1840,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1733,6 +1854,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1746,6 +1868,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1759,6 +1882,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1772,6 +1896,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1785,6 +1910,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1798,6 +1924,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE",
         "NFSE"
@@ -1812,6 +1939,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1825,6 +1953,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1838,6 +1967,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1851,6 +1981,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1864,6 +1995,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1877,6 +2009,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE",
         "NFSE"
@@ -1891,6 +2024,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1904,6 +2038,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1917,6 +2052,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1930,6 +2066,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1943,6 +2080,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1956,6 +2094,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -1969,6 +2108,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFCE",
         "NFE"
@@ -1983,6 +2123,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE",
         "NFSE"
@@ -1997,6 +2138,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE",
         "NFSE"
@@ -2011,6 +2153,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE"
       ],
@@ -2024,6 +2167,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE",
         "NFSE"
@@ -2038,6 +2182,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE",
         "NFSE"
@@ -2052,6 +2197,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFE",
         "NFSE"
@@ -2066,6 +2212,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -2079,6 +2226,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -2092,6 +2240,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -2105,6 +2254,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -2118,6 +2268,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFABI"
       ],
@@ -2131,6 +2282,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -2144,6 +2296,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NFSE"
       ],
@@ -2157,6 +2310,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NF3E",
         "NFAG",
@@ -2173,6 +2327,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "CTEOS",
         "NF3E",
@@ -2191,6 +2346,7 @@
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 2,
+      "permite_cred_pres": false,
       "dfe_allowed": [
         "NF3E",
         "NFE"
