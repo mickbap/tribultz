@@ -33,3 +33,16 @@ def classtrib_expected_zero(code: str) -> tuple[bool, bool] | None:
     cbs_zero = is_exempt or float(item.get("reduction_cbs_pct", 0) or 0) >= 100
     ibs_zero = is_exempt or float(item.get("reduction_ibs_pct", 0) or 0) >= 100
     return cbs_zero, ibs_zero
+
+
+def classtrib_permite_cred_pres(code: str) -> bool | None:
+    """Indica se o cClassTrib permite crédito presumido (tag cCredPres) — #339.
+
+    Retorna True/False (fonte SVRS: IndPermiteCredPres) ou None se o código for desconhecido.
+    Apenas alguns cClassTrib permitem; quando permitem, a ausência de cCredPres na operação
+    pode levar à rejeição da NF-e e à perda do crédito.
+    """
+    item = CLASSTRIB_BY_CODE.get(code)
+    if item is None:
+        return None
+    return bool(item.get("permite_cred_pres", False))

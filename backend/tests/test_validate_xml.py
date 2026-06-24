@@ -490,3 +490,50 @@ class TestAliquotaClasstrib:
 
     def test_codigo_desconhecido_sem_finding(self):
         assert self._find(self._nfe("999999", pcbs="0.009")) == []
+
+
+class TestCredPres:
+    """#339 — crédito presumido (cCredPres) coerente com o cClassTrib (fonte SVRS).
+    Só alguns cClassTrib admitem (IndPermiteCredPres): 000003/000004/410014/410016."""
+
+    def _nfe(self, code, ccredpres=None):
+        ccp = f"<cCredPres>{ccredpres}</cCredPres>" if ccredpres is not None else ""
+        return (
+            '<nfeProc><NFe><infNFe><ide><mod>55</mod></ide>'
+            '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            '<det nItem="1"><prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>'
+            f'<imposto><IBSCBS><CST>000</CST><cClassTrib>{code}</cClassTrib>{ccp}'
+            '<gIBSCBS><vBC>1000.00</vBC>'
+            '<gIBSUF><pIBSUF>0</pIBSUF><vIBSUF>0.00</vIBSUF></gIBSUF>'
+            '<gIBSMun><pIBSMun>0</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun>'
+            '<vIBS>0.00</vIBS><gCBS><pCBS>0</pCBS><vCBS>0.00</vCBS></gCBS>'
+            '</gIBSCBS></IBSCBS></imposto></det>'
+            '<total><IBSCBSTot><vIBS>0.00</vIBS><vCBS>0.00</vCBS></IBSCBSTot></total>'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml):
+        return [f for f in validate_xml(xml, "NFE").findings if f.rule_id == "CRED_PRES"]
+
+    def test_permite_sem_ccredpres_warning(self):
+        # 000003 admite crédito presumido; sem cCredPres → WARNING (risco de perda do crédito)
+        f = self._find(self._nfe("000003"))
+        assert any(x.id == "F_CREDPRES_MISSING" and x.severity == "WARNING" for x in f)
+
+    def test_permite_com_ccredpres_sem_finding(self):
+        assert self._find(self._nfe("000003", "100001")) == []
+
+    def test_ccredpres_formato_invalido_alert(self):
+        f = self._find(self._nfe("000003", "12"))
+        assert any(x.id == "F_CREDPRES_INVALID" and x.severity == "ALERT" for x in f)
+
+    def test_ccredpres_em_classtrib_que_nao_permite_alert(self):
+        # 000001 não admite crédito presumido; cCredPres informado → ALERT (inconsistência)
+        f = self._find(self._nfe("000001", "100001"))
+        assert any(x.id == "F_CREDPRES_INCONSISTENT" and x.severity == "ALERT" for x in f)
+
+    def test_nao_permite_sem_ccredpres_sem_finding(self):
+        assert self._find(self._nfe("000001")) == []
+
+    def test_classtrib_desconhecido_sem_finding(self):
+        assert self._find(self._nfe("999999")) == []
