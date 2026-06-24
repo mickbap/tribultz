@@ -300,6 +300,11 @@ def _within_no_penalty_window(emission_date: dict | None) -> bool:
 # contribuinte não é verificável do XML → ALERT informativo (verificar enquadramento).
 _PF_CNPJ_REQUIRED_DATE = "2026-07-01"
 
+# ── NF-e de devolução: referência à nota original por item via DFeReferenciado ──
+# v1.40: a partir de 01/09/2026, a devolução (finNFe=4) referencia a nota original
+# exclusivamente por item, via grupo DFeReferenciado (Rejeição 321 — VC02-14/VC03-20).
+_DEVOLUCAO_DFEREF_DATE = "2026-09-01"
+
 
 def validate_xml(
     xml: str,
@@ -919,6 +924,35 @@ def validate_xml(
                         evidence_ids=[ev_id],
                     ),
                     Evidence(id=ev_id, type="xml", label="Emitente PF (CPF) — verificar CNPJ", xpath=_xpath("CPF", doc_type), snippet=emit_cpf["snippet"]),
+                )
+
+    # ── Rule 22: DEVOLUCAO_DFEREF — devolução referencia a nota original por item (#312) ──
+    # v1.40: NF-e de devolução (finNFe=4) deve referenciar a nota original POR ITEM,
+    # exclusivamente via grupo DFeReferenciado. Antes de 01/09/2026 → WARNING (antecipação);
+    # a partir da vigência → FATAL. pedagogical_mode mantém WARNING.
+    if is_nfe:
+        _fin = _first_tag(xml, ["finNFe"])
+        if _fin and _fin["value"].strip() == "4":
+            _n_items = len(re.findall(r"<det\b", xml))
+            _n_ref = len(re.findall(r"<DFeReferenciado\b", xml))
+            if _n_ref < max(_n_items, 1):
+                _vigente = bool(re.match(r"^\d{4}-\d{2}-\d{2}$", em_date)) and em_date >= _DEVOLUCAO_DFEREF_DATE
+                _sev = "FATAL" if (_vigente and not pedagogical_mode) else "WARNING"
+                _falta = "nenhum item referencia" if _n_ref == 0 else f"só {_n_ref} de {_n_items} itens referenciam"
+                ev_id = "E_XML_DEVOLUCAO_DFEREF"
+                _add(
+                    Finding(
+                        id="F_DEVOLUCAO_DFEREF", severity=_sev, rule_id="DEVOLUCAO_DFEREF",
+                        title=f"NF-e de devolução sem DFeReferenciado por item ({_falta} a nota original)",
+                        where=FindingWhere(field="DFeReferenciado", xpath=_xpath("DFeReferenciado", doc_type), snippet=_fin["snippet"]),
+                        recommendation=(
+                            "NF-e de devolução (finNFe=4) deve referenciar a nota original POR ITEM, "
+                            "exclusivamente via grupo DFeReferenciado (NT 2025.002-RTC v1.40, vigência 01/09/2026). "
+                            "Inclua um DFeReferenciado para cada item devolvido. SEFAZ: Rejeição 321 (regras VC02-14 / VC03-20)."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="Devolução sem DFeReferenciado por item", xpath=_xpath("DFeReferenciado", doc_type), snippet=_fin["snippet"]),
                 )
 
     # ── NT v1.40 — anotar código de rejeição SEFAZ nas detecções (#311) ───────

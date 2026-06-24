@@ -926,3 +926,46 @@ test("#311: NFS-e NÃO recebe código de rejeição NF-e (1106)", () => {
   assert.ok(f, "CCLASSTRIB_6_DIGITS esperado em NFS-e");
   assert.doesNotMatch(f!.recommendation ?? "", /1106/);
 });
+
+// ── #312 — DEVOLUCAO_DFEREF (devolução referencia nota original por item) ─────
+function devNfe(fin: string, dhEmi: string, nItems: number, nRef: number): string {
+  const dets = Array.from({ length: nItems }, (_, i) =>
+    `<det nItem="${i + 1}"><prod><NCM>84713012</NCM><vProd>10.00</vProd></prod></det>`).join("");
+  const refs = Array.from({ length: nRef }, () =>
+    "<DFeReferenciado><refNFe>35260612345678000195550010000000011000000017</refNFe></DFeReferenciado>").join("");
+  return `<nfeProc><NFe><infNFe><ide><mod>55</mod><finNFe>${fin}</finNFe>` +
+    `<dhEmi>${dhEmi}T10:00:00-03:00</dhEmi></ide>` +
+    `<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>${refs}${dets}` +
+    `</infNFe></NFe></nfeProc>`;
+}
+function devFindings(xml: string, pedagogicalMode = false) {
+  return validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml, pedagogicalMode })
+    .findings.filter((f) => f.rule_id === "DEVOLUCAO_DFEREF");
+}
+
+test("#312 devolução sem DFeReferenciado após 01/09 → FATAL", () => {
+  const f = devFindings(devNfe("4", "2026-09-15", 1, 0));
+  assert.ok(f.some((x) => x.id === "F_DEVOLUCAO_DFEREF" && x.severity === "FATAL"));
+});
+
+test("#312 devolução sem DFeReferenciado antes da vigência → WARNING", () => {
+  const f = devFindings(devNfe("4", "2026-08-15", 1, 0));
+  assert.ok(f.length > 0 && f.every((x) => x.severity === "WARNING"));
+});
+
+test("#312 devolução com DFeReferenciado por item → sem finding", () => {
+  assert.equal(devFindings(devNfe("4", "2026-09-15", 2, 2)).length, 0);
+});
+
+test("#312 referência parcial → finding", () => {
+  assert.ok(devFindings(devNfe("4", "2026-09-15", 2, 1)).length > 0);
+});
+
+test("#312 não-devolução (finNFe=1) → sem finding", () => {
+  assert.equal(devFindings(devNfe("1", "2026-09-15", 1, 0)).length, 0);
+});
+
+test("#312 pedagogicalMode mantém WARNING após vigência", () => {
+  const f = devFindings(devNfe("4", "2026-09-15", 1, 0), true);
+  assert.ok(f.length > 0 && f.every((x) => x.severity === "WARNING"));
+});

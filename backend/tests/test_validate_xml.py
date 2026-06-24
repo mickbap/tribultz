@@ -579,3 +579,50 @@ class TestClassTribDocType:
 
     def test_desconhecido_sem_finding(self):
         assert self._find(self._nfe("999999"), "NFE") == []
+
+
+class TestDevolucaoDFeRef:
+    """#312 — NF-e de devolução (finNFe=4) referencia a nota original por item via
+    DFeReferenciado. WARNING até 31/08/2026; FATAL a partir de 01/09/2026 (Rej. 321)."""
+
+    def _nfe(self, fin="4", dhemi="2026-09-15", n_items=1, n_ref=0):
+        dets = "".join(
+            f'<det nItem="{i + 1}"><prod><NCM>84713012</NCM><vProd>10.00</vProd></prod></det>'
+            for i in range(n_items)
+        )
+        refs = "".join(
+            '<DFeReferenciado><refNFe>35260612345678000195550010000000011000000017</refNFe></DFeReferenciado>'
+            for _ in range(n_ref)
+        )
+        return (
+            f'<nfeProc><NFe><infNFe><ide><mod>55</mod><finNFe>{fin}</finNFe>'
+            f'<dhEmi>{dhemi}T10:00:00-03:00</dhEmi></ide>'
+            '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            f'{refs}{dets}'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml, **kw):
+        return [f for f in validate_xml(xml, "NFE", **kw).findings if f.rule_id == "DEVOLUCAO_DFEREF"]
+
+    def test_sem_ref_apos_vigencia_fatal(self):
+        f = self._find(self._nfe(dhemi="2026-09-15", n_ref=0))
+        assert any(x.id == "F_DEVOLUCAO_DFEREF" and x.severity == "FATAL" for x in f)
+
+    def test_sem_ref_antes_vigencia_warning(self):
+        f = self._find(self._nfe(dhemi="2026-08-15", n_ref=0))
+        assert f and all(x.severity == "WARNING" for x in f)
+
+    def test_com_ref_por_item_sem_finding(self):
+        assert self._find(self._nfe(n_items=2, n_ref=2)) == []
+
+    def test_ref_parcial_gera_finding(self):
+        f = self._find(self._nfe(n_items=2, n_ref=1))
+        assert any(x.id == "F_DEVOLUCAO_DFEREF" for x in f)
+
+    def test_nao_devolucao_sem_finding(self):
+        assert self._find(self._nfe(fin="1", n_ref=0)) == []
+
+    def test_pedagogical_mantem_warning(self):
+        f = self._find(self._nfe(dhemi="2026-09-15", n_ref=0), pedagogical_mode=True)
+        assert f and all(x.severity == "WARNING" for x in f)
