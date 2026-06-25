@@ -31,6 +31,7 @@ from app.api.plan_gate import require_plan, check_usage_limit, increment_usage
 from app.data.ncm_codes import VALID_NCM_CODES
 from app.data.classtrib_table import (
     classtrib_dfe_allowed,
+    classtrib_expected_aliquota_2026,
     classtrib_expected_zero,
     classtrib_permite_cred_pres,
 )
@@ -785,6 +786,54 @@ def validate_xml(
                     ),
                     Evidence(id=ev_id, type="xml", label="IBS — alíquota-zero incoerente", xpath=_xpath("pIBSUF", doc_type), snippet=p_ibs_uf["snippet"] if p_ibs_uf else None),
                 )
+
+        # Fase 2 (#278): comparação ABSOLUTA — pCBS/pIBS vs referência 2026 × (1−redução).
+        # ALERT advisory (não FATAL): há regimes monofásico/específico onde a derivação
+        # ad-valorem não vale; não bloquear nota legítima (incerto → ALERT honesto). Só
+        # emissão 2026 (a fase de transição 2027+ tem alíquotas em rampa — fora de escopo).
+        _em2 = emission_date["value"][:10] if emission_date else ""
+        if re.match(r"^2026-\d{2}-\d{2}$", _em2):
+            _expa = classtrib_expected_aliquota_2026(c_class_trib["value"])
+            if _expa is not None:
+                _exp_cbs, _exp_ibs = _expa
+                _TOL2 = 0.0001  # ±0,01 ponto percentual
+                _pcbs2 = _to_float(p_cbs["value"]) if p_cbs else None
+                _pibs2 = (
+                    (_to_float(p_ibs_uf["value"]) if p_ibs_uf else 0.0)
+                    + (_to_float(p_ibs_mun["value"]) if p_ibs_mun else 0.0)
+                ) if (p_ibs_uf or p_ibs_mun) else None
+                if _pcbs2 is not None and abs(_pcbs2 - _exp_cbs) > _TOL2:
+                    ev_id = "E_XML_ALIQUOTA_CLASSTRIB_ABS_CBS"
+                    _add(
+                        Finding(
+                            id="F_ALIQUOTA_CLASSTRIB_ABS_CBS", severity="ALERT", rule_id="ALIQUOTA_CLASSTRIB",
+                            title=f'pCBS {_pcbs2} diverge do esperado ({round(_exp_cbs, 4)}) para o cClassTrib {c_class_trib["value"]} em 2026',
+                            where=FindingWhere(field="pCBS", xpath=_xpath("pCBS", doc_type), snippet=p_cbs["snippet"] if p_cbs else None),
+                            recommendation=(
+                                f'Para o cClassTrib {c_class_trib["value"]}, a CBS esperada em 2026 é '
+                                f'{round(_exp_cbs * 100, 4)}% (0,9% × (1 − redução oficial SVRS)). Verifique a alíquota '
+                                "declarada — exceto em regime monofásico/específico, onde a derivação não se aplica."
+                            ),
+                            evidence_ids=[ev_id],
+                        ),
+                        Evidence(id=ev_id, type="xml", label="CBS — alíquota diverge do cClassTrib (2026)", xpath=_xpath("pCBS", doc_type), snippet=p_cbs["snippet"] if p_cbs else None),
+                    )
+                if _pibs2 is not None and abs(_pibs2 - _exp_ibs) > _TOL2:
+                    ev_id = "E_XML_ALIQUOTA_CLASSTRIB_ABS_IBS"
+                    _add(
+                        Finding(
+                            id="F_ALIQUOTA_CLASSTRIB_ABS_IBS", severity="ALERT", rule_id="ALIQUOTA_CLASSTRIB",
+                            title=f'pIBSUF+pIBSMun ({round(_pibs2, 6)}) diverge do esperado ({round(_exp_ibs, 4)}) para o cClassTrib {c_class_trib["value"]} em 2026',
+                            where=FindingWhere(field="pIBS", xpath=_xpath("pIBSUF", doc_type), snippet=p_ibs_uf["snippet"] if p_ibs_uf else None),
+                            recommendation=(
+                                f'Para o cClassTrib {c_class_trib["value"]}, o IBS total esperado em 2026 é '
+                                f'{round(_exp_ibs * 100, 4)}% (0,1% × (1 − redução oficial SVRS)). Verifique a alíquota '
+                                "declarada — exceto em regime monofásico/específico, onde a derivação não se aplica."
+                            ),
+                            evidence_ids=[ev_id],
+                        ),
+                        Evidence(id=ev_id, type="xml", label="IBS — alíquota diverge do cClassTrib (2026)", xpath=_xpath("pIBSUF", doc_type), snippet=p_ibs_uf["snippet"] if p_ibs_uf else None),
+                    )
 
     # ── Rule 20: CRED_PRES — crédito presumido coerente com o cClassTrib (#339) ──
     # Fonte SVRS (IndPermiteCredPres): só alguns cClassTrib admitem crédito presumido.
