@@ -35,6 +35,9 @@ export function PublicNavbar() {
           <Link href="/pricing" className="font-medium text-slate-600 transition-colors hover:text-[#2956E3]">
             Planos
           </Link>
+          <Link href="/blog" className="font-medium text-slate-600 transition-colors hover:text-[#2956E3]">
+            Blog
+          </Link>
           <Link href="/login" className="font-medium text-slate-500 transition-colors hover:text-slate-800">
             Entrar
           </Link>
