@@ -955,6 +955,60 @@ def validate_xml(
                     Evidence(id=ev_id, type="xml", label="Devolução sem DFeReferenciado por item", xpath=_xpath("DFeReferenciado", doc_type), snippet=_fin["snippet"]),
                 )
 
+    # ── Rule 23: IS_CALC — coerência do Imposto Seletivo declarado (#314) ──────
+    # vIS = vBCIS × pIS (ad valorem) + qTrib × pISEspec (específico). Incoerência → FATAL
+    # (erro de cálculo é alta confiança). Tags exclusivas do IS (vIS/vBCIS/pIS), sem colisão
+    # com o PIS legado (vPIS/pPIS). O IS só é cobrado a partir de 2027, mas a coerência do
+    # grupo, quando declarado, é validável já.
+    _is_match = re.search(r"<IS\b[^>]*>(.*?)</IS>", xml, re.DOTALL)
+    if is_nfe and _is_match:
+        _isblk = _is_match.group(1)
+
+        def _isf(tag: str) -> float:
+            t = _first_tag(_isblk, [tag])
+            return _to_float(t["value"]) if t else 0.0
+
+        _vis_tag = _first_tag(_isblk, ["vIS"])
+        if _vis_tag:
+            _expected_is = round(_isf("vBCIS") * _isf("pIS") + _isf("qTrib") * _isf("pISEspec"), 2)
+            _vis_decl = _to_float(_vis_tag["value"])
+            if abs(_vis_decl - _expected_is) > 0.01:
+                ev_id = "E_XML_IS_CALC"
+                _add(
+                    Finding(
+                        id="F_IS_CALC", severity="FATAL", rule_id="IS_CALC",
+                        title=f"Imposto Seletivo incoerente: vIS={_vis_decl} declarado, esperado {_expected_is}",
+                        where=FindingWhere(field="vIS", xpath=_xpath("vIS", doc_type), snippet=_vis_tag["snippet"]),
+                        recommendation=(
+                            "vIS deve ser vBCIS × pIS (ad valorem) + qTrib × pISEspec (específico), "
+                            "conforme NT 2025.002-RTC. Ajuste a base, a alíquota ou o valor do IS."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="IS — cálculo incoerente", xpath=_xpath("vIS", doc_type), snippet=_vis_tag["snippet"]),
+                )
+
+    # ── Rule 24: IS_EXPECTED — NCM de capítulo sujeito ao IS sem grupo IS (#314) ──
+    # Núcleo inequívoco do IS na LC 214: bebidas (cap. 22) e produtos fumígenos (cap. 24).
+    # ALERT informativo (não FATAL): o IS só passa a ser cobrado em 2027 e há exceções.
+    if is_nfe and ncm and re.match(r"^\d{8}$", ncm["value"]) and not _is_match:
+        if ncm["value"][:2] in {"22", "24"}:
+            ev_id = "E_XML_IS_EXPECTED"
+            _add(
+                Finding(
+                    id="F_IS_EXPECTED", severity="ALERT", rule_id="IS_EXPECTED",
+                    title=f'NCM {ncm["value"]} pode estar sujeito ao Imposto Seletivo — grupo IS ausente',
+                    where=FindingWhere(field="IS", xpath=_xpath("IS", doc_type), snippet=ncm["snippet"]),
+                    recommendation=(
+                        "Produtos dos capítulos 22 (bebidas) e 24 (fumo) são, em regra, sujeitos ao "
+                        "Imposto Seletivo (LC 214 art. 409). A cobrança do IS inicia em 2027; verifique "
+                        "o enquadramento e, quando aplicável, informe o grupo IS na NF-e."
+                    ),
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label="IS — NCM possivelmente sujeito, grupo ausente", xpath=_xpath("IS", doc_type), snippet=ncm["snippet"]),
+            )
+
     # ── NT v1.40 — anotar código de rejeição SEFAZ nas detecções (#311) ───────
     # Apenas NF-e/NFC-e (rejeições da SEFAZ NF-e; NFS-e tem regras próprias).
     if is_nfe:

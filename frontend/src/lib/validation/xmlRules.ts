@@ -931,6 +931,67 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
     }
   }
 
+  // ── Rule: IS_CALC — coerência do Imposto Seletivo declarado (#314) ──────
+  // vIS = vBCIS × pIS (ad valorem) + qTrib × pISEspec (específico). Tags exclusivas do IS
+  // (sem colisão com o PIS legado vPIS/pPIS). O IS só é cobrado a partir de 2027, mas a
+  // coerência do grupo, quando declarado, é validável já.
+  const isMatch = xml.match(/<IS\b[^>]*>([\s\S]*?)<\/IS>/);
+  if (isNfe && isMatch) {
+    const isblk = isMatch[1];
+    const isf = (tag: string): number => parseFloat(firstTag(isblk, [tag])?.value ?? "0") || 0;
+    const visTag = firstTag(isblk, ["vIS"]);
+    if (visTag) {
+      const expected = Math.round((isf("vBCIS") * isf("pIS") + isf("qTrib") * isf("pISEspec")) * 100) / 100;
+      const declared = parseFloat(visTag.value) || 0;
+      if (Math.abs(declared - expected) > 0.01) {
+        const evId = makeEvidenceId("IS_CALC");
+        pushFindingAndEvidence(findings, evidences, evidenceById,
+          makeFinding({
+            id: "F_IS_CALC",
+            severity: "FATAL",
+            ruleId: "IS_CALC",
+            title: `Imposto Seletivo incoerente: vIS=${declared} declarado, esperado ${expected}`,
+            field: "vIS",
+            xpath: inferXpath("vIS", docType),
+            snippet: visTag.snippet,
+            evidenceId: evId,
+            recommendation:
+              "vIS deve ser vBCIS × pIS (ad valorem) + qTrib × pISEspec (específico), " +
+              "conforme NT 2025.002-RTC. Ajuste a base, a alíquota ou o valor do IS.",
+          }),
+          makeEvidence({ id: evId, type: "xml", label: "IS — cálculo incoerente", xpath: inferXpath("vIS", docType), snippet: visTag.snippet }),
+        );
+      }
+    }
+  }
+
+  // ── Rule: IS_EXPECTED — NCM de capítulo sujeito ao IS sem grupo IS (#314) ──
+  // Núcleo inequívoco do IS na LC 214: bebidas (cap. 22) e fumo (cap. 24). ALERT informativo
+  // (não FATAL): o IS só passa a ser cobrado em 2027 e há exceções.
+  if (isNfe && ncm && /^\d{8}$/.test(ncm.value) && !isMatch) {
+    const cap = ncm.value.slice(0, 2);
+    if (cap === "22" || cap === "24") {
+      const evId = makeEvidenceId("IS_EXPECTED");
+      pushFindingAndEvidence(findings, evidences, evidenceById,
+        makeFinding({
+          id: "F_IS_EXPECTED",
+          severity: "ALERT",
+          ruleId: "IS_EXPECTED",
+          title: `NCM ${ncm.value} pode estar sujeito ao Imposto Seletivo — grupo IS ausente`,
+          field: "IS",
+          xpath: inferXpath("IS", docType),
+          snippet: ncm.snippet,
+          evidenceId: evId,
+          recommendation:
+            "Produtos dos capítulos 22 (bebidas) e 24 (fumo) são, em regra, sujeitos ao " +
+            "Imposto Seletivo (LC 214 art. 409). A cobrança do IS inicia em 2027; verifique " +
+            "o enquadramento e, quando aplicável, informe o grupo IS na NF-e.",
+        }),
+        makeEvidence({ id: evId, type: "xml", label: "IS — NCM possivelmente sujeito, grupo ausente", xpath: inferXpath("IS", docType), snippet: ncm.snippet }),
+      );
+    }
+  }
+
   // ── Rule 9: CEST_FORMAT — CEST must be exactly 7 digits ──────────────────
 
   if (cest && !/^\d{7}$/.test(cest.value)) {

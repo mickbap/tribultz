@@ -626,3 +626,58 @@ class TestDevolucaoDFeRef:
     def test_pedagogical_mantem_warning(self):
         f = self._find(self._nfe(dhemi="2026-09-15", n_ref=0), pedagogical_mode=True)
         assert f and all(x.severity == "WARNING" for x in f)
+
+
+class TestImpostoSeletivo:
+    """#314 — Imposto Seletivo: coerência do grupo IS (IS_CALC) + advertência de NCM
+    sujeito sem grupo IS (IS_EXPECTED, cap. 22 bebidas / 24 fumo, vigência 2027)."""
+
+    def _nfe(self, ncm="22030000", vbcis=None, pis=None, vis=None, pespec=None, qtrib=None):
+        is_grp = ""
+        if vis is not None:
+            fields = ""
+            if vbcis is not None:
+                fields += f"<vBCIS>{vbcis}</vBCIS>"
+            if pis is not None:
+                fields += f"<pIS>{pis}</pIS>"
+            if pespec is not None:
+                fields += f"<pISEspec>{pespec}</pISEspec>"
+            if qtrib is not None:
+                fields += f"<qTrib>{qtrib}</qTrib>"
+            fields += f"<vIS>{vis}</vIS>"
+            is_grp = f"<IS><CSTIS>01</CSTIS><cClassTribIS>000001</cClassTribIS><gIS>{fields}</gIS></IS>"
+        return (
+            '<nfeProc><NFe><infNFe><ide><mod>55</mod></ide>'
+            '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            f'<det nItem="1"><prod><NCM>{ncm}</NCM><vProd>1000.00</vProd></prod>'
+            f'<imposto>{is_grp}</imposto></det>'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml, rule):
+        return [f for f in validate_xml(xml, "NFE").findings if f.rule_id == rule]
+
+    def test_is_advalorem_coerente_sem_finding(self):
+        assert self._find(self._nfe(vbcis="1000.00", pis="0.1000", vis="100.00"), "IS_CALC") == []
+
+    def test_is_advalorem_incoerente_fatal(self):
+        f = self._find(self._nfe(vbcis="1000.00", pis="0.1000", vis="50.00"), "IS_CALC")
+        assert any(x.id == "F_IS_CALC" and x.severity == "FATAL" for x in f)
+
+    def test_is_especifico_coerente_sem_finding(self):
+        # vIS = qTrib × pISEspec = 100 × 0,50 = 50,00
+        assert self._find(self._nfe(qtrib="100", pespec="0.50", vis="50.00"), "IS_CALC") == []
+
+    def test_ncm_bebida_sem_is_alerta(self):
+        f = self._find(self._nfe(ncm="22030000"), "IS_EXPECTED")
+        assert any(x.id == "F_IS_EXPECTED" and x.severity == "ALERT" for x in f)
+
+    def test_ncm_fumo_sem_is_alerta(self):
+        assert any(x.id == "F_IS_EXPECTED" for x in self._find(self._nfe(ncm="24022000"), "IS_EXPECTED"))
+
+    def test_ncm_nao_sujeito_sem_finding(self):
+        assert self._find(self._nfe(ncm="84713012"), "IS_EXPECTED") == []
+
+    def test_ncm_sujeito_com_is_nao_alerta(self):
+        # grupo IS presente → IS_EXPECTED não dispara
+        assert self._find(self._nfe(ncm="22030000", vbcis="1000.00", pis="0.1000", vis="100.00"), "IS_EXPECTED") == []

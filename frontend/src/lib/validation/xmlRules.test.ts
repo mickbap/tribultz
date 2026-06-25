@@ -969,3 +969,50 @@ test("#312 pedagogicalMode mantém WARNING após vigência", () => {
   const f = devFindings(devNfe("4", "2026-09-15", 1, 0), true);
   assert.ok(f.length > 0 && f.every((x) => x.severity === "WARNING"));
 });
+
+// ── #314 — Imposto Seletivo (IS_CALC + IS_EXPECTED) ──────────────────────────
+function isNfe(ncm: string, opts: { vbcis?: string; pis?: string; vis?: string; pespec?: string; qtrib?: string } = {}): string {
+  let grp = "";
+  if (opts.vis !== undefined) {
+    let f = "";
+    if (opts.vbcis !== undefined) f += `<vBCIS>${opts.vbcis}</vBCIS>`;
+    if (opts.pis !== undefined) f += `<pIS>${opts.pis}</pIS>`;
+    if (opts.pespec !== undefined) f += `<pISEspec>${opts.pespec}</pISEspec>`;
+    if (opts.qtrib !== undefined) f += `<qTrib>${opts.qtrib}</qTrib>`;
+    f += `<vIS>${opts.vis}</vIS>`;
+    grp = `<IS><CSTIS>01</CSTIS><cClassTribIS>000001</cClassTribIS><gIS>${f}</gIS></IS>`;
+  }
+  return `<nfeProc><NFe><infNFe><ide><mod>55</mod></ide>` +
+    `<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>` +
+    `<det nItem="1"><prod><NCM>${ncm}</NCM><vProd>1000.00</vProd></prod>` +
+    `<imposto>${grp}</imposto></det></infNFe></NFe></nfeProc>`;
+}
+function isFindings(xml: string, rule: string) {
+  return validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml }).findings.filter((f) => f.rule_id === rule);
+}
+
+test("#314 IS ad valorem coerente → sem IS_CALC", () => {
+  assert.equal(isFindings(isNfe("22030000", { vbcis: "1000.00", pis: "0.1000", vis: "100.00" }), "IS_CALC").length, 0);
+});
+
+test("#314 IS incoerente → IS_CALC FATAL", () => {
+  const f = isFindings(isNfe("22030000", { vbcis: "1000.00", pis: "0.1000", vis: "50.00" }), "IS_CALC");
+  assert.ok(f.some((x) => x.id === "F_IS_CALC" && x.severity === "FATAL"));
+});
+
+test("#314 IS específico coerente → sem IS_CALC", () => {
+  assert.equal(isFindings(isNfe("24022000", { qtrib: "100", pespec: "0.50", vis: "50.00" }), "IS_CALC").length, 0);
+});
+
+test("#314 NCM bebida/fumo sem grupo IS → IS_EXPECTED ALERT", () => {
+  const f = isFindings(isNfe("22030000"), "IS_EXPECTED");
+  assert.ok(f.some((x) => x.id === "F_IS_EXPECTED" && x.severity === "ALERT"));
+});
+
+test("#314 NCM não sujeito → sem IS_EXPECTED", () => {
+  assert.equal(isFindings(isNfe("84713012"), "IS_EXPECTED").length, 0);
+});
+
+test("#314 NCM sujeito com grupo IS → sem IS_EXPECTED", () => {
+  assert.equal(isFindings(isNfe("22030000", { vbcis: "1000.00", pis: "0.1000", vis: "100.00" }), "IS_EXPECTED").length, 0);
+});
