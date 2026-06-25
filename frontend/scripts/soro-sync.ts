@@ -9,6 +9,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { parseFeedToPosts, postToMdx } from "../src/lib/soroSync";
+import { lintMdx } from "../src/lib/contentLint";
 
 const FEED_URL = process.env.SORO_RSS_URL;
 const CONTENT_DIR = path.join(process.cwd(), "content", "blog");
@@ -28,14 +29,20 @@ async function main() {
 
   let created = 0;
   for (const p of posts) {
-    const { filename, mdx } = postToMdx(p);
-    const dest = path.join(CONTENT_DIR, filename);
+    const built = postToMdx(p);
+    const dest = path.join(CONTENT_DIR, built.filename);
     if (fs.existsSync(dest)) {
-      console.log(`skip (já existe): ${filename}`);
+      console.log(`skip (já existe): ${built.filename}`);
       continue;
     }
+    // Corretor de conformidade: auto-fix do determinístico (ex.: alíquota plena sem
+    // contexto de 2026) + flags para a revisão humana do PR.
+    const { mdx, findings } = lintMdx(built.mdx);
     fs.writeFileSync(dest, mdx, "utf-8");
-    console.log(`novo: ${filename}`);
+    console.log(`novo: ${built.filename}`);
+    for (const f of findings) {
+      console.log(`   [${f.severity === "fix" ? "auto-fix" : "REVISAR"}] ${f.rule}: ${f.message}`);
+    }
     created++;
   }
   console.log(`Itens no feed: ${posts.length} | novos gravados: ${created}`);
