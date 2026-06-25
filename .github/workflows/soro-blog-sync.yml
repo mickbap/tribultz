@@ -1,0 +1,56 @@
+name: Soro Blog Sync
+
+# Importa artigos do feed RSS do Soro como MDX e abre um PR draft (needs-review).
+# Gate de revisão (#349): nada vai ao ar sem revisão humana + merge.
+
+on:
+  schedule:
+    - cron: "0 9 * * *"   # diário, 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: soro-blog-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install deps (tsx)
+        working-directory: frontend
+        run: npm ci
+
+      - name: Soro RSS → MDX
+        working-directory: frontend
+        env:
+          SORO_RSS_URL: ${{ secrets.SORO_RSS_URL }}
+        run: npx tsx scripts/soro-sync.ts
+
+      - name: Abrir PR de revisão
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: soro-sync/auto
+          title: "chore(blog): novos artigos do Soro para revisão"
+          commit-message: "chore(blog): import de artigos do Soro (RSS)"
+          labels: "blog-automation,needs-review"
+          draft: true
+          add-paths: frontend/content/blog/*.mdx
+          body: |
+            Artigos importados do feed RSS do Soro para **revisão humana** (gate do #349).
+
+            ⚠️ **Antes do merge:**
+            - Revisar a **precisão fiscal** (alíquotas, códigos, prazos) — conteúdo gerado por IA.
+            - Preencher `legalRefs`, `tags` e ajustar `category`.
+            - Confirmar que o `frontend-build` passou (valida o MDX).
+
+            Nada vai ao ar até o merge. Gerado por `.github/workflows/soro-blog-sync.yml`.
