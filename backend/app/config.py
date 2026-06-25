@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:3000,https://tribultz.com.br,https://*.vercel.app"
     ENVIRONMENT: str = "development"  # development | staging | production
 
+    # ── Observabilidade / Sentry (error tracking) ───────────
+    # Sem DSN → init é no-op (zero impacto em dev/CI). traces_sample_rate controla apenas o
+    # tracing de performance; erros são sempre capturados quando o DSN está presente.
+    SENTRY_DSN: str = ""
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.0
+    SENTRY_RELEASE: str = ""
+
     # ── Turnstile (CAPTCHA) ─────────────────────────────────
     TURNSTILE_SECRET_KEY: str = ""
     CAPTCHA_ENABLED: bool = False
