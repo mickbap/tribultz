@@ -492,6 +492,59 @@ class TestAliquotaClasstrib:
         assert self._find(self._nfe("999999", pcbs="0.009")) == []
 
 
+class TestAliquotaAbsoluta:
+    """#278 fase 2 — pCBS/pIBS declarados vs referência 2026 × (1−redução). ALERT advisory
+    (não FATAL): regimes monofásico/específico não derivam ad-valorem. Só emissão 2026."""
+
+    def _nfe(self, code, pcbs="0", pibsuf="0", pibsmun="0", dhemi="2026-06-15"):
+        return (
+            '<nfeProc><NFe><infNFe><ide><mod>55</mod>'
+            f'<dhEmi>{dhemi}T10:00:00-03:00</dhEmi></ide>'
+            '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            '<det nItem="1"><prod><NCM>84713012</NCM><vProd>1000.00</vProd></prod>'
+            f'<imposto><IBSCBS><CST>000</CST><cClassTrib>{code}</cClassTrib>'
+            '<gIBSCBS><vBC>1000.00</vBC>'
+            f'<gIBSUF><pIBSUF>{pibsuf}</pIBSUF><vIBSUF>0.00</vIBSUF></gIBSUF>'
+            f'<gIBSMun><pIBSMun>{pibsmun}</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun>'
+            f'<vIBS>0.00</vIBS><gCBS><pCBS>{pcbs}</pCBS><vCBS>0.00</vCBS></gCBS>'
+            '</gIBSCBS></IBSCBS></imposto></det>'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _abs(self, xml):
+        return [f for f in validate_xml(xml, "NFE").findings
+                if f.rule_id == "ALIQUOTA_CLASSTRIB" and "ABS" in f.id]
+
+    def test_aliquotas_corretas_sem_alerta(self):
+        # 000001 (sem redução): CBS 0,9% / IBS total 0,1%
+        assert self._abs(self._nfe("000001", pcbs="0.009", pibsuf="0.0005", pibsmun="0.0005")) == []
+
+    def test_cbs_divergente_alerta(self):
+        # exemplo da issue: padrão 0,9% declarado como 0,1%
+        f = self._abs(self._nfe("000001", pcbs="0.001", pibsuf="0.0005", pibsmun="0.0005"))
+        assert any(x.id == "F_ALIQUOTA_CLASSTRIB_ABS_CBS" and x.severity == "ALERT" for x in f)
+
+    def test_ibs_divergente_alerta(self):
+        f = self._abs(self._nfe("000001", pcbs="0.009", pibsuf="0", pibsmun="0"))
+        assert any(x.id == "F_ALIQUOTA_CLASSTRIB_ABS_IBS" and x.severity == "ALERT" for x in f)
+
+    def test_reducao_60_correta_sem_alerta(self):
+        # 011001 (redução 60%): CBS 0,36% / IBS total 0,04%
+        assert self._abs(self._nfe("011001", pcbs="0.0036", pibsuf="0.0002", pibsmun="0.0002")) == []
+
+    def test_reducao_60_ignorada_alerta(self):
+        # declarou a alíquota cheia ignorando a redução → diverge
+        f = self._abs(self._nfe("011001", pcbs="0.009", pibsuf="0.0002", pibsmun="0.0002"))
+        assert any(x.id == "F_ALIQUOTA_CLASSTRIB_ABS_CBS" for x in f)
+
+    def test_fora_de_2026_nao_dispara(self):
+        assert self._abs(self._nfe("000001", pcbs="0.001", pibsuf="0", pibsmun="0", dhemi="2027-01-15")) == []
+
+    def test_zero_rate_nao_emite_absoluto(self):
+        # 400001 (isento) é tratado pela fase 1 (zero), não pela comparação absoluta
+        assert self._abs(self._nfe("400001", pcbs="0.009", pibsuf="0.0005", pibsmun="0.0005")) == []
+
+
 class TestCredPres:
     """#339 — crédito presumido (cCredPres) coerente com o cClassTrib (fonte SVRS).
     Só alguns cClassTrib admitem (IndPermiteCredPres): 000003/000004/410014/410016."""

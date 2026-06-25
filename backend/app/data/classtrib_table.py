@@ -13,6 +13,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from app.data.uf_rates import CBS_TESTE_2026, IBS_TESTE_2026_TOTAL
+
 _DATA = json.loads((Path(__file__).parent / "classtrib.json").read_text(encoding="utf-8"))
 CLASSTRIB_BY_CODE: dict[str, dict] = _DATA.get("by_code", {})
 
@@ -59,3 +61,25 @@ def classtrib_dfe_allowed(code: str) -> list[str] | None:
     if item is None:
         return None
     return list(item.get("dfe_allowed") or [])
+
+
+def classtrib_expected_aliquota_2026(code: str) -> tuple[float, float] | None:
+    """(pCBS, pIBS_total) esperados para o cClassTrib na fase de teste 2026 — #278 fase 2.
+
+    Deriva da redução oficial × alíquota de referência de 2026 (CBS 0,9% / IBS 0,1%, #315):
+        esperado = base × (1 − redução/100).
+    Retorna None para códigos zero-rate (cobertos pela fase 1, que é FATAL) ou desconhecidos.
+    Nota: para regimes monofásico/específico a derivação ad-valorem não se aplica — por isso
+    a regra fase 2 emite ALERT (advisory), nunca FATAL.
+    """
+    item = CLASSTRIB_BY_CODE.get(code)
+    if item is None:
+        return None
+    cst = str(item.get("cst", ""))
+    red_cbs = float(item.get("reduction_cbs_pct", 0) or 0)
+    red_ibs = float(item.get("reduction_ibs_pct", 0) or 0)
+    if cst in _ZERO_CSTS or red_cbs >= 100 or red_ibs >= 100:
+        return None
+    exp_cbs = float(CBS_TESTE_2026) * (1 - red_cbs / 100)
+    exp_ibs = float(IBS_TESTE_2026_TOTAL) * (1 - red_ibs / 100)
+    return round(exp_cbs, 6), round(exp_ibs, 6)
