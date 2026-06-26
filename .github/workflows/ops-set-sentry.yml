@@ -1,0 +1,57 @@
+name: Ops — Set Sentry DSN (VM)
+
+# Habilita o error-tracking em produção setando SENTRY_DSN no /opt/tribultz/.env da VM
+# e recriando os containers (re-lê o env_file). Usa o acesso SSH autorizado do CI
+# (secrets MAGALU_SSH_*), já que chaves locais de devs não são autorizadas na VM.
+# Manual (workflow_dispatch). O DSN é uma chave só de ingestão (baixa sensibilidade).
+
+on:
+  workflow_dispatch:
+    inputs:
+      dsn:
+        description: "SENTRY_DSN (https://...ingest.sentry.io/...)"
+        required: true
+      traces_rate:
+        description: "SENTRY_TRACES_SAMPLE_RATE (0.0 = só erros)"
+        required: false
+        default: "0.0"
+
+jobs:
+  set-sentry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configurar chave SSH (acesso autorizado do CI)
+        env:
+          SSH_KEY: ${{ secrets.MAGALU_SSH_KEY }}
+          SSH_HOST: ${{ secrets.MAGALU_SSH_HOST }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Setar SENTRY_DSN no .env + recriar api/worker
+        env:
+          SSH_HOST: ${{ secrets.MAGALU_SSH_HOST }}
+          SSH_USER: ${{ secrets.MAGALU_SSH_USER }}
+          DSN: ${{ inputs.dsn }}
+          RATE: ${{ inputs.traces_rate }}
+        run: |
+          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" \
+            "sudo bash -s" <<REMOTE
+          set -e
+          ENV=/opt/tribultz/.env
+          cp "\$ENV" "\${ENV}.bak.\$(date +%s)"
+          if grep -q '^SENTRY_DSN=' "\$ENV"; then sed -i "s#^SENTRY_DSN=.*#SENTRY_DSN=${DSN}#" "\$ENV"; else echo "SENTRY_DSN=${DSN}" >> "\$ENV"; fi
+          if grep -q '^SENTRY_TRACES_SAMPLE_RATE=' "\$ENV"; then sed -i "s#^SENTRY_TRACES_SAMPLE_RATE=.*#SENTRY_TRACES_SAMPLE_RATE=${RATE}#" "\$ENV"; else echo "SENTRY_TRACES_SAMPLE_RATE=${RATE}" >> "\$ENV"; fi
+          echo "--- .env (linhas SENTRY):"; grep '^SENTRY' "\$ENV"
+          cd /opt/tribultz/infra
+          docker compose -f docker-compose.prod.yml up -d --force-recreate api worker
+          sleep 6
+          echo "--- log de boot (sentry):"
+          docker compose -f docker-compose.prod.yml logs --tail=120 api 2>/dev/null | grep -i sentry || echo "(linha 'Sentry inicializado' não encontrada no tail — verifique manualmente)"
+          REMOTE
+
+      - name: Limpar chave SSH
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
