@@ -778,3 +778,30 @@ class TestSuframaAlczfm:
 
     def test_sem_grupo_alczfm_sem_finding(self):
         assert self._find(self._nfe(), "ALCZFM_NPROC") == []
+
+
+class TestCindopNfce:
+    """#311 — B25d: cIndOp (Código Indicador do Local da Operação) não é permitido em NFC-e."""
+
+    def _doc(self, mod, with_cindop):
+        c = "<cIndOp>010104</cIndOp>" if with_cindop else ""
+        return (
+            f'<nfeProc><NFe><infNFe><ide><mod>{mod}</mod></ide>'
+            '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            f'<det nItem="1"><prod><NCM>84713012</NCM>{c}<vProd>10.00</vProd></prod>'
+            '<imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib></IBSCBS></imposto></det>'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml, dt):
+        return [f for f in validate_xml(xml, dt).findings if f.rule_id == "CINDOP_NFCE"]
+
+    def test_cindop_em_nfce_warning(self):
+        f = self._find(self._doc("65", True), "NFCE")
+        assert any(x.id == "F_CINDOP_NFCE" and x.severity == "WARNING" for x in f)
+
+    def test_cindop_em_nfe_sem_finding(self):
+        assert self._find(self._doc("55", True), "NFE") == []
+
+    def test_nfce_sem_cindop_sem_finding(self):
+        assert self._find(self._doc("65", False), "NFCE") == []
