@@ -1,0 +1,56 @@
+name: cClassTrib Data Sync
+
+# Mantém a tabela oficial cClassTrib (app/data/classtrib.json) + o mapeamento NCM fresca.
+# A SVRS adiciona códigos com frequência (ex.: +8 em 2 dias) — sem isto, o motor decai:
+# as regras de cClassTrib (incl. a Rejeição 1024) deixam de cobrir os códigos novos.
+# Gate: abre PR (needs-review) — dado fiscal não entra sem revisão humana.
+
+on:
+  schedule:
+    - cron: "0 8 * * *"   # diário, 08:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: classtrib-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps (httpx)
+        run: pip install httpx
+
+      - name: Re-sync cClassTrib (SVRS) → JSON
+        run: python backend/scripts/resync_classtrib.py
+
+      - name: Abrir PR de revisão
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: classtrib-sync/auto
+          title: "chore(data): atualização da tabela cClassTrib (SVRS)"
+          commit-message: "chore(data): re-sync cClassTrib + mapeamento NCM (SVRS)"
+          labels: "data-sync,needs-review"
+          add-paths: |
+            backend/app/data/classtrib.json
+            backend/app/data/ncm_cclasstrib.json
+          body: |
+            Re-sincronização automática da tabela oficial **cClassTrib** e do mapeamento NCM
+            a partir da consulta pública SVRS (sem credencial).
+
+            ⚠️ **Revisar antes do merge:**
+            - Conferir o **diff** (novos códigos / remoções) — o `print_diff` do script aborta se < 74 ou drop > limite.
+            - Se o **total de códigos mudou**, atualizar `CLASSTRIB_COUNT` em `frontend/src/lib/validation/rulesMeta.ts` (stat do site).
+            - (Follow-up) re-seed do DB `cclass_trib_items` (endpoint público `/classtrib`) — exige migration própria.
+
+            Gerado por `.github/workflows/classtrib-sync.yml`.

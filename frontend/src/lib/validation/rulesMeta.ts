@@ -27,4 +27,4 @@ export const RULES_LABEL = `${RULES_COUNT} regras determinísticas alinhadas à 
  * a tabela oficial cobre múltiplos DF-e; este é o conjunto carregado. Não derivado
  * automaticamente porque o arquivo-fonte vive no backend (fora do build do frontend).
  */
-export const CLASSTRIB_COUNT = 156;
+export const CLASSTRIB_COUNT = 164;
