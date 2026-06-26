@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "@/lib/api";
 import { getToken } from "@/lib/storage";
 
@@ -9,9 +9,13 @@ export function useAdminData<T>(path: string) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tick, setTick] = useState(0);
+
+  const reload = useCallback(() => setTick((t) => t + 1), []);
 
   useEffect(() => {
     let alive = true;
+    setLoading(true);
     (async () => {
       try {
         const res = await fetch(`${API_BASE}${path}`, {
@@ -19,7 +23,10 @@ export function useAdminData<T>(path: string) {
         });
         if (!alive) return;
         if (!res.ok) setError(`Erro ${res.status}`);
-        else setData((await res.json()) as T);
+        else {
+          setError(null);
+          setData((await res.json()) as T);
+        }
       } catch {
         if (alive) setError("Erro de conexão.");
       } finally {
@@ -29,7 +36,20 @@ export function useAdminData<T>(path: string) {
     return () => {
       alive = false;
     };
-  }, [path]);
+  }, [path, tick]);
 
-  return { data, error, loading };
+  return { data, error, loading, reload };
+}
+
+/** Mutação autenticada (ação administrativa). Lança em erro para o chamador tratar. */
+export async function adminPost(path: string, body: unknown): Promise<void> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(detail.detail ?? `Erro ${res.status}`);
+  }
 }

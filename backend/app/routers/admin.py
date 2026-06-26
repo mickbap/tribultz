@@ -3,13 +3,16 @@
 import logging
 from datetime import datetime, timezone
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.database import get_db
+from app.models.admin_audit import AdminAuditLog
 from app.models.api_key import ApiKey
 from app.models.auth import User, Tenant
 from app.models.billing import Payment, Plan, Subscription
@@ -407,3 +410,97 @@ def admin_usage(
             "used_today": _safe_count(db, select(func.count(ApiKey.id)).where(ApiKey.last_used_at >= today_start)),
         },
     }
+
+
+# ── Fase 2 — ações administrativas (auditadas) + audit log (superadmin) ──────
+
+def _audit(
+    db: Session, actor: User, action: str, target_type: str, target_id: Any, detail: dict[str, Any]
+) -> None:
+    """Registra a ação na trilha de auditoria (mesma transação da mutação)."""
+    db.add(
+        AdminAuditLog(
+            actor_user_id=actor.id,
+            actor_email=cast(str, actor.email),
+            action=action,
+            target_type=target_type,
+            target_id=str(target_id),
+            detail=detail,
+        )
+    )
+
+
+class SetActiveBody(BaseModel):
+    is_active: bool
+
+
+@router.post("/users/{user_id}/active")
+def admin_set_user_active(
+    user_id: UUID,
+    body: SetActiveBody,
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+) -> dict[str, Any]:
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
+    if str(user.id) == str(_admin.id) and not body.is_active:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Você não pode desativar a si mesmo.")
+    before = bool(user.is_active)
+    user.is_active = body.is_active  # type: ignore[assignment]
+    _audit(
+        db, _admin,
+        "user.activate" if body.is_active else "user.deactivate",
+        "user", user.id,
+        {"before": before, "after": body.is_active, "email": cast(str, user.email)},
+    )
+    db.commit()
+    return {"id": str(user.id), "is_active": body.is_active}
+
+
+@router.post("/tenants/{tenant_id}/active")
+def admin_set_tenant_active(
+    tenant_id: UUID,
+    body: SetActiveBody,
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+) -> dict[str, Any]:
+    tenant = db.get(Tenant, tenant_id)
+    if tenant is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant não encontrado.")
+    before = bool(tenant.is_active)
+    tenant.is_active = body.is_active  # type: ignore[assignment]
+    _audit(
+        db, _admin,
+        "tenant.activate" if body.is_active else "tenant.deactivate",
+        "tenant", tenant.id,
+        {"before": before, "after": body.is_active, "name": cast(str, tenant.name)},
+    )
+    db.commit()
+    return {"id": str(tenant.id), "is_active": body.is_active}
+
+
+@router.get("/audit-log")
+def admin_audit_log_list(
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+    limit: int = 50,
+    offset: int = 0,
+) -> dict[str, Any]:
+    total = _safe_count(db, select(func.count(AdminAuditLog.id)))
+    rows = db.execute(
+        select(AdminAuditLog).order_by(AdminAuditLog.created_at.desc()).limit(min(limit, 200)).offset(max(offset, 0))
+    ).scalars().all()
+    items = [
+        {
+            "id": str(r.id),
+            "actor_email": cast(str, r.actor_email),
+            "action": cast(str, r.action),
+            "target_type": cast(str, r.target_type),
+            "target_id": r.target_id,
+            "detail": r.detail,
+            "created_at": cast(datetime, r.created_at).isoformat(),
+        }
+        for r in rows
+    ]
+    return {"total": total, "limit": limit, "offset": offset, "items": items}

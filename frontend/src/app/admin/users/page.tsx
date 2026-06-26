@@ -1,6 +1,7 @@
 "use client";
 
-import { useAdminData } from "@/lib/useAdminData";
+import { useState } from "react";
+import { useAdminData, adminPost } from "@/lib/useAdminData";
 
 type AdminUser = {
   id: string;
@@ -13,7 +14,22 @@ type AdminUser = {
 type Resp = { total: number; items: AdminUser[] };
 
 export default function AdminUsersPage() {
-  const { data, error, loading } = useAdminData<Resp>("/api/v1/admin/users?limit=100");
+  const { data, error, loading, reload } = useAdminData<Resp>("/api/v1/admin/users?limit=100");
+  const [busy, setBusy] = useState<string | null>(null);
+
+  async function toggleActive(u: AdminUser) {
+    const verb = u.is_active ? "suspender" : "reativar";
+    if (!window.confirm(`Confirma ${verb} o usuário ${u.email}? A ação fica registrada na auditoria.`)) return;
+    setBusy(u.id);
+    try {
+      await adminPost(`/api/v1/admin/users/${u.id}/active`, { is_active: !u.is_active });
+      reload();
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : "Falha na ação.");
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <div>
@@ -35,6 +51,7 @@ export default function AdminUsersPage() {
                 <th className="px-4 py-3">Papel</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Criado em</th>
+                <th className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -53,10 +70,19 @@ export default function AdminUsersPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-slate-500">{new Date(u.created_at).toLocaleDateString("pt-BR")}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => toggleActive(u)}
+                      disabled={busy === u.id}
+                      className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${u.is_active ? "border border-red-200 text-red-600 hover:bg-red-50" : "border border-green-200 text-green-700 hover:bg-green-50"}`}
+                    >
+                      {busy === u.id ? "…" : u.is_active ? "Suspender" : "Reativar"}
+                    </button>
+                  </td>
                 </tr>
               ))}
               {data.items.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">Nenhum usuário.</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Nenhum usuário.</td></tr>
               )}
             </tbody>
           </table>
