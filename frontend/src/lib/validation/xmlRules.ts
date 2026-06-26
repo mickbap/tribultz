@@ -1048,7 +1048,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             evidenceId: evId,
             recommendation:
               "Operações com benefício de ALC/Zona Franca (grupo gALCZFMCBS) exigem o número do processo na " +
-              "SUFRAMA (nProcSuframa) do processo produtivo aprovado. Informe o nProcSuframa. SEFAZ: Rejeição UB66c-10.",
+              "SUFRAMA (nProcSuframa) do processo produtivo aprovado. Informe o nProcSuframa. SEFAZ: Rejeição 1192 (regra UB66c-10).",
           }),
           makeEvidence({ id: evId, type: "xml", label: "ALC/ZFM — nProcSuframa ausente", xpath: inferXpath("nProcSuframa", docType), snippet: alc[0].slice(0, 200) }),
         );
@@ -1073,10 +1073,68 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
           evidenceId: evId,
           recommendation:
             "O campo cIndOp (Código Indicador do Local da Operação de Fornecimento) não é permitido na " +
-            "NFC-e (modelo 65) — remova-o. SEFAZ: regra B25d (NT 2025.002-RTC v1.40).",
+            "NFC-e (modelo 65) — remova-o. SEFAZ: Rejeição 1099 (regra B25d-10).",
         }),
         makeEvidence({ id: evId, type: "xml", label: "cIndOp — não permitido em NFC-e", xpath: inferXpath("cIndOp", docType), snippet: cindop.snippet }),
       );
+    }
+  }
+
+  // ── Rule: RETIRADA_CINDOP — B25d-30: cIndOp 010104/010105 exige Local de Retirada (#311) ──
+  if (docType === "NFE") {
+    const cind = firstTag(xml, ["cIndOp"]);
+    const v = cind?.value.trim();
+    if (cind && (v === "010104" || v === "010105") && !/<retirada(?=[\s>])/i.test(xml)) {
+      const evId = makeEvidenceId("RETIRADA_CINDOP");
+      pushFindingAndEvidence(findings, evidences, evidenceById,
+        makeFinding({
+          id: "F_RETIRADA_CINDOP",
+          severity: "WARNING",
+          ruleId: "RETIRADA_CINDOP",
+          title: `cIndOp ${v} exige o grupo Local de Retirada (ausente)`,
+          field: "retirada",
+          xpath: inferXpath("retirada", docType),
+          snippet: cind.snippet,
+          evidenceId: evId,
+          recommendation:
+            "cIndOp 010104 (leilão/licitação) ou 010105 (irregularidade) exige o grupo Local de Retirada " +
+            "(retirada) informado. SEFAZ: Rejeição 1110 (regra B25d-30).",
+        }),
+        makeEvidence({ id: evId, type: "xml", label: "Local de Retirada ausente (cIndOp 010104/010105)", xpath: inferXpath("retirada", docType), snippet: cind.snippet }),
+      );
+    }
+  }
+
+  // ── Rule: ALCZFM_CBS_CALC — UB66e-10: vTribRegCBS = vBC × pAliqEfetRegCBS/100 (#311) ──
+  {
+    const alc = xml.match(/<gALCZFMCBS\b[^>]*>([\s\S]*?)<\/gALCZFMCBS>/i);
+    if (isNfe && alc) {
+      const vtrib = firstTag(alc[1], ["vTribRegCBS"]);
+      const palq = firstTag(alc[1], ["pAliqEfetRegCBS"]);
+      const vbc = firstTag(xml, ["vBC"]);
+      if (vtrib && palq && vbc) {
+        const exp = Math.round((parseFloat(vbc.value) * parseFloat(palq.value)) / 100 * 100) / 100;
+        const decl = parseFloat(vtrib.value) || 0;
+        if (Math.abs(decl - exp) > 0.01) {
+          const evId = makeEvidenceId("ALCZFM_CBS_CALC");
+          pushFindingAndEvidence(findings, evidences, evidenceById,
+            makeFinding({
+              id: "F_ALCZFM_CBS_CALC",
+              severity: "WARNING",
+              ruleId: "ALCZFM_CBS_CALC",
+              title: `vTribRegCBS (${decl}) diverge do calculado (${exp}) na operação ALC/ZFM`,
+              field: "vTribRegCBS",
+              xpath: inferXpath("vTribRegCBS", docType),
+              snippet: vtrib.snippet,
+              evidenceId: evId,
+              recommendation:
+                "Em operação ALC/ZFM, vTribRegCBS deve ser vBC × (pAliqEfetRegCBS / 100). " +
+                "Ajuste o valor. SEFAZ: Rejeição 1218 (regra UB66e-10).",
+            }),
+            makeEvidence({ id: evId, type: "xml", label: "ALC/ZFM — vTribRegCBS incoerente", xpath: inferXpath("vTribRegCBS", docType), snippet: vtrib.snippet }),
+          );
+        }
+      }
     }
   }
 

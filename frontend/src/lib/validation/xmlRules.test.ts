@@ -1085,3 +1085,42 @@ test("#311 CINDOP_NFCE: NFC-e sem cIndOp → sem finding", () => {
     .findings.filter((x) => x.rule_id === "CINDOP_NFCE");
   assert.equal(f.length, 0);
 });
+
+// ── #311 — RETIRADA_CINDOP (B25d-30) + ALCZFM_CBS_CALC (UB66e-10) ────────────
+function b25Nfe(opts: { cindop?: string; retirada?: boolean; alc?: string } = {}): string {
+  const cind = opts.cindop ? `<cIndOp>${opts.cindop}</cIndOp>` : "";
+  const ret = opts.retirada ? "<retirada><xLgr>Rua X</xLgr></retirada>" : "";
+  const alc = opts.alc ?? "";
+  return `<nfeProc><NFe><infNFe><ide><mod>55</mod></ide>` +
+    `<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>${cind}${ret}` +
+    `<det nItem="1"><prod><NCM>84713012</NCM><vProd>1000.00</vProd></prod>` +
+    `<imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib>` +
+    `<gIBSCBS><vBC>1000.00</vBC></gIBSCBS>${alc}</IBSCBS></imposto></det>` +
+    `</infNFe></NFe></nfeProc>`;
+}
+function b25Find(xml: string, rule: string) {
+  return validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml }).findings.filter((f) => f.rule_id === rule);
+}
+const ALC = (v: string) => `<gALCZFMCBS><tpALCZFMCBS>2</tpALCZFMCBS><nProcSuframa>1234567890</nProcSuframa><pAliqEfetRegCBS>8.80</pAliqEfetRegCBS><vTribRegCBS>${v}</vTribRegCBS></gALCZFMCBS>`;
+
+test("#311 RETIRADA_CINDOP: cIndOp 010104 sem retirada → WARNING (1110)", () => {
+  const f = b25Find(b25Nfe({ cindop: "010104", retirada: false }), "RETIRADA_CINDOP");
+  assert.ok(f.some((x) => x.id === "F_RETIRADA_CINDOP" && x.severity === "WARNING"));
+});
+
+test("#311 RETIRADA_CINDOP: com retirada → sem finding", () => {
+  assert.equal(b25Find(b25Nfe({ cindop: "010105", retirada: true }), "RETIRADA_CINDOP").length, 0);
+});
+
+test("#311 RETIRADA_CINDOP: cIndOp de outro valor → sem finding", () => {
+  assert.equal(b25Find(b25Nfe({ cindop: "000000" }), "RETIRADA_CINDOP").length, 0);
+});
+
+test("#311 ALCZFM_CBS_CALC: vTribRegCBS coerente (88.00) → sem finding", () => {
+  assert.equal(b25Find(b25Nfe({ alc: ALC("88.00") }), "ALCZFM_CBS_CALC").length, 0);
+});
+
+test("#311 ALCZFM_CBS_CALC: vTribRegCBS incoerente → WARNING (1218)", () => {
+  const f = b25Find(b25Nfe({ alc: ALC("50.00") }), "ALCZFM_CBS_CALC");
+  assert.ok(f.some((x) => x.id === "F_ALCZFM_CBS_CALC" && x.severity === "WARNING"));
+});
