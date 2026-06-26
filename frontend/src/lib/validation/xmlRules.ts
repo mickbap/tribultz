@@ -142,6 +142,19 @@ function firstTag(xml: string, tags: string[]): { tag: string; value: string; sn
   return null;
 }
 
+/** Valida o DV da Inscrição SUFRAMA (9 díg; módulo 11, pesos 2–9 da direita p/ esquerda;
+ * resto 0/1 → DV 0). Regra SUFRAMA_DV (C22-20, #311). */
+function suframaDvOk(inscricao: string): boolean {
+  const digits = (inscricao.match(/\d/g) ?? []).join("");
+  if (digits.length !== 9) return false;
+  const weights = [9, 8, 7, 6, 5, 4, 3, 2];
+  let total = 0;
+  for (let i = 0; i < 8; i++) total += Number(digits[i]) * weights[i];
+  let calc = 11 - (total % 11);
+  if (calc >= 10) calc = 0;
+  return calc === Number(digits[8]);
+}
+
 /** Returns ALL matches for a tag (useful for multi-item NF-e). */
 function allTags(xml: string, tag: string): { value: string; snippet: string; index: number }[] {
   const re = new RegExp(`<${tag}(?=[\\s>/])([^>]*)>([\\s\\S]*?)<\\/${tag}>`, "gi");
@@ -989,6 +1002,57 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
         }),
         makeEvidence({ id: evId, type: "xml", label: "IS — NCM possivelmente sujeito, grupo ausente", xpath: inferXpath("IS", docType), snippet: ncm.snippet }),
       );
+    }
+  }
+
+  // ── Rule: SUFRAMA_DV — DV da Inscrição SUFRAMA do emitente (#311, C22-20) ──
+  if (isNfe) {
+    const isuf = firstTag(xml, ["ISUFemit", "ISUF"]);
+    if (isuf && isuf.value.trim() && !suframaDvOk(isuf.value)) {
+      const evId = makeEvidenceId("SUFRAMA_DV");
+      pushFindingAndEvidence(findings, evidences, evidenceById,
+        makeFinding({
+          id: "F_SUFRAMA_DV",
+          severity: "WARNING",
+          ruleId: "SUFRAMA_DV",
+          title: `Inscrição SUFRAMA "${isuf.value.trim()}" — dígito verificador inválido`,
+          field: "ISUFemit",
+          xpath: inferXpath("ISUFemit", docType),
+          snippet: isuf.snippet,
+          evidenceId: evId,
+          recommendation:
+            "A Inscrição SUFRAMA do emitente deve ter 9 dígitos com DV válido (módulo 11). " +
+            "Verifique a inscrição. SEFAZ: Rejeição C22-20 (DV da Inscrição SUFRAMA do emitente inválido).",
+        }),
+        makeEvidence({ id: evId, type: "xml", label: "SUFRAMA — DV inválido", xpath: inferXpath("ISUFemit", docType), snippet: isuf.snippet }),
+      );
+    }
+  }
+
+  // ── Rule: ALCZFM_NPROC — grupo gALCZFMCBS exige nProcSuframa (#311, UB66c-10) ──
+  if (isNfe) {
+    const alc = xml.match(/<gALCZFMCBS\b[^>]*>([\s\S]*?)<\/gALCZFMCBS>/i);
+    if (alc) {
+      const nproc = firstTag(alc[1], ["nProcSuframa"]);
+      if (!(nproc && nproc.value.trim())) {
+        const evId = makeEvidenceId("ALCZFM_NPROC");
+        pushFindingAndEvidence(findings, evidences, evidenceById,
+          makeFinding({
+            id: "F_ALCZFM_NPROC",
+            severity: "WARNING",
+            ruleId: "ALCZFM_NPROC",
+            title: "Grupo ALC/ZFM (gALCZFMCBS) sem nProcSuframa",
+            field: "nProcSuframa",
+            xpath: inferXpath("nProcSuframa", docType),
+            snippet: alc[0].slice(0, 200),
+            evidenceId: evId,
+            recommendation:
+              "Operações com benefício de ALC/Zona Franca (grupo gALCZFMCBS) exigem o número do processo na " +
+              "SUFRAMA (nProcSuframa) do processo produtivo aprovado. Informe o nProcSuframa. SEFAZ: Rejeição UB66c-10.",
+          }),
+          makeEvidence({ id: evId, type: "xml", label: "ALC/ZFM — nProcSuframa ausente", xpath: inferXpath("nProcSuframa", docType), snippet: alc[0].slice(0, 200) }),
+        );
+      }
     }
   }
 
