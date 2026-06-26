@@ -1,8 +1,9 @@
 ﻿"use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { clearSession } from "@/lib/storage";
+import { clearSession, getRole } from "@/lib/storage";
 
 const links = [
   { href: "/dashboard", label: "Painel" },
@@ -24,6 +25,14 @@ export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNa
   const pathname = usePathname();
   const router = useRouter();
 
+  // Link de Admin só para superadmin (UX). A autorização real é no backend (/admin/me + guard).
+  // useEffect evita mismatch de hidratação (localStorage só existe no cliente).
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    setIsAdmin(getRole() === "superadmin");
+  }, [pathname]);
+  const navLinks = isAdmin ? [...links, { href: "/admin", label: "Admin" }] : links;
+
   function handleLogout(): void {
     clearSession();
     window.dispatchEvent(new Event("tribultz-settings-updated"));
@@ -44,7 +53,7 @@ export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNa
       </div>
       <nav className="flex-1 p-3" aria-label="Navegação principal">
         <ul className="space-y-1">
-          {links.map((item) => {
+          {navLinks.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <li key={item.href}>

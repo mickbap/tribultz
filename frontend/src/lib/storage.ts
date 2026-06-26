@@ -2,6 +2,7 @@ const KEY_TENANT = "tribultz.tenant";
 const KEY_TOKEN = "tribultz.token";
 const KEY_ACCOUNT_TYPE = "tribultz.account_type";
 const KEY_TENANTS = "tribultz.tenants";
+const KEY_ROLE = "tribultz.role";
 
 function safeLocalStorage(): Storage | null {
   if (typeof window === "undefined") return null;
@@ -44,6 +45,18 @@ export function setAccountType(value: string): void {
   store.setItem(KEY_ACCOUNT_TYPE, value);
 }
 
+export function getRole(): string {
+  const store = safeLocalStorage();
+  if (!store) return "";
+  return store.getItem(KEY_ROLE) ?? "";
+}
+
+export function setRole(value: string): void {
+  const store = safeLocalStorage();
+  if (!store) return;
+  store.setItem(KEY_ROLE, value);
+}
+
 export type StoredTenant = { id: string; name: string; slug: string; is_default: boolean };
 
 export function getTenants(): StoredTenant[] {
@@ -69,4 +82,5 @@ export function clearSession(): void {
   store.removeItem(KEY_ACCOUNT_TYPE);
   store.removeItem(KEY_TENANTS);
   store.removeItem(KEY_TENANT);
+  store.removeItem(KEY_ROLE);
 }

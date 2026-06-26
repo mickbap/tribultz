@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Toast } from "@/components/common/Toast";
 import { loginWithApi, resendVerificationEmail } from "@/lib/api";
-import { setAccountType, setTenantId, setTenants, setToken } from "@/lib/storage";
+import { setAccountType, setRole, setTenantId, setTenants, setToken } from "@/lib/storage";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -68,6 +68,7 @@ function LoginForm() {
       setTenantId(login.tenant_id ?? "");
       setToken(login.access_token);
       setAccountType(login.account_type ?? "empresa");
+      setRole(login.role ?? "user");
       setTenants(login.tenants ?? []);
       window.dispatchEvent(new Event("tribultz-settings-updated"));
       // Superadmins go to plan/mode selector before entering the app

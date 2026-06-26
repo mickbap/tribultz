@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.database import get_db
+from app.models.api_key import ApiKey
 from app.models.auth import User, Tenant
 from app.models.billing import Payment, Plan, Subscription
 
@@ -307,4 +308,102 @@ def admin_dashboard(
         },
         "support": _support_stats(db),
         "feedback": _feedback_stats(db, month_start),
+    }
+
+
+# ── Drill-down (leitura) — visão top-down completa (superadmin) ──────────────
+
+@router.get("/me")
+def admin_me(_admin: Annotated[User, Depends(_require_superadmin)]) -> dict[str, Any]:
+    """Ping de autorização: 200 só para superadmin (usado pelo guard do layout /admin)."""
+    return {"email": cast(str, _admin.email), "role": cast(str, _admin.role), "is_superadmin": True}
+
+
+@router.get("/tenants")
+def admin_tenants(
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+    limit: int = 50,
+    offset: int = 0,
+    q: str | None = None,
+) -> dict[str, Any]:
+    stmt = select(Tenant)
+    if q:
+        stmt = stmt.where(Tenant.name.ilike(f"%{q}%"))
+    total = _safe_count(db, select(func.count()).select_from(stmt.subquery()))
+    rows = db.execute(
+        stmt.order_by(Tenant.created_at.desc()).limit(min(limit, 200)).offset(max(offset, 0))
+    ).scalars().all()
+    items = [
+        {
+            "id": str(t.id),
+            "name": cast(str, t.name),
+            "is_active": bool(t.is_active),
+            "users": _safe_count(db, select(func.count(User.id)).where(User.tenant_id == t.id)),
+            "created_at": cast(datetime, t.created_at).isoformat(),
+        }
+        for t in rows
+    ]
+    return {"total": total, "limit": limit, "offset": offset, "items": items}
+
+
+@router.get("/users")
+def admin_users(
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+    limit: int = 50,
+    offset: int = 0,
+    q: str | None = None,
+) -> dict[str, Any]:
+    stmt = select(User)
+    if q:
+        stmt = stmt.where(User.email.ilike(f"%{q}%") | User.full_name.ilike(f"%{q}%"))
+    total = _safe_count(db, select(func.count()).select_from(stmt.subquery()))
+    rows = db.execute(
+        stmt.order_by(User.created_at.desc()).limit(min(limit, 200)).offset(max(offset, 0))
+    ).scalars().all()
+    items = [
+        {
+            "id": str(u.id),
+            "email": cast(str, u.email),
+            "full_name": cast(str, u.full_name),
+            "role": cast(str, u.role),
+            "is_active": bool(u.is_active),
+            "created_at": cast(datetime, u.created_at).isoformat(),
+        }
+        for u in rows
+    ]
+    return {"total": total, "limit": limit, "offset": offset, "items": items}
+
+
+@router.get("/usage")
+def admin_usage(
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+) -> dict[str, Any]:
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    def _jobs_since(start: datetime | None) -> int:
+        try:
+            if start is None:
+                return db.scalar(text("SELECT COUNT(*) FROM jobs")) or 0
+            return db.scalar(text("SELECT COUNT(*) FROM jobs WHERE created_at >= :s"), {"s": start}) or 0
+        except Exception:
+            return 0
+
+    credits = db.execute(
+        select(func.coalesce(func.sum(ApiKey.credits_balance), 0)).where(ApiKey.is_active == True)  # noqa: E712
+    ).scalar() or 0
+
+    return {
+        "generated_at": now.isoformat(),
+        "jobs": {"today": _jobs_since(today_start), "month": _jobs_since(month_start), "total": _jobs_since(None)},
+        "api_keys": {
+            "total": _safe_count(db, select(func.count(ApiKey.id))),
+            "active": _safe_count(db, select(func.count(ApiKey.id)).where(ApiKey.is_active == True)),  # noqa: E712
+            "credits_balance": int(credits),
+            "used_today": _safe_count(db, select(func.count(ApiKey.id)).where(ApiKey.last_used_at >= today_start)),
+        },
     }
