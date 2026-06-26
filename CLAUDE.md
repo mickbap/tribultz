@@ -14,18 +14,21 @@ Motor determinístico que verifica notas fiscais contra regras CBS/IBS e gera ev
 | Database | PostgreSQL 16 (multi-tenant, UUID PKs, tenant_id FK em todas as tabelas) |
 | Storage | MinIO (S3-compatible) |
 | Infra | Docker Compose (db, redis, minio, api, worker, beat) |
-| CI | GitHub Actions — backend-gates + frontend-build |
+| CI/Automação | GitHub Actions — backend-gates, frontend-build, deploy-prod, monitor (uptime → alerta Resend), classtrib-sync (re-sync diário cClassTrib SVRS → PR revisado), soro-blog-sync (RSS Soro → PR revisado) |
 
 ## Estrutura do projeto
 
 ```
 frontend/          Next.js app (app router)
-  src/app/         Páginas: validate-xml, audit, chat, closing, dashboard, jobs, report, settings
-  src/lib/         Lógica de validação (xmlRules), export (bundle, zip), closing (aggregate)
+  src/app/         Páginas: validate-xml, audit, chat, closing, dashboard, jobs, report, settings,
+                   admin (painel superadmin: visão geral, tenants, usuários, uso, saúde, audit log), blog
+  src/lib/         Lógica de validação (xmlRules), export (bundle, zip), closing (aggregate),
+                   contentLint (corretor fiscal do blog), soroSync (Soro RSS→MDX), useAdminData
   src/components/  UI: AppShell, Sidebar, EvidenceList, JsonViewer, Toast
 
 backend/           FastAPI
-  app/routers/     audit, auth, chat, health, jobs, tasks, validate, validation
+  app/routers/     audit, auth, chat, health, jobs, tasks, validate, validation, admin (BFF
+                   superadmin + ações auditadas), classtrib, ncm_suggest, public_api, calculadora
   app/crews/       CrewAI chatops crew + tools
   app/tasks/       Celery tasks (validate, report, simulation, reconciliation, hubspot)
   app/tools/       ERP connector, HubSpot, Postgres, S3, validation
@@ -63,7 +66,8 @@ cd backend && source .venv/bin/activate && python -m pytest tests/ -q && ruff ch
 - **CBS**: Contribuição sobre Bens e Serviços (federal) — fase de teste 2026: **0,9%**; referência plena (regime cheio, ~2033): **8,8%**
 - **IBS**: Imposto sobre Bens e Serviços (estadual/municipal) — fase de teste 2026: **0,1%**; referência plena (regime cheio, ~2033): **17,7%** (UF + Município)
 - **Base legal**: LC 214 (reforma tributária) + LC 227 (regulamentação)
-- **20 regras determinísticas** no engine (`frontend/src/lib/validation/xmlRules.ts`, fonte canônica `RULES_COUNT`; 22 ruleIds − 2 placeholders) com evidência auditável no formato Findings/Evidence v1.1
+- **28 regras determinísticas** no engine mock (`frontend/src/lib/validation/xmlRules.ts`, fonte canônica `RULES_COUNT`; 30 ruleIds − 2 placeholders) + **regras de enrichment backend-only** que dependem da tabela SVRS (cClassTrib × CST = **Rejeição 1024**, alíquota zero/absoluta, cClassTrib × modelo de DFe, cCredPres). Catálogo de rejeições da NT v1.40 coberto, citando códigos oficiais (1024, 1099, 1106, 1110, 1192, 1218, C22-20…). Evidência auditável no formato Findings/Evidence v1.1
+- **Tabela cClassTrib oficial** (`backend/app/data/classtrib.json`, fonte SVRS pública): 164 códigos, re-sincronizada diariamente via workflow `classtrib-sync` (cresce com frequência — sem re-sync, o motor decai). `CLASSTRIB_COUNT` em `rulesMeta.ts`.
 - **Vocabulário fiscal**: CEST, ClassTrib, IBS, CBS, Nota Nacional, ISS, ICMS, Split Payment, Cashback
 
 ## Validação
