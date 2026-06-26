@@ -850,3 +850,35 @@ class TestB25d30Ub66e:
         xml = self._nfe(alc=self._ALC.format(v="50.00"))
         f = self._find(xml, "ALCZFM_CBS_CALC")
         assert any(x.id == "F_ALCZFM_CBS_CALC" and x.severity == "WARNING" for x in f)
+
+
+class TestClasstribCstCompat:
+    """Rejeição 1024 (UB14-20): cClassTrib incompatível com o CST declarado.
+    Carro-chefe — cada cClassTrib é registrado sob um CST oficial (SVRS)."""
+
+    def _nfe(self, code, cst):
+        return (
+            '<nfeProc><NFe><infNFe><ide><mod>55</mod></ide>'
+            '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            '<det nItem="1"><prod><NCM>84713012</NCM><vProd>1000.00</vProd></prod>'
+            f'<imposto><IBSCBS><CST>{cst}</CST><cClassTrib>{code}</cClassTrib>'
+            '<gIBSCBS><vBC>1000.00</vBC></gIBSCBS></IBSCBS></imposto></det>'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml):
+        return [f for f in validate_xml(xml, "NFE").findings if f.rule_id == "CLASSTRIB_CST_COMPAT"]
+
+    def test_cst_compativel_sem_finding(self):
+        # 000001 é registrado sob CST 000
+        assert self._find(self._nfe("000001", "000")) == []
+
+    def test_cst_incompativel_fatal(self):
+        f = self._find(self._nfe("000001", "200"))
+        assert any(x.id == "F_CLASSTRIB_CST_COMPAT" and x.severity == "FATAL" for x in f)
+
+    def test_outro_classtrib_compativel_sem_finding(self):
+        assert self._find(self._nfe("200001", "200")) == []
+
+    def test_classtrib_desconhecido_sem_finding(self):
+        assert self._find(self._nfe("999999", "000")) == []

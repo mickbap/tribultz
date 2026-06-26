@@ -30,6 +30,7 @@ from app.services.xml_correction_service import correct_xml
 from app.api.plan_gate import require_plan, check_usage_limit, increment_usage
 from app.data.ncm_codes import VALID_NCM_CODES
 from app.data.classtrib_table import (
+    classtrib_cst,
     classtrib_dfe_allowed,
     classtrib_expected_aliquota_2026,
     classtrib_expected_zero,
@@ -752,6 +753,31 @@ def validate_xml(
             _add(
                 Finding(id="F_CNPJ_UNAVAIL", severity="ALERT", rule_id="CNPJ_ACTIVE", title="Verificação de CNPJ indisponível — API fora do ar", where=FindingWhere(field="CNPJ", xpath=_xpath("CNPJ", doc_type)), recommendation="APIs de consulta CNPJ temporariamente indisponíveis. Verifique manualmente.", evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="CNPJ — API indisponível", xpath=_xpath("CNPJ", doc_type)),
+            )
+
+    # ── Rule: CLASSTRIB_CST_COMPAT — cClassTrib compatível com o CST (Rejeição 1024) ──
+    # CARRO-CHEFE: cada cClassTrib é registrado sob um CST específico (fonte oficial SVRS).
+    # Se o CST declarado no grupo IBSCBS difere do CST do cClassTrib → incompatibilidade,
+    # que a SEFAZ rejeita com a Rejeição 1024 (regra UB14-20). FATAL: é a rejeição dura que
+    # o produto se propõe a prevenir; dado oficial e determinístico → alta confiança.
+    if has_ibscbs and c_class_trib and cst and re.match(r"^\d{6}$", c_class_trib["value"]):
+        _reg_cst = classtrib_cst(c_class_trib["value"])
+        _decl_cst = cst["value"].strip()
+        if _reg_cst and _decl_cst and _decl_cst != _reg_cst:
+            ev_id = "E_XML_CLASSTRIB_CST_COMPAT"
+            _add(
+                Finding(
+                    id="F_CLASSTRIB_CST_COMPAT", severity="FATAL", rule_id="CLASSTRIB_CST_COMPAT",
+                    title=f'cClassTrib {c_class_trib["value"]} incompatível com o CST {_decl_cst} (esperado CST {_reg_cst})',
+                    where=FindingWhere(field="cClassTrib", xpath=_xpath("cClassTrib", doc_type), snippet=c_class_trib["snippet"]),
+                    recommendation=(
+                        f'O cClassTrib {c_class_trib["value"]} é registrado sob o CST {_reg_cst} (tabela oficial SVRS), '
+                        f'mas a nota declarou o CST {_decl_cst}. Corrija o CST ou o cClassTrib. '
+                        "SEFAZ: Rejeição 1024 (regra UB14-20 — cClassTrib incompatível com o CST informado)."
+                    ),
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label="cClassTrib × CST incompatível (Rejeição 1024)", xpath=_xpath("cClassTrib", doc_type), snippet=c_class_trib["snippet"]),
             )
 
     # ── Rule 19: ALIQUOTA_CLASSTRIB — alíquota-zero coerente com o cClassTrib (#278) ──

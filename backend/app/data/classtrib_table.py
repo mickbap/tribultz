@@ -83,3 +83,15 @@ def classtrib_expected_aliquota_2026(code: str) -> tuple[float, float] | None:
     exp_cbs = float(CBS_TESTE_2026) * (1 - red_cbs / 100)
     exp_ibs = float(IBS_TESTE_2026_TOTAL) * (1 - red_ibs / 100)
     return round(exp_cbs, 6), round(exp_ibs, 6)
+
+
+def classtrib_cst(code: str) -> str | None:
+    """CST oficial registrado para o cClassTrib (fonte SVRS) — usado na Rejeição 1024.
+
+    Cada cClassTrib pertence a exatamente um CST. Retorna o CST registrado, ou None se o
+    código for desconhecido. Permite validar a compatibilidade cClassTrib × CST (UB14-20).
+    """
+    item = CLASSTRIB_BY_CODE.get(code)
+    if item is None:
+        return None
+    return str(item.get("cst", "")) or None
