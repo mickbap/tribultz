@@ -1108,7 +1108,7 @@ def validate_xml(
                         recommendation=(
                             "Operações com benefício de ALC/Zona Franca (grupo gALCZFMCBS) exigem o número do "
                             "processo na SUFRAMA (nProcSuframa) do processo produtivo aprovado. Informe o nProcSuframa. "
-                            "SEFAZ: Rejeição UB66c-10 (Número do processo na SUFRAMA não informado)."
+                            "SEFAZ: Rejeição 1192 (regra UB66c-10 — número do processo na SUFRAMA não informado)."
                         ),
                         evidence_ids=[ev_id],
                     ),
@@ -1129,12 +1129,60 @@ def validate_xml(
                     where=FindingWhere(field="cIndOp", xpath=_xpath("cIndOp", doc_type), snippet=_cindop["snippet"]),
                     recommendation=(
                         "O campo cIndOp (Código Indicador do Local da Operação de Fornecimento) não é permitido "
-                        "na NFC-e (modelo 65) — remova-o. SEFAZ: regra B25d (NT 2025.002-RTC v1.40)."
+                        "na NFC-e (modelo 65) — remova-o. SEFAZ: Rejeição 1099 (regra B25d-10)."
                     ),
                     evidence_ids=[ev_id],
                 ),
                 Evidence(id=ev_id, type="xml", label="cIndOp — não permitido em NFC-e", xpath=_xpath("cIndOp", doc_type), snippet=_cindop["snippet"]),
             )
+
+    # ── Rule 28: RETIRADA_CINDOP — B25d-30: cIndOp 010104/010105 exige Local de Retirada (#311) ──
+    # Spec oficial (NT v1.40): se cIndOp = "010104" (leilão/licitação) ou "010105" (irregularidade)
+    # e o grupo Local de Retirada (retirada/F01) não foi informado → Rejeição 1110. Modelo 55.
+    if doc_type == "NFE":
+        _cind = _first_tag(xml, ["cIndOp"])
+        if _cind and _cind["value"].strip() in ("010104", "010105") and not re.search(r"<retirada(?=[\s>])", xml, re.IGNORECASE):
+            ev_id = "E_XML_RETIRADA_CINDOP"
+            _add(
+                Finding(
+                    id="F_RETIRADA_CINDOP", severity="WARNING", rule_id="RETIRADA_CINDOP",
+                    title=f'cIndOp {_cind["value"].strip()} exige o grupo Local de Retirada (ausente)',
+                    where=FindingWhere(field="retirada", xpath=_xpath("retirada", doc_type), snippet=_cind["snippet"]),
+                    recommendation=(
+                        "cIndOp 010104 (leilão/licitação) ou 010105 (irregularidade) exige o grupo Local de "
+                        "Retirada (retirada) informado. SEFAZ: Rejeição 1110 (regra B25d-30)."
+                    ),
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label="Local de Retirada ausente (cIndOp 010104/010105)", xpath=_xpath("retirada", doc_type), snippet=_cind["snippet"]),
+            )
+
+    # ── Rule 29: ALCZFM_CBS_CALC — UB66e-10: vTribRegCBS = vBC × pAliqEfetRegCBS/100 (#311) ──
+    # Spec oficial (Rejeição 1218): coerência do valor da CBS na operação ALC/ZFM. WARNING.
+    _alc2 = re.search(r"<gALCZFMCBS\b[^>]*>([\s\S]*?)</gALCZFMCBS>", xml, re.IGNORECASE)
+    if is_nfe and _alc2:
+        _blk = _alc2.group(1)
+        _vtrib = _first_tag(_blk, ["vTribRegCBS"])
+        _palq = _first_tag(_blk, ["pAliqEfetRegCBS"])
+        _vbc_t = _first_tag(xml, ["vBC"])
+        if _vtrib and _palq and _vbc_t:
+            _exp = round(_to_float(_vbc_t["value"]) * _to_float(_palq["value"]) / 100, 2)
+            _decl = _to_float(_vtrib["value"])
+            if abs(_decl - _exp) > 0.01:
+                ev_id = "E_XML_ALCZFM_CBS_CALC"
+                _add(
+                    Finding(
+                        id="F_ALCZFM_CBS_CALC", severity="WARNING", rule_id="ALCZFM_CBS_CALC",
+                        title=f"vTribRegCBS ({_decl}) diverge do calculado ({_exp}) na operação ALC/ZFM",
+                        where=FindingWhere(field="vTribRegCBS", xpath=_xpath("vTribRegCBS", doc_type), snippet=_vtrib["snippet"]),
+                        recommendation=(
+                            "Em operação ALC/ZFM, vTribRegCBS deve ser vBC × (pAliqEfetRegCBS / 100). "
+                            "Ajuste o valor. SEFAZ: Rejeição 1218 (regra UB66e-10)."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="ALC/ZFM — vTribRegCBS incoerente", xpath=_xpath("vTribRegCBS", doc_type), snippet=_vtrib["snippet"]),
+                )
 
     # ── NT v1.40 — anotar código de rejeição SEFAZ nas detecções (#311) ───────
     # Apenas NF-e/NFC-e (rejeições da SEFAZ NF-e; NFS-e tem regras próprias).

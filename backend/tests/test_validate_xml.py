@@ -805,3 +805,48 @@ class TestCindopNfce:
 
     def test_nfce_sem_cindop_sem_finding(self):
         assert self._find(self._doc("65", False), "NFCE") == []
+
+
+class TestB25d30Ub66e:
+    """#311 — B25d-30 (Rej. 1110: cIndOp 010104/010105 exige Local de Retirada) +
+    UB66e-10 (Rej. 1218: vTribRegCBS = vBC × pAliqEfetRegCBS/100 na operação ALC/ZFM)."""
+
+    def _nfe(self, cindop=None, retirada=False, alc="", vbc="1000.00"):
+        cind = f"<cIndOp>{cindop}</cIndOp>" if cindop else ""
+        ret = "<retirada><xLgr>Rua X</xLgr></retirada>" if retirada else ""
+        return (
+            '<nfeProc><NFe><infNFe><ide><mod>55</mod></ide>'
+            '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            f'{cind}{ret}'
+            '<det nItem="1"><prod><NCM>84713012</NCM><vProd>1000.00</vProd></prod>'
+            f'<imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib>'
+            f'<gIBSCBS><vBC>{vbc}</vBC></gIBSCBS>{alc}</IBSCBS></imposto></det>'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml, rule):
+        return [f for f in validate_xml(xml, "NFE").findings if f.rule_id == rule]
+
+    # B25d-30
+    def test_cindop_sem_retirada_warning(self):
+        f = self._find(self._nfe(cindop="010104", retirada=False), "RETIRADA_CINDOP")
+        assert any(x.id == "F_RETIRADA_CINDOP" and x.severity == "WARNING" for x in f)
+
+    def test_cindop_com_retirada_sem_finding(self):
+        assert self._find(self._nfe(cindop="010105", retirada=True), "RETIRADA_CINDOP") == []
+
+    def test_cindop_outro_valor_sem_finding(self):
+        assert self._find(self._nfe(cindop="000000", retirada=False), "RETIRADA_CINDOP") == []
+
+    # UB66e-10
+    _ALC = "<gALCZFMCBS><tpALCZFMCBS>2</tpALCZFMCBS><nProcSuframa>1234567890</nProcSuframa><pAliqEfetRegCBS>8.80</pAliqEfetRegCBS><vTribRegCBS>{v}</vTribRegCBS></gALCZFMCBS>"
+
+    def test_alczfm_cbs_coerente_sem_finding(self):
+        # 1000 × 8.80/100 = 88.00
+        xml = self._nfe(alc=self._ALC.format(v="88.00"))
+        assert self._find(xml, "ALCZFM_CBS_CALC") == []
+
+    def test_alczfm_cbs_incoerente_warning(self):
+        xml = self._nfe(alc=self._ALC.format(v="50.00"))
+        f = self._find(xml, "ALCZFM_CBS_CALC")
+        assert any(x.id == "F_ALCZFM_CBS_CALC" and x.severity == "WARNING" for x in f)
