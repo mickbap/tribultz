@@ -1056,6 +1056,30 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
     }
   }
 
+  // ── Rule: CINDOP_NFCE — cIndOp não é permitido na NFC-e (#311, B25d) ──
+  if (docType === "NFCE") {
+    const cindop = firstTag(xml, ["cIndOp"]);
+    if (cindop && cindop.value.trim()) {
+      const evId = makeEvidenceId("CINDOP_NFCE");
+      pushFindingAndEvidence(findings, evidences, evidenceById,
+        makeFinding({
+          id: "F_CINDOP_NFCE",
+          severity: "WARNING",
+          ruleId: "CINDOP_NFCE",
+          title: "cIndOp informado em NFC-e (modelo 65) — não permitido",
+          field: "cIndOp",
+          xpath: inferXpath("cIndOp", docType),
+          snippet: cindop.snippet,
+          evidenceId: evId,
+          recommendation:
+            "O campo cIndOp (Código Indicador do Local da Operação de Fornecimento) não é permitido na " +
+            "NFC-e (modelo 65) — remova-o. SEFAZ: regra B25d (NT 2025.002-RTC v1.40).",
+        }),
+        makeEvidence({ id: evId, type: "xml", label: "cIndOp — não permitido em NFC-e", xpath: inferXpath("cIndOp", docType), snippet: cindop.snippet }),
+      );
+    }
+  }
+
   // ── Rule 9: CEST_FORMAT — CEST must be exactly 7 digits ──────────────────
 
   if (cest && !/^\d{7}$/.test(cest.value)) {

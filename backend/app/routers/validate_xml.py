@@ -1115,6 +1115,27 @@ def validate_xml(
                     Evidence(id=ev_id, type="xml", label="ALC/ZFM — nProcSuframa ausente", xpath=_xpath("nProcSuframa", doc_type), snippet=_alc.group(0)[:200]),
                 )
 
+    # ── Rule 27: CINDOP_NFCE — cIndOp não é permitido na NFC-e (#311, B25d) ──
+    # A NT v1.40 veda o campo cIndOp (Código Indicador do Local da Operação) no modelo 65.
+    # Restrição explícita e determinística → regra limpa. WARNING (advisory, cita B25d).
+    if doc_type == "NFCE":
+        _cindop = _first_tag(xml, ["cIndOp"])
+        if _cindop and _cindop["value"].strip():
+            ev_id = "E_XML_CINDOP_NFCE"
+            _add(
+                Finding(
+                    id="F_CINDOP_NFCE", severity="WARNING", rule_id="CINDOP_NFCE",
+                    title="cIndOp informado em NFC-e (modelo 65) — não permitido",
+                    where=FindingWhere(field="cIndOp", xpath=_xpath("cIndOp", doc_type), snippet=_cindop["snippet"]),
+                    recommendation=(
+                        "O campo cIndOp (Código Indicador do Local da Operação de Fornecimento) não é permitido "
+                        "na NFC-e (modelo 65) — remova-o. SEFAZ: regra B25d (NT 2025.002-RTC v1.40)."
+                    ),
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label="cIndOp — não permitido em NFC-e", xpath=_xpath("cIndOp", doc_type), snippet=_cindop["snippet"]),
+            )
+
     # ── NT v1.40 — anotar código de rejeição SEFAZ nas detecções (#311) ───────
     # Apenas NF-e/NFC-e (rejeições da SEFAZ NF-e; NFS-e tem regras próprias).
     if is_nfe:

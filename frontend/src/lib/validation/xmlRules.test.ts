@@ -1057,3 +1057,31 @@ test("#311 ALCZFM_NPROC: grupo sem nProcSuframa → WARNING (UB66c-10)", () => {
 test("#311 ALCZFM_NPROC: sem grupo → sem finding", () => {
   assert.equal(sufFindings(sufNfe(), "ALCZFM_NPROC").length, 0);
 });
+
+// ── #311 — CINDOP_NFCE (B25d: cIndOp não permitido em NFC-e) ──────────────────
+function cindopDoc(model: string, withCindop: boolean): string {
+  const c = withCindop ? "<cIndOp>010104</cIndOp>" : "";
+  return `<nfeProc><NFe><infNFe><ide><mod>${model}</mod></ide>` +
+    `<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>` +
+    `<det nItem="1"><prod><NCM>84713012</NCM>${c}<vProd>10.00</vProd></prod>` +
+    `<imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib></IBSCBS></imposto></det>` +
+    `</infNFe></NFe></nfeProc>`;
+}
+
+test("#311 CINDOP_NFCE: cIndOp em NFC-e (mod 65) → WARNING", () => {
+  const f = validateXmlWithRules({ tenantId: "t", documentType: "NFCE", xml: cindopDoc("65", true) })
+    .findings.filter((x) => x.rule_id === "CINDOP_NFCE");
+  assert.ok(f.some((x) => x.id === "F_CINDOP_NFCE" && x.severity === "WARNING"));
+});
+
+test("#311 CINDOP_NFCE: cIndOp em NF-e (mod 55) → sem finding", () => {
+  const f = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml: cindopDoc("55", true) })
+    .findings.filter((x) => x.rule_id === "CINDOP_NFCE");
+  assert.equal(f.length, 0);
+});
+
+test("#311 CINDOP_NFCE: NFC-e sem cIndOp → sem finding", () => {
+  const f = validateXmlWithRules({ tenantId: "t", documentType: "NFCE", xml: cindopDoc("65", false) })
+    .findings.filter((x) => x.rule_id === "CINDOP_NFCE");
+  assert.equal(f.length, 0);
+});
