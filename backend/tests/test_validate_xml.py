@@ -734,3 +734,47 @@ class TestImpostoSeletivo:
     def test_ncm_sujeito_com_is_nao_alerta(self):
         # grupo IS presente → IS_EXPECTED não dispara
         assert self._find(self._nfe(ncm="22030000", vbcis="1000.00", pis="0.1000", vis="100.00"), "IS_EXPECTED") == []
+
+
+class TestSuframaAlczfm:
+    """#311 — SUFRAMA_DV (C22-20: DV da Inscrição SUFRAMA do emitente) +
+    ALCZFM_NPROC (UB66c-10: grupo gALCZFMCBS exige nProcSuframa)."""
+
+    def _nfe(self, isuf=None, alczfm=None):
+        emit_extra = f"<ISUFemit>{isuf}</ISUFemit>" if isuf is not None else ""
+        imp = alczfm if alczfm is not None else ""
+        return (
+            '<nfeProc><NFe><infNFe><ide><mod>55</mod></ide>'
+            f'<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT>{emit_extra}</emit>'
+            '<det nItem="1"><prod><NCM>84713012</NCM><vProd>1000.00</vProd></prod>'
+            f'<imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib>{imp}</IBSCBS></imposto></det>'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml, rule):
+        return [f for f in validate_xml(xml, "NFE").findings if f.rule_id == rule]
+
+    def test_suframa_dv_valido_sem_finding(self):
+        assert self._find(self._nfe(isuf="100123457"), "SUFRAMA_DV") == []
+
+    def test_suframa_dv_invalido_warning(self):
+        f = self._find(self._nfe(isuf="100123450"), "SUFRAMA_DV")
+        assert any(x.id == "F_SUFRAMA_DV" and x.severity == "WARNING" for x in f)
+
+    def test_suframa_malformado_warning(self):
+        assert any(x.id == "F_SUFRAMA_DV" for x in self._find(self._nfe(isuf="12345"), "SUFRAMA_DV"))
+
+    def test_sem_suframa_sem_finding(self):
+        assert self._find(self._nfe(), "SUFRAMA_DV") == []
+
+    def test_alczfm_com_nproc_sem_finding(self):
+        xml = self._nfe(alczfm="<gALCZFMCBS><nProcSuframa>1234567890</nProcSuframa></gALCZFMCBS>")
+        assert self._find(xml, "ALCZFM_NPROC") == []
+
+    def test_alczfm_sem_nproc_warning(self):
+        xml = self._nfe(alczfm="<gALCZFMCBS><vCBS>0.00</vCBS></gALCZFMCBS>")
+        f = self._find(xml, "ALCZFM_NPROC")
+        assert any(x.id == "F_ALCZFM_NPROC" and x.severity == "WARNING" for x in f)
+
+    def test_sem_grupo_alczfm_sem_finding(self):
+        assert self._find(self._nfe(), "ALCZFM_NPROC") == []

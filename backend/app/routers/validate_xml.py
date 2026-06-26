@@ -126,6 +126,20 @@ def _first_tag(xml: str, tags: list[str]) -> dict[str, Any] | None:
     return None
 
 
+def _suframa_dv_ok(inscricao: str) -> bool:
+    """Valida o DV da Inscrição SUFRAMA (9 díg: 8 base + DV; módulo 11, pesos 2–9 da
+    direita p/ esquerda; resto 0 ou 1 → DV 0). Usado pela regra SUFRAMA_DV (C22-20, #311)."""
+    digits = "".join(c for c in (inscricao or "") if c.isdigit())
+    if len(digits) != 9:
+        return False
+    weights = [9, 8, 7, 6, 5, 4, 3, 2]  # pesos 2–9 da direita p/ esquerda = 9..2 da esquerda
+    total = sum(int(d) * w for d, w in zip(digits[:8], weights))
+    calc = 11 - (total % 11)
+    if calc >= 10:
+        calc = 0
+    return calc == int(digits[8])
+
+
 def _to_float(value: str | None) -> float:
     """Parse a numeric string to float; returns 0.0 on missing/invalid input."""
     try:
@@ -1057,6 +1071,49 @@ def validate_xml(
                 ),
                 Evidence(id=ev_id, type="xml", label="IS — NCM possivelmente sujeito, grupo ausente", xpath=_xpath("IS", doc_type), snippet=ncm["snippet"]),
             )
+
+    # ── Rule 25: SUFRAMA_DV — DV da Inscrição SUFRAMA do emitente (#311, C22-20) ──
+    # WARNING (não FATAL): catch determinístico do DV, mas mantemos advisory para não
+    # bloquear nota por nuance do algoritmo; cita o código oficial de rejeição.
+    if is_nfe:
+        _isuf = _first_tag(xml, ["ISUFemit", "ISUF"])
+        if _isuf and _isuf["value"].strip() and not _suframa_dv_ok(_isuf["value"]):
+            ev_id = "E_XML_SUFRAMA_DV"
+            _add(
+                Finding(
+                    id="F_SUFRAMA_DV", severity="WARNING", rule_id="SUFRAMA_DV",
+                    title=f'Inscrição SUFRAMA "{_isuf["value"].strip()}" — dígito verificador inválido',
+                    where=FindingWhere(field="ISUFemit", xpath=_xpath("ISUFemit", doc_type), snippet=_isuf["snippet"]),
+                    recommendation=(
+                        "A Inscrição SUFRAMA do emitente deve ter 9 dígitos com DV válido (módulo 11). "
+                        "Verifique a inscrição. SEFAZ: Rejeição C22-20 (DV da Inscrição SUFRAMA do emitente inválido)."
+                    ),
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label="SUFRAMA — DV inválido", xpath=_xpath("ISUFemit", doc_type), snippet=_isuf["snippet"]),
+            )
+
+    # ── Rule 26: ALCZFM_NPROC — grupo gALCZFMCBS exige nProcSuframa (#311, UB66c-10) ──
+    if is_nfe:
+        _alc = re.search(r"<gALCZFMCBS\b[^>]*>([\s\S]*?)</gALCZFMCBS>", xml, re.IGNORECASE)
+        if _alc:
+            _nproc = _first_tag(_alc.group(1), ["nProcSuframa"])
+            if not (_nproc and _nproc["value"].strip()):
+                ev_id = "E_XML_ALCZFM_NPROC"
+                _add(
+                    Finding(
+                        id="F_ALCZFM_NPROC", severity="WARNING", rule_id="ALCZFM_NPROC",
+                        title="Grupo ALC/ZFM (gALCZFMCBS) sem nProcSuframa",
+                        where=FindingWhere(field="nProcSuframa", xpath=_xpath("nProcSuframa", doc_type), snippet=_alc.group(0)[:200]),
+                        recommendation=(
+                            "Operações com benefício de ALC/Zona Franca (grupo gALCZFMCBS) exigem o número do "
+                            "processo na SUFRAMA (nProcSuframa) do processo produtivo aprovado. Informe o nProcSuframa. "
+                            "SEFAZ: Rejeição UB66c-10 (Número do processo na SUFRAMA não informado)."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="ALC/ZFM — nProcSuframa ausente", xpath=_xpath("nProcSuframa", doc_type), snippet=_alc.group(0)[:200]),
+                )
 
     # ── NT v1.40 — anotar código de rejeição SEFAZ nas detecções (#311) ───────
     # Apenas NF-e/NFC-e (rejeições da SEFAZ NF-e; NFS-e tem regras próprias).

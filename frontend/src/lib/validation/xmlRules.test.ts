@@ -1016,3 +1016,44 @@ test("#314 NCM não sujeito → sem IS_EXPECTED", () => {
 test("#314 NCM sujeito com grupo IS → sem IS_EXPECTED", () => {
   assert.equal(isFindings(isNfe("22030000", { vbcis: "1000.00", pis: "0.1000", vis: "100.00" }), "IS_EXPECTED").length, 0);
 });
+
+// ── #311 — SUFRAMA_DV (C22-20) + ALCZFM_NPROC (UB66c-10) ─────────────────────
+function sufNfe(opts: { isuf?: string; alczfm?: string } = {}): string {
+  const isuf = opts.isuf !== undefined ? `<ISUFemit>${opts.isuf}</ISUFemit>` : "";
+  const alc = opts.alczfm ?? "";
+  return `<nfeProc><NFe><infNFe><ide><mod>55</mod></ide>` +
+    `<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT>${isuf}</emit>` +
+    `<det nItem="1"><prod><NCM>84713012</NCM><vProd>1000.00</vProd></prod>` +
+    `<imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib>${alc}</IBSCBS></imposto></det>` +
+    `</infNFe></NFe></nfeProc>`;
+}
+function sufFindings(xml: string, rule: string) {
+  return validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml }).findings.filter((f) => f.rule_id === rule);
+}
+
+test("#311 SUFRAMA_DV: DV válido (100123457) → sem finding", () => {
+  assert.equal(sufFindings(sufNfe({ isuf: "100123457" }), "SUFRAMA_DV").length, 0);
+});
+
+test("#311 SUFRAMA_DV: DV inválido → WARNING (C22-20)", () => {
+  const f = sufFindings(sufNfe({ isuf: "100123450" }), "SUFRAMA_DV");
+  assert.ok(f.some((x) => x.id === "F_SUFRAMA_DV" && x.severity === "WARNING"));
+});
+
+test("#311 SUFRAMA_DV: sem ISUFemit → sem finding", () => {
+  assert.equal(sufFindings(sufNfe(), "SUFRAMA_DV").length, 0);
+});
+
+test("#311 ALCZFM_NPROC: grupo com nProcSuframa → sem finding", () => {
+  const xml = sufNfe({ alczfm: "<gALCZFMCBS><nProcSuframa>1234567890</nProcSuframa></gALCZFMCBS>" });
+  assert.equal(sufFindings(xml, "ALCZFM_NPROC").length, 0);
+});
+
+test("#311 ALCZFM_NPROC: grupo sem nProcSuframa → WARNING (UB66c-10)", () => {
+  const f = sufFindings(sufNfe({ alczfm: "<gALCZFMCBS><vCBS>0.00</vCBS></gALCZFMCBS>" }), "ALCZFM_NPROC");
+  assert.ok(f.some((x) => x.id === "F_ALCZFM_NPROC" && x.severity === "WARNING"));
+});
+
+test("#311 ALCZFM_NPROC: sem grupo → sem finding", () => {
+  assert.equal(sufFindings(sufNfe(), "ALCZFM_NPROC").length, 0);
+});
