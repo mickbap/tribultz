@@ -3,8 +3,8 @@
     "source": "SVRS Conformidade Fácil — consulta pública classTrib (sem credencial)",
     "source_url": "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria",
     "extraction_method": "JSON embutido na página /CFF/ClassificacaoTributaria",
-    "date": "2026-06-24",
-    "total_codes": 156,
+    "date": "2026-06-26",
+    "total_codes": 164,
     "total_cst_groups": 18
   },
   "by_code": {
@@ -19,7 +19,6 @@
       "dfe_allowed": [
         "BPE",
         "BPETA",
-        "BPETM",
         "CTE",
         "CTEOS",
         "NF3E",
@@ -470,6 +469,7 @@
       "tipo_aliquota": 2,
       "permite_cred_pres": false,
       "dfe_allowed": [
+        "CTE",
         "NF3E",
         "NFCE",
         "NFE",
@@ -1033,6 +1033,48 @@
       ],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art484\r\n"
+    },
+    "221002": {
+      "cst": "221",
+      "cst_description": "Alíquota fixa proporcional",
+      "description": "Incorporação imobiliária submetida ao regime especial de tributação, observado o art. 485 da Lei Complementar nº 214, de 2025.",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": 1,
+      "permite_cred_pres": false,
+      "dfe_allowed": [
+        "NFABI"
+      ],
+      "vigencia_ini": "2026-01-01",
+      "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art485"
+    },
+    "221003": {
+      "cst": "221",
+      "cst_description": "Alíquota fixa proporcional",
+      "description": "Incorporação imobiliária submetida ao regime especial de tributação, observado o art. 485 da Lei Complementar nº 214, de 2025.",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": 1,
+      "permite_cred_pres": false,
+      "dfe_allowed": [
+        "NFABI"
+      ],
+      "vigencia_ini": "2026-01-01",
+      "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art485"
+    },
+    "221004": {
+      "cst": "221",
+      "cst_description": "Alíquota fixa proporcional",
+      "description": "Alienação de imóvel decorrente de parcelamento do solo, observado o art. 486 da Lei Complementar nº 214, de 2025.",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": 1,
+      "permite_cred_pres": false,
+      "dfe_allowed": [
+        "NFABI"
+      ],
+      "vigencia_ini": "2026-01-01",
+      "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art486"
     },
     "222001": {
       "cst": "222",
@@ -1636,7 +1678,7 @@
     "410035": {
       "cst": "410",
       "cst_description": "Imunidade e não incidência",
-      "description": "Fornecimento realizado por nanoempreendedor, observado o art. 226 da Lei Complementar nº 214, de 2025.",
+      "description": "Fornecimento realizado por nanoempreendedor, observado o art. 26 da Lei Complementar nº 214, de 2025.",
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
@@ -1650,6 +1692,35 @@
       ],
       "vigencia_ini": "2026-01-01",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art26"
+    },
+    "410036": {
+      "cst": "410",
+      "cst_description": "Imunidade e não incidência",
+      "description": "Descontos incondicionais, observado o art. 12 da Lei Complementar nº 214, de 2025.",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": 3,
+      "permite_cred_pres": false,
+      "dfe_allowed": [
+        "NF3E",
+        "NFAG",
+        "NFCOM",
+        "NFGAS"
+      ],
+      "vigencia_ini": "2026-01-01",
+      "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art12"
+    },
+    "410037": {
+      "cst": "410",
+      "cst_description": "Imunidade e não incidência",
+      "description": "Importação de bens materiais sem incidência de IBS e CBS, observado o art. 66 da Lei Complementar nº 214, de 2025.",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": 3,
+      "permite_cred_pres": false,
+      "dfe_allowed": [],
+      "vigencia_ini": "2026-01-01",
+      "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art66"
     },
     "410999": {
       "cst": "410",
@@ -2031,6 +2102,30 @@
       "vigencia_ini": "2026-01-01",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art172"
     },
+    "550024": {
+      "cst": "550",
+      "cst_description": "Suspensão",
+      "description": "Importações e nas aquisições no mercado interno de máquinas, equipamentos e veículos destinados a utilização nas atividades de que trata o inciso IIIdo art. 107 efetuadas para incorporação a seu ativo imobilizado, observado o art. 107 da Lei Complementar nº 214, de 2025.",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": 3,
+      "permite_cred_pres": false,
+      "dfe_allowed": [],
+      "vigencia_ini": "2026-01-01",
+      "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art107"
+    },
+    "550025": {
+      "cst": "550",
+      "cst_description": "Suspensão",
+      "description": "Importações e nas aquisições no mercado interno de matérias-primas, produtos intermediários, partes, peças e componentes para utilização na construção, conservação, modernização e reparo de embarcações pré-registradas ou registradas no REB, observado o art. 107 da Lei Complementar nº 214, de 2025.",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": 3,
+      "permite_cred_pres": false,
+      "dfe_allowed": [],
+      "vigencia_ini": "2026-01-01",
+      "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art107"
+    },
     "620001": {
       "cst": "620",
       "cst_description": "Tributação Monofásica",
@@ -2115,6 +2210,20 @@
       ],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art180"
+    },
+    "620007": {
+      "cst": "620",
+      "cst_description": "Tributação Monofásica",
+      "description": "Perecimento, deteriorização, roubo, furto ou extravio no regime monofásico sem estorno de crédito, observado o art. 47 da Lei Complementar nº 214, de 2025.",
+      "reduction_ibs_pct": 0.0,
+      "reduction_cbs_pct": 0.0,
+      "tipo_aliquota": 3,
+      "permite_cred_pres": false,
+      "dfe_allowed": [
+        "NFE"
+      ],
+      "vigencia_ini": "2026-01-01",
+      "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art47"
     },
     "800001": {
       "cst": "800",
@@ -2306,7 +2415,7 @@
     "820008": {
       "cst": "820",
       "cst_description": "Tributação em documento específico",
-      "description": "Documento com informações de fornecimento, mas com tributação realizada em fatura anterior, observado o art. 10 da Lei Complementar nº 214, de 2025.",
+      "description": "Documento com informações de fornecimento de serviço continuado, mas com tributação realizada em fatura anterior, observado o art. 10 da Lei Complementar nº 214, de 2025.",
       "reduction_ibs_pct": 0.0,
       "reduction_cbs_pct": 0.0,
       "tipo_aliquota": 3,
@@ -2436,7 +2545,10 @@
       "220003"
     ],
     "221": [
-      "221001"
+      "221001",
+      "221002",
+      "221003",
+      "221004"
     ],
     "222": [
       "222001"
@@ -2481,6 +2593,8 @@
       "410033",
       "410034",
       "410035",
+      "410036",
+      "410037",
       "410999"
     ],
     "510": [
@@ -2512,7 +2626,9 @@
       "550020",
       "550021",
       "550022",
-      "550023"
+      "550023",
+      "550024",
+      "550025"
     ],
     "620": [
       "620001",
@@ -2520,7 +2636,8 @@
       "620003",
       "620004",
       "620005",
-      "620006"
+      "620006",
+      "620007"
     ],
     "800": [
       "800001",
