@@ -6,7 +6,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 const SITE_URL = "https://tribultz.com.br";
 
 export const metadata: Metadata = {
-  title: "Blog | Tribultz — Reforma Tributária CBS/IBS",
+  title: "Blog — Reforma Tributária CBS/IBS",
   description:
     "Artigos técnicos sobre cClassTrib, NCM, Rejeição 1024 e compliance CBS/IBS para a Reforma Tributária de 2026.",
   alternates: { canonical: `${SITE_URL}/blog` },
