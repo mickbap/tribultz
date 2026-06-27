@@ -1,6 +1,6 @@
 ---
-title: "cClassTrib 2026: mapeamento NCM × cClassTrib e como evitar a Rejeição 1024"
-description: "Guia completo sobre o cClassTrib na Reforma Tributária de 2026. Entenda a estrutura do código, o mapeamento NCM × CST × cClassTrib e como evitar a Rejeição 1024 na NF-e antes da emissão."
+title: "cClassTrib 2026: mapeamento NCM e como evitar a Rejeição 1024"
+description: "Guia do cClassTrib na Reforma de 2026: estrutura do código, mapeamento NCM × CST × cClassTrib e como evitar a Rejeição 1024 na NF-e antes da emissão."
 slug: "classtrib-2026-ncm-mapeamento-completo"
 category: "Reforma Tributária"
 author:
@@ -44,7 +44,7 @@ legalRefs:
 
 A Reforma Tributária brasileira (LC 214/2025, regulamentada pela LC 227/2026) introduziu o **cClassTrib** como o novo código de classificação tributária obrigatório na NF-e e NFS-e a partir de 2026. Ele substitui parcialmente a função do CST isolado e passa a determinar o regime tributário aplicável ao item — indicando se o produto está sujeito ao **CBS** (Contribuição sobre Bens e Serviços, federal), ao **IBS** (Imposto sobre Bens e Serviços, estadual/municipal), à alíquota padrão, reduzida, à isenção ou ao regime monofásico.
 
-Se você emite NF-e e ainda não adaptou seu emissor ou ERP ao novo campo, este guia é leitura obrigatória. A SEFAZ já rejeita documentos fiscais com cClassTrib incompatível com o CST informado — erro conhecido como **Rejeição 1024** na NT 2025.002.
+Se você emite NF-e e ainda não adaptou seu emissor ou ERP ao novo campo, este guia é leitura obrigatória. A SEFAZ já rejeita documentos fiscais com cClassTrib incompatível com o CST informado — erro conhecido como [**Rejeição 1024**](https://tribultz.com.br/blog/rejeicao-1024-nfe-cbs-ibs-como-corrigir) na NT 2025.002.
 
 ---
 
@@ -141,8 +141,8 @@ A tabela a seguir resume os principais regimes tributários CBS/IBS e os prefixo
 
 Durante o **período educativo de 2026** (LC 227, art. 348, §§ 3º e 4º), as alíquotas CBS e IBS são reduzidas:
 
-- **CBS**: 0,90% (referência plena será ~8,8% após transição completa)
-- **IBS**: 0,10% (referência plena será ~9,2%)
+- **CBS**: 0,9% na fase de teste de 2026 (referência do regime pleno: ~8,8%)
+- **IBS**: 0,1% na fase de teste de 2026 (referência do regime pleno: ~17,7%, somando UF + Município)
 
 Isso significa que mesmo que o cClassTrib aponte para alíquota "padrão", os valores absolutos de CBS/IBS na NF-e serão muito menores que os definitivos. A mecânica de cálculo, no entanto, é idêntica: `vBC × pCBS = vCBS` e `vBC × pIBS = vIBS`.
 
