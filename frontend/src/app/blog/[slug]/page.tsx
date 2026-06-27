@@ -29,7 +29,7 @@ export async function generateMetadata({
   const post = getPostBySlug(slug);
   if (!post) return {};
   return {
-    title: `${post.title} | Tribultz`,
+    title: post.title,
     description: post.description,
     alternates: { canonical: `${SITE_URL}/blog/${post.slug}` },
     openGraph: {
