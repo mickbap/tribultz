@@ -3,6 +3,11 @@
 from celery import Celery
 from celery.schedules import crontab
 from app.config import settings
+from app.core.observability import init_sentry
+
+# Error tracking nos processos worker/beat (no-op sem SENTRY_DSN).
+# A API inicializa em app/main.py; aqui cobrimos as tasks de fundo.
+init_sentry()
 
 celery = Celery(
     "tribultz",
