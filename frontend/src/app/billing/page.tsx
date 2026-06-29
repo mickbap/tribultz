@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { apiFetch } from "@/lib/api";
+import { track } from "@/lib/analytics";
 import {
   getPlanSlug,
   setPlanSlug,
@@ -114,6 +115,7 @@ export default function BillingPage() {
         method: "POST",
         body: JSON.stringify({ plan_slug: targetSlug, billing_type: "PIX" }),
       });
+      track("begin_checkout", { plan: targetSlug, context: "upgrade" });
       setUpgradeResult(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao processar upgrade.");

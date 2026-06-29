@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
+import { WhatsAppLink } from "@/components/public/WhatsAppLink";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { NewsFeed } from "@/components/public/NewsFeed";
 import { RULES_COUNT, CLASSTRIB_COUNT } from "@/lib/validation/rulesMeta";
@@ -85,23 +86,22 @@ function WhatsAppIcon({ size = 18 }: { size?: number }) {
   );
 }
 
-function WhatsAppButton({ label = "Falar pelo WhatsApp", variant = "green" }: { label?: string; variant?: "green" | "outline-white" | "outline-dark" }) {
+function WhatsAppButton({ label = "Falar pelo WhatsApp", variant = "green", source = "cta" }: { label?: string; variant?: "green" | "outline-white" | "outline-dark"; source?: string }) {
   const styles: Record<string, React.CSSProperties> = {
     green: { background: "#25D366", color: "#fff", boxShadow: "0 8px 24px rgba(37,211,102,0.30)" },
     "outline-white": { background: "transparent", color: "#fff", border: "1.5px solid rgba(255,255,255,0.55)" },
     "outline-dark": { background: "transparent", color: "#25D366", border: "1.5px solid #25D366" },
   };
   return (
-    <a
+    <WhatsAppLink
       href={WA_URL}
-      target="_blank"
-      rel="noopener noreferrer"
+      source={source}
       className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold transition-all hover:brightness-95 hover:scale-[1.02]"
       style={styles[variant]}
     >
       <WhatsAppIcon />
       {label}
-    </a>
+    </WhatsAppLink>
   );
 }
 
@@ -221,7 +221,7 @@ export default function HomePage() {
                   >
                     Criar conta grátis →
                   </Link>
-                  <WhatsAppButton label="Falar com a gente" variant="outline-dark" />
+                  <WhatsAppButton label="Falar com a gente" variant="outline-dark" source="hero" />
                   <Link href="/diagnostico" className="text-sm font-semibold text-[#2956E3] underline-offset-4 hover:underline">
                     Ver como funciona
                   </Link>
@@ -299,7 +299,7 @@ export default function HomePage() {
               <p className="text-base font-bold text-[#24292E]">NF-e rejeitada? Penalidades CBS/IBS chegam em agosto/2026.</p>
               <p className="mt-1 text-sm text-[#334155]">Nosso time fiscal responde em minutos — sem enrolação. <span className="font-semibold">(51) 99188-1026</span>.</p>
             </div>
-            <WhatsAppButton label="Chamar agora" variant="green" />
+            <WhatsAppButton label="Chamar agora" variant="green" source="cta_meio" />
           </div>
         </section>
 
@@ -400,23 +400,21 @@ export default function HomePage() {
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-3">
-              <a
+              <WhatsAppLink
                 href={WA_REJEICAO}
-                target="_blank"
-                rel="noopener noreferrer"
+                source="rejeicao_1024"
                 className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700"
               >
                 <WhatsAppIcon size={16} />
                 Resolver a Rejeição 1024
-              </a>
-              <a
+              </WhatsAppLink>
+              <WhatsAppLink
                 href={WA_ERP}
-                target="_blank"
-                rel="noopener noreferrer"
+                source="integrar_erp"
                 className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-5 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50"
               >
                 Integrar ao ERP →
-              </a>
+              </WhatsAppLink>
             </div>
           </div>
         </section>
@@ -456,7 +454,7 @@ export default function HomePage() {
                   >
                     Criar conta grátis
                   </Link>
-                  <WhatsAppButton label="Falar com um especialista" variant="outline-white" />
+                  <WhatsAppButton label="Falar com um especialista" variant="outline-white" source="cta_final" />
                   <Link href="/pricing" className="text-sm font-semibold text-white underline underline-offset-4 opacity-80 hover:opacity-100">
                     Ver todos os planos
                   </Link>
