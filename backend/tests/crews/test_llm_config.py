@@ -11,6 +11,7 @@ from app.crews.llm_config import (
     TIER_NEMOTRON_SUPER,
     TIER_GEMMA4_31B,
     TIER_LLAMA33_70B,
+    TIER_FREE_ROUTER,
     LLMUnavailableError,
     ModelTier,
     _is_overloaded_or_rate_limited,
@@ -37,8 +38,8 @@ class TestModelTiers:
         assert FREE_FALLBACK.is_free is True
         assert "free" in FREE_FALLBACK.model_id
 
-    def test_default_chain_has_six_tiers(self):
-        assert len(DEFAULT_FALLBACK_CHAIN) == 6
+    def test_default_chain_has_seven_tiers(self):
+        assert len(DEFAULT_FALLBACK_CHAIN) == 7
 
     def test_default_chain_order(self):
         assert DEFAULT_FALLBACK_CHAIN == [
@@ -48,7 +49,14 @@ class TestModelTiers:
             TIER_NEMOTRON_SUPER,
             TIER_GEMMA4_31B,
             TIER_LLAMA33_70B,
+            TIER_FREE_ROUTER,
         ]
+
+    def test_free_router_is_last_resort(self):
+        """O router free é a rede de segurança — sempre o último tier."""
+        assert DEFAULT_FALLBACK_CHAIN[-1] == TIER_FREE_ROUTER
+        assert TIER_FREE_ROUTER.is_free is True
+        assert TIER_FREE_ROUTER.model_id == "openrouter/openrouter/free"
 
     def test_all_tiers_are_free(self):
         """Benchmark 08/04/2026: 100% free tier, zero paid models."""
@@ -56,9 +64,12 @@ class TestModelTiers:
             assert tier.is_free is True, f"Tier {tier.name} must be free"
 
     def test_all_tiers_have_tool_calling_models(self):
-        """All models in the chain must be tool-calling capable (benchmark verified)."""
+        """All models são free + tool-calling (modelos :free do benchmark + router free)."""
         for tier in DEFAULT_FALLBACK_CHAIN:
-            assert ":free" in tier.model_id, f"Tier {tier.name} must use a :free model"
+            assert tier.is_free is True, f"Tier {tier.name} must be free"
+            assert ":free" in tier.model_id or tier.model_id.endswith("/free"), (
+                f"Tier {tier.name} must use a :free model or the openrouter/free router"
+            )
 
     def test_primary_is_fastest_model(self):
         """gpt-oss-20b was fastest in benchmark (3.4s) — should be first."""
