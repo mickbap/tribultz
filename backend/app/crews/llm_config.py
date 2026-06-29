@@ -4,15 +4,18 @@ LLM configuration with tiered fallback for CrewAI agents.
 Benchmark realizado em 08/04/2026 contra OpenRouter free tier.
 Todos os modelos abaixo suportam tool calling e são 100% free.
 
-Cadeia de fallback (6 tiers, diversificação de providers):
+Cadeia de fallback (7 tiers, diversificação de providers):
   T1  openai/gpt-oss-20b:free          3.4s  131K ctx  OpenAI  (US)     — mais rápido
   T2  arcee-ai/trinity-large:free      8.3s  131K ctx  Arcee   (US)
   T3  openai/gpt-oss-120b:free         9.6s  131K ctx  OpenAI  (US)     — maior
   T4  nvidia/nemotron-3-super:free     11.6s 262K ctx  NVIDIA  (US)     — maior ctx
   T5  google/gemma-4-31b:free          ~429  262K ctx  Google  (US/EU)  — qualidade
   T6  meta-llama/llama-3.3-70b:free   ~429   65K ctx  Meta    (US)     — último recurso
+  T7  openrouter/free (router)          dyn   dyn      OpenRouter        — rede de segurança
 
 T5 e T6 ficam em 429 sob alta carga mas recuperam após backoff.
+T7 é o router free do OpenRouter: auto-seleciona um modelo free disponível
+filtrando por tool calling — resiliente à volatilidade do free tier.
 Nenhum modelo pago na cadeia — 100% free tier.
 """
 
@@ -105,6 +108,18 @@ TIER_LLAMA33_70B = ModelTier(
     backoff_base=2.0,
 )
 
+# Rede de segurança: router free do OpenRouter. Auto-seleciona um modelo free
+# disponível filtrando por tool calling. Resiliente à volatilidade do free tier
+# (modelos saem da lista sem aviso). Só é acionado se TODOS os tiers acima
+# falharem — garante que a cadeia nunca "morre" e o custo continua R$ 0.
+TIER_FREE_ROUTER = ModelTier(
+    name="openrouter-free-router",
+    model_id="openrouter/openrouter/free",
+    is_free=True,
+    max_retries=3,
+    backoff_base=2.0,
+)
+
 # Cadeia padrão — ordem por confiabilidade observada no benchmark
 DEFAULT_FALLBACK_CHAIN: list[ModelTier] = [
     TIER_GPT_OSS_20B,      # primário: mais rápido (3.4s), confiável
@@ -113,6 +128,7 @@ DEFAULT_FALLBACK_CHAIN: list[ModelTier] = [
     TIER_NEMOTRON_SUPER,   # 4º: 11.6s, 262K ctx, NVIDIA
     TIER_GEMMA4_31B,       # 5º: alta qualidade, pode 429
     TIER_LLAMA33_70B,      # 6º: último recurso, provado em PT-BR
+    TIER_FREE_ROUTER,      # 7º: rede de segurança — router free auto-seleciona
 ]
 
 # Aliases para compatibilidade retroativa
