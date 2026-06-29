@@ -186,7 +186,7 @@ async def asaas_webhook(
                 ga4_purchase.delay(
                     user_id=str(sub.user_id),
                     transaction_id=str(asaas_payment_id),
-                    value=round(int(confirmed_plan.price_cents) / 100, 2),
+                    value=round(int(confirmed_plan.price_cents) / 100, 2),  # type: ignore[arg-type]
                     plan=str(confirmed_plan.name),
                 )
 
