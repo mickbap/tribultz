@@ -5,6 +5,7 @@ import { FormEvent, useRef, useState } from "react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Toast } from "@/components/common/Toast";
 import { registerWithApi } from "@/lib/api";
+import { track } from "@/lib/analytics";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -146,7 +147,10 @@ export default function RegisterPage() {
         captcha_token: captchaToken,
       });
 
+      track("sign_up", { method: accountType, plan: planSlug });
+
       if (isPaidPlan && (result.checkout_url || result.pix_qr_code)) {
+        track("begin_checkout", { plan: planSlug, payment: billingType });
         setPaymentData({
           checkout_url: result.checkout_url,
           pix_qr_code: result.pix_qr_code,
