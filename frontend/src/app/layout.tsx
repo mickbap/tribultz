@@ -2,6 +2,8 @@
 import { Montserrat, Source_Sans_3, Roboto_Mono } from "next/font/google";
 import Script from "next/script";
 import { AppShell } from "@/components/layout/AppShell";
+import CookieConsent from "@/components/common/CookieConsent";
+import { CONSENT_STORAGE_KEY } from "@/lib/consent";
 import { RULES_COUNT } from "@/lib/validation/rulesMeta";
 import "./globals.css";
 
@@ -25,6 +27,7 @@ const robotoMono = Roboto_Mono({
 
 const SITE_URL = "https://tribultz.com.br";
 const SITE_NAME = "Tribultz";
+const GA_MEASUREMENT_ID = "G-KJ986WZ5ZJ";
 const DEFAULT_DESCRIPTION =
   `Evite a Rejeição 1024 e penalidades CBS/IBS: valide CST × cClassTrib e ${RULES_COUNT} regras LC 214, calcule CBS/IBS e exporte para TOTVS, SAP, Omie e Linx. Compliance auditável para a Reforma Tributária.`;
 
@@ -79,6 +82,44 @@ export default function RootLayout({
           src="//js.hs-scripts.com/49735644.js"
           strategy="afterInteractive"
         />
+        {/* Google Consent Mode v2 — analytics negado por padrão (LGPD).
+            Roda antes do gtag.js e respeita a escolha salva pelo usuário. */}
+        <Script id="ga-consent-default" strategy="beforeInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            window.gtag = gtag;
+            gtag('consent', 'default', {
+              ad_storage: 'denied',
+              ad_user_data: 'denied',
+              ad_personalization: 'denied',
+              analytics_storage: 'denied',
+            });
+            try {
+              if (localStorage.getItem('${CONSENT_STORAGE_KEY}') === 'granted') {
+                gtag('consent', 'update', {
+                  ad_storage: 'granted',
+                  ad_user_data: 'granted',
+                  ad_personalization: 'granted',
+                  analytics_storage: 'granted',
+                });
+              }
+            } catch (e) {}
+          `}
+        </Script>
+        {/* Google tag (gtag.js) */}
+        <Script
+          id="ga-loader"
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga-init" strategy="afterInteractive">
+          {`
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
+        <CookieConsent />
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { TribultzLogo } from "./PublicNavbar";
+import { CookiePreferencesLink } from "@/components/common/CookiePreferencesLink";
 import { LEGAL_LINKS } from "@/lib/legal";
 
 export function PublicFooter() {
@@ -69,6 +70,9 @@ export function PublicFooter() {
                 <Link href="/support" className="transition-colors hover:text-white">
                   Suporte
                 </Link>
+              </li>
+              <li>
+                <CookiePreferencesLink className="transition-colors hover:text-white" />
               </li>
             </ul>
           </div>
