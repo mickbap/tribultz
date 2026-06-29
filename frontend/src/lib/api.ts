@@ -319,6 +319,51 @@ export async function exportJobEvidenceZip(jobId: string): Promise<JobEvidenceZi
   return { filename, bytes };
 }
 
+/** Sinaliza que o recurso exige plano pago (HTTP 403 do gate server-side). */
+export class PlanRequiredError extends Error {
+  constructor(message = "Recurso disponível em planos pagos.") {
+    super(message);
+    this.name = "PlanRequiredError";
+  }
+}
+
+/**
+ * Baixa o relatório PDF auditável do job via endpoint server-side **gated**
+ * (`GET /jobs/{id}/report.pdf`, exige Profissional/Contador). O artefato é
+ * gerado e autorizado no servidor — o gate não é burlável no cliente.
+ * Lança PlanRequiredError em 403.
+ */
+export async function downloadJobReportPdf(jobId: string): Promise<void> {
+  if (!jobId) throw new Error("jobId obrigatório para exportar o relatório.");
+
+  const res = await fetch(`${API_BASE}/api/v1/jobs/${encodeURIComponent(jobId)}/report.pdf`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+      "X-Tenant-Id": getTenantId(),
+      Accept: "application/pdf",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    if (res.status === 403) throw new PlanRequiredError();
+    const detail = await res.text().catch(() => "Erro de API");
+    throw new Error(`API ${res.status}: ${detail}`);
+  }
+
+  const blob = await res.blob();
+  const filename = contentDispositionFilename(res.headers.get("content-disposition")) ?? `relatorio_${jobId}.pdf`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function openExceptionRequest(payload: {
   job_id: string;
   finding_id: string;

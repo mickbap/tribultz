@@ -4,8 +4,8 @@ import Link from "next/link";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
 import { Toast } from "@/components/common/Toast";
-import { generateCorrectedXml, getJob, openExceptionRequest, validateXml } from "@/lib/api";
-import { buildAuditableReportCsv, buildAuditableReportHtml, downloadCsv, downloadPdf } from "@/lib/export/auditableReport";
+import { downloadJobReportPdf, generateCorrectedXml, getJob, openExceptionRequest, PlanRequiredError, validateXml } from "@/lib/api";
+import { canAccess } from "@/lib/plan";
 import { Finding, Job, ValidateXmlRequest, ValidationEvidence, ValidationResultV11, XmlDocumentType } from "@/lib/types";
 import { CST_TABLE, detectDocumentType } from "@/lib/validation/xmlRules";
 
@@ -49,6 +49,8 @@ export default function ValidateXmlPage() {
   const [correcting, setCorrecting] = useState(false);
   const [correctionDownloadUrl, setCorrectionDownloadUrl] = useState<string | null>(null);
   const [awaitingCorrectionConfirm, setAwaitingCorrectionConfirm] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const canExport = canAccess("hasPdfReports");
 
   const evidenceMap = useMemo(() => {
     const map = new Map<string, ValidationEvidence>();
@@ -120,6 +122,23 @@ export default function ValidateXmlPage() {
       setError(err instanceof Error ? err.message : "Falha ao validar XML.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function onExportPdf(): Promise<void> {
+    if (!result) return;
+    setToast(null);
+    setExportingPdf(true);
+    try {
+      await downloadJobReportPdf(result.job.id);
+    } catch (err) {
+      if (err instanceof PlanRequiredError) {
+        setToast({ tone: "info", msg: "Relatório PDF auditável disponível nos planos Profissional e Contador." });
+      } else {
+        setToast({ tone: "error", msg: err instanceof Error ? err.message : "Falha ao gerar o relatório PDF." });
+      }
+    } finally {
+      setExportingPdf(false);
     }
   }
 
@@ -262,20 +281,24 @@ export default function ValidateXmlPage() {
               >
                 Abrir Audit
               </Link>
-              <button
-                type="button"
-                onClick={() => downloadCsv(buildAuditableReportCsv(result, documentType), result.job.id)}
-                className="rounded border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-              >
-                CSV
-              </button>
-              <button
-                type="button"
-                onClick={() => downloadPdf(buildAuditableReportHtml(result, documentType), result.job.id)}
-                className="rounded border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-              >
-                PDF
-              </button>
+              {canExport ? (
+                <button
+                  type="button"
+                  onClick={onExportPdf}
+                  disabled={exportingPdf}
+                  className="rounded border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-70"
+                >
+                  {exportingPdf ? "Gerando..." : "Baixar PDF auditável"}
+                </button>
+              ) : (
+                <Link
+                  href="/billing"
+                  className="rounded border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                  title="Exportação do relatório auditável (PDF) disponível nos planos Profissional e Contador"
+                >
+                  📄 Exportar PDF auditável — Profissional
+                </Link>
+              )}
               {awaitingCorrectionConfirm ? (
                 <span className="inline-flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
                   <span>⚠️ Isso consumirá <strong>1 validação</strong> do seu plano.</span>
