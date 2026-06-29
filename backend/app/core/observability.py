@@ -25,6 +25,7 @@ def init_sentry() -> bool:
 
     try:
         import sentry_sdk
+        from sentry_sdk.integrations.celery import CeleryIntegration
         from sentry_sdk.integrations.fastapi import FastApiIntegration
         from sentry_sdk.integrations.starlette import StarletteIntegration
 
@@ -35,7 +36,8 @@ def init_sentry() -> bool:
             traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
             # Não enviar PII (cabeçalhos/corpo) — dados fiscais são sensíveis (LGPD).
             send_default_pii=False,
-            integrations=[StarletteIntegration(), FastApiIntegration()],
+            # FastAPI/Starlette cobrem a API; Celery cobre worker e beat (tasks de fundo).
+            integrations=[StarletteIntegration(), FastApiIntegration(), CeleryIntegration()],
         )
         logger.info("Sentry inicializado (environment=%s)", settings.ENVIRONMENT)
         return True
