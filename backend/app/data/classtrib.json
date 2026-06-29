@@ -3,7 +3,7 @@
     "source": "SVRS Conformidade Fácil — consulta pública classTrib (sem credencial)",
     "source_url": "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria",
     "extraction_method": "JSON embutido na página /CFF/ClassificacaoTributaria",
-    "date": "2026-06-26",
+    "date": "2026-06-27",
     "total_codes": 164,
     "total_cst_groups": 18
   },
