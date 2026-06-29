@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     SENTRY_TRACES_SAMPLE_RATE: float = 0.0
     SENTRY_RELEASE: str = ""
 
+    # ── GA4 Measurement Protocol (eventos server-side, ex.: purchase) ───────
+    # Sem API secret → envio é no-op. O api_secret é criado em:
+    # GA4 → Admin → Fluxos de dados → (stream) → Measurement Protocol API secrets.
+    GA4_MEASUREMENT_ID: str = "G-KJ986WZ5ZJ"
+    GA4_MP_API_SECRET: str = ""
+
     # ── Turnstile (CAPTCHA) ─────────────────────────────────
     TURNSTILE_SECRET_KEY: str = ""
     CAPTCHA_ENABLED: bool = False

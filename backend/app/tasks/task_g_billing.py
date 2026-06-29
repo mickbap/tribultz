@@ -172,3 +172,23 @@ def reset_monthly_usage():
         raise
     finally:
         db.close()
+
+
+@celery.task(name="billing.ga4_purchase")
+def ga4_purchase(user_id: str, transaction_id: str, value: float, plan: str) -> dict:
+    """Envia o evento `purchase` ao GA4 (Measurement Protocol) após pagamento confirmado.
+
+    Roda fora do request do webhook (não bloqueia a resposta ao ASAAS).
+    No-op se GA4_MP_API_SECRET não estiver configurado.
+    """
+    from app.services.ga4_mp import send_purchase
+
+    sent = send_purchase(
+        client_id=user_id,
+        transaction_id=transaction_id,
+        value=value,
+        plan=plan,
+        user_id=user_id,
+    )
+    logger.info("ga4_purchase tx=%s value=%s sent=%s", transaction_id, value, sent)
+    return {"sent": sent, "transaction_id": transaction_id}
