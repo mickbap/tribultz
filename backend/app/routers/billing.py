@@ -180,6 +180,16 @@ async def asaas_webhook(
             from app.tasks.task_crm import crm_sync
             crm_sync.delay(user_id=str(sub.user_id), event_type="payment_confirmed")
 
+            # GA4 purchase (server-side): receita por usuário/canal. No-op sem secret.
+            if confirmed_plan:
+                from app.tasks.task_g_billing import ga4_purchase
+                ga4_purchase.delay(
+                    user_id=str(sub.user_id),
+                    transaction_id=str(asaas_payment_id),
+                    value=round(int(confirmed_plan.price_cents) / 100, 2),  # type: ignore[arg-type]
+                    plan=str(confirmed_plan.name),
+                )
+
         return {"status": "ok", "action": "payment_confirmed"}
 
     # ── PAYMENT_OVERDUE ──
