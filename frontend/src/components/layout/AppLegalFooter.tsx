@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookiePreferencesLink } from "@/components/common/CookiePreferencesLink";
 import { LEGAL_LINKS } from "@/lib/legal";
 
 export function AppLegalFooter() {
@@ -19,6 +20,7 @@ export function AppLegalFooter() {
               {link.label}
             </Link>
           ))}
+          <CookiePreferencesLink className="font-medium text-slate-600 hover:text-tribultz-700" />
         </nav>
       </div>
     </footer>
