@@ -15,7 +15,7 @@ export const CONSENT_OPEN_EVENT = "tribultz:cookie-preferences";
  * Para onde o usuário é enviado ao recusar os cookies (sai do site).
  * Altere esta URL caso queira outro destino.
  */
-export const REFUSE_REDIRECT_URL = "https://www.google.com";
+export const REFUSE_REDIRECT_URL = "https://6tech.net.br";
 
 export type ConsentChoice = "granted" | "denied";
 
