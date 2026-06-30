@@ -1,8 +1,8 @@
-"""Testes de regressão para cClassTrib — migration 0018 + endpoint + sync task.
+"""Testes de regressão para cClassTrib — endpoint (fonte: classtrib.json, #365) + sync task.
 
 Verifica que:
-- Os códigos essenciais (cesta básica, padrão, serviços) estão presentes na DB
-- As alíquotas estão corretas por regime
+- Os códigos essenciais (cesta básica, padrão, serviços) estão presentes no classtrib.json
+- As alíquotas estão corretas por regime (plena + fase de teste 2026)
 - O endpoint /public/classtrib/{codigo} retorna last_synced_at
 - O endpoint /public/classtrib/search retorna resultados relevantes
 - O endpoint /classtrib/validate detecta divergência de NCM × cClassTrib
@@ -54,10 +54,10 @@ def auth_client():
     app.dependency_overrides.pop(get_current_user, None)
 
 
-# ── Testes de dados — via API (migration 0020: 156 cClassTrib de 6 dígitos) ───
+# ── Testes de dados — via API (fonte: classtrib.json, #365) ───────────────────
 
 class TestClassTribData:
-    """A migration 0020 re-seedou os 156 cClassTrib de 6 dígitos (fonte pública SVRS)."""
+    """A API lê os cClassTrib de 6 dígitos do classtrib.json (fonte única SVRS, #365)."""
 
     @pytest.mark.parametrize("codigo,regime,zero", [
         ("000001", "padrao", False),
@@ -77,10 +77,16 @@ class TestClassTribData:
             assert float(data["p_cbs"]) > 0.0
 
     def test_padrao_usa_aliquota_de_referencia_plena(self):
-        """000001 (padrão) → alíquota de REFERÊNCIA PLENA (8,8 / 17,7), não a de teste 2026."""
+        """000001 (padrão) → p_cbs/p_ibs = REFERÊNCIA PLENA (8,8 / 17,7)."""
         data = client.get("/api/v1/public/classtrib/000001").json()
         assert float(data["p_cbs"]) == 8.8
         assert float(data["p_ibs"]) == 17.7
+
+    def test_expoe_aliquota_da_fase_de_teste_2026(self):
+        """#365: a API também expõe a alíquota da fase de teste 2026 (0,9 / 0,1)."""
+        data = client.get("/api/v1/public/classtrib/000001").json()
+        assert float(data["p_cbs_2026"]) == 0.9
+        assert float(data["p_ibs_2026"]) == 0.1
 
     def test_search_por_termo_da_descricao(self):
         resp = client.get("/api/v1/public/classtrib/search?q=serviços")
