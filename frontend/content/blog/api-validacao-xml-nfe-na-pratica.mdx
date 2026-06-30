@@ -8,9 +8,24 @@ author:
   jobTitle: "Conteúdo Fiscal"
   url: "https://tribultz.com.br/sobre"
 publishedAt: "2026-06-30T01:39:44.000Z"
-tags: []
+tags:
+  - "API"
+  - "validação XML"
+  - NF-e
+  - CST
+  - cClassTrib
+  - "integração ERP"
+  - "Reforma Tributária"
 coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/76fc4d86-d528-4294-a3c6-020f77cb3995/56b66e58-90c4-4774-8703-bdff208c3c64.webp"
-legalRefs: []
+legalRefs:
+  - instrumento: "NT 2025.002-RTC v1.40"
+    descricao: "Regras de validação da NF-e/NFC-e para IBS/CBS — campos obrigatórios, coerência CST × cClassTrib e códigos de rejeição na emissão."
+  - instrumento: "LC 214/2025"
+    descricao: "Institui CBS, IBS e o Imposto Seletivo; base da obrigatoriedade do grupo gIBSCBS e do campo cClassTrib na NF-e."
+    link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
+  - instrumento: "Tabela cClassTrib SVRS"
+    descricao: "Tabela oficial de classificação tributária (NCM × CST × cClassTrib) usada na validação dos documentos fiscais."
+    link: "https://dfe-portal.svrs.rs.gov.br/Cff/ClassificacaoTributaria"
 soroGuid: "56b66e58-90c4-4774-8703-bdff208c3c64"
 ---
 
@@ -20,7 +35,7 @@ soroGuid: "56b66e58-90c4-4774-8703-bdff208c3c64"
 <p>Na prática, validar XML não é apenas checar se a estrutura do arquivo “abre” ou se o schema foi respeitado. Isso resolve uma parte pequena do risco. O que pesa mesmo, especialmente com a transição das novas regras tributárias, é validar coerência fiscal entre CST, classificação tributária, cadastros de produto e regras vigentes de preenchimento conforme a NT e a legislação aplicável. É aqui que muitas rotinas de ERP ainda deixam brechas.</p>
 <h2>O que uma API de validação XML NF-e precisa verificar de verdade</h2>
 <p>Se a sua operação emite volume, a pergunta correta não é “tem validação?”. A pergunta correta é “qual validação, em que momento e com qual evidência?”. Existe uma diferença grande entre um validador superficial e uma camada de compliance fiscal conectada ao fluxo de emissão.</p>
-<p>Uma API útil para NF-e precisa olhar o XML como documento fiscal e não só como arquivo. Isso inclui consistência de tags, presença de campos obrigatórios, relacionamento entre natureza da operação, tributação, NCM, CST e, quando aplicável, enquadramentos que passaram a exigir atenção adicional com a Reforma Tributária. Em regra, o problema mais caro não é o erro óbvio. É o erro plausível, aquele que passa na operação e só explode na rejeição, na apuração ou em uma auditoria.</p>
+<p>Uma API útil para NF-e precisa olhar o XML como documento fiscal e não só como arquivo. Isso inclui consistência de tags, presença de campos obrigatórios, relacionamento entre natureza da operação, tributação, NCM, CST e, quando aplicável, enquadramentos que passaram a exigir atenção adicional com a <a href="https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/reforma-tributaria">Reforma Tributária</a>. Em regra, o problema mais caro não é o erro óbvio. É o erro plausível, aquele que passa na operação e só explode na rejeição, na apuração ou em uma auditoria.</p>
 <p>Outro ponto pouco discutido é a rastreabilidade. Quando o time fiscal contesta um bloqueio ou quando o time de TI precisa justificar por que uma nota foi barrada antes da emissão, não basta retornar “inválido”. A API precisa devolver motivo, regra aplicada, contexto do campo e evidência utilizável em governança. Sem isso, a automação vira caixa-preta - e caixa-preta em fiscal costuma gerar retrabalho.</p>
 <h2>Por que a validação antes da emissão virou prioridade</h2>
 <p>Historicamente, muita empresa aceitava corrigir a nota depois da rejeição. Era ruim, mas administrável em alguns cenários. Esse raciocínio perde força quando o volume cresce, quando há múltiplos ERPs na operação ou quando o catálogo de produtos depende de classificação tributária mais sensível.</p>
