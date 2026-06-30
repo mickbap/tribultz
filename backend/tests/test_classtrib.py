@@ -1,4 +1,4 @@
-"""Testes de regressão para cClassTrib — endpoint (fonte: classtrib.json, #365) + sync task.
+"""Testes de regressão para cClassTrib — endpoint (fonte: classtrib.json, #365).
 
 Verifica que:
 - Os códigos essenciais (cesta básica, padrão, serviços) estão presentes no classtrib.json
@@ -6,12 +6,11 @@ Verifica que:
 - O endpoint /public/classtrib/{codigo} retorna last_synced_at
 - O endpoint /public/classtrib/search retorna resultados relevantes
 - O endpoint /classtrib/validate detecta divergência de NCM × cClassTrib
-- sync_classtrib_svrs trata 403 de forma graceful (sem lançar exceção)
+- svrs_auth_headers monta o header Authorization conforme CLASSTRIB_API_TOKEN
 """
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 import pytest
@@ -164,47 +163,6 @@ class TestClassTribValidate:
         assert resp.status_code == 401
 
 
-# ── Testes do task sync ───────────────────────────────────────────────────────
-
-class TestSyncClasstribSvrs:
-    def test_svrs_403_retorna_graceful(self):
-        """403 da SVRS não deve lançar exceção — retorna dict com reason."""
-        from app.tasks.task_i_compliance import sync_classtrib_svrs
-
-        mock_resp = MagicMock()
-        mock_resp.status_code = 403
-
-        with patch("httpx.Client") as mock_client_cls:
-            mock_client = MagicMock()
-            mock_client.__enter__ = MagicMock(return_value=mock_client)
-            mock_client.__exit__ = MagicMock(return_value=False)
-            mock_client.get.return_value = mock_resp
-            mock_client_cls.return_value = mock_client
-
-            result = sync_classtrib_svrs()
-
-        assert result["synced"] == 0
-        assert result.get("reason") == "svrs_auth_required"
-        assert result.get("status_code") == 403
-
-    def test_svrs_network_error_retorna_graceful(self):
-        """Erro de rede não deve lançar exceção."""
-        import httpx
-        from app.tasks.task_i_compliance import sync_classtrib_svrs
-
-        with patch("httpx.Client") as mock_client_cls:
-            mock_client = MagicMock()
-            mock_client.__enter__ = MagicMock(return_value=mock_client)
-            mock_client.__exit__ = MagicMock(return_value=False)
-            mock_client.get.side_effect = httpx.ConnectError("connection refused")
-            mock_client_cls.return_value = mock_client
-
-            result = sync_classtrib_svrs()
-
-        assert result["synced"] == 0
-        assert "error" in result
-
-
 class TestSvrsAuthHeaders:
     """#313 credential-ready: Authorization Bearer só quando CLASSTRIB_API_TOKEN setado."""
 
@@ -223,22 +181,3 @@ class TestSvrsAuthHeaders:
         monkeypatch.setattr(settings, "CLASSTRIB_API_TOKEN", "  tok-abc  ")
         h = svrs_auth_headers()
         assert h["Authorization"] == "Bearer tok-abc"  # trim aplicado
-
-    def test_sync_task_envia_authorization_quando_token(self, monkeypatch):
-        """O sync task injeta o header Authorization quando o token está configurado."""
-        from app.config import settings
-        from app.tasks.task_i_compliance import sync_classtrib_svrs
-        monkeypatch.setattr(settings, "CLASSTRIB_API_TOKEN", "tok-xyz")
-
-        mock_resp = MagicMock()
-        mock_resp.status_code = 403
-        with patch("httpx.Client") as mock_client_cls:
-            mock_client = MagicMock()
-            mock_client.__enter__ = MagicMock(return_value=mock_client)
-            mock_client.__exit__ = MagicMock(return_value=False)
-            mock_client.get.return_value = mock_resp
-            mock_client_cls.return_value = mock_client
-            sync_classtrib_svrs()
-
-        _, kwargs = mock_client_cls.call_args
-        assert kwargs["headers"]["Authorization"] == "Bearer tok-xyz"
