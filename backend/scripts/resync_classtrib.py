@@ -24,8 +24,10 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import sys
+import time
 from pathlib import Path
 
 SOURCE_URL = "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
@@ -40,7 +42,14 @@ _DFE_INDICATORS = {
 }
 
 
-def fetch_html() -> str:
+def fetch_html(attempts: int = 4) -> str:
+    """Baixa a página pública do SVRS com retry/backoff.
+
+    O portal SVRS é um serviço público de governo que falha de forma intermitente
+    (ConnectTimeout/ReadTimeout em ~30% das execuções diárias). Sem retry, o sync
+    falha no dia e o motor não é atualizado. Tenta `attempts` vezes com backoff
+    exponencial (2s, 4s, 8s) antes de desistir.
+    """
     import httpx
 
     headers = {
@@ -48,10 +57,24 @@ def fetch_html() -> str:
                       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36",
         "Accept": "text/html,application/json,*/*",
     }
-    with httpx.Client(timeout=60, headers=headers, follow_redirects=True) as client:
-        resp = client.get(SOURCE_URL)
-        resp.raise_for_status()
-        return resp.text
+    last_exc: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            with httpx.Client(timeout=60, headers=headers, follow_redirects=True) as client:
+                resp = client.get(SOURCE_URL)
+                resp.raise_for_status()
+                return resp.text
+        except httpx.HTTPError as exc:
+            last_exc = exc
+            if attempt < attempts:
+                wait = 2 ** attempt  # 2s, 4s, 8s
+                print(
+                    f"  ⚠️  tentativa {attempt}/{attempts} falhou "
+                    f"({type(exc).__name__}); novo retry em {wait}s…",
+                    file=sys.stderr,
+                )
+                time.sleep(wait)
+    raise SystemExit(f"ERRO: SVRS inacessível após {attempts} tentativas: {last_exc!r}")
 
 
 def extract_groups(html: str) -> list[dict]:
@@ -181,6 +204,20 @@ def print_diff(old: dict, new: dict) -> None:
         print(f"  ⚠️  códigos fora do formato 6 dígitos: {bad[:10]}")
 
 
+# Chaves de DADOS comparadas para detectar mudança real (o bloco `meta` — que carrega
+# `date` e contagens — é deliberadamente ignorado, senão todo dia haveria "mudança").
+_CODE_KEYS = ("by_code", "by_cst", "cst_descriptions")
+_NCM_KEYS = ("by_ncm",)
+
+
+def _data_signature(d: dict, keys: tuple[str, ...]) -> str:
+    """Hash estável do conteúdo de dados (ignorando `meta`), p/ detectar no-op."""
+    payload = {k: d.get(k) for k in keys}
+    return hashlib.md5(
+        json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()
+    ).hexdigest()
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--html", help="arquivo HTML local (em vez de baixar)")
@@ -191,26 +228,36 @@ def main() -> int:
     html = Path(args.html).read_text(encoding="utf-8", errors="replace") if args.html else fetch_html()
     groups = extract_groups(html)
     new = normalize(groups)
+    ncm_map = normalize_ncm_mapping(groups)
 
+    # Guards de sanidade: aborta se a extração degradou (não sobrescreve dados bons).
     if len(new["by_code"]) < 74:
         raise SystemExit(f"ERRO: só {len(new['by_code'])} códigos extraídos (< 74) — abortando p/ não degradar dados.")
+    if ncm_map["meta"]["total_ncm"] < 500:
+        raise SystemExit(f"ERRO: só {ncm_map['meta']['total_ncm']} NCMs mapeadas (< 500) — abortando.")
 
     out_path = Path(args.out)
+    ncm_path = out_path.parent / "ncm_cclasstrib.json"
     old = json.loads(out_path.read_text(encoding="utf-8")) if out_path.exists() else {}
+    old_ncm = json.loads(ncm_path.read_text(encoding="utf-8")) if ncm_path.exists() else {}
     print_diff(old, new)
 
+    # Guard no-op: se os DADOS não mudaram (só mudaria o timestamp), não regrava —
+    # assim o workflow não abre PR no-op diário nem dispara deploy-prod à toa.
+    code_unchanged = _data_signature(old, _CODE_KEYS) == _data_signature(new, _CODE_KEYS)
+    ncm_unchanged = _data_signature(old_ncm, _NCM_KEYS) == _data_signature(ncm_map, _NCM_KEYS)
+    if code_unchanged and ncm_unchanged:
+        print("\n✓ sem mudança de dados (apenas timestamp) — nada gravado, sem PR.")
+        return 0
+
     if args.dry_run:
-        print("\n[dry-run] nada gravado.")
+        print("\n[dry-run] mudança detectada, mas nada gravado.")
         return 0
 
     out_path.write_text(json.dumps(new, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"\n✓ gravado {out_path} ({len(new['by_code'])} códigos)")
 
     # Mapeamento NCM→cClassTrib (anexos) — candidatos do ncm/suggest e /classify (RF-A2, Order A).
-    ncm_map = normalize_ncm_mapping(groups)
-    if ncm_map["meta"]["total_ncm"] < 500:
-        raise SystemExit(f"ERRO: só {ncm_map['meta']['total_ncm']} NCMs mapeadas (< 500) — abortando.")
-    ncm_path = out_path.parent / "ncm_cclasstrib.json"
     ncm_path.write_text(json.dumps(ncm_map, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"✓ gravado {ncm_path} ({ncm_map['meta']['total_ncm']} NCMs, {ncm_map['meta']['total_pares']} pares)")
     return 0
