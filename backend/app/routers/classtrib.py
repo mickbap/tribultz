@@ -12,12 +12,10 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.data.classtrib_table import classtrib_api_item, classtrib_api_search
 from app.data.ncm_cclasstrib_table import ncm_candidatos
-from app.database import get_db
 from app.models.auth import User
 
 router = APIRouter(tags=["classtrib"])
@@ -28,8 +26,10 @@ router = APIRouter(tags=["classtrib"])
 class ClassTribItem(BaseModel):
     codigo: str
     descricao: str
-    p_cbs: float
-    p_ibs: float
+    p_cbs: float            # alíquota de referência PLENA (8,8) ajustada pela redução
+    p_ibs: float            # alíquota de referência PLENA (17,7) ajustada pela redução
+    p_cbs_2026: float       # alíquota da fase de teste 2026 (0,9) ajustada pela redução
+    p_ibs_2026: float       # alíquota da fase de teste 2026 (0,1) ajustada pela redução
     regime_especial: Optional[str]
     vigencia_ini: Optional[date]
     vigencia_fim: Optional[date]
@@ -64,22 +64,9 @@ class ValidateClassTribResponse(BaseModel):
 def search_classtrib(
     q: str = Query(..., min_length=2, description="Texto para busca na descrição"),
     limit: int = Query(20, ge=1, le=100),
-    db: Session = Depends(get_db),
 ) -> Any:
-    rows = db.execute(
-        text("""
-            SELECT * FROM cclass_trib_items
-            WHERE is_active = TRUE
-              AND (
-                descricao ILIKE :q
-                OR to_tsvector('portuguese', descricao) @@ plainto_tsquery('portuguese', :q2)
-              )
-            ORDER BY descricao
-            LIMIT :lim
-        """),
-        {"q": f"%{q}%", "q2": q, "lim": limit},
-    ).mappings().all()
-    return [dict(r) for r in rows]
+    # Fonte única: classtrib.json (mesma do motor), via #365 — sem tabela DB.
+    return classtrib_api_search(q, limit)
 
 
 @router.get(
@@ -87,18 +74,11 @@ def search_classtrib(
     response_model=ClassTribItem,
     summary="Lookup cClassTrib por código (público)",
 )
-def get_classtrib(codigo: str, db: Session = Depends(get_db)) -> Any:
-    row = db.execute(
-        text("""
-            SELECT *, synced_at::text AS last_synced_at
-            FROM cclass_trib_items
-            WHERE codigo = :c AND is_active = TRUE
-        """),
-        {"c": codigo},
-    ).mappings().fetchone()
-    if row is None:
+def get_classtrib(codigo: str) -> Any:
+    item = classtrib_api_item(codigo)
+    if item is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"cClassTrib '{codigo}' não encontrado.")
-    return dict(row)
+    return item
 
 
 # ── Endpoint autenticado ──────────────────────────────────────────────────────
@@ -110,14 +90,10 @@ def get_classtrib(codigo: str, db: Session = Depends(get_db)) -> Any:
 )
 def validate_classtrib(
     payload: ValidateClassTribRequest,
-    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
-    # Buscar o cClassTrib informado
-    item = db.execute(
-        text("SELECT * FROM cclass_trib_items WHERE codigo = :c AND is_active = TRUE"),
-        {"c": payload.classtrib_informado},
-    ).mappings().fetchone()
+    # Buscar o cClassTrib informado na fonte única (classtrib.json) — #365.
+    item = classtrib_api_item(payload.classtrib_informado)
 
     if item is None:
         return ValidateClassTribResponse(
@@ -130,8 +106,6 @@ def validate_classtrib(
             p_ibs_correto=None,
             finding=None,
         )
-
-    item = dict(item)
 
     # Sugestão pelo mapeamento oficial NCM→cClassTrib (anexos SVRS) — NÃO mais por prefixo
     # de capítulo na taxonomia de produto (#313 Part 2). A mesma NCM pode admitir vários

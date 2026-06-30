@@ -13,13 +13,26 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.data.uf_rates import CBS_TESTE_2026, IBS_TESTE_2026_TOTAL
+from app.data.uf_rates import (
+    CBS_NATIONAL_RATE,
+    CBS_TESTE_2026,
+    IBS_NATIONAL_RATE,
+    IBS_TESTE_2026_TOTAL,
+)
 
 _DATA = json.loads((Path(__file__).parent / "classtrib.json").read_text(encoding="utf-8"))
 CLASSTRIB_BY_CODE: dict[str, dict] = _DATA.get("by_code", {})
+# Data da última sincronização SVRS (bloco meta) — exposto como last_synced_at na API.
+CLASSTRIB_SYNCED_AT: str | None = _DATA.get("meta", {}).get("date")
 
 # CSTs do cClassTrib que zeram o tributo independentemente de redução.
 _ZERO_CSTS = {"400", "410"}
+
+# Alíquotas de referência em pontos percentuais (uf_rates guarda como fração).
+_CBS_PLENA = float(CBS_NATIONAL_RATE) * 100  # 8,8
+_IBS_PLENA = float(IBS_NATIONAL_RATE) * 100  # 17,7
+_CBS_2026 = float(CBS_TESTE_2026) * 100      # 0,9
+_IBS_2026 = float(IBS_TESTE_2026_TOTAL) * 100  # 0,1
 
 
 def classtrib_expected_zero(code: str) -> tuple[bool, bool] | None:
@@ -95,3 +108,63 @@ def classtrib_cst(code: str) -> str | None:
     if item is None:
         return None
     return str(item.get("cst", "")) or None
+
+
+def _regime_slug(cst: str, red_cbs: float, red_ibs: float) -> str:
+    """Rótulo de regime derivado (padrao/isencao/imunidade/reducao_integral/reducao_N).
+
+    Mesma lógica que populou cclass_trib_items na migration 0020 — agora servida
+    direto do JSON (fonte única, #365).
+    """
+    if cst == "400":
+        return "isencao"
+    if cst == "410":
+        return "imunidade"
+    r = max(red_cbs, red_ibs)
+    if r >= 100:
+        return "reducao_integral"
+    if r > 0:
+        return f"reducao_{int(r)}"
+    return "padrao"
+
+
+def classtrib_api_item(code: str) -> dict | None:
+    """cClassTrib no formato do endpoint público, derivado do classtrib.json (#365).
+
+    Substitui a leitura da tabela DB `cclass_trib_items` — assim a API pública e o motor
+    compartilham a MESMA fonte, e o re-sync diário mantém ambos frescos sem migration.
+    Alíquotas em pontos percentuais: p_cbs/p_ibs = referência PLENA (8,8/17,7); os campos
+    *_2026 = fase de teste de 2026 (0,9/0,1). Isenção (CST 400)/imunidade (410) → 0.
+    """
+    it = CLASSTRIB_BY_CODE.get(code)
+    if it is None:
+        return None
+    cst = str(it.get("cst", ""))
+    red_cbs = float(it.get("reduction_cbs_pct", 0) or 0)
+    red_ibs = float(it.get("reduction_ibs_pct", 0) or 0)
+    zero = cst in _ZERO_CSTS
+    return {
+        "codigo": code,
+        "descricao": (it.get("description") or "").strip() or code,
+        "p_cbs": 0.0 if zero else round(_CBS_PLENA * (1 - red_cbs / 100), 4),
+        "p_ibs": 0.0 if zero else round(_IBS_PLENA * (1 - red_ibs / 100), 4),
+        "p_cbs_2026": 0.0 if zero else round(_CBS_2026 * (1 - red_cbs / 100), 4),
+        "p_ibs_2026": 0.0 if zero else round(_IBS_2026 * (1 - red_ibs / 100), 4),
+        "regime_especial": _regime_slug(cst, red_cbs, red_ibs),
+        "vigencia_ini": (it.get("vigencia_ini") or "2026-01-01") or "2026-01-01",
+        "vigencia_fim": None,
+        "is_active": True,
+        "last_synced_at": CLASSTRIB_SYNCED_AT,
+    }
+
+
+def classtrib_api_search(q: str, limit: int) -> list[dict]:
+    """Busca por substring na descrição (case-insensitive), ordenada por descrição (#365)."""
+    ql = q.lower()
+    hits = [
+        classtrib_api_item(code)
+        for code, it in CLASSTRIB_BY_CODE.items()
+        if ql in (it.get("description") or "").lower()
+    ]
+    hits.sort(key=lambda r: r["descricao"] if r else "")
+    return [h for h in hits if h][:limit]
