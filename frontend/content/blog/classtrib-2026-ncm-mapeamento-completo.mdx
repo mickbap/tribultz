@@ -47,27 +47,26 @@ Se você emite NF-e e ainda não adaptou seu emissor ou ERP ao novo campo, este 
 
 ---
 
-## Estrutura do cClassTrib: 8 dígitos que definem o regime
+## Estrutura do cClassTrib: 6 dígitos que definem o regime
 
-O cClassTrib tem **8 dígitos** organizados em três grupos:
+O cClassTrib tem **6 dígitos** organizados em dois grupos:
 
 | Posição | Tamanho | Significado |
 |---------|---------|-------------|
-| 1–3 | 3 dígitos | **Grupo CST** — espelha o CST aplicável (000 = padrão, 200 = reduzido, 400 = isento, 600 = monofásico, etc.) |
-| 4–6 | 3 dígitos | **Subgrupo de produto** — categoria fiscal do item (alimentos, medicamentos, combustíveis, etc.) |
-| 7–8 | 2 dígitos | **Modificador** — variação dentro do subgrupo (cesta básica nacional, ZFM, regime especial, etc.) |
+| 1–3 | 3 dígitos | **CST** — Código de Situação Tributária IBS/CBS (000 = tributação integral, 200 = redução, 400 = isenção, 620 = monofásico, etc.) |
+| 4–6 | 3 dígitos | **Sequencial** — identificador da classificação específica dentro daquele CST, atribuído pela tabela oficial SVRS |
 
-Exemplo: `20003400`
+Exemplo: `200003`
 
-- `200` → CST 200 (alíquota reduzida)
-- `034` → Alimentos da cesta básica nacional (LC 214, art. 21)
-- `00` → Sem modificador adicional
+- `200` → CST 200 (tributação com redução de alíquota)
+- `003` → classificação do Anexo 1 da LC 214 (alimentos da cesta básica nacional, redução a zero)
 
-Outro exemplo: `60001200`
+Outro exemplo: `000001`
 
-- `600` → CST 600 (monofásico zero — downstream)
-- `012` → Combustíveis e lubrificantes (LC 214, art. 171)
-- `00` → Operação normal
+- `000` → CST 000 (tributação integral — regime padrão)
+- `001` → primeira classificação do regime padrão na tabela SVRS
+
+> O cClassTrib **não** tem "subgrupo" nem "modificador" semântico nos dígitos. Os 3 primeiros são o CST; os 3 últimos são um número sequencial. É a combinação dos 6 dígitos que aponta o regime e a base legal.
 
 ---
 
@@ -79,11 +78,11 @@ Exemplos de combinações inválidas mais comuns:
 
 | CST declarado | cClassTrib informado | Resultado |
 |------------|---------------------|-----------|
-| 000 (padrão) | 20003400 (reduzido) | **Rejeição 1024** |
-| 200 (reduzido) | 00001200 (padrão) | **Rejeição 1024** |
-| 400 (isento) | 60001200 (monofásico) | **Rejeição 1024** |
-| 000 (padrão) | 00001200 (padrão) | Válido ✓ |
-| 200 (reduzido) | 20003400 (cesta básica) | Válido ✓ |
+| 000 (padrão) | 200003 (prefixo 200, redução) | **Rejeição 1024** |
+| 200 (reduzido) | 000001 (prefixo 000, padrão) | **Rejeição 1024** |
+| 400 (isento) | 620xxx (prefixo 620, monofásico) | **Rejeição 1024** |
+| 000 (padrão) | 000001 (prefixo 000) | Válido ✓ |
+| 200 (reduzido) | 200003 (prefixo 200) | Válido ✓ |
 
 O problema ocorre com frequência quando:
 
@@ -120,19 +119,18 @@ Após identificar o cClassTrib, valide que os três primeiros dígitos coincidem
 
 A tabela a seguir resume os principais regimes tributários CBS/IBS e os prefixos cClassTrib correspondentes na NT 2025.002 (versão V1.36, atualização de abril de 2026):
 
-| Regime | CST | Prefixo cClassTrib | Exemplos de produtos |
+| Regime (situação tributária oficial) | CST | Prefixo cClassTrib | Exemplos de produtos |
 |--------|-----|--------------------|---------------------|
-| Padrão (alíquota plena) | 000 | 000 | Produtos industrializados em geral |
-| Alíquota reduzida | 200 | 200 | Medicamentos, itens da cesta básica estendida |
-| Alíquota reduzida — cesta básica nacional | 200 | 200 | Arroz, feijão, carnes, ovos, leite |
-| Isento | 400 | 400 | Exportações, papel para impressão de livros |
-| Imune | 500 | 500 | Livros, templos, entidades filantrópicas |
-| Monofásico (produtor recolhe) | 610 | 610 | Gasolina, diesel, GLP — produtor/importador |
-| Monofásico zero (downstream) | 620 | 620 | Combustíveis — postos, distribuidores |
-| Suspensão | 700 | 700 | Drawback, regimes aduaneiros especiais |
-| Diferimento | 800 | 800 | Operações entre contribuintes no mesmo Estado |
+| Tributação integral (padrão) | 000 | 000 | Produtos industrializados em geral |
+| Alíquota reduzida | 200 | 200 | Medicamentos, itens da cesta básica, alimentos |
+| Isenção | 400 | 400 | Hipóteses de isenção previstas em lei |
+| Imunidade e não incidência | 410 | 410 | Livros, periódicos, papel para impressão |
+| Diferimento | 510 | 510 | Operações com diferimento do recolhimento |
+| Suspensão | 550 | 550 | Exportações, drawback, regimes suspensivos |
+| Tributação monofásica | 620 | 620 | Combustíveis e lubrificantes |
+| Transferência de crédito | 800 | 800 | Operações específicas de transferência de crédito |
 
-> **Atenção**: a tabela completa tem mais de 200 cClassTrib distintos. Os prefixos acima são os grupos de alto nível. O código completo (8 dígitos) depende do NCM e do regime específico do produto.
+> **Atenção**: a tabela oficial SVRS tem mais de 160 cClassTrib distintos (e cresce a cada atualização). Os prefixos acima são os grupos de alto nível (o CST). O código completo (6 dígitos) depende do NCM e do regime específico do produto.
 
 ---
 
@@ -186,7 +184,7 @@ A tabela cClassTrib é atualizada periodicamente pela SVRS. A versão vigente em
 
 - Inclusão de novos cClassTrib para dispositivos médicos com benefício fiscal (LC 214, art. 53)
 - Revisão dos cClassTrib para veículos elétricos (CST 200, alíquota reduzida)
-- Novos modificadores para operações em Zona Franca de Manaus
+- Novos cClassTrib para ajustes de IBS em operações na Zona Franca de Manaus (CST 810)
 
 Se seu sistema foi configurado com uma versão anterior da tabela, alguns cClassTrib podem ter sido descontinuados, causando rejeição mesmo que a combinação CST × prefixo seja válida formalmente.
 

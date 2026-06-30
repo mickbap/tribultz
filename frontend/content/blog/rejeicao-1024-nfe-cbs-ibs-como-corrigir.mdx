@@ -99,21 +99,20 @@ A validação é sequencial: se a nota falha na camada 1, ela não chega à cama
 
 ### Cenário 1: ERP ativou CBS/IBS com cClassTrib genérico
 
-É o mais comum. O fornecedor do ERP lançou a atualização para o leiaute NT 2025.002 e, como valor padrão no campo `cClassTrib`, usou `00000000` ou um código genérico como `00001000` (regime padrão, subgrupo genérico).
+É o mais comum. O fornecedor do ERP lançou a atualização para o leiaute NT 2025.002 e, como valor padrão no campo `cClassTrib`, usou `000001` ou outro código genérico do regime padrão (CST 000).
 
-O problema: se o produto tem CST 200 (alíquota reduzida) no cadastro, o cClassTrib genérico `00001000` começa com `000` — incompatível com CST 200, que exige prefixo `200`. Resultado: Rejeição 1024 em cada nota que emite esse produto.
+O problema: se o produto tem CST 200 (alíquota reduzida) no cadastro, o cClassTrib genérico `000001` começa com `000` — incompatível com CST 200, que exige prefixo `200`. Resultado: Rejeição 1024 em cada nota que emite esse produto.
 
 **Resolução:** Mapear todos os produtos com CST ≠ 000 e atribuir o cClassTrib correto. A [API da Tribultz](https://tribultz.com.br/classificacao) retorna o cClassTrib a partir do NCM em menos de 1 segundo.
 
 ### Cenário 2: NCM com múltiplos cClassTribs possíveis
 
-Alguns NCMs se enquadram em mais de um regime tributário dependendo do destinatário, da UF ou da finalidade do produto. Por exemplo, o NCM `3004.90.99` (medicamentos) pode ter:
+Alguns NCMs se enquadram em mais de um regime tributário dependendo do destinatário, da UF ou da finalidade da operação. Por exemplo, o NCM `3004.90.99` (medicamentos/dispositivos médicos) pode ter:
 
-- cClassTrib `20003100` → alíquota reduzida (venda a pessoa física)
-- cClassTrib `40003100` → isento (venda a entidade beneficente)
-- cClassTrib `50003100` → imune (exportação)
+- cClassTrib `200005` → CST 200, redução de alíquota (Anexo 4 — venda no mercado interno)
+- cClassTrib de prefixo `550` → CST 550, exportação de bens
 
-Se o ERP usa o primeiro cClassTrib para todas as saídas, notas para exportação ou para entidades beneficentes terão CST 400 ou 500 com cClassTrib prefixo `200` — Rejeição 1024.
+Se o ERP usa o código de redução (`200005`, prefixo `200`) para uma saída de exportação — que exige CST 550 — os três primeiros dígitos não batem com o CST declarado: Rejeição 1024.
 
 **Resolução:** Cadastrar variantes de produto por destinatário, ou usar regras de parametrização no ERP que selecionem o cClassTrib correto baseado no tipo de operação (CFOP).
 
