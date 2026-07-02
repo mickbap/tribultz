@@ -228,16 +228,30 @@ def list_tickets(
     return db.execute(stmt).scalars().all()
 
 
+def _is_tribultz_staff(user: User) -> bool:
+    """Só `superadmin` é equipe Tribultz. `admin` é papel de TENANT (default do
+    primeiro usuário de cada conta) e não dá acesso cross-tenant (#411)."""
+    return str(getattr(user, "role", "")) == "superadmin"
+
+
+def _get_ticket_scoped(db: Session, ticket_id: UUID, current_user: User) -> SupportTicket:
+    """Ticket do tenant do usuário; staff Tribultz enxerga qualquer tenant."""
+    ticket = db.get(SupportTicket, ticket_id)
+    if ticket is None or (
+        not _is_tribultz_staff(current_user)
+        and str(ticket.tenant_id) != str(current_user.tenant_id)
+    ):
+        raise HTTPException(status_code=404, detail="Ticket não encontrado.")
+    return ticket
+
+
 @router.get("/tickets/{ticket_id}", response_model=TicketRead)
 def get_ticket(
     ticket_id: UUID,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    ticket = db.get(SupportTicket, ticket_id)
-    if ticket is None or str(ticket.tenant_id) != str(current_user.tenant_id):
-        raise HTTPException(status_code=404, detail="Ticket não encontrado.")
-    return ticket
+    return _get_ticket_scoped(db, ticket_id, current_user)
 
 
 @router.post("/tickets/{ticket_id}/messages", response_model=MessageRead, status_code=201)
@@ -247,11 +261,9 @@ def add_message(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    ticket = db.get(SupportTicket, ticket_id)
-    if ticket is None or str(ticket.tenant_id) != str(current_user.tenant_id):
-        raise HTTPException(status_code=404, detail="Ticket não encontrado.")
+    _get_ticket_scoped(db, ticket_id, current_user)
 
-    is_staff = str(getattr(current_user, "role", "")) in ("superadmin", "admin")
+    is_staff = _is_tribultz_staff(current_user)
     msg = SupportMessage(
         ticket_id=ticket_id,
         user_id=current_user.id,
@@ -270,9 +282,7 @@ def list_messages(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    ticket = db.get(SupportTicket, ticket_id)
-    if ticket is None or str(ticket.tenant_id) != str(current_user.tenant_id):
-        raise HTTPException(status_code=404, detail="Ticket não encontrado.")
+    _get_ticket_scoped(db, ticket_id, current_user)
 
     stmt = (
         select(SupportMessage)
@@ -289,8 +299,7 @@ def update_ticket_status(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    role = str(getattr(current_user, "role", ""))
-    if role not in ("superadmin", "admin"):
+    if not _is_tribultz_staff(current_user):
         raise HTTPException(status_code=403, detail="Acesso restrito à equipe Tribultz.")
 
     ticket = db.get(SupportTicket, ticket_id)
