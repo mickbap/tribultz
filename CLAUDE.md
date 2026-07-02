@@ -35,7 +35,7 @@ backend/           FastAPI
   tests/           pytest
 
 crews/             CrewAI crews (chatops, devops)
-database/          DDL (schema.sql) — 9 tabelas multi-tenant + seed data
+database/          README — schema é 100% Alembic (backend/app/alembic); schema.sql aposentado (#409)
 infra/             docker-compose.yml
 tools/qa_gates/    run_gates.py — QA automation
 docs/sprints/      Histórico de sprints e relatórios de entrega
