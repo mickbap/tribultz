@@ -245,6 +245,7 @@ _PEDAGOGICAL_ACCESSORY_RULES = {
     "IBSCBS_MISSING", "CEST_MISSING", "CEST_FORMAT",
     "LAYOUT_NFE", "LAYOUT_PORTAL", "IMPORT_IBSCBS_REQUIRED",
     "NCM_FORMAT", "NCM_VALID", "CLASSTRIB_VALID",
+    "IBSCBSTOT_MISSING",
 }
 
 # CSTs que legitimamente não destacam IBS/CBS no estágio atual — imunidade/isenção
@@ -270,6 +271,20 @@ _REJECTION_CODES = {
     "CCLASSTRIB_6_DIGITS": (
         " — SEFAZ: Rejeição 1106 (regra LA01-30) / 960 (regra N12-110): cClassTrib obrigatório "
         "e com classificação tributária adequada (NT 2025.002 v1.40)."
+    ),
+    # Grupo W03 (Total da NF-e — IBS/CBS/IS) — #403
+    "IBSCBSTOT_MISSING": (
+        " — SEFAZ: Rejeição 1119 (regra W34-20): grupo de totais IBSCBSTot (W03) obrigatório quando "
+        "algum item informa IBS/CBS — produção a partir de 03/08/2026 (Regime Normal/CRT 3) "
+        "e 04/01/2027 (Simples/MEI), NT 2025.002 v1.40."
+    ),
+    "IBSCBSTOT_UNDUE": (
+        " — SEFAZ: Rejeição 1118 (regra W34-10): grupo IBSCBSTot informado sem nenhum item "
+        "com IBS/CBS (NT 2025.002 v1.40)."
+    ),
+    "IBSCBS_TOTAL": (
+        " — SEFAZ: Rejeição 1091 (regra W56-10, total CBS) / 1085 (regra W47-10, total IBS): "
+        "os totais do IBSCBSTot devem ser a soma dos campos correspondentes dos itens (NT 2025.002 v1.40)."
     ),
 }
 
@@ -395,7 +410,7 @@ def validate_xml(
     aliq_ibs = _first_tag(xml, ["AliquotaIBS", "pIBSUF", "pIBSMun"])
     base_calculo = _first_tag(xml, ["BaseCalculo", "vBC"])
 
-    _first_tag(xml, ["IBSCBSTot"])  # totals checked via item-level rules
+    ibscbs_tot = _first_tag(xml, ["IBSCBSTot"])  # grupo W03 (totais IBS/CBS) — #403
 
     # ── Rules 1-3: Format checks ────────────────────────────────────────────
 
@@ -531,6 +546,65 @@ def validate_xml(
                     )
             except (ValueError, TypeError):
                 pass
+
+    # ── Rules 14/14b/14c: W03 — IBSCBSTot, presença e consistência (#403) ────
+    # Grupo W03 (Total da NF-e — IBS/CBS/IS), NT 2025.002 v1.40. _all_tags("IBSCBS")
+    # não casa <IBSCBSTot> (o padrão exige espaço/>/ após o nome da tag).
+
+    if has_ibscbs:
+        _item_ibscbs = _all_tags(xml, "IBSCBS")
+
+        # W34-20 → Rejeição 1119: item informa IBS/CBS mas IBSCBSTot ausente.
+        # Severidade faseada por CRT, como IBSCBS_MISSING (03/08/2026 vs 04/01/2027).
+        if _item_ibscbs and not ibscbs_tot:
+            _w03_sev = "WARNING" if _is_simples_mei else _pedagogical_severity("IBSCBSTOT_MISSING", pedagogical_mode)
+            ev_id = "E_XML_IBSCBSTOT_MISSING"
+            _rec = (
+                "Informar <IBSCBSTot> em <total> com o somatório dos campos de IBS/CBS dos itens "
+                "(vBCIBSCBS, gIBS, gCBS) conforme NT 2025.002."
+            )
+            if _is_simples_mei:
+                _rec += _simples_note
+            elif _w03_sev == "WARNING":
+                _rec += _LC227_RECOMMENDATION
+            _add(
+                Finding(id="F_IBSCBSTOT_MISSING", severity=_w03_sev, rule_id="IBSCBSTOT_MISSING", title="Grupo de totais IBSCBSTot (W03) ausente — itens informam IBS/CBS", where=FindingWhere(field="IBSCBSTot", xpath=_xpath("total", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),
+                Evidence(id=ev_id, type="xml", label="IBSCBSTot (W03) — grupo ausente", xpath=_xpath("total", doc_type)),
+            )
+
+        # W34-10 → Rejeição 1118: IBSCBSTot informado sem nenhum item com IBS/CBS.
+        # Inconsistência (não faseamento) — FATAL sempre, como IBSCBS_SPLIT.
+        if ibscbs_tot and not _item_ibscbs:
+            ev_id = "E_XML_IBSCBSTOT_UNDUE"
+            _add(
+                Finding(id="F_IBSCBSTOT_UNDUE", severity="FATAL", rule_id="IBSCBSTOT_UNDUE", title="Grupo IBSCBSTot (W03) informado indevidamente — nenhum item possui IBS/CBS", where=FindingWhere(field="IBSCBSTot", xpath=_xpath("IBSCBSTot", doc_type), snippet=ibscbs_tot["snippet"]), recommendation="Remover <IBSCBSTot> ou informar o grupo IBSCBS nos itens correspondentes conforme NT 2025.002.", evidence_ids=[ev_id]),
+                Evidence(id=ev_id, type="xml", label="IBSCBSTot (W03) — informado sem itens IBS/CBS", xpath=_xpath("IBSCBSTot", doc_type), snippet=ibscbs_tot["snippet"]),
+            )
+
+        # W56-10 → 1091 / W47-10 → 1085: totais devem ser a soma dos itens.
+        # Espelha o frontend (xmlRules.ts, Rule 14): a última ocorrência de vCBS/vIBS
+        # no documento é a do IBSCBSTot (totais vêm depois dos itens no leiaute).
+        if ibscbs_tot and _item_ibscbs:
+            def _tot_sum_check(tag: str, label: str, fid_suffix: str) -> None:
+                tot_field = _first_tag(ibscbs_tot["snippet"], [tag])
+                occurrences = _all_tags(xml, tag)
+                det_values = occurrences[:-1] if tot_field else occurrences
+                if not (tot_field and det_values):
+                    return
+                try:
+                    declared = float(tot_field["value"])
+                    soma = sum(float(o["value"]) for o in det_values if o["value"])
+                except (ValueError, TypeError):
+                    return
+                if abs(declared - soma) > 0.01:
+                    ev_id = f"E_XML_IBSCBS_TOTAL_{fid_suffix}"
+                    _add(
+                        Finding(id=f"F_IBSCBS_TOTAL_{fid_suffix}", severity="FATAL", rule_id="IBSCBS_TOTAL", title=f"Total {label} ({declared:.2f}) ≠ soma dos itens ({soma:.2f})", where=FindingWhere(field=f"IBSCBSTot/{tag}", xpath=_xpath("IBSCBSTot", doc_type), snippet=tot_field["snippet"]), recommendation=f"IBSCBSTot.{tag} deve ser a soma dos {tag} de cada item.", evidence_ids=[ev_id]),
+                        Evidence(id=ev_id, type="xml", label=f"Total {label} — divergente", xpath=_xpath("IBSCBSTot", doc_type), snippet=tot_field["snippet"]),
+                    )
+
+            _tot_sum_check("vCBS", "CBS", "CBS")
+            _tot_sum_check("vIBS", "IBS", "IBS")
 
     # ── Rule 8-9: CEST ───────────────────────────────────────────────────────
 
