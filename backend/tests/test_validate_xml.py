@@ -882,3 +882,98 @@ class TestClasstribCstCompat:
 
     def test_classtrib_desconhecido_sem_finding(self):
         assert self._find(self._nfe("999999", "000")) == []
+
+
+# ── #403: Grupo W03 (IBSCBSTot) — NT 2025.002-RTC v1.40, W34-10/W34-20 ────────
+# W34-20 → Rejeição 1119 (IBSCBSTot ausente com item IBS/CBS);
+# W34-10 → Rejeição 1118 (IBSCBSTot sem nenhum item IBS/CBS);
+# W56-10 → 1091 / W47-10 → 1085 (totais ≠ soma dos itens).
+
+_W03_ITEM = """<det nItem="1">
+    <prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>
+    <imposto>
+      <IBSCBS>
+        <CST>000</CST>
+        <cClassTrib>654321</cClassTrib>
+        <gIBSCBS>
+          <vBC>1000.00</vBC>
+          <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+          <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+          <vIBS>1.00</vIBS>
+          <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+        </gIBSCBS>
+      </IBSCBS>
+    </imposto>
+  </det>"""
+
+_W03_ITEM_SEM_IBSCBS = """<det nItem="1">
+    <prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>
+    <imposto><ICMS><ICMS00><CST>00</CST></ICMS00></ICMS></imposto>
+  </det>"""
+
+_W03_TOT = "<IBSCBSTot><vBCIBSCBS>1000.00</vBCIBSCBS><vIBS>1.00</vIBS><vCBS>9.00</vCBS></IBSCBSTot>"
+
+
+def _nfe_w03(crt="3", dh_emi="2026-08-10T10:00:00-03:00", item=True, tot=True, tot_xml=None):
+    det = _W03_ITEM if item else _W03_ITEM_SEM_IBSCBS
+    total = tot_xml if tot_xml is not None else (_W03_TOT if tot else "")
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod><dhEmi>{dh_emi}</dhEmi></ide>
+  <emit><CNPJ>12345678000195</CNPJ><CRT>{crt}</CRT></emit>
+  {det}
+  <total>{total}</total>
+</infNFe></NFe></nfeProc>"""
+
+
+class TestW03Totals:
+    def test_ibscbstot_missing_crt3_fatal_cita_1119(self):
+        result = validate_xml(_nfe_w03(tot=False))
+        f = [x for x in result.findings if x.rule_id == "IBSCBSTOT_MISSING"]
+        assert f, "IBSCBSTOT_MISSING esperado"
+        assert f[0].severity == "FATAL"
+        assert "1119" in (f[0].recommendation or "")
+        assert "W34-20" in (f[0].recommendation or "")
+
+    def test_ibscbstot_missing_simples_warning(self):
+        result = validate_xml(_nfe_w03(crt="1", tot=False))
+        f = [x for x in result.findings if x.rule_id == "IBSCBSTOT_MISSING"]
+        assert f, "IBSCBSTOT_MISSING esperado"
+        assert f[0].severity == "WARNING"
+
+    def test_ibscbstot_missing_janela_sem_penalidades_warning(self):
+        result = validate_xml(_nfe_w03(dh_emi="2026-07-10T10:00:00-03:00", tot=False))
+        f = [x for x in result.findings if x.rule_id == "IBSCBSTOT_MISSING"]
+        assert f, "IBSCBSTOT_MISSING esperado"
+        assert f[0].severity == "WARNING"
+        assert "Ato Conjunto" in (f[0].recommendation or "")
+
+    def test_ibscbstot_undue_fatal_cita_1118(self):
+        result = validate_xml(_nfe_w03(item=False, tot=True))
+        f = [x for x in result.findings if x.rule_id == "IBSCBSTOT_UNDUE"]
+        assert f, "IBSCBSTOT_UNDUE esperado"
+        assert f[0].severity == "FATAL"
+        assert "1118" in (f[0].recommendation or "")
+
+    def test_w03_coerente_sem_findings(self):
+        result = validate_xml(_nfe_w03())
+        rules = [x.rule_id for x in result.findings]
+        assert "IBSCBSTOT_MISSING" not in rules
+        assert "IBSCBSTOT_UNDUE" not in rules
+        assert "IBSCBS_TOTAL" not in rules
+
+    def test_total_cbs_divergente_fatal_cita_1091(self):
+        tot = "<IBSCBSTot><vBCIBSCBS>1000.00</vBCIBSCBS><vIBS>1.00</vIBS><vCBS>99.00</vCBS></IBSCBSTot>"
+        result = validate_xml(_nfe_w03(tot_xml=tot))
+        f = [x for x in result.findings if x.rule_id == "IBSCBS_TOTAL"]
+        assert f, "IBSCBS_TOTAL esperado (total CBS divergente da soma dos itens)"
+        assert f[0].severity == "FATAL"
+        assert "1091" in (f[0].recommendation or "")
+
+    def test_total_ibs_divergente_fatal_cita_1085(self):
+        tot = "<IBSCBSTot><vBCIBSCBS>1000.00</vBCIBSCBS><vIBS>5.00</vIBS><vCBS>9.00</vCBS></IBSCBSTot>"
+        result = validate_xml(_nfe_w03(tot_xml=tot))
+        f = [x for x in result.findings if x.rule_id == "IBSCBS_TOTAL"]
+        assert f, "IBSCBS_TOTAL esperado (total IBS divergente da soma dos itens)"
+        assert f[0].severity == "FATAL"
+        assert "1085" in (f[0].recommendation or "")

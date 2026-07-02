@@ -34,6 +34,7 @@ const PEDAGOGICAL_ACCESSORY_RULES = new Set([
   "CST_VALID", "CST_GROUP_MATCH", "CST_SEMANTIC",
   "IBSCBS_MISSING", "CEST_MISSING", "CEST_FORMAT",
   "LAYOUT_NFE", "LAYOUT_PORTAL", "IMPORT_IBSCBS_REQUIRED",
+  "IBSCBSTOT_MISSING",
 ]);
 
 const LC227_NOTE =
@@ -51,6 +52,17 @@ const REJECTION_CODES: Record<string, string> = {
   CCLASSTRIB_6_DIGITS:
     " — SEFAZ: Rejeição 1106 (regra LA01-30) / 960 (regra N12-110): cClassTrib obrigatório " +
     "e com classificação tributária adequada (NT 2025.002 v1.40).",
+  // Grupo W03 (Total da NF-e — IBS/CBS/IS) — #403
+  IBSCBSTOT_MISSING:
+    " — SEFAZ: Rejeição 1119 (regra W34-20): grupo de totais IBSCBSTot (W03) obrigatório quando " +
+    "algum item informa IBS/CBS — produção a partir de 03/08/2026 (Regime Normal/CRT 3) " +
+    "e 04/01/2027 (Simples/MEI), NT 2025.002 v1.40.",
+  IBSCBSTOT_UNDUE:
+    " — SEFAZ: Rejeição 1118 (regra W34-10): grupo IBSCBSTot informado sem nenhum item " +
+    "com IBS/CBS (NT 2025.002 v1.40).",
+  IBSCBS_TOTAL:
+    " — SEFAZ: Rejeição 1091 (regra W56-10, total CBS) / 1085 (regra W47-10, total IBS): " +
+    "os totais do IBSCBSTot devem ser a soma dos campos correspondentes dos itens (NT 2025.002 v1.40).",
 };
 
 // ── Ato Conjunto RFB/CGIBS nº 1/2025 — janela sem penalidades ─────────────────
@@ -744,6 +756,60 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
           makeEvidence({ id: evId, type: "xml", label: "Total IBS — divergente", xpath: inferXpath("IBSCBSTot", docType), snippet: totVIBS.snippet }),
         );
       }
+    }
+  }
+
+  // ── Rules 14b/14c: W03 — presença do IBSCBSTot (#403, NT v1.40) ──────────
+  // Grupo W03 (Total da NF-e — IBS/CBS/IS): a SEFAZ valida presença nas duas
+  // direções (regras W34-10/W34-20). allTags("IBSCBS") não casa <IBSCBSTot>
+  // (lookahead exige espaço/>/ após o nome da tag).
+
+  if (hasIbscbsGroup) {
+    const itemIbscbsBlocks = allTags(xml, "IBSCBS");
+
+    // W34-20 → Rejeição 1119: item informa IBS/CBS mas IBSCBSTot ausente.
+    // Severidade faseada por CRT (como IBSCBS_MISSING): FATAL p/ Regime Normal
+    // (produção 03/08/2026), WARNING p/ Simples/MEI (04/01/2027).
+    if (itemIbscbsBlocks.length > 0 && !ibscbsTot) {
+      const evId = makeEvidenceId("IBSCBSTOT_MISSING");
+      pushFindingAndEvidence(findings, evidences, evidenceById,
+        makeFinding({
+          id: "F_IBSCBSTOT_MISSING",
+          severity: ibsCbsMissingSev,
+          ruleId: "IBSCBSTOT_MISSING",
+          title: "Grupo de totais IBSCBSTot (W03) ausente — itens informam IBS/CBS",
+          field: "IBSCBSTot",
+          xpath: inferXpath("total", docType),
+          snippet: "<!-- Grupo <IBSCBSTot> não encontrado em <total> -->",
+          evidenceId: evId,
+          recommendation:
+            "Informar <IBSCBSTot> em <total> com o somatório dos campos de IBS/CBS dos itens " +
+            "(vBCIBSCBS, gIBS, gCBS) conforme NT 2025.002." +
+            (isSimplesOrMei ? SIMPLES_MEI_NOTE : ""),
+        }),
+        makeEvidence({ id: evId, type: "xml", label: "IBSCBSTot (W03) — grupo ausente", xpath: inferXpath("total", docType), snippet: "<!-- Grupo <IBSCBSTot> não encontrado em <total> -->" }),
+      );
+    }
+
+    // W34-10 → Rejeição 1118: IBSCBSTot informado sem nenhum item com IBS/CBS.
+    // Inconsistência (não faseamento) — FATAL sempre, como IBSCBS_SPLIT/IBSCBS_TOTAL.
+    if (ibscbsTot && itemIbscbsBlocks.length === 0) {
+      const evId = makeEvidenceId("IBSCBSTOT_UNDUE");
+      pushFindingAndEvidence(findings, evidences, evidenceById,
+        makeFinding({
+          id: "F_IBSCBSTOT_UNDUE",
+          severity: "FATAL",
+          ruleId: "IBSCBSTOT_UNDUE",
+          title: "Grupo IBSCBSTot (W03) informado indevidamente — nenhum item possui IBS/CBS",
+          field: "IBSCBSTot",
+          xpath: inferXpath("IBSCBSTot", docType),
+          snippet: ibscbsTot.snippet,
+          evidenceId: evId,
+          recommendation:
+            "Remover <IBSCBSTot> ou informar o grupo IBSCBS nos itens correspondentes conforme NT 2025.002.",
+        }),
+        makeEvidence({ id: evId, type: "xml", label: "IBSCBSTot (W03) — informado sem itens IBS/CBS", xpath: inferXpath("IBSCBSTot", docType), snippet: ibscbsTot.snippet }),
+      );
     }
   }
 

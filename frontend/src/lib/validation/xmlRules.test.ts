@@ -1124,3 +1124,87 @@ test("#311 ALCZFM_CBS_CALC: vTribRegCBS incoerente → WARNING (1218)", () => {
   const f = b25Find(b25Nfe({ alc: ALC("50.00") }), "ALCZFM_CBS_CALC");
   assert.ok(f.some((x) => x.id === "F_ALCZFM_CBS_CALC" && x.severity === "WARNING"));
 });
+
+// ── #403: Grupo W03 (IBSCBSTot) — NT 2025.002-RTC v1.40, W34-10/W34-20 ───────
+// SEFAZ rejeita em produção a partir de 03/08/2026 (CRT 3) / 04/01/2027 (Simples/MEI):
+//   W34-20 → Rejeição 1119: IBSCBSTot ausente com item informando IBS/CBS;
+//   W34-10 → Rejeição 1118: IBSCBSTot informado sem nenhum item com IBS/CBS.
+
+const w03Item = `<det nItem="1">
+    <prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>
+    <imposto>
+      <IBSCBS>
+        <CST>000</CST>
+        <cClassTrib>000001</cClassTrib>
+        <gIBSCBS>
+          <vBC>1000.00</vBC>
+          <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+          <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+          <vIBS>1.00</vIBS>
+          <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+        </gIBSCBS>
+      </IBSCBS>
+    </imposto>
+  </det>`;
+
+const nfeW03 = (opts: { crt: string; dhEmi: string; item?: boolean; tot?: boolean }) => `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod><dhEmi>${opts.dhEmi}</dhEmi></ide>
+  <emit><CNPJ>12345678000195</CNPJ><CRT>${opts.crt}</CRT></emit>
+  ${opts.item === false ? `<det nItem="1"><prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod><imposto><ICMS><ICMS00><CST>00</CST></ICMS00></ICMS></imposto></det>` : w03Item}
+  <total>${opts.tot === false ? "" : "<IBSCBSTot><vBCIBSCBS>1000.00</vBCIBSCBS><vIBS>1.00</vIBS><vCBS>9.00</vCBS></IBSCBSTot>"}</total>
+</infNFe></NFe></nfeProc>`;
+
+test("#403 IBSCBSTOT_MISSING: CRT 3, item com IBSCBS sem IBSCBSTot (pós 01/08) → FATAL citando 1119", () => {
+  const xml = nfeW03({ crt: "3", dhEmi: "2026-08-10T10:00:00-03:00", tot: false });
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBSTOT_MISSING");
+  assert.ok(f, "IBSCBSTOT_MISSING esperado");
+  assert.equal(f!.severity, "FATAL");
+  assert.ok(f!.recommendation?.includes("1119"), "recommendation deve citar Rejeição 1119");
+  assert.ok(f!.recommendation?.includes("W34-20"), "recommendation deve citar regra W34-20");
+});
+
+test("#403 IBSCBSTOT_MISSING: CRT 1 (Simples) → WARNING (faseamento 04/01/2027)", () => {
+  const xml = nfeW03({ crt: "1", dhEmi: "2026-08-10T10:00:00-03:00", tot: false });
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBSTOT_MISSING");
+  assert.ok(f, "IBSCBSTOT_MISSING esperado");
+  assert.equal(f!.severity, "WARNING");
+});
+
+test("#403 IBSCBSTOT_MISSING: dhEmi na janela sem penalidades (até 31/07/2026) → WARNING com nota do Ato Conjunto", () => {
+  const xml = nfeW03({ crt: "3", dhEmi: "2026-07-10T10:00:00-03:00", tot: false });
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBSTOT_MISSING");
+  assert.ok(f, "IBSCBSTOT_MISSING esperado");
+  assert.equal(f!.severity, "WARNING");
+  assert.ok(f!.recommendation?.includes("Ato Conjunto"), "deve citar a janela do Ato Conjunto 1/25");
+});
+
+test("#403 IBSCBSTOT_UNDUE: IBSCBSTot presente sem item com IBS/CBS → FATAL citando 1118", () => {
+  const xml = nfeW03({ crt: "3", dhEmi: "2026-08-10T10:00:00-03:00", item: false });
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBSTOT_UNDUE");
+  assert.ok(f, "IBSCBSTOT_UNDUE esperado");
+  assert.equal(f!.severity, "FATAL");
+  assert.ok(f!.recommendation?.includes("1118"), "recommendation deve citar Rejeição 1118");
+});
+
+test("#403 W03 coerente (item + IBSCBSTot) → sem findings W03", () => {
+  const xml = nfeW03({ crt: "3", dhEmi: "2026-08-10T10:00:00-03:00" });
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBSTOT_MISSING"), undefined);
+  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBSTOT_UNDUE"), undefined);
+});
+
+test("#403 IBSCBS_TOTAL: recommendation cita códigos oficiais W56-10/1091 e W47-10/1085", () => {
+  const xml = nfeW03({ crt: "3", dhEmi: "2026-08-10T10:00:00-03:00" }).replace(
+    "<IBSCBSTot><vBCIBSCBS>1000.00</vBCIBSCBS><vIBS>1.00</vIBS><vCBS>9.00</vCBS></IBSCBSTot>",
+    "<IBSCBSTot><vBCIBSCBS>1000.00</vBCIBSCBS><vIBS>1.00</vIBS><vCBS>99.00</vCBS></IBSCBSTot>",
+  );
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBS_TOTAL");
+  assert.ok(f, "IBSCBS_TOTAL esperado (total CBS divergente)");
+  assert.ok(f!.recommendation?.includes("1091"), "recommendation deve citar Rejeição 1091");
+});
