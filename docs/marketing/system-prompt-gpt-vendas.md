@@ -1,3 +1,7 @@
+> ⚠️ **DEPRECATED (02/07/2026)** — este arquivo não recebe mais atualizações.
+> A fonte canônica agora é o tribultz-brain: [knowledge/prompts/system-prompt-gpt-vendas.md](https://github.com/mickbap/tribultz-brain/blob/main/knowledge/prompts/system-prompt-gpt-vendas.md).
+> Mantido temporariamente na etapa 1 da migração (RFC-0001); remoção em etapa futura.
+
 # System Prompt — GPT de Vendas Tribultz
 
 > Cole o bloco abaixo como **system prompt** do agente de vendas. Fonte da verdade

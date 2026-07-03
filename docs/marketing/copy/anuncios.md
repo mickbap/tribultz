@@ -1,3 +1,7 @@
+> ⚠️ **DEPRECATED (02/07/2026)** — este arquivo não recebe mais atualizações.
+> A fonte canônica agora é o tribultz-brain: [knowledge/marketing/copy/anuncios.md](https://github.com/mickbap/tribultz-brain/blob/main/knowledge/marketing/copy/anuncios.md).
+> Mantido temporariamente na etapa 1 da migração (RFC-0001); remoção em etapa futura.
+
 # Copy — Anúncios (Google & Meta)
 
 > Tom deadline, âncora empresa emissora. CTA = trial grátis (ou WhatsApp).

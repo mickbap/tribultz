@@ -1,3 +1,7 @@
+> ⚠️ **DEPRECATED (02/07/2026)** — este arquivo não recebe mais atualizações.
+> A fonte canônica agora é o tribultz-brain: [knowledge/marketing/copy/email-whatsapp.md](https://github.com/mickbap/tribultz-brain/blob/main/knowledge/marketing/copy/email-whatsapp.md).
+> Mantido temporariamente na etapa 1 da migração (RFC-0001); remoção em etapa futura.
+
 # Copy — E-mail & WhatsApp
 
 > Sequências curtas de ativação→conversão. Âncora: empresa emissora. Tom deadline.

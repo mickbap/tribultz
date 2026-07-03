@@ -1,3 +1,7 @@
+> ⚠️ **DEPRECATED (02/07/2026)** — este arquivo não recebe mais atualizações.
+> A fonte canônica agora é o tribultz-brain: [knowledge/marketing/posicionamento-e-vendas.md](https://github.com/mickbap/tribultz-brain/blob/main/knowledge/marketing/posicionamento-e-vendas.md).
+> Mantido temporariamente na etapa 1 da migração (RFC-0001); remoção em etapa futura.
+
 # Instruções de Marketing & Vendas — Tribultz
 
 > **Decisões cravadas (29/06/2026):** público primário = **empresa que emite**

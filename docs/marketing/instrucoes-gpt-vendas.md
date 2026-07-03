@@ -1,3 +1,7 @@
+> ⚠️ **DEPRECATED (02/07/2026)** — este arquivo não recebe mais atualizações.
+> A fonte canônica agora é o tribultz-brain: [knowledge/sales/instrucoes-gpt-vendas.md](https://github.com/mickbap/tribultz-brain/blob/main/knowledge/sales/instrucoes-gpt-vendas.md).
+> Mantido temporariamente na etapa 1 da migração (RFC-0001); remoção em etapa futura.
+
 # Instruções do GPT de Vendas — Tribultz
 
 > **Para o marketing:** copie **tudo abaixo da linha** e cole como as instruções

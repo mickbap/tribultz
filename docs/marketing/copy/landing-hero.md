@@ -1,3 +1,7 @@
+> ⚠️ **DEPRECATED (02/07/2026)** — este arquivo não recebe mais atualizações.
+> A fonte canônica agora é o tribultz-brain: [knowledge/marketing/copy/landing-hero.md](https://github.com/mickbap/tribultz-brain/blob/main/knowledge/marketing/copy/landing-hero.md).
+> Mantido temporariamente na etapa 1 da migração (RFC-0001); remoção em etapa futura.
+
 # Copy — Landing / Hero
 
 > Tom: agressivo/deadline. Âncora: empresa emissora (Rejeição 1024 / ago-2026).
