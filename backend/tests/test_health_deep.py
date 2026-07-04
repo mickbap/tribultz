@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -15,9 +16,19 @@ from app.main import app
 client = TestClient(app)
 
 
+@pytest.fixture(autouse=True)
+def _s3_probe_ok():
+    """Default o probe de storage para 'ok' em todos os testes deste arquivo, para
+    que os testes de readiness pré-existentes (que só mockam 6 probes) sigam verdes.
+    Os testes específicos de storage sobrescrevem com um patch interno; o unit test
+    do probe real vive em test_health_s3_probe.py (sem este autouse)."""
+    with patch("app.routers.health._probe_s3", return_value="ok"):
+        yield
+
+
 # ── Helper ────────────────────────────────────────────────────────────────────
 
-def _patch_probes(db="ok", redis="ok", asaas="unconfigured", ai="unconfigured", hubspot="unconfigured", email="unconfigured"):
+def _patch_probes(db="ok", redis="ok", asaas="unconfigured", ai="unconfigured", hubspot="unconfigured", email="unconfigured", storage="ok"):
     """Context manager that patches all six probe functions."""
     return (
         patch("app.routers.health._probe_db",         return_value=db),
@@ -26,6 +37,7 @@ def _patch_probes(db="ok", redis="ok", asaas="unconfigured", ai="unconfigured", 
         patch("app.routers.health._probe_ai_engine",   return_value=ai),
         patch("app.routers.health._probe_hubspot",     return_value=hubspot),
         patch("app.routers.health._probe_email",       return_value=email),
+        patch("app.routers.health._probe_s3",          return_value=storage),
     )
 
 
@@ -164,6 +176,54 @@ class TestReadiness:
         assert "latency_ms" in body
         assert isinstance(body["latency_ms"], int)
         assert body["latency_ms"] >= 0
+
+
+# ── Storage readiness (#399) ──────────────────────────────────────────────────
+
+class TestStorageReadiness:
+    def test_storage_unreachable_returns_error(self):
+        """Storage é crítico: unreachable derruba o status para 'error' (alerta)."""
+        with (
+            patch("app.routers.health._probe_db",         return_value="ok"),
+            patch("app.routers.health._probe_redis",       return_value="ok"),
+            patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
+            patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
+            patch("app.routers.health._probe_hubspot",     return_value="unconfigured"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
+            patch("app.routers.health._probe_s3",          return_value="unreachable"),
+        ):
+            r = client.get("/health/ready")
+        assert r.json()["status"] == "error"
+        assert r.json()["storage"] == "unreachable"
+
+    def test_storage_unconfigured_stays_ok(self):
+        """Storage unconfigured (dev sem object storage) NÃO deve alertar."""
+        with (
+            patch("app.routers.health._probe_db",         return_value="ok"),
+            patch("app.routers.health._probe_redis",       return_value="ok"),
+            patch("app.routers.health._probe_asaas",       return_value="ok"),
+            patch("app.routers.health._probe_ai_engine",   return_value="ok"),
+            patch("app.routers.health._probe_hubspot",     return_value="ok"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
+            patch("app.routers.health._probe_s3",          return_value="unconfigured"),
+        ):
+            r = client.get("/health/ready")
+        assert r.json()["status"] == "ok"
+        assert r.json()["storage"] == "unconfigured"
+
+    def test_storage_ok_present_in_response(self):
+        with (
+            patch("app.routers.health._probe_db",         return_value="ok"),
+            patch("app.routers.health._probe_redis",       return_value="ok"),
+            patch("app.routers.health._probe_asaas",       return_value="unconfigured"),
+            patch("app.routers.health._probe_ai_engine",   return_value="unconfigured"),
+            patch("app.routers.health._probe_hubspot",     return_value="unconfigured"),
+            patch("app.routers.health._probe_email",       return_value="unconfigured"),
+            patch("app.routers.health._probe_s3",          return_value="ok"),
+        ):
+            r = client.get("/health/deep")
+        assert r.json()["storage"] == "ok"
+        assert r.json()["status"] == "ok"
 
 
 # ── Deep alias (/health/deep) ─────────────────────────────────────────────────
