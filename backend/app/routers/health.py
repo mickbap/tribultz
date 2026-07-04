@@ -12,8 +12,10 @@ import smtplib
 import time
 from typing import Literal
 
+import boto3
 import httpx
 import redis as redis_lib
+from botocore.config import Config as BotoConfig
 from fastapi import APIRouter
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -39,6 +41,7 @@ class DeepHealthResponse(BaseModel):
     ai_engine: ServiceStatus
     hubspot: ServiceStatus
     email: ServiceStatus
+    storage: ServiceStatus
     latency_ms: int
 
 
@@ -163,6 +166,39 @@ def _probe_ai_engine() -> ServiceStatus:
         return "unreachable"
 
 
+def _probe_s3() -> ServiceStatus:
+    """HEAD the configured object-storage bucket (boto3 head_bucket, timeout 3s).
+
+    O storage guarda XMLs enviados, bundles de export e evidências — é crítico:
+    sem ele não há validação com evidência. Retorna 'unconfigured' quando o
+    endpoint/bucket estão em branco, para não alertar em ambientes sem object
+    storage (dev). Qualquer falha real (endpoint morto, timeout, credencial
+    inválida) é 'unreachable' — o Uptime Monitor precisa gritar.
+    """
+    if not settings.S3_ENDPOINT or not settings.S3_BUCKET:
+        return "unconfigured"
+    try:
+        client = boto3.client(
+            "s3",
+            endpoint_url=settings.S3_ENDPOINT,
+            aws_access_key_id=settings.S3_ACCESS_KEY,
+            aws_secret_access_key=settings.S3_SECRET_KEY,
+            region_name=settings.S3_REGION,
+            config=BotoConfig(
+                signature_version="s3v4",
+                s3={"addressing_style": "path" if settings.S3_FORCE_PATH_STYLE else "virtual"},
+                connect_timeout=3,
+                read_timeout=3,
+                retries={"max_attempts": 0},
+            ),
+        )
+        client.head_bucket(Bucket=settings.S3_BUCKET)
+        return "ok"
+    except Exception as exc:
+        logger.warning("Health: object storage probe failed — %s", exc)
+        return "unreachable"
+
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.api_route("", methods=["GET", "HEAD"], summary="Liveness probe")
@@ -197,10 +233,17 @@ def readiness() -> DeepHealthResponse:
     ai_status      = _probe_ai_engine()
     hubspot_status = _probe_hubspot()
     email_status   = _probe_email()
+    storage_status = _probe_s3()
 
     latency_ms = int((time.monotonic() - t0) * 1000)
 
-    critical_ok = db_status == "ok" and redis_status == "ok"
+    # storage é crítico: sem object storage não há validação com evidência.
+    # 'unconfigured' (dev sem storage) não alerta; 'unreachable' derruba o status.
+    critical_ok = (
+        db_status == "ok"
+        and redis_status == "ok"
+        and storage_status in ("ok", "unconfigured")
+    )
     optional_ok = (
         asaas_status   in ("ok", "unconfigured") and
         ai_status      in ("ok", "unconfigured") and
@@ -223,6 +266,7 @@ def readiness() -> DeepHealthResponse:
         ai_engine=ai_status,
         hubspot=hubspot_status,
         email=email_status,
+        storage=storage_status,
         latency_ms=latency_ms,
     )
 
