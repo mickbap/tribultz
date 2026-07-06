@@ -1,0 +1,38 @@
+# Tribultz Weekly Snapshot — configuração das métricas.
+# Cada métrica declara sua FONTE. O script preenche o que consegue medir no
+# ambiente atual; o que depende de fonte indisponível vira "n/d" (o slot
+# permanece, para o histórico ser consistente desde a semana 1).
+#
+# Fontes: repo (grep/ls no checkout) · gh (GitHub CLI) · db (banco — CI/VM) · manual
+
+next_priority: "TERA (RFC-0018) — ver tribultz-brain rfcs/README (ordem revenue-first)"
+
+metrics:
+  produto:
+    - { nome: "Regras determinísticas", fonte: repo }   # RULES_COUNT
+    - { nome: "cClassTrib",             fonte: repo }   # CLASSTRIB_COUNT
+    - { nome: "Routers (backend)",      fonte: repo }
+    - { nome: "Endpoints (rotas)",      fonte: repo }
+    - { nome: "Páginas (frontend)",     fonte: repo }
+  infraestrutura:
+    - { nome: "Migrations (arquivos)",  fonte: repo }
+    - { nome: "Migrations pendentes",   fonte: db }
+    - { nome: "Health storage probe",   fonte: repo }
+  dados:
+    - { nome: "Usuários",       fonte: db }
+    - { nome: "Empresas",       fonte: db }
+    - { nome: "API Keys",       fonte: db }
+    - { nome: "Laudos gerados", fonte: db }
+    - { nome: "XML processados",fonte: db }
+  saude:
+    - { nome: "TODO/FIXME",     fonte: repo }
+    - { nome: "Issues abertas", fonte: gh }
+    - { nome: "Issues P2",      fonte: gh }
+    - { nome: "RFCs abertas",   fonte: manual }  # vivem no tribultz-brain
+
+# Known limitations rastreadas por ausência (grep whole-word) — devem ser 0 na Fase 0.
+known_limitations:
+  - { termo: "EarlyAdopter",     destrava: "RFC-0017" }
+  - { termo: "EarlyGrant",       destrava: "ADR-0008" }
+  - { termo: "EffectiveLicense", destrava: "ADR-0008" }
+  - { termo: "TERA",             destrava: "RFC-0018" }
