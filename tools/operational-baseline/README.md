@@ -15,10 +15,15 @@ Depois, **preencher à mão o bloco de reflexão** no fim do snapshot gerado.
 
 ## O ritual (toda sexta)
 
-1. Rodar o gerador.
-2. Preencher a reflexão obrigatória (aprendizado / risco / decisão / evidência / prioridade).
+1. Rodar o gerador → `output/AAAA/AAAA-MM-DD.md` (**só fatos** — produto mede).
+2. **Interpretar no Brain** (não aqui): criar `tribultz-brain` → `knowledge/discovery/weekly/AAAA-Wnn.md`
+   com as 6 perguntas da Weekly Review (RFC-0023) — **Brain interpreta**.
 3. `diff` contra o snapshot da sexta anterior → "o que mudou?".
-4. Commitar o novo `output/AAAA-MM-DD.md`.
+4. Commitar o novo `output/AAAA/AAAA-MM-DD.md`.
+
+> **Regra: produto mede, Brain interpreta.** O snapshot nunca contém análise —
+> só fatos. Isso impede que o fato (imutável) e a interpretação (revisável) se
+> contaminem. Ver RFC-0023 no `tribultz-brain`.
 
 ## O que ele mede
 

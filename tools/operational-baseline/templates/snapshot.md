@@ -4,6 +4,11 @@
 - **Ref:** `{{BRANCH}} @ {{REF}}`
 - **Gerado por:** `tools/operational-baseline/operational_baseline.sh` (hábito: toda sexta)
 
+> **Produto mede, Brain interpreta.** Este documento contém **apenas fatos** —
+> nenhuma análise. A interpretação da semana (aprendizado, risco, decisão,
+> evidência, prioridade, hipóteses derrotadas) vive no Brain: `tribultz-brain`
+> → `knowledge/discovery/weekly/AAAA-Wnn.md` (RFC-0023).
+
 ## Produto
 | Métrica | Valor |
 |---|---|
@@ -52,10 +57,4 @@ _Devem ser 0 na Fase 0. Quando passarem de 0, a Fase 1 começou a existir._
 
 ---
 
-## Reflexão da semana (obrigatório — preencher à mão)
-
-- **Maior aprendizado da semana:** _(preencher)_
-- **Maior risco da semana:** _(preencher)_
-- **Maior decisão tomada:** _(preencher)_
-- **Maior evidência coletada:** _(preencher)_
-- **Maior prioridade da próxima semana:** _(preencher)_
+_Fatos apenas. Interpretação da semana → `tribultz-brain` `knowledge/discovery/weekly/` (RFC-0023: Produto mede, Brain interpreta)._
