@@ -15,7 +15,9 @@ cd "$ROOT" || exit 1
 TEMPLATE="$HERE/templates/snapshot.md"
 CONFIG="$HERE/baseline_config.yml"
 DATE="$(date +%F)"
-OUT="$HERE/output/$DATE.md"
+YEAR="$(date +%Y)"
+mkdir -p "$HERE/output/$YEAR"
+OUT="$HERE/output/$YEAR/$DATE.md"
 
 # ── medições ──────────────────────────────────────────────────────────────────
 n_lines() { wc -l | tr -d ' '; }
