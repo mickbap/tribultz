@@ -65,8 +65,10 @@ def _pg_available() -> bool:
 
 pytestmark_db = pytest.mark.skipif(not _pg_available(), reason="Postgres indisponível (roda no CI)")
 
-engine = create_engine(DATABASE_URL) if _pg_available() else None
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine) if engine else None
+# create_engine é lazy (não conecta aqui); a conexão real só acontece nas fixtures
+# dos testes não-pulados. Criado incondicionalmente para o tipo não ser Optional.
+engine = create_engine(DATABASE_URL)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 @pytest.fixture(name="session")
