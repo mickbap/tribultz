@@ -9,6 +9,7 @@ import { getToken } from "@/lib/storage";
 const NAV = [
   { href: "/admin", label: "Visão geral" },
   { href: "/admin/tenants", label: "Tenants" },
+  { href: "/admin/partners", label: "Parceiros" },
   { href: "/admin/users", label: "Usuários" },
   { href: "/admin/usage", label: "Uso & Operações" },
   { href: "/admin/system", label: "Saúde do sistema" },

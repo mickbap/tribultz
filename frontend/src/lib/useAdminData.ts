@@ -53,3 +53,21 @@ export async function adminPost(path: string, body: unknown): Promise<void> {
     throw new Error(detail.detail ?? `Erro ${res.status}`);
   }
 }
+
+/** Mutação autenticada com método arbitrário (ex.: PATCH). Retorna o JSON da resposta. */
+export async function adminRequest<T = unknown>(
+  method: string,
+  path: string,
+  body?: unknown,
+): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(detail.detail ?? `Erro ${res.status}`);
+  }
+  return (await res.json().catch(() => ({}))) as T;
+}

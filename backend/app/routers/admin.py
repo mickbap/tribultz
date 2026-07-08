@@ -16,6 +16,12 @@ from app.models.admin_audit import AdminAuditLog
 from app.models.api_key import ApiKey
 from app.models.auth import User, Tenant
 from app.models.billing import Payment, Plan, Subscription
+from app.models.partner import (
+    PARTNER_STATUSES,
+    PARTNER_TYPES,
+    Partner,
+    normalize_partner_code,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
@@ -329,24 +335,42 @@ def admin_tenants(
     limit: int = 50,
     offset: int = 0,
     q: str | None = None,
+    partner_id: UUID | None = None,
 ) -> dict[str, Any]:
     stmt = select(Tenant)
     if q:
         stmt = stmt.where(Tenant.name.ilike(f"%{q}%"))
+    if partner_id is not None:
+        stmt = stmt.where(Tenant.partner_id == partner_id)
     total = _safe_count(db, select(func.count()).select_from(stmt.subquery()))
     rows = db.execute(
         stmt.order_by(Tenant.created_at.desc()).limit(min(limit, 200)).offset(max(offset, 0))
     ).scalars().all()
-    items = [
-        {
-            "id": str(t.id),
-            "name": cast(str, t.name),
-            "is_active": bool(t.is_active),
-            "users": _safe_count(db, select(func.count(User.id)).where(User.tenant_id == t.id)),
-            "created_at": cast(datetime, t.created_at).isoformat(),
-        }
-        for t in rows
-    ]
+    # Proveniência comercial (RFC-0025): resolve os Partners referenciados em lote.
+    partner_ids = {t.partner_id for t in rows if t.partner_id is not None}
+    partners = {
+        p.id: p
+        for p in (
+            db.execute(select(Partner).where(Partner.id.in_(partner_ids))).scalars().all()
+            if partner_ids
+            else []
+        )
+    }
+    items = []
+    for t in rows:
+        p = partners.get(t.partner_id) if t.partner_id is not None else None
+        items.append(
+            {
+                "id": str(t.id),
+                "name": cast(str, t.name),
+                "is_active": bool(t.is_active),
+                "users": _safe_count(db, select(func.count(User.id)).where(User.tenant_id == t.id)),
+                "created_at": cast(datetime, t.created_at).isoformat(),
+                "partner_id": str(t.partner_id) if t.partner_id is not None else None,
+                "partner_name": cast(str, p.name) if p is not None else None,
+                "partner_code": cast(str, p.code) if p is not None else None,
+            }
+        )
     return {"total": total, "limit": limit, "offset": offset, "items": items}
 
 
@@ -504,3 +528,212 @@ def admin_audit_log_list(
         for r in rows
     ]
     return {"total": total, "limit": limit, "offset": offset, "items": items}
+
+
+# ── Partner Attribution — proveniência comercial (RFC-0025, superadmin) ───────
+#
+# Partner = EXCLUSIVAMENTE origem comercial. Nunca comissão/contrato/financeiro.
+# Sem exclusão física: desativação via status. Toda mutação é auditada.
+
+
+def _partner_out(db: Session, p: Partner) -> dict[str, Any]:
+    return {
+        "id": str(p.id),
+        "type": cast(str, p.type),
+        "name": cast(str, p.name),
+        "company": p.company,
+        "email": p.email,
+        "phone": p.phone,
+        "code": cast(str, p.code),
+        "status": cast(str, p.status),
+        "notes": p.notes,
+        "companies": _safe_count(db, select(func.count(Tenant.id)).where(Tenant.partner_id == p.id)),
+        "created_at": cast(datetime, p.created_at).isoformat(),
+        "updated_at": cast(datetime, p.updated_at).isoformat(),
+    }
+
+
+class PartnerCreateBody(BaseModel):
+    type: str = "other"
+    name: str
+    company: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    code: str
+    notes: str | None = None
+
+
+class PartnerUpdateBody(BaseModel):
+    type: str | None = None
+    name: str | None = None
+    company: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    code: str | None = None
+    notes: str | None = None
+
+
+class SetPartnerBody(BaseModel):
+    # partner_id = None desvincula a origem (raro; auditado).
+    partner_id: UUID | None = None
+
+
+def _validate_code_unique(db: Session, raw: str, exclude_id: UUID | None = None) -> str:
+    code = normalize_partner_code(raw)
+    if code is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Código inválido. Use A-Z, 0-9, _ ou -, 3 a 32 caracteres.",
+        )
+    stmt = select(Partner).where(Partner.code == code)
+    if exclude_id is not None:
+        stmt = stmt.where(Partner.id != exclude_id)
+    if db.execute(stmt).scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Já existe um Partner com o código {code}.",
+        )
+    return code
+
+
+@router.get("/partners")
+def admin_partners(
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+    limit: int = 50,
+    offset: int = 0,
+    q: str | None = None,
+    status_filter: str | None = None,
+) -> dict[str, Any]:
+    stmt = select(Partner)
+    if q:
+        stmt = stmt.where(Partner.name.ilike(f"%{q}%") | Partner.code.ilike(f"%{q}%"))
+    if status_filter in PARTNER_STATUSES:
+        stmt = stmt.where(Partner.status == status_filter)
+    total = _safe_count(db, select(func.count()).select_from(stmt.subquery()))
+    rows = db.execute(
+        stmt.order_by(Partner.created_at.desc()).limit(min(limit, 200)).offset(max(offset, 0))
+    ).scalars().all()
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "items": [_partner_out(db, p) for p in rows],
+    }
+
+
+@router.post("/partners", status_code=status.HTTP_201_CREATED)
+def admin_create_partner(
+    body: PartnerCreateBody,
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+) -> dict[str, Any]:
+    ptype = body.type.lower().strip()
+    if ptype not in PARTNER_TYPES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Tipo inválido: {body.type}.")
+    if not body.name.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nome é obrigatório.")
+    code = _validate_code_unique(db, body.code)
+    partner = Partner(
+        type=ptype,
+        name=body.name.strip(),
+        company=(body.company or None),
+        email=(body.email or None),
+        phone=(body.phone or None),
+        code=code,
+        notes=(body.notes or None),
+    )
+    db.add(partner)
+    db.flush()
+    _audit(db, _admin, "partner.create", "partner", partner.id, {"code": code, "name": partner.name, "type": ptype})
+    db.commit()
+    db.refresh(partner)
+    return _partner_out(db, partner)
+
+
+@router.patch("/partners/{partner_id}")
+def admin_update_partner(
+    partner_id: UUID,
+    body: PartnerUpdateBody,
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+) -> dict[str, Any]:
+    partner = db.get(Partner, partner_id)
+    if partner is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Partner não encontrado.")
+    changed: dict[str, Any] = {}
+    if body.type is not None:
+        ptype = body.type.lower().strip()
+        if ptype not in PARTNER_TYPES:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Tipo inválido: {body.type}.")
+        partner.type = ptype  # type: ignore[assignment]
+        changed["type"] = ptype
+    if body.name is not None:
+        if not body.name.strip():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nome é obrigatório.")
+        partner.name = body.name.strip()  # type: ignore[assignment]
+        changed["name"] = partner.name
+    if body.code is not None:
+        code = _validate_code_unique(db, body.code, exclude_id=partner_id)
+        partner.code = code  # type: ignore[assignment]
+        changed["code"] = code
+    for field in ("company", "email", "phone", "notes"):
+        val = getattr(body, field)
+        if val is not None:
+            setattr(partner, field, val or None)
+            changed[field] = val or None
+    _audit(db, _admin, "partner.update", "partner", partner.id, {"changed": changed})
+    db.commit()
+    db.refresh(partner)
+    return _partner_out(db, partner)
+
+
+@router.post("/partners/{partner_id}/active")
+def admin_set_partner_active(
+    partner_id: UUID,
+    body: SetActiveBody,
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+) -> dict[str, Any]:
+    partner = db.get(Partner, partner_id)
+    if partner is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Partner não encontrado.")
+    new_status = "active" if body.is_active else "inactive"
+    before = cast(str, partner.status)
+    partner.status = new_status  # type: ignore[assignment]
+    _audit(
+        db, _admin,
+        "partner.activate" if body.is_active else "partner.deactivate",
+        "partner", partner.id,
+        {"before": before, "after": new_status, "code": cast(str, partner.code)},
+    )
+    db.commit()
+    return {"id": str(partner.id), "status": new_status}
+
+
+@router.post("/tenants/{tenant_id}/partner")
+def admin_set_tenant_partner(
+    tenant_id: UUID,
+    body: SetPartnerBody,
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+) -> dict[str, Any]:
+    """Atribui/ajusta manualmente a origem de uma empresa (casos vindos do
+    Microsoft Forms + criação manual — RFC-0025)."""
+    tenant = db.get(Tenant, tenant_id)
+    if tenant is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant não encontrado.")
+    before = str(tenant.partner_id) if tenant.partner_id is not None else None
+    if body.partner_id is not None:
+        partner = db.get(Partner, body.partner_id)
+        if partner is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Partner não encontrado.")
+        if cast(str, partner.status) != "active":
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Partner inativo não pode ser vinculado.")
+    tenant.partner_id = body.partner_id  # type: ignore[assignment]
+    _audit(
+        db, _admin, "tenant.set_partner", "tenant", tenant.id,
+        {"before": before, "after": str(body.partner_id) if body.partner_id else None},
+    )
+    db.commit()
+    return {"id": str(tenant.id), "partner_id": str(body.partner_id) if body.partner_id else None}

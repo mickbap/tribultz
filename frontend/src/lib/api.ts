@@ -63,6 +63,8 @@ type RegisterRequest = {
   lgpd_consent: boolean;
   tenant_slug: string;
   captcha_token?: string;
+  // Proveniência comercial (RFC-0025): código do Partner do link ?partner=/?ref=.
+  partner_code?: string;
 };
 
 type RegisterResponse = {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Toast } from "@/components/common/Toast";
 import { registerWithApi } from "@/lib/api";
@@ -83,10 +83,20 @@ export default function RegisterPage() {
   const [paymentData, setPaymentData] = useState<{ checkout_url?: string; pix_qr_code?: string; pix_copy_paste?: string } | null>(null);
   const [toast, setToast] = useState<{ tone: "success" | "error"; msg: string } | null>(null);
   const [captchaToken, setCaptchaToken] = useState("");
+  // Proveniência comercial (RFC-0025): captura o código do link ?partner=/?ref=.
+  const [partnerCode, setPartnerCode] = useState("");
   const turnstileRef = useRef<TurnstileInstance>(null);
   const captchaConfigured = Boolean(TURNSTILE_SITE_KEY?.trim());
 
   const isPaidPlan = planSlug !== "trial";
+
+  useEffect(() => {
+    // Lê ?partner=/?ref= no carregamento (client-only, seguro no build).
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("partner") ?? params.get("ref");
+    if (code) setPartnerCode(code.trim().toUpperCase());
+  }, []);
 
   function validateStep1(): boolean {
     if (!fullName.trim() || !email.trim() || !password.trim()) {
@@ -145,6 +155,7 @@ export default function RegisterPage() {
         lgpd_consent: true,
         tenant_slug: "",
         captcha_token: captchaToken,
+        partner_code: partnerCode || undefined,
       });
 
       track("sign_up", { method: accountType, plan: planSlug });
@@ -282,6 +293,11 @@ export default function RegisterPage() {
       <section className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-2xl">
         <h1 className="text-2xl font-bold text-slate-900">Criar conta</h1>
         <p className="mt-1 text-sm font-medium text-tribultz-700">Garanta sua conformidade fiscal antes que a reforma tributária te pegue de surpresa.</p>
+        {partnerCode && (
+          <p className="mt-2 inline-block rounded-full bg-tribultz-50 px-3 py-1 text-xs font-medium text-tribultz-700">
+            Indicação: <span className="font-mono">{partnerCode}</span>
+          </p>
+        )}
 
         {/* Plan picker */}
         <fieldset className="mt-6 space-y-3">

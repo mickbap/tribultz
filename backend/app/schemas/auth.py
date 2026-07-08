@@ -37,6 +37,9 @@ class UserRegister(BaseModel):
     lgpd_consent: bool = False
     tenant_slug: str = "default"
     captcha_token: str = ""
+    # Proveniência comercial (RFC-0025): código do Partner que indicou a empresa,
+    # capturado do link ?partner=/?ref=. Inválido/inativo NÃO bloqueia o cadastro.
+    partner_code: str = ""
 
     @field_validator("phone")
     @classmethod

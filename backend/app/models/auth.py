@@ -26,6 +26,14 @@ class Tenant(Base):
     slug = Column(String(100), nullable=False, unique=True)
     is_active = Column(Boolean, nullable=False, default=True)
     pedagogical_mode_2026 = Column(Boolean, nullable=False, server_default="TRUE")
+    # Proveniência comercial (RFC-0025): quem apresentou esta empresa à Tribultz.
+    # Opcional, permanente, um só Partner. ondelete=RESTRICT: Partner nunca é
+    # apagado enquanto houver empresa vinculada (integridade referencial).
+    partner_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("partners.id", ondelete="RESTRICT"),
+        nullable=True,
+    )
     # Using server_default=func.now() for creation
     # Using onupdate=func.now() to ensure python-side updates trigger the timestamp update
     # Schema just says DEFAULT now(), so DB side auto-update depends on triggers (not present in standard schema dump).
