@@ -42,15 +42,21 @@
 | Issues P2 (prioritárias) | {{ISSUES_P2}} |
 | RFCs abertas | {{RFCS}} |
 
+## Capacidades em produção (Fase 1)
+| Capacidade | Referência | Desde |
+|---|---|---|
+| Partner Attribution | RFC-0025 | 2026-07-08 |
+| EarlyAdopter | RFC-0017 | 2026-07-08 |
+| EarlyGrant | ADR-0008 | 2026-07-08 |
+| EffectiveLicense | ADR-0008 | 2026-07-08 |
+| Programa Founding Partners | RFC-0017 | 2026-07-08 |
+
 ## Motor / Known Limitations (Fase 1 — por design)
 | Item | Ocorrências | Destrava |
 |---|---|---|
-| Early Adopter | {{EA}} | RFC-0017 |
-| Early Grant | {{EG}} | ADR-0008 |
-| Effective License | {{EL}} | ADR-0008 |
 | TERA | {{TERA}} | RFC-0018 |
 
-_Devem ser 0 na Fase 0. Quando passarem de 0, a Fase 1 começou a existir._
+_Deve ser 0 na Fase 0. Quando passar de 0, a Fase 1 daquele item começou a existir._
 
 ## Próxima prioridade
 {{NEXT_PRIORITY}}

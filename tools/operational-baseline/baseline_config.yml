@@ -31,8 +31,15 @@ metrics:
     - { nome: "RFCs abertas",   fonte: manual }  # vivem no tribultz-brain
 
 # Known limitations rastreadas por ausência (grep whole-word) — devem ser 0 na Fase 0.
+# EarlyAdopter/EarlyGrant/EffectiveLicense graduaram para capacidades em produção
+# (08/07/2026, Grant Adapter — RFC-0017/ADR-0008); saíram desta lista.
 known_limitations:
-  - { termo: "EarlyAdopter",     destrava: "RFC-0017" }
-  - { termo: "EarlyGrant",       destrava: "ADR-0008" }
-  - { termo: "EffectiveLicense", destrava: "ADR-0008" }
   - { termo: "TERA",             destrava: "RFC-0018" }
+
+# Capacidades operacionais em produção (Fase 1) — o que já saiu de "limitação".
+capabilities_in_production:
+  - { capacidade: "Partner Attribution",       referencia: "RFC-0025", desde: "2026-07-08" }
+  - { capacidade: "EarlyAdopter",              referencia: "RFC-0017", desde: "2026-07-08" }
+  - { capacidade: "EarlyGrant",                referencia: "ADR-0008", desde: "2026-07-08" }
+  - { capacidade: "EffectiveLicense",          referencia: "ADR-0008", desde: "2026-07-08" }
+  - { capacidade: "Programa Founding Partners", referencia: "RFC-0017", desde: "2026-07-08" }

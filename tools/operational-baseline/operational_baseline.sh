@@ -49,15 +49,16 @@ USERS="n/d (requer DB)"; TENANTS="n/d (requer DB)"; APIKEYS="n/d (requer DB)"
 LAUDOS="n/d (requer DB)"; XMLS="n/d (requer DB)"; PENDING_MIGS="n/d (requer DB)"
 RFCS="ver tribultz-brain (status: proposed)"
 
-EA="$(absent EarlyAdopter)"; EG="$(absent EarlyGrant)"
-EL="$(absent EffectiveLicense)"; TERA="$(absent TERA)"
+# EarlyAdopter/EarlyGrant/EffectiveLicense graduaram para capacidades em produção
+# (08/07/2026, Grant Adapter) — não são mais rastreados como known limitations.
+TERA="$(absent TERA)"
 NEXT_PRIORITY="$(grep -E '^next_priority:' "$CONFIG" | sed -E 's/^next_priority: *"?//; s/"? *$//')"
 
 # ── render (substitui {{VAR}} no template) ────────────────────────────────────
 render="$(cat "$TEMPLATE")"
 for kv in DATE WEEK REF BRANCH RULES CLASSTRIB ROUTERS ENDPOINTS PAGES \
           MIGRATIONS PENDING_MIGS STORAGE_PROBE USERS TENANTS APIKEYS LAUDOS XMLS \
-          TODOS ISSUES_OPEN ISSUES_P2 RFCS EA EG EL TERA NEXT_PRIORITY; do
+          TODOS ISSUES_OPEN ISSUES_P2 RFCS TERA NEXT_PRIORITY; do
   val="${!kv}"
   render="${render//\{\{$kv\}\}/$val}"
 done
