@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.auth import Tenant, User, UserTenant
+from app.models.founding_partner import resolve_effective_license
 from app.models.partner import Partner, normalize_partner_code
 from app.models.billing import Plan, Subscription, UsageTracking
 from app.schemas.auth import Token, TenantInfo, UserLogin, UserRead, UserRegister
@@ -200,6 +201,10 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
         _, plan_obj = sub_row
         plan_slug = cast(str, plan_obj.slug)
 
+    # Grant Adapter (ADR-0008): Grant ativo tem precedência sobre a assinatura.
+    # Ponto único de resolução de licença — 2 fontes, ASAAS intacto.
+    plan_slug, license_source = resolve_effective_license(db, UUID(default_tenant_id), plan_slug)
+
     access_token = create_access_token(
         subject=str(user.id),
         extra_claims={
@@ -210,7 +215,10 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
         },
     )
 
-    logger.info("login_success", extra={"user_id": str(user.id), "ip": ip})
+    logger.info(
+        "login_success",
+        extra={"user_id": str(user.id), "ip": ip, "license_source": license_source},
+    )
     return {
         "access_token": access_token,
         "token_type": "bearer",
