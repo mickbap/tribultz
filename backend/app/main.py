@@ -10,7 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.config import settings
 from app.core.logging import configure_logging
 from app.core.observability import init_sentry
-from app.routers import admin, auth, audit, billing, calculadora, classtrib, compliance, credits, documents, exceptions, feedback, health, jobs, lgpd, ncm_suggest, news, public, public_api, reports, simulator, sped, split_payment, support, tasks, validate, validate_xml, validation
+from app.routers import admin, auth, audit, billing, calculadora, classtrib, compliance, credits, documents, exceptions, feedback, founding_partners, health, jobs, lgpd, ncm_suggest, news, public, public_api, reports, simulator, sped, split_payment, support, tasks, validate, validate_xml, validation
 from app.services.news_seed import ensure_default_news_entry
 
 configure_logging()
@@ -92,6 +92,7 @@ app.include_router(news.router)
 app.include_router(documents.router)
 app.include_router(support.router)
 app.include_router(admin.router)
+app.include_router(founding_partners.router)
 app.include_router(sped.router)
 app.include_router(classtrib.router)
 app.include_router(compliance.router)
