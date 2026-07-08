@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.auth import Tenant, User, UserTenant
+from app.models.partner import Partner, normalize_partner_code
 from app.models.billing import Plan, Subscription, UsageTracking
 from app.schemas.auth import Token, TenantInfo, UserLogin, UserRead, UserRegister
 from app.core.security import (
@@ -77,6 +78,31 @@ def _get_or_create_tenant_for_cnpj(
     db.add(tenant)
     db.flush()  # get the ID without committing
     return tenant
+
+
+def _attach_partner_from_code(db: Session, tenant: Tenant, raw_code: str) -> None:
+    """Captura a proveniência comercial (RFC-0025) sem nunca bloquear o cadastro.
+
+    Vincula ``tenant.partner_id`` ao Partner ativo cujo código bate com o link
+    ``?partner=/?ref=``. Regras (RFC-0025):
+    - Código inválido ou inativo → apenas loga; a empresa entra sem vínculo.
+    - A origem é permanente: se o tenant já tem Partner, não sobrescreve.
+    """
+    code = normalize_partner_code(raw_code)
+    if not code:
+        if raw_code:
+            logger.info("partner attribution ignorada: código inválido %r", raw_code)
+        return
+    if tenant.partner_id is not None:
+        return  # origem já registrada — permanente, não sobrescreve
+    partner = db.execute(
+        select(Partner).where(Partner.code == code)
+    ).scalar_one_or_none()
+    if partner is None or cast(str, partner.status) != "active":
+        logger.info("partner attribution ignorada: código %s inexistente/inativo", code)
+        return
+    tenant.partner_id = partner.id  # type: ignore[assignment]
+    logger.info("partner attribution: tenant %s → partner %s", tenant.slug, code)
 
 
 def _get_user_tenants(db: Session, user_id: UUID) -> list[TenantInfo]:
@@ -233,6 +259,8 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
     # Auto-create tenant from CNPJ
     if data.cnpj:
         tenant = _get_or_create_tenant_for_cnpj(db, data.cnpj, company_name)
+        # Proveniência comercial (RFC-0025): captura não-bloqueante do Partner.
+        _attach_partner_from_code(db, tenant, data.partner_code)
     else:
         # Fallback to default tenant
         tenant = db.execute(
