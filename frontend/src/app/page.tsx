@@ -419,6 +419,28 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* FOUNDING PARTNERS — teaser institucional */}
+        <section className="border-y border-slate-200 bg-[#F4F7FF] py-16">
+          <div className="mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 md:flex-row md:items-center md:justify-between md:px-6">
+            <div className="max-w-2xl">
+              <span className="text-xs font-semibold uppercase tracking-wide text-[#2956E3]">Programa Founding Partners</span>
+              <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[#24292E]">Construa a Tribultz conosco</h2>
+              <p className="mt-3 text-slate-600">
+                Estamos formando um grupo seleto de empresas para construir a plataforma durante a
+                Reforma Tributária. Não é um teste de software — é construção conjunta com quem vive
+                a operação fiscal todos os dias.
+              </p>
+            </div>
+            <Link
+              href="/founding-partners"
+              className="flex-none rounded-lg bg-[#2956E3] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#2044C7]"
+              style={{ boxShadow: "0 8px 24px rgba(41,86,227,0.20)" }}
+            >
+              Conhecer o Programa
+            </Link>
+          </div>
+        </section>
+
         {/* NEWS */}
         <section className="py-16">
           <div className="mx-auto max-w-6xl px-4 md:px-6">
