@@ -170,6 +170,25 @@ def test_post_news_validation_rejects_short_title(client, publish_token):
     assert resp.status_code == 422
 
 
+def test_post_news_accepts_advisory_category(client, publish_token, session):
+    """Advisory (#407): categoria de aviso regulatório, distinta de Feature/Fix/Security."""
+    title = f"Advisory test {uuid.uuid4().hex[:8]}"
+    resp = client.post(
+        "/api/v1/news",
+        json={"title": title, "description": "Aviso regulatório de teste.", "category": "Advisory"},
+        headers={"Authorization": f"Bearer {publish_token}"},
+    )
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["category"] == "Advisory"
+
+    session.expire_all()
+    row = session.execute(
+        text("SELECT category FROM news WHERE id = :id"),
+        {"id": resp.json()["id"]},
+    ).fetchone()
+    assert row.category == "Advisory"
+
+
 def test_post_news_validation_rejects_invalid_category(client, publish_token):
     resp = client.post(
         "/api/v1/news",

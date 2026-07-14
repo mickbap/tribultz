@@ -10,7 +10,7 @@ class News(Base):
     __tablename__ = "news"
     __table_args__ = (
         CheckConstraint(
-            "category IN ('Feature', 'Fix', 'Security')",
+            "category IN ('Feature', 'Fix', 'Security', 'Advisory')",
             name="news_category_check",
         ),
     )
