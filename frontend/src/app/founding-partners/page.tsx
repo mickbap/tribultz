@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { PublicFooter } from "@/components/public/PublicFooter";
 
 // Formulário oficial de inscrição do Programa Founding Partners.
@@ -49,7 +48,6 @@ const BENEFITS: { title: string; desc: string }[] = [
 export default function FoundingPartnersPage() {
   return (
     <div className="bg-white">
-      <PublicNavbar />
       <main>
         {/* HERO */}
         <section className="border-b border-slate-200 bg-gradient-to-b from-[#F4F7FF] to-white">
