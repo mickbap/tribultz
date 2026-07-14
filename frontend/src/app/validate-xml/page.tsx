@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import DeadlineCountdownBanner from "@/components/common/DeadlineCountdownBanner";
 import { Skeleton } from "@/components/common/Skeleton";
 import { Toast } from "@/components/common/Toast";
 import { downloadJobReportPdf, generateCorrectedXml, getJob, openExceptionRequest, PlanRequiredError, validateXml } from "@/lib/api";
@@ -204,6 +205,8 @@ export default function ValidateXmlPage() {
 
   return (
     <section className="space-y-5">
+      <DeadlineCountdownBanner />
+
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Validar XML</h1>
         <p className="text-sm text-slate-500">

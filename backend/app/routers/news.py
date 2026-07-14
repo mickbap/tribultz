@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/news", tags=["news"])
 
-NewsCategory = Literal["Feature", "Fix", "Security"]
+NewsCategory = Literal["Feature", "Fix", "Security", "Advisory"]
 
 
 class NewsResponse(BaseModel):

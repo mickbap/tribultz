@@ -6,7 +6,7 @@ type NewsItem = {
   id: string;
   title: string;
   description: string;
-  category: "Feature" | "Fix" | "Security";
+  category: "Feature" | "Fix" | "Security" | "Advisory";
   created_at: string;
 };
 
@@ -21,6 +21,7 @@ const categoryStyles: Record<NewsItem["category"], string> = {
   Feature: "bg-emerald-100 text-emerald-800",
   Fix: "bg-amber-100 text-amber-800",
   Security: "bg-rose-100 text-rose-800",
+  Advisory: "bg-blue-100 text-blue-800",
 };
 
 export function NewsFeed({ limit, compact = false }: NewsFeedProps) {

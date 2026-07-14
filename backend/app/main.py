@@ -11,7 +11,7 @@ from app.config import settings
 from app.core.logging import configure_logging
 from app.core.observability import init_sentry
 from app.routers import admin, auth, audit, billing, calculadora, classtrib, compliance, credits, documents, exceptions, feedback, founding_partners, health, jobs, lgpd, ncm_suggest, news, public, public_api, reports, simulator, sped, split_payment, support, tasks, validate, validate_xml, validation
-from app.services.news_seed import ensure_default_news_entry
+from app.services.news_seed import ensure_default_news_entry, ensure_regulatory_advisories
 
 configure_logging()
 init_sentry()  # no-op sem SENTRY_DSN — deve vir antes da criação do app FastAPI
@@ -20,6 +20,7 @@ init_sentry()  # no-op sem SENTRY_DSN — deve vir antes da criação do app Fas
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # noqa: ARG001
     ensure_default_news_entry()
+    ensure_regulatory_advisories()
     yield
 
 
