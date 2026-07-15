@@ -89,12 +89,20 @@ Não existe caminho para *persistir uma key já existente*: `mgc auth api-key` s
 
 A conta tem **dois tenants Magalu**, e `mgc auth login` cai no **errado** por padrão:
 
-| Tenant | Hospeda a VM? |
-|--------|---------------|
-| `mickel.baptista@outlook.com` (pessoal) | não — é onde o `mgc auth login` cai por padrão |
-| `mickel@6tech.net.br` (managed) | **sim** — `tribultz-api` e o Object Storage vivem aqui |
+| Tenant | UUID | Hospeda a VM? |
+|--------|------|---------------|
+| `mickel.baptista@outlook.com` (pessoal) | `ff4cd2a8-5f78-42d1-b047-ec90c1afe100` | não — é onde o `mgc auth login` cai por padrão |
+| `mickel@6tech.net.br` (managed) | `77554d12-fe63-4697-ac4f-9bfb3bc926a4` | **sim** — `tribultz-api` e o Object Storage vivem aqui |
 
-Sintoma: login funciona, nenhum erro aparece, e `mgc virtual-machine instances list` volta **vazio** — parece falta de permissão, mas é tenant errado. Selecione o tenant correto após o login (`mgc auth tenant list`).
+Sintoma: login funciona, nenhum erro aparece, e `mgc virtual-machine instances list` volta **vazio** — parece falta de permissão, mas é tenant errado.
+
+```bash
+mgc auth tenant list      # lista os dois — seguro, não imprime token
+mgc auth tenant current   # mostra o ativo — seguro, não imprime token
+mgc auth tenant set 77554d12-fe63-4697-ac4f-9bfb3bc926a4 > /dev/null 2>&1   # PERIGOSO sem redirect
+```
+
+> Ao conferir a saída do mgc, não filtre por `name:` ou `state:`: o CLI injeta códigos ANSI de cor **entre** a palavra e os dois-pontos, e o grep literal nunca casa — parece que a VM sumiu quando ela está lá. Filtre por um valor contíguo (ex.: `tribultz-api`) ou use `| sed -E 's/\x1b\[[0-9;]*m//g'` antes do grep.
 
 > ⚠️ **`mgc auth tenant set` imprime `access_token` e `refresh_token` completos em texto puro no stdout.** Redirecione a saída (`> /dev/null`) e nunca rode esse comando com o terminal compartilhado, em screenshot ou em sessão de agente cujo transcript fique salvo. Um `refresh_token` vazado continua valendo até a sessão ser encerrada com `mgc auth logout`.
 
