@@ -60,13 +60,19 @@ if ! command -v mgc >/dev/null 2>&1; then
   bad "mgc não está no PATH" "instale: github.com/MagaluCloud/mgccli (Mac: darwin_arm64) e confira o sha256"
 else
   ok "mgc encontrado: $(mgc --version 2>/dev/null | head -1)"
-  if [ -z "$MGC_API_KEY" ]; then
-    bad "MGC_API_KEY não está definida" "export MGC_API_KEY=... — NÃO existe login persistido; sem essa var o mgc falha com 'RefreshToken is not set'"
-  else
-    if mgc virtual-machine instances list 2>/dev/null | grep -q 'tribultz-api'; then
-      ok "API key válida — VM tribultz-api visível"
+  # Testa o acesso de verdade, não a forma de autenticar: serve tanto para
+  # sessão OAuth (mgc auth login) quanto para MGC_API_KEY.
+  if mgc virtual-machine instances list 2>/dev/null | grep -q 'tribultz-api'; then
+    if [ -n "$MGC_API_KEY" ]; then
+      ok "acesso ok — VM tribultz-api visível (via MGC_API_KEY)"
     else
+      ok "acesso ok — VM tribultz-api visível (via sessão de 'mgc auth login')"
+    fi
+  else
+    if [ -n "$MGC_API_KEY" ]; then
       bad "MGC_API_KEY definida mas a chamada falhou" "key errada/revogada, ou tenant sem permissão"
+    else
+      bad "sem acesso à Magalu" "rode 'mgc auth login' (OAuth por navegador, cria sessão persistente) OU export MGC_API_KEY=... — sem um dos dois o mgc falha com 'RefreshToken is not set'"
     fi
   fi
 fi
