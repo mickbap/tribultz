@@ -59,13 +59,19 @@ Para comparar cópia local com a VM sem expor valores, compare o md5 de cada val
 
 Válidos: Magalu (API key, SSH, Object Storage), Cloudflare, Turnstile, Asaas produção, OpenRouter, HubSpot, GitHub.
 
-**Pendências abertas:**
+> 🔒 **Ordem vigente (2026-07-15): NÃO rotacionar, revogar nem encerrar sessão de credencial alguma enquanto o produto não escala.** Vale inclusive para as pendências listadas abaixo — inclusive as comprovadamente vazadas ou já revogadas. Documentar e seguir; não propor rotação de novo. O objetivo da fase é acesso livre e sem atrito a partir de Windows e Mac. Reavaliar quando o produto escalar.
+>
+> Contexto que sustenta a ordem: **deploy não usa credencial local alguma** — frontend pelo `vercel[bot]` (GitHub App), backend pelo Actions com `MAGALU_SSH_KEY`. Nenhuma ação sobre credencial local pode conflitar com deploy.
+
+**Pendências abertas** (registradas, sem ação — ver ordem acima)**:**
 
 1. **Resend revogado.** A chave é idêntica em `.env.prod`, `secrets/credentials.md` e na memória, e as três retornam **HTTP 401**. E-mail transacional está quebrado em produção com `EMAIL_VERIFICATION_ENABLED=true` — provavelmente ninguém consegue concluir cadastro. Ao rotacionar, a nova chave precisa entrar em **quatro** lugares: `/opt/tribultz/.env` (VM), `.env.prod` (local), `secrets/credentials.md` e a memória.
 
 2. **`GITHUB_TOKEN` de produção é um OAuth pessoal.** O valor em `/opt/tribultz/.env` é byte a byte o mesmo token `gho_` do `gh` CLI do `mickbap` (confirmado por hash). Consequências: `gh auth logout`, troca de máquina ou expiração do OAuth derrubam produção junto; e o escopo `repo` alcança todos os repositórios da conta, não só este. Deveria ser um fine-grained PAT restrito a `mickbap/tribultz` ou um GitHub App.
 
 3. **`gh` CLI sem escopo `workflow`.** Escopos atuais: `gist`, `read:org`, `repo`. Alterar `.github/workflows/**` via API/CLI falha; só via push.
+
+4. **`refresh_token` do mgc exposto em transcript** (Mac, 2026-07-15). Um `mgc auth tenant set` imprimiu `access_token` e `refresh_token` completos em texto puro numa sessão de agente. O `refresh_token` continua cunhando access tokens até um `mgc auth logout` — que, por ordem vigente, **não será executado**. Prevenção: sempre redirecionar a saída desse comando (`> /dev/null 2>&1`).
 
 ## Por que "funciona no Windows" e não no Mac
 
