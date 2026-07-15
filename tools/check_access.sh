@@ -11,7 +11,10 @@
 VM_HOST="201.54.20.18"
 VM_USER="ubuntu"
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
-KEY_FP="SHA256:ydI3GwtHcGHjUvcCzFQgOp7zypbiVwqqiicGlhun7gg"   # tribultz-infra (público)
+# Fingerprints das chaves autorizadas na VM (públicos — não são segredo).
+# Ao adicionar uma máquina, autorize a chave em ~/.ssh/authorized_keys na VM e liste aqui.
+KEY_FPS="SHA256:ydI3GwtHcGHjUvcCzFQgOp7zypbiVwqqiicGlhun7gg=tribultz-infra (Windows)
+SHA256:6DqZCh26dT2Ce0KPD8ZwMXPtZ9++3siBctZKD1E+8ig=tribultz-infra (Mac)"
 API="https://api.tribultz.com.br"
 FRONTEND="https://tribultz.com.br"
 
@@ -42,9 +45,18 @@ else
     echo -e "  ${DIM}· permissão não verificada (Windows usa ACL, não modo POSIX)${NC}"
   fi
   FP=$(ssh-keygen -lf "${SSH_KEY}.pub" 2>/dev/null | awk '{print $2}')
-  if [ -z "$FP" ]; then warn "sem ${SSH_KEY}.pub para conferir fingerprint"
-  elif [ "$FP" = "$KEY_FP" ]; then ok "fingerprint confere (tribultz-infra)"
-  else bad "fingerprint diferente do esperado" "esperado $KEY_FP, obtido $FP"; fi
+  if [ -z "$FP" ]; then
+    warn "sem ${SSH_KEY}.pub para conferir fingerprint"
+  else
+    NAME=$(printf '%s\n' "$KEY_FPS" | grep -F "$FP=" | cut -d= -f2-)
+    if [ -n "$NAME" ]; then
+      ok "chave reconhecida: $NAME"
+    else
+      # Não é falha: a autoridade é o teste de conexão logo abaixo. Uma chave nova
+      # e legítima simplesmente ainda não foi listada em KEY_FPS.
+      warn "chave não listada em KEY_FPS ($FP)" "se a conexão abaixo funcionar, a chave é válida — considere adicioná-la a KEY_FPS"
+    fi
+  fi
 
   if ssh -i "$SSH_KEY" -o BatchMode=yes -o ConnectTimeout=12 -o StrictHostKeyChecking=accept-new \
        "$VM_USER@$VM_HOST" 'exit 0' 2>/dev/null; then
@@ -70,7 +82,10 @@ else
     fi
   else
     if [ -n "$MGC_API_KEY" ]; then
-      bad "MGC_API_KEY definida mas a chamada falhou" "key errada/revogada, ou tenant sem permissão"
+      bad "MGC_API_KEY definida mas a chamada falhou" "key errada/revogada, ou key de outro tenant"
+    elif mgc auth tenant list >/dev/null 2>&1; then
+      # Autenticado, mas sem enxergar a VM: quase sempre é tenant errado.
+      bad "autenticado, mas a VM tribultz-api não aparece" "TENANT ERRADO. A conta tem 2 tenants e o 'mgc auth login' cai no pessoal (mickel.baptista@outlook.com) por padrão; a VM vive no mickel@6tech.net.br (managed). Veja 'mgc auth tenant list' e selecione o correto. ATENÇÃO: 'mgc auth tenant set' IMPRIME access_token e refresh_token em texto puro — redirecione a saída (> /dev/null) ou não compartilhe o terminal."
     else
       bad "sem acesso à Magalu" "rode 'mgc auth login' (OAuth por navegador, cria sessão persistente) OU export MGC_API_KEY=... — sem um dos dois o mgc falha com 'RefreshToken is not set'"
     fi

@@ -79,6 +79,19 @@ Duas formas de resolver, ambas verificadas:
 
 Não existe caminho para *persistir uma key já existente*: `mgc auth api-key` só tem `create`, `get`, `list` e `revoke`.
 
+### Armadilha dos dois tenants
+
+A conta tem **dois tenants Magalu**, e `mgc auth login` cai no **errado** por padrão:
+
+| Tenant | Hospeda a VM? |
+|--------|---------------|
+| `mickel.baptista@outlook.com` (pessoal) | não — é onde o `mgc auth login` cai por padrão |
+| `mickel@6tech.net.br` (managed) | **sim** — `tribultz-api` e o Object Storage vivem aqui |
+
+Sintoma: login funciona, nenhum erro aparece, e `mgc virtual-machine instances list` volta **vazio** — parece falta de permissão, mas é tenant errado. Selecione o tenant correto após o login (`mgc auth tenant list`).
+
+> ⚠️ **`mgc auth tenant set` imprime `access_token` e `refresh_token` completos em texto puro no stdout.** Redirecione a saída (`> /dev/null`) e nunca rode esse comando com o terminal compartilhado, em screenshot ou em sessão de agente cujo transcript fique salvo. Um `refresh_token` vazado continua valendo até a sessão ser encerrada com `mgc auth logout`.
+
 **Vercel: login é por máquina, e não há nada para migrar.** O CLI usa OAuth — `auth.json` guarda um access token de ~8h mais um `refreshToken` que o renova sozinho. Copiar esse arquivo para o Mac é inútil (expira e é vinculado à sessão). No Mac: `vercel login`. Só é necessário para deploy manual.
 
 **Nenhum deploy depende do seu laptop.** O frontend é publicado pelo `vercel[bot]` via GitHub App (deployments de Production e Preview criados por ele em 2026-07-14). O backend é publicado pelo GitHub Actions via SSH, usando os secrets `MAGALU_SSH_KEY` / `MAGALU_SSH_HOST` / `MAGALU_SSH_USER`. Ou seja: mesmo com zero credencial local, **você nunca fica sem conseguir fazer deploy** — o que se perde sem credencial local é o acesso operacional (inspecionar VM, ler logs, rodar migrations).
