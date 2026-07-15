@@ -61,6 +61,12 @@ cd frontend && npm test --silent && npm run build
 cd backend && source .venv/bin/activate && python -m pytest tests/ -q && ruff check app/ tests/
 ```
 
+## Contexto durável — leia antes de agir
+
+- `docs/context/` — conhecimento que vale para qualquer máquina: vocabulário fiscal oficial, base legal, regras da contabilidade, referências de APIs, convenções e decisões de produto. **Fonte de verdade**; a memória local do agente é só cache. Nunca colocar credencial lá.
+- `docs/infra/secrets_inventory.md` — onde os segredos vivem, como validar sem expor valores, onboarding de máquina nova. Fonte de verdade dos segredos: `/opt/tribultz/.env` na VM.
+- `tools/check_access.sh` — valida SSH, mgc, gh, Vercel, drift do `.env.prod` e saúde da produção.
+
 ## Regras de domínio
 
 - **CBS**: Contribuição sobre Bens e Serviços (federal) — fase de teste 2026: **0,9%**; referência plena (regime cheio, ~2033): **8,8%**
