@@ -1,0 +1,3 @@
+# Scripts shell precisam de LF: com CRLF o macOS/Linux falham com "bad interpreter".
+# Necessário porque o repo é editado tanto no Windows quanto no Mac.
+*.sh text eol=lf

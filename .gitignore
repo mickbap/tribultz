@@ -138,6 +138,12 @@ celerybeat.pid
 .env
 .env.prod
 .envrc
+# Backups de .env — contêm segredos de produção (ex.: .env.prod.bak.20260715-085246,
+# .env.bak.1782742372 gerados em rotações/deploys na VM)
+.env.bak*
+.env.*.bak*
+.env.prod.bak*
+*.env.bak*
 
 # Secrets locais — NUNCA commitar
 secrets/
