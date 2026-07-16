@@ -57,7 +57,9 @@ docs/sprints/      Histórico de sprints e relatórios de entrega
 # Frontend
 cd frontend && npm test --silent && npm run build
 
-# Backend
+# Backend — pré-requisito: infra local no ar (ver "Dev servers"). Testes que
+# disparam tasks Celery (ex.: tests/test_billing_webhook.py) precisam de um
+# Redis real em localhost:6379; sem ele falham com ConnectionRefusedError.
 cd backend && source .venv/bin/activate && python -m pytest tests/ -q && ruff check app/ tests/
 ```
 
@@ -85,7 +87,8 @@ cd backend && source .venv/bin/activate && python -m pytest tests/ -q && ruff ch
 ## Dev servers
 
 - Frontend: `cd frontend && npm run dev` → porta 3000
-- Backend + infra: `docker compose -f infra/docker-compose.yml up -d` → porta 8000
+- Backend + infra: `docker compose -f infra/docker-compose.yml up -d --build` → porta 8000
+  - `--build` é necessário sempre que o código do backend ou uma migration Alembic mudar — o Compose reutiliza a imagem em cache e não rebuilda sozinho. Sem isso, o serviço one-shot `migrate` pode falhar com `Can't locate revision identified by '<rev>'` (imagem desatualizada não conhece a migration nova), e `api`/`worker`/`beat` ficam parados porque dependem de `migrate` completar com sucesso.
 
 ## Deploy
 
