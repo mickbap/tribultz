@@ -144,6 +144,7 @@ def test_crud_partner_e_codigo_unico(client, superadmin):
     pid = r.json()["id"]
     assert r.json()["code"] == code  # normalizado para uppercase
     assert r.json()["status"] == "active"
+    assert r.json()["has_account"] is False
     # código duplicado → 409
     assert client.post("/api/v1/admin/partners", json={"name": "Outro", "code": code}).status_code == 409
     # código inválido → 400
@@ -206,6 +207,11 @@ def test_create_partner_account_success(client, superadmin, session):
     assert user.tenant_id is None
     assert user.actor_type == "partner"
     assert user.role == "partner"
+
+    # GET /admin/partners reflete has_account (usado pela UI para decidir
+    # se mostra "criar conta" ou "conta já existe").
+    listed = client.get("/api/v1/admin/partners").json()["items"]
+    assert next(p for p in listed if p["id"] == str(partner.id))["has_account"] is True
 
 
 @pytestmark_db

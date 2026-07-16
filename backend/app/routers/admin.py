@@ -549,6 +549,8 @@ def _partner_out(db: Session, p: Partner) -> dict[str, Any]:
         "status": cast(str, p.status),
         "notes": p.notes,
         "companies": _safe_count(db, select(func.count(Tenant.id)).where(Tenant.partner_id == p.id)),
+        # Cadastro operacional (RFC-0026, ADR-0011) — se já tem conta de login.
+        "has_account": db.execute(select(User.id).where(User.partner_id == p.id)).scalar_one_or_none() is not None,
         "created_at": cast(datetime, p.created_at).isoformat(),
         "updated_at": cast(datetime, p.updated_at).isoformat(),
     }
