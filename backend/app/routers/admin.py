@@ -6,11 +6,12 @@ from typing import Annotated, Any, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.security import get_password_hash
 from app.database import get_db
 from app.models.admin_audit import AdminAuditLog
 from app.models.api_key import ApiKey
@@ -578,6 +579,12 @@ class SetPartnerBody(BaseModel):
     partner_id: UUID | None = None
 
 
+class PartnerAccountCreateBody(BaseModel):
+    email: EmailStr
+    full_name: str
+    initial_password: str
+
+
 def _validate_code_unique(db: Session, raw: str, exclude_id: UUID | None = None) -> str:
     code = normalize_partner_code(raw)
     if code is None:
@@ -709,6 +716,58 @@ def admin_set_partner_active(
     )
     db.commit()
     return {"id": str(partner.id), "status": new_status}
+
+
+@router.post("/partners/{partner_id}/account", status_code=status.HTTP_201_CREATED)
+def admin_create_partner_account(
+    partner_id: UUID,
+    body: PartnerAccountCreateBody,
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+) -> dict[str, Any]:
+    """Cria a conta de login do Partner (RFC-0026, ADR-0011 — Programa de Parceiros, Fase 1).
+
+    Mesmo padrão do Founding Partner (_provision_tenant_and_user): admin
+    provisiona com senha inicial — sem convite/e-mail automático (não existe
+    hoje no código). ``User.partner_id`` é setado, ``tenant_id`` fica NULL —
+    o CHECK constraint do banco (migration 2026_07_16_0027) garante que essa
+    separação nunca é violada. Um Partner tem no máximo uma conta nesta fase.
+    """
+    partner = db.get(Partner, partner_id)
+    if partner is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Partner não encontrado.")
+    if cast(str, partner.status) != "active":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Partner inativo não pode receber conta.")
+    if len(body.initial_password) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Senha inicial deve ter no mínimo 8 caracteres.")
+    if not body.full_name.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nome é obrigatório.")
+
+    existing_account = db.execute(
+        select(User).where(User.partner_id == partner.id)
+    ).scalar_one_or_none()
+    if existing_account is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este Partner já possui uma conta.")
+
+    # Login busca por e-mail globalmente (scalar_one_or_none) — e-mail precisa
+    # ser único entre TODOS os atores, não só entre partners.
+    if db.execute(select(User).where(User.email == body.email)).scalar_one_or_none() is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este e-mail já está em uso.")
+
+    user = User(
+        partner_id=partner.id,
+        email=body.email,
+        full_name=body.full_name.strip(),
+        password_hash=get_password_hash(body.initial_password),
+        role="partner",
+        email_verified=True,
+    )
+    db.add(user)
+    db.flush()
+    _audit(db, _admin, "partner.create_account", "partner", partner.id, {"user_id": str(user.id), "email": body.email})
+    db.commit()
+    db.refresh(user)
+    return {"user_id": str(user.id), "partner_id": str(partner.id), "email": cast(str, user.email)}
 
 
 @router.post("/tenants/{tenant_id}/partner")
