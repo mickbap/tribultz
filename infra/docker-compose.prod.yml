@@ -25,7 +25,7 @@ x-common: &common
     PYTHONUNBUFFERED: "1"        # único override — não sobrescreve vars do .env
   restart: unless-stopped
   networks:
-    - internal
+    - tribultz
   # CIS Docker Benchmark 5.25 — previne escalada de privilégios via setuid/setgid
   security_opt:
     - no-new-privileges:true
@@ -157,7 +157,7 @@ services:
 
 # ── Redes ─────────────────────────────────────────────────────────────────────
 networks:
-  internal:
+  tribultz:
     driver: bridge
 
 # ── Volumes ───────────────────────────────────────────────────────────────────
