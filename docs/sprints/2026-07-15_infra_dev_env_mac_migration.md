@@ -59,3 +59,32 @@ Numa sessão anterior desta mesma migração, um comando (`mgc auth tenant set`)
 - Stack local (`infra/docker-compose.yml`) no ar: `db`, `redis`, `minio`, `api`, `worker`, `beat` todos saudáveis.
 - `backend/.venv` com dependências instaladas.
 - Nenhuma credencial rotacionada/revogada. Nenhum código de produto alterado — só `CLAUDE.md` e este relatório.
+
+## 7) Auditoria de estado — Magalu VM e Vercel (16/07)
+
+Com acesso operacional validado, foi feita uma checagem viva (não só de disponibilidade) da VM de produção e do projeto Vercel.
+
+**Magalu — VM `tribultz-api`** (BV2-4-100: 2 vCPU / 4GB RAM / 100GB disco, `br-se1`):
+
+| Item | Achado |
+|---|---|
+| SO | Ubuntu 24.04.4 LTS — **14 semanas sem reboot**, com `*** System restart required ***` pendente (patch de segurança já instalado por `unattended-upgrades`, faltando só ativar) |
+| Disco/memória | Sem aperto real: 27% de disco usado, sem OOM em 30 dias (container `api` era o mais próximo do limite, 72%) |
+| Docker/imagens em prod | Versões atuais; imagens sempre frescas a cada deploy (diferente do ambiente local, que não rebuilda sozinho) |
+| Config divergente | `infra/docker-compose.prod.yml` tinha uma mudança **feita direto na VM, nunca commitada** (rede renomeada `internal`→`tribultz`) — risco real de quebrar o próximo `git pull --ff-only` do `deploy.sh` |
+
+**Ações tomadas:**
+- **Reboot da VM**, coordenado e verificado ponta a ponta: kernel `6.8.0-106`→`6.8.0-134`, flag de restart limpa, uptime zerado, os 4 containers voltaram sozinhos (`restart: unless-stopped`), `/health/deep` (local e externo) e frontend confirmados saudáveis logo depois. Downtime = só o tempo do boot.
+- **PR [#453](https://github.com/mickbap/tribultz/pull/453)** trouxe a mudança de rede da VM para o repositório (mesmo diff, byte a byte) e foi mergeado. Working tree da VM reconciliado (`git checkout` + `sudo git pull --ff-only`) — `git status` limpo, sem mais risco de deploy travar por isso.
+- Achado colateral: `.git` na VM tinha ownership misto (`FETCH_HEAD` do `root`, resto do `ubuntu`) — motivo pelo qual o `deploy.sh` roda com `sudo`. Sem ação necessária, só registrado.
+
+**Vercel — projeto `tribultz`**: Next.js já na última versão (16.2.10), deploys recentes todos `Ready`, sem atualização estrutural pendente. `npm audit` aponta 3 vulnerabilidades (1 low, 2 moderate) internas ao próprio `node_modules/next` — sem exposição real, sem ação necessária agora.
+
+## Pendências conhecidas — sem ação (por ordem vigente, não esquecimento)
+
+- Chave Resend revogada (HTTP 401) — e-mail transacional afetado.
+- `GITHUB_TOKEN` de produção é o OAuth pessoal do `gh` do usuário, não uma credencial dedicada.
+- `gh` CLI sem escopo `workflow`.
+- `refresh_token` do `mgc` exposto em sessão anterior — permanece válido por decisão do usuário.
+
+Todas documentadas em `docs/infra/secrets_inventory.md`, com o motivo de não terem sido rotacionadas/corrigidas nesta fase.
