@@ -27,10 +27,16 @@ frontend/          Next.js app (app router)
   src/components/  UI: AppShell, Sidebar, EvidenceList, JsonViewer, Toast
 
 backend/           FastAPI
-  app/routers/     audit, auth, chat, health, jobs, tasks, validate, validation, admin (BFF
-                   superadmin + ações auditadas), classtrib, ncm_suggest, public_api, calculadora
-  app/crews/       CrewAI chatops crew + tools
-  app/tasks/       Celery tasks (validate, report, simulation, reconciliation, hubspot)
+  app/routers/     28 routers (auditado 16/07/2026) — admin, audit, auth, billing, calculadora,
+                   classtrib, compliance, credits, documents, exceptions, feedback,
+                   founding_partners, health, jobs, lgpd, ncm_suggest, news, public, public_api,
+                   reports, simulator, sped, split_payment, support, tasks, validate,
+                   validate_xml, validation. Chat não é mais endpoint REST — virou crew CrewAI
+                   (app/crews/chatops_crew.py) desde a migration 2026_04_11_0010.
+  app/crews/       CrewAI crews (chatops, devops, security audit)
+  app/tasks/       10 tasks Celery (validate, report, simulation, reconciliation, hubspot,
+                   security_audit — órfã, sem beat/autodiscover, ver runbook —, billing, sped,
+                   compliance, crm)
   app/tools/       ERP connector, HubSpot, Postgres, S3, validation
   tests/           pytest
 
@@ -39,6 +45,8 @@ database/          README — schema é 100% Alembic (backend/app/alembic); sche
 infra/             docker-compose.yml
 tools/qa_gates/    run_gates.py — QA automation
 docs/sprints/      Histórico de sprints e relatórios de entrega
+docs/infra/operations_runbook.md   Arquitetura, fluxo de deploy/rollback, recuperação de
+                                    ambiente, checklist de auditoria operacional
 ```
 
 ## Convenções
