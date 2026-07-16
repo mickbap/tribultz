@@ -11,9 +11,12 @@ class Token(BaseModel):
 
 
 class TokenPayload(BaseModel):
-    sub: str  # user_id (UUID string)
-    tenant_id: str
+    sub: str  # user_id (UUID string) — âncora de identidade, qualquer ator
+    actor_type: str  # "tenant" | "partner" — domínio do ator (RFC-0026)
     role: str
+    # Contextuais: exatamente um preenchido, conforme actor_type.
+    tenant_id: Optional[str] = None
+    partner_id: Optional[str] = None
     exp: int
     iat: int
 

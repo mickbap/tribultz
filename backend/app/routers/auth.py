@@ -178,6 +178,26 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Ator partner (Programa de Parceiros, RFC-0026): não tem tenant, billing
+    # nem Grant/licença — sai cedo, antes de qualquer resolução tenant-scoped
+    # (o restante deste handler assume tenant_id válido).
+    if user.actor_type == "partner":
+        access_token = create_access_token(
+            subject=str(user.id),
+            extra_claims={
+                "actor_type": "partner",
+                "partner_id": str(user.partner_id),
+                "role": cast(str, user.role),
+            },
+        )
+        logger.info("login_success", extra={"user_id": str(user.id), "ip": ip, "actor_type": "partner"})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "partner_id": str(user.partner_id),
+            "role": cast(str, user.role),
+        }
+
     # Resolve default tenant from user_tenants
     user_tenant_list = _get_user_tenants(db, cast(UUID, user.id))
     default_tenant_id = str(user.tenant_id)
@@ -208,6 +228,7 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
     access_token = create_access_token(
         subject=str(user.id),
         extra_claims={
+            "actor_type": "tenant",
             "tenant_id": default_tenant_id,
             "role": cast(str, user.role),
             "account_type": cast(str, user.account_type),
@@ -543,12 +564,12 @@ async def add_cnpj(
     db: Session = Depends(get_db),
 ):
     """Add a new CNPJ/tenant for contador accounts."""
-    from app.api.deps import get_current_user, oauth2_scheme
+    from app.api.deps import get_current_actor, oauth2_scheme
 
     token = await oauth2_scheme(request)
     if not token:
         raise HTTPException(status_code=401, detail="Token ausente.")
-    user = await get_current_user(token, db)
+    user = await get_current_actor(token, db)
     user_id = cast(UUID, user.id)
 
     if cast(str, user.account_type) != "contador":
@@ -615,12 +636,12 @@ async def switch_tenant(
     db: Session = Depends(get_db),
 ):
     """Switch active tenant — returns new JWT with updated tenant_id."""
-    from app.api.deps import get_current_user, oauth2_scheme
+    from app.api.deps import get_current_actor, oauth2_scheme
 
     token = await oauth2_scheme(request)
     if not token:
         raise HTTPException(status_code=401, detail="Token ausente.")
-    user = await get_current_user(token, db)
+    user = await get_current_actor(token, db)
     user_id = cast(UUID, user.id)
 
     # Verify user has access to this tenant
@@ -640,6 +661,7 @@ async def switch_tenant(
     access_token = create_access_token(
         subject=str(user.id),
         extra_claims={
+            "actor_type": "tenant",
             "tenant_id": str(data.tenant_id),
             "role": cast(str, user_tenant.role),
             "account_type": cast(str, user.account_type),
@@ -679,12 +701,12 @@ async def select_mode(
     experience the platform as any plan tier (trial, starter, etc.) or
     enter the admin dashboard (plan_slug="admin").
     """
-    from app.api.deps import get_current_user, oauth2_scheme
+    from app.api.deps import get_current_actor, oauth2_scheme
 
     token = await oauth2_scheme(request)
     if not token:
         raise HTTPException(status_code=401, detail="Token ausente.")
-    user = await get_current_user(token, db)
+    user = await get_current_actor(token, db)
 
     # Only superadmins may switch test mode
     if cast(str, user.role) != "superadmin":
@@ -702,6 +724,7 @@ async def select_mode(
     access_token = create_access_token(
         subject=str(user.id),
         extra_claims={
+            "actor_type": "tenant",
             "tenant_id": str(user.tenant_id),
             "role": cast(str, user.role),
             "account_type": cast(str, user.account_type),
