@@ -10,6 +10,28 @@ Primeira entrega de código do Programa de Parceiros: a plataforma agora sabe au
 
 **Nenhuma informação financeira, comissão ou pagamento foi implementada.** Fora de escopo por decisão explícita, conforme RFC-0026.
 
+> **Leitura oficial deste PR:** não é só a documentação de uma feature do Programa de Parceiros — é uma evolução da arquitetura de autenticação da Tribultz, com validade permanente para qualquer ator futuro.
+
+## Decisão arquitetural consolidada
+
+> A autenticação da Tribultz autentica identidades.
+> A autorização define contexto e permissões.
+> Novos domínios reutilizam a mesma infraestrutura de autenticação.
+
+Este passa a ser o princípio oficial para toda evolução futura da autenticação da plataforma — não um detalhe de implementação do Programa de Parceiros.
+
+## Benefícios obtidos
+
+- Eliminação do Tenant artificial (a primeira proposta previa criar uma "empresa" fictícia só para o parceiro logar — descartada).
+- Reutilização integral da infraestrutura de autenticação existente — nenhum sistema paralelo.
+- Compatibilidade total com os usuários e tenants atuais — zero regressão (677/677 testes).
+- Base preparada para novos atores institucionais futuros, sem necessidade de redesenho.
+- Redução de dívida técnica futura: a próxima vez que a plataforma precisar de um novo tipo de ator, o modelo já existe.
+
+## O que NÃO muda (para evitar interpretação futura equivocada)
+
+Permanecem **inalterados**: fluxo de login, convite, primeiro acesso, OTP, recuperação de senha, auditoria, sessão, usuários atuais, tenants atuais. Esta entrega **estende** a autenticação para um novo domínio de ator — não **substitui** nem **modifica** o comportamento existente para quem já usa a plataforma hoje.
+
 ## O que muda, na prática
 
 Hoje, todo login na Tribultz assume implicitamente "isso é alguém de uma empresa cliente". Essa entrega generaliza esse conceito: o sistema de login passa a reconhecer **dois tipos de ator** — quem é de uma empresa (como sempre foi) e quem é um parceiro (novo). Um parceiro poderá usar exatamente o mesmo fluxo de convite, criação de senha e login que qualquer outro usuário já usa hoje — não é um sistema paralelo, é o mesmo sistema reconhecendo um novo tipo de conta.
@@ -22,11 +44,17 @@ Guardrail preservado: um Partner **nunca** vira uma empresa-cliente, e vice-vers
 - Suite completa do backend: **677 de 677 testes passando** — ou seja, nada que já existia foi afetado.
 - Um problema real foi encontrado e corrigido **durante** a implementação (não estava previsto na proposta técnica original): três endpoints antigos chamavam uma função interna de um jeito que quebraria com essa mudança. A ferramenta de checagem de tipos (pyright) pegou isso antes de virar bug em produção; foi corrigido no mesmo PR.
 
-## O que ainda falta (não está nesta entrega)
+## Escopo delimitado — este PR NÃO implementa
 
-1. **Criar a conta do parceiro de fato** — hoje a plataforma sabe autenticar um parceiro, mas ainda não existe a tela/fluxo pra convidar um novo parceiro e ele criar a senha.
-2. **Dashboard do parceiro** — a área onde ele vê seu código, link e empresas indicadas.
-3. **Extensão do Command Center** — visão do Owner sobre todos os parceiros e a evolução das indicações.
+- Cadastro operacional do parceiro (convite, criação de conta de verdade).
+- Dashboard do parceiro.
+- Comissão.
+- Carteira financeira.
+- Pagamentos.
+- Relatórios comerciais.
+- Command Center expandido (visão de parceiros/indicações).
+
+Todos pertencem às próximas etapas do Programa de Parceiros — nenhum está bloqueado por esta entrega, mas nenhum está pronto ainda.
 
 ## Decisão de processo que vale registrar
 
