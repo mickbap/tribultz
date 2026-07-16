@@ -57,10 +57,20 @@ class User(Base):
         primary_key=True,
         server_default=text("gen_random_uuid()"),
     )
+    # Contexto do ator — exatamente um dos dois é preenchido (CHECK
+    # ck_users_exactly_one_actor_domain, migration 2026_07_16_0027).
+    # tenant_id: ator pertence a uma Empresa (Tenant) — fluxo original.
     tenant_id = Column(
         UUID(as_uuid=True),
         ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
+    )
+    # partner_id: ator é um Partner (Programa de Parceiros, RFC-0026) — nunca
+    # um Tenant. Ver Partner em app.models.partner.
+    partner_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("partners.id", ondelete="CASCADE"),
+        nullable=True,
     )
     email = Column(String(255), nullable=False)
     full_name = Column(String(200), nullable=False)
@@ -85,6 +95,16 @@ class User(Base):
     )
 
     __table_args__ = (UniqueConstraint("tenant_id", "email", name="users_tenant_id_email_key"),)
+
+    @property
+    def actor_type(self) -> str:
+        """Domínio do ator autenticado — computado, nunca armazenado.
+
+        Deriva de qual FK está preenchida (garantido mutuamente exclusivo
+        pela CHECK constraint ck_users_exactly_one_actor_domain), evitando
+        uma coluna redundante que poderia divergir da realidade.
+        """
+        return "partner" if self.partner_id is not None else "tenant"
 
 
 class UserTenant(Base):
