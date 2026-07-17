@@ -216,10 +216,23 @@ class TestNfceValidation:
 # ── Router registration ─────────────────────────────────────────────────────
 
 
+def _all_registered_paths(routes) -> list[str]:
+    """FastAPI >=0.139 envolve include_router() em _IncludedRouter (lazy) —
+    o path só existe no original_router aninhado, não direto em app.routes."""
+    paths = []
+    for r in routes:
+        path = getattr(r, "path", None)
+        if path is not None:
+            paths.append(path)
+        elif hasattr(r, "original_router"):
+            paths.extend(_all_registered_paths(r.original_router.routes))
+    return paths
+
+
 class TestRouterRegistered:
     def test_validate_xml_route_exists(self):
         from app.main import app
-        paths = [getattr(r, "path", "") for r in app.routes]
+        paths = _all_registered_paths(app.routes)
         assert "/api/v1/validate/xml" in paths
 
 
