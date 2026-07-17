@@ -69,13 +69,13 @@ class TestBuildCrewWiring:
         llm = LLM(model="openrouter/test:free", api_key="test-key-123")
         crew = _make_crew()._build_crew(llm)
         analyst = crew.agents[0]
-        assert [t.name for t in analyst.tools] == ["get_customer_context"]
+        assert [t.name for t in analyst.tools or []] == ["get_customer_context"]
 
     def test_executor_has_email_and_hubspot_tools(self):
         llm = LLM(model="openrouter/test:free", api_key="test-key-123")
         crew = _make_crew()._build_crew(llm)
         executor = crew.agents[2]
-        assert [t.name for t in executor.tools] == ["send_email", "hubspot_log_note"]
+        assert [t.name for t in executor.tools or []] == ["send_email", "hubspot_log_note"]
 
     def test_copywriter_has_no_tools(self):
         llm = LLM(model="openrouter/test:free", api_key="test-key-123")
