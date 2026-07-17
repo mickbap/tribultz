@@ -120,6 +120,28 @@ def test_login_success(client, test_user, test_tenant):
     assert data["token_type"] == "bearer"
 
 
+def test_login_response_body_includes_role_and_tenant(client, test_user, test_tenant):
+    """Regressão: response_model=Token só declarava access_token/token_type e
+    descartava silenciosamente role/tenant_id/tenants — o handler retornava
+    esses campos, mas o FastAPI filtrava tudo que não estava no schema. Isso
+    quebrava toda UI client-side que lê o corpo do /login (link Admin,
+    redirect de superadmin, nome do tenant ativo) mesmo com o JWT correto."""
+    response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": test_user.email,
+            "password": "password123",
+            "tenant_slug": test_tenant.slug
+        }
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["role"] == "admin"
+    assert data["tenant_id"] == str(test_tenant.id)
+    assert data["account_type"] == "empresa"
+    assert "tenants" in data  # test_user não tem linha em user_tenants; lista vazia é válida aqui
+
+
 def test_login_wrong_password(client, test_user, test_tenant):
     response = client.post(
         "/api/v1/auth/login",
