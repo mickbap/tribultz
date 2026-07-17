@@ -6,8 +6,8 @@ from app.crews.llm_config import (
     FREE_FALLBACK,
     FREE_PRIMARY,
     TIER_GPT_OSS_20B,
-    TIER_GPT_OSS_120B,
-    TIER_TRINITY_LARGE,
+    TIER_NEMOTRON_ULTRA,
+    TIER_QWEN3_NEXT_80B,
     TIER_NEMOTRON_SUPER,
     TIER_GEMMA4_31B,
     TIER_LLAMA33_70B,
@@ -44,8 +44,8 @@ class TestModelTiers:
     def test_default_chain_order(self):
         assert DEFAULT_FALLBACK_CHAIN == [
             TIER_GPT_OSS_20B,
-            TIER_TRINITY_LARGE,
-            TIER_GPT_OSS_120B,
+            TIER_QWEN3_NEXT_80B,
+            TIER_NEMOTRON_ULTRA,
             TIER_NEMOTRON_SUPER,
             TIER_GEMMA4_31B,
             TIER_LLAMA33_70B,
@@ -143,8 +143,8 @@ class TestExecuteWithFallback:
 
         result, tier, elapsed = execute_with_fallback(fn)
         assert result == "fallback_ok"
-        # Second tier in chain is TIER_TRINITY_LARGE
-        assert tier == TIER_TRINITY_LARGE
+        # Second tier in chain is TIER_QWEN3_NEXT_80B
+        assert tier == TIER_QWEN3_NEXT_80B
         # PRIMARY (gpt-oss-20b) has max_retries=2, so 2 attempts + 1 on tier 2 = 3
         assert call_count == TIER_GPT_OSS_20B.max_retries + 1
 

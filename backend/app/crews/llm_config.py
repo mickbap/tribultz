@@ -1,22 +1,33 @@
 """
 LLM configuration with tiered fallback for CrewAI agents.
 
-Benchmark realizado em 08/04/2026 contra OpenRouter free tier.
-Todos os modelos abaixo suportam tool calling e são 100% free.
+Benchmark original em 08/04/2026 contra OpenRouter free tier (T1, T4-T7
+abaixo sobrevivem desse benchmark). Revisão de disponibilidade em
+17/07/2026: 2 dos 7 modelos originais (arcee-ai/trinity-large-preview,
+openai/gpt-oss-120b) saíram do catálogo free do OpenRouter — toda vez que
+T1 falhava, a cadeia perdia tempo tentando 2 tiers mortos antes de chegar
+num vivo. Substituídos por T2/T3 novos: verificados **live + tool calling**
+via `GET /api/v1/models` do OpenRouter nesta data, mas sem benchmark de
+velocidade próprio (diferente de T1/T4-T7, que têm tempo medido).
 
 Cadeia de fallback (7 tiers, diversificação de providers):
-  T1  openai/gpt-oss-20b:free          3.4s  131K ctx  OpenAI  (US)     — mais rápido
-  T2  arcee-ai/trinity-large:free      8.3s  131K ctx  Arcee   (US)
-  T3  openai/gpt-oss-120b:free         9.6s  131K ctx  OpenAI  (US)     — maior
-  T4  nvidia/nemotron-3-super:free     11.6s 262K ctx  NVIDIA  (US)     — maior ctx
-  T5  google/gemma-4-31b:free          ~429  262K ctx  Google  (US/EU)  — qualidade
-  T6  meta-llama/llama-3.3-70b:free   ~429   65K ctx  Meta    (US)     — último recurso
-  T7  openrouter/free (router)          dyn   dyn      OpenRouter        — rede de segurança
+  T1  openai/gpt-oss-20b:free           3.4s  131K ctx  OpenAI  (US)     — mais rápido (bench 08/04/2026)
+  T2  qwen/qwen3-next-80b-a3b:free      —     262K ctx  Alibaba (CN)     — substituto de trinity-large (revisão 17/07/2026)
+  T3  nvidia/nemotron-3-ultra-550b:free —     1M  ctx   NVIDIA  (US)     — substituto de gpt-oss-120b, maior (revisão 17/07/2026)
+  T4  nvidia/nemotron-3-super:free      11.6s 262K ctx  NVIDIA  (US)     — maior ctx (bench 08/04/2026)
+  T5  google/gemma-4-31b:free           ~429  262K ctx  Google  (US/EU)  — qualidade (bench 08/04/2026)
+  T6  meta-llama/llama-3.3-70b:free    ~429   65K ctx  Meta    (US)     — último recurso (bench 08/04/2026)
+  T7  openrouter/free (router)           dyn   dyn      OpenRouter        — rede de segurança
 
 T5 e T6 ficam em 429 sob alta carga mas recuperam após backoff.
 T7 é o router free do OpenRouter: auto-seleciona um modelo free disponível
 filtrando por tool calling — resiliente à volatilidade do free tier.
 Nenhum modelo pago na cadeia — 100% free tier.
+
+O catálogo free do OpenRouter tem alta rotatividade — reconfirmar
+disponibilidade (`GET https://openrouter.ai/api/v1/models`, filtrar por
+`id` terminando em `:free` e `supported_parameters` incluindo `tools`)
+a cada trimestre ou ao notar 429/erro de modelo não encontrado recorrente.
 """
 
 from __future__ import annotations
@@ -68,17 +79,17 @@ TIER_GPT_OSS_20B = ModelTier(
     backoff_base=2.0,
 )
 
-TIER_TRINITY_LARGE = ModelTier(
-    name="trinity-large",
-    model_id="openrouter/arcee-ai/trinity-large-preview:free",
+TIER_QWEN3_NEXT_80B = ModelTier(
+    name="qwen3-next-80b",
+    model_id="openrouter/qwen/qwen3-next-80b-a3b-instruct:free",
     is_free=True,
     max_retries=2,
     backoff_base=2.0,
 )
 
-TIER_GPT_OSS_120B = ModelTier(
-    name="gpt-oss-120b",
-    model_id="openrouter/openai/gpt-oss-120b:free",
+TIER_NEMOTRON_ULTRA = ModelTier(
+    name="nemotron-3-ultra-550b",
+    model_id="openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
     is_free=True,
     max_retries=2,
     backoff_base=2.0,
@@ -121,10 +132,11 @@ TIER_FREE_ROUTER = ModelTier(
 )
 
 # Cadeia padrão — ordem por confiabilidade observada no benchmark
+# (T2/T3 revisados em 17/07/2026 — ver docstring do módulo)
 DEFAULT_FALLBACK_CHAIN: list[ModelTier] = [
     TIER_GPT_OSS_20B,      # primário: mais rápido (3.4s), confiável
-    TIER_TRINITY_LARGE,    # 2º: 8.3s, provider alternativo
-    TIER_GPT_OSS_120B,     # 3º: 9.6s, maior e mais capaz
+    TIER_QWEN3_NEXT_80B,   # 2º: provider alternativo (Alibaba/Qwen)
+    TIER_NEMOTRON_ULTRA,   # 3º: maior e mais capaz (1M ctx)
     TIER_NEMOTRON_SUPER,   # 4º: 11.6s, 262K ctx, NVIDIA
     TIER_GEMMA4_31B,       # 5º: alta qualidade, pode 429
     TIER_LLAMA33_70B,      # 6º: último recurso, provado em PT-BR
@@ -133,7 +145,7 @@ DEFAULT_FALLBACK_CHAIN: list[ModelTier] = [
 
 # Aliases para compatibilidade retroativa
 FREE_PRIMARY = TIER_GPT_OSS_20B
-FREE_FALLBACK = TIER_GPT_OSS_120B
+FREE_FALLBACK = TIER_QWEN3_NEXT_80B
 
 
 def _get_api_key() -> str:
