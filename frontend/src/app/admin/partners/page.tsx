@@ -26,6 +26,7 @@ type Partner = {
   status: string;
   notes: string | null;
   companies: number;
+  has_account: boolean;
   created_at: string;
 };
 type Resp = { total: number; items: Partner[] };
@@ -96,6 +97,29 @@ export default function AdminPartnersPage() {
       reload();
     } catch (err) {
       window.alert(err instanceof Error ? err.message : "Falha na ação.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Cadastro operacional do parceiro (RFC-0026, ADR-0011). Sem convite/OTP —
+  // o admin define a senha inicial (mesmo padrão do Founding Partner).
+  async function createAccount(p: Partner) {
+    const email = window.prompt(`Criar conta para "${p.name}".\nE-mail:`, p.email ?? "");
+    if (!email) return;
+    const initialPassword = window.prompt("Senha inicial (mínimo 8 caracteres):");
+    if (!initialPassword) return;
+    setBusy(true);
+    try {
+      await adminPost(`/api/v1/admin/partners/${p.id}/account`, {
+        email: email.trim(),
+        full_name: p.name,
+        initial_password: initialPassword,
+      });
+      window.alert(`Conta criada para ${email.trim()}. Informe a senha inicial ao parceiro por um canal seguro.`);
+      reload();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Falha ao criar conta.");
     } finally {
       setBusy(false);
     }
@@ -183,6 +207,7 @@ export default function AdminPartnersPage() {
                 <th className="px-4 py-3">Tipo</th>
                 <th className="px-4 py-3">Empresas</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Conta</th>
                 <th className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
@@ -198,10 +223,24 @@ export default function AdminPartnersPage() {
                       {p.status === "active" ? "Ativo" : "Inativo"}
                     </span>
                   </td>
+                  <td className="px-4 py-3">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.has_account ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
+                      {p.has_account ? "Criada" : "Sem conta"}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <button onClick={() => edit(p)} className="mr-2 rounded-lg border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">
                       Editar
                     </button>
+                    {!p.has_account && p.status === "active" && (
+                      <button
+                        onClick={() => createAccount(p)}
+                        disabled={busy}
+                        className="mr-2 rounded-lg border border-blue-200 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                      >
+                        Criar conta
+                      </button>
+                    )}
                     <button
                       onClick={() => toggleActive(p)}
                       disabled={busy}
@@ -213,7 +252,7 @@ export default function AdminPartnersPage() {
                 </tr>
               ))}
               {data.items.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Nenhum Partner cadastrado.</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Nenhum Partner cadastrado.</td></tr>
               )}
             </tbody>
           </table>
