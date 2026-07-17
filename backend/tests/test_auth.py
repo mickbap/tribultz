@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.database import get_db
 from app.main import app
-from app.models.auth import Tenant, User
+from app.models.auth import Tenant, User, UserTenant
 from app.core.security import get_password_hash
 
 # Use the environment variable for DB connection (standard for CI/Docker)
@@ -140,6 +140,39 @@ def test_login_response_body_includes_role_and_tenant(client, test_user, test_te
     assert data["tenant_id"] == str(test_tenant.id)
     assert data["account_type"] == "empresa"
     assert "tenants" in data  # test_user não tem linha em user_tenants; lista vazia é válida aqui
+
+
+def test_switch_tenant_response_includes_role_for_new_tenant(client, session, test_user, test_tenant):
+    """Regressão: /switch-tenant nunca devolvia role/account_type no corpo —
+    o frontend (Topbar.tsx) só atualizava tenant_id/token e dava reload, então
+    um usuário com role diferente em cada tenant (comum: admin numa empresa,
+    contador levado por /settings noutra) ficava com o role antigo em cache
+    até fazer logout/login de novo."""
+    other_tenant = Tenant(name="Outro Tenant", slug=f"other-{test_tenant.slug}")
+    session.add(other_tenant)
+    session.flush()
+    session.add_all([
+        UserTenant(user_id=test_user.id, tenant_id=test_tenant.id, role="admin", is_default=True),
+        UserTenant(user_id=test_user.id, tenant_id=other_tenant.id, role="contador", is_default=False),
+    ])
+    session.commit()
+
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": test_user.email, "password": "password123", "tenant_slug": test_tenant.slug},
+    )
+    assert login.status_code == 200
+
+    response = client.post(
+        "/api/v1/auth/switch-tenant",
+        json={"tenant_id": str(other_tenant.id)},
+        headers={"Authorization": f"Bearer {login.json()['access_token']}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["role"] == "contador"  # role do vínculo com other_tenant, não o role original
+    assert data["account_type"] == "empresa"
+    assert data["tenant_name"] == "Outro Tenant"
 
 
 def test_login_wrong_password(client, test_user, test_tenant):
