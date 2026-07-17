@@ -77,10 +77,10 @@ class Settings(BaseSettings):
     # ── LLM / OpenRouter ─────────────────────────────────────
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    # Benchmark 08/04/2026 — cadeia de 6 tiers 100% free (ver llm_config.py)
-    LLM_FREE_PRIMARY: str = "openrouter/openai/gpt-oss-20b:free"
-    LLM_FREE_FALLBACK: str = "openrouter/openai/gpt-oss-120b:free"
-    # Timeout aumentado para acomodar 6 tiers com backoff (pior caso ~90s)
+    # Cadeia de fallback de 7 tiers 100% free vive em app/crews/llm_config.py
+    # (DEFAULT_FALLBACK_CHAIN) — não nestas settings, que não são lidas por
+    # nenhum código (LLM_FREE_PRIMARY/LLM_FREE_FALLBACK removidas em 17/07/2026).
+    # Timeout aumentado para acomodar 7 tiers com backoff (pior caso ~90s)
     CHATOPS_TIMEOUT_SECONDS: int = 120
     CREW_MEMORY_TTL_SECONDS: int = 2_592_000
 
