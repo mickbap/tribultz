@@ -5,9 +5,31 @@ from uuid import UUID
 from pydantic import BaseModel, EmailStr, field_validator
 
 
+class TenantInfo(BaseModel):
+    id: UUID
+    name: str
+    slug: str
+    is_default: bool = False
+
+
 class Token(BaseModel):
+    """response_model de /login e /switch-tenant.
+
+    Precisa declarar TODO campo que os handlers colocam no dict de retorno —
+    response_model descarta silenciosamente qualquer chave extra não listada
+    aqui (FastAPI serializa através do schema). Os opcionais cobrem os 3
+    formatos de resposta: login tenant, login partner e switch-tenant.
+    """
+
     access_token: str
     token_type: str
+    role: Optional[str] = None
+    tenant_id: Optional[str] = None
+    tenant_name: Optional[str] = None
+    partner_id: Optional[str] = None
+    account_type: Optional[str] = None
+    plan_slug: Optional[str] = None
+    tenants: Optional[list[TenantInfo]] = None
 
 
 class TokenPayload(BaseModel):
@@ -102,13 +124,6 @@ class UserRegister(BaseModel):
                 "Consentimento LGPD obrigatório para cadastro."
             )
         return v
-
-
-class TenantInfo(BaseModel):
-    id: UUID
-    name: str
-    slug: str
-    is_default: bool = False
 
 
 class UserRead(BaseModel):
