@@ -677,6 +677,8 @@ async def switch_tenant(
         "token_type": "bearer",
         "tenant_id": str(data.tenant_id),
         "tenant_name": cast(str, tenant.name) if tenant else "",
+        "role": cast(str, user_tenant.role),
+        "account_type": cast(str, user.account_type),
     }
 
 

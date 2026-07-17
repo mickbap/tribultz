@@ -5,6 +5,8 @@ import {
   getAccountType,
   getTenantId,
   getTenants,
+  setAccountType,
+  setRole,
   setTenantId,
   setToken,
   type StoredTenant,
@@ -64,6 +66,8 @@ export function Topbar({ onOpenMenu, stateVersion }: TopbarProps) {
         const data = await res.json();
         setTenantId(tenantId);
         setToken(data.access_token);
+        if (data.role) setRole(data.role);
+        if (data.account_type) setAccountType(data.account_type);
         window.dispatchEvent(new Event("tribultz-settings-updated"));
         window.location.reload();
       }
