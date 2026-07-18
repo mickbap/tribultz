@@ -126,6 +126,13 @@ def normalize(groups: list[dict]) -> dict:
                 # Crédito presumido IBS/CBS: se True, a operação pode carregar a tag cCredPres
                 # (#339). Só alguns cClassTrib permitem — fonte SVRS: IndPermiteCredPres.
                 "permite_cred_pres": bool(c.get("IndPermiteCredPres")),
+                # Subgrupos do UB84 (gIBSCBSMono) exigidos pelo cClassTrib — NT 2025.002
+                # v1.50, regime monofásico (#404). Fonte SVRS: IndMonoRetem/IndMonoRet/
+                # IndMonoDif. Confirmado ao vivo em 2026-07-18 (não documentado antes
+                # dessa versão do script).
+                "mono_retencao": bool(c.get("IndMonoRetem")),
+                "mono_retido_anteriormente": bool(c.get("IndMonoRet")),
+                "mono_diferimento": bool(c.get("IndMonoDif")),
                 "dfe_allowed": dfe,
                 "vigencia_ini": (c.get("DthIniVig") or "")[:10],
                 "legislacao": c.get("TexUrlLegislacao") or "",

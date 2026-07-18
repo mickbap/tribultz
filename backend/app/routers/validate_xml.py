@@ -34,6 +34,7 @@ from app.data.classtrib_table import (
     classtrib_dfe_allowed,
     classtrib_expected_aliquota_2026,
     classtrib_expected_zero,
+    classtrib_monofasico_grupos,
     classtrib_permite_cred_pres,
 )
 from app.data.cest_ncm import lookup_ncm_st
@@ -335,6 +336,13 @@ _PF_CNPJ_REQUIRED_DATE = "2026-07-01"
 # v1.40: a partir de 01/09/2026, a devolução (finNFe=4) referencia a nota original
 # exclusivamente por item, via grupo DFeReferenciado (Rejeição 321 — VC02-14/VC03-20).
 _DEVOLUCAO_DFEREF_DATE = "2026-09-01"
+
+# ── Regime monofásico de combustíveis — grupo UB84 (gIBSCBSMono), NT 2025.002 v1.50 ──
+# A partir de 04/01/2027, os subgrupos gMonoReten/gMonoRet/gMonoDif tornam-se
+# obrigatórios quando o indicador correspondente do cClassTrib está ativo (fonte
+# oficial SVRS). Antes da vigência → WARNING (antecipação); pedagogical_mode mantém
+# WARNING (#404).
+_MONOFASICO_GRUPO_UB_DATE = "2027-01-04"
 
 
 def validate_xml(
@@ -853,6 +861,40 @@ def validate_xml(
                 ),
                 Evidence(id=ev_id, type="xml", label="cClassTrib × CST incompatível (Rejeição 1024)", xpath=_xpath("cClassTrib", doc_type), snippet=c_class_trib["snippet"]),
             )
+
+    # ── Rule: MONOFASICO_GRUPO_UB — subgrupo do UB84 presente quando exigido (NT v1.50, #404) ──
+    # Checagem estrutural de presença do grupo XML exigido pelo indicador do cClassTrib
+    # (fonte oficial SVRS). Não valida os valores de ad rem calculados dentro do grupo —
+    # fora de escopo desta entrega, que cobre a obrigatoriedade estrutural confirmada.
+    if has_ibscbs and ibscbs_block and c_class_trib and re.match(r"^\d{6}$", c_class_trib["value"]):
+        _mono = classtrib_monofasico_grupos(c_class_trib["value"])
+        if _mono:
+            _mono_checks = [
+                ("mono_retencao", "gMonoReten", "UB90-10"),
+                ("mono_retido_anteriormente", "gMonoRet", "UB94-10"),
+                ("mono_diferimento", "gMonoDif", "UB99-10"),
+            ]
+            _mono_em_date = emission_date["value"][:10] if emission_date else ""
+            _mono_vigente = bool(re.match(r"^\d{4}-\d{2}-\d{2}$", _mono_em_date)) and _mono_em_date >= _MONOFASICO_GRUPO_UB_DATE
+            _mono_sev = "FATAL" if (_mono_vigente and not pedagogical_mode) else "WARNING"
+            for _flag, _group, _validacao in _mono_checks:
+                if _mono.get(_flag) and not _first_tag(ibscbs_block["snippet"], [_group]):
+                    ev_id = f"E_XML_MONOFASICO_GRUPO_UB_{_group.upper()}"
+                    _add(
+                        Finding(
+                            id=f"F_MONOFASICO_GRUPO_UB_{_group.upper()}", severity=_mono_sev, rule_id="MONOFASICO_GRUPO_UB",
+                            title=f'cClassTrib {c_class_trib["value"]} exige o grupo {_group}, ausente na nota',
+                            where=FindingWhere(field=_group, xpath=_xpath("IBSCBS", doc_type), snippet=c_class_trib["snippet"]),
+                            recommendation=(
+                                f'O cClassTrib {c_class_trib["value"]} tem o indicador correspondente ativo na tabela oficial SVRS '
+                                f"(NT 2025.002 v1.50, regime monofásico de combustíveis) — o grupo {_group} é obrigatório e não "
+                                f"foi encontrado na nota. SEFAZ: regra {_validacao}. Implantação em produção a partir de "
+                                "04/01/2027 (antes disso, antecipação)."
+                            ),
+                            evidence_ids=[ev_id],
+                        ),
+                        Evidence(id=ev_id, type="xml", label=f"cClassTrib exige {_group} (regra {_validacao})", xpath=_xpath("IBSCBS", doc_type), snippet=c_class_trib["snippet"]),
+                    )
 
     # ── Rule 19: ALIQUOTA_CLASSTRIB — alíquota-zero coerente com o cClassTrib (#278) ──
     # Slice de alíquota-zero (independente das alíquotas de referência 2026, que ainda
