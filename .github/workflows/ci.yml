@@ -144,6 +144,12 @@ jobs:
         run: |
           pytest -q
 
+      - name: Architecture Audit (informativo)
+        working-directory: backend
+        continue-on-error: true
+        run: |
+          python ../tools/architecture_audit.py
+
       - name: QA Gates (report)
         run: |
           python tools/qa_gates/run_gates.py --mode ci
