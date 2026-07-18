@@ -1,7 +1,7 @@
 """Tests for CRMEngagementCrew (dunning/win-back emails) — zero coverage before this file.
 
 Crew.kickoff is monkeypatched globally (crewai.Crew) for the run() tests —
-same seam used in test_chatops_resilience.py and test_security_crew.py.
+same seam used in test_security_crew.py.
 """
 
 from __future__ import annotations

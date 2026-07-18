@@ -350,21 +350,11 @@ tenants ──┬── users ──── user_tenants
 
 ## CrewAI — Agentes
 
-### ChatOps Crew (backend)
+> Classificação oficial (Produção / Dormante / Experimental / Descontinuada)
+> e políticas de cada Crew em `knowledge/engineering/crews.md` no Brain
+> (`mickbap/tribultz-brain`) — fonte de verdade, não duplicar aqui.
 
-```
-Triager → Operator → Narrator
-```
-
-| Agente | Papel |
-|---|---|
-| `triager` | Classifica a pergunta; decide se aciona validação ou consulta |
-| `operator` | Executa tools: GetJobStatus, TriggerTaskA |
-| `narrator` | Formata resposta em Markdown com citação de regra e evidência |
-
-Fallback determinístico: se o LLM falhar, retorna findings da validação diretamente.
-
-### CRM Engagement Crew (backend)
+### CRM Engagement Crew (backend) — Produção
 
 ```
 CRM Analyst → Email Copywriter → Executor
@@ -383,15 +373,26 @@ Tarefas Celery relacionadas:
 - `crm.engagement` — LLM crew para dunning/win-back
 - `crm.audit` — daily beat 09:00, reconcilia subscriptions com updated_at < 24h
 
-### NF-e Validation Crew (backend)
+### NF-e Validation Crew (backend) — Dormante
 
 ```
 nfe_parser → ibscbs_validator → nfe_reporter
 ```
 
-### DevOps Crew (standalone)
+A validação fiscal oficial da Tribultz é o motor determinístico (seção
+acima). Esta Crew não substitui o motor — único gatilho de reativação:
+camada interpretativa em linguagem natural sobre os findings já produzidos.
 
-Auditoria contínua da stack de produção com 4 agentes e 9 tasks cobrindo tenant isolation, segurança de containers (CIS Docker Benchmark), hardening de VM, higiene de secrets e pipeline de deploy.
+### Security Crew (backend) — Produção Interna
+
+```
+SOC Analyst → CloudSec Engineer → SRE Lead
+```
+
+Ferramenta operacional interna da Tribultz (auditoria de acesso, storage,
+relatório executivo de segurança) — não é funcionalidade do produto. Task
+Celery (`task_f_security_audit`) construída e testada, ainda não registrada
+no `beat_schedule` (pendente de decisão de frequência).
 
 ---
 
@@ -475,8 +476,6 @@ O `deploy.sh` executa um rolling deploy sequencial com rollback automático:
 | Rollback | Snapshot de imagem antes de cada build |
 | Auditoria | Log JSONB imutável + checksum SHA-256 por evento |
 | LGPD | Export de dados + exclusão sob demanda |
-
-A DevOps Crew audita automaticamente todos esses controles contra CIS Ubuntu Benchmark, CIS Docker Benchmark e OWASP Secure Headers Project.
 
 ---
 

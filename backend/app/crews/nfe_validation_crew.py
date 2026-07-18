@@ -56,6 +56,14 @@ class NFeValidationCrew:
     """
     NF-e/NFC-e validation crew: parser → validator → reporter.
 
+    Status: Dormante — ver knowledge/engineering/crews.md (tribultz-brain).
+    Motivo: a validação fiscal oficial da Tribultz é o motor determinístico
+    (xmlRules.ts / /validate/cbs-ibs) — esta Crew nunca deve substituí-lo.
+    Único gatilho de reativação: disponibilizar explicações em linguagem
+    natural sobre os resultados do motor determinístico (papel
+    interpretativo, nunca decisório). Sem esse gatilho, nenhuma
+    funcionalidade nova deve ser desenvolvida aqui.
+
     Pipeline:
       1. nfe_parser — Extracts IBSCBS fields from XML (parse_nfe_xml tool)
       2. ibscbs_validator — Applies 14 NT 2025.002-RTC rules (validate_ibscbs_rules tool)

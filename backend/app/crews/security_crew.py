@@ -1,11 +1,15 @@
 """Tribultz Security Crew — SOC + CloudSec + SRE agents.
 
+Status: Produção Interna — ver knowledge/engineering/crews.md (tribultz-brain).
+Ferramenta operacional interna da Tribultz, não funcionalidade do produto.
+Oferecer a clientes exige RFC própria antes de qualquer implementação.
+
 Three specialized agents for enterprise security compliance:
 - SOC Analyst: access monitoring, anomaly detection
 - CloudSec Engineer: storage/infrastructure security audit
 - SRE Lead: executive governance, periodic reports
 
-Uses the same LLM fallback chain as ChatOps crew.
+Uses the same LLM fallback chain (app/crews/llm_config.py) as every other Crew.
 """
 
 from __future__ import annotations

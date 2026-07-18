@@ -1,5 +1,7 @@
 """CRM Engagement Crew — personalized dunning and win-back emails via LLM.
 
+Status: Produção — ver knowledge/engineering/crews.md (tribultz-brain).
+
 Architecture:
   1. CRM Analyst reads customer context (plan, usage, days since signup, subscription status)
   2. Email Copywriter composes a personalized PT-BR email targeting CBS/IBS compliance urgency
