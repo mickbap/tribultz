@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { listDocuments, getDocumentDownloadUrl, type DocumentResponse } from "@/lib/api";
+import { formatDateTimeBR } from "@/lib/formatDateTimeBR";
 
 export default function DocumentsPage() {
   const [docs, setDocs] = useState<DocumentResponse[]>([]);
@@ -62,7 +63,7 @@ export default function DocumentsPage() {
                     {doc.original_filename ?? doc.storage_key.split("/").pop()}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {doc.doc_type} • {doc.content_type ?? ""} • {new Date(doc.created_at).toLocaleString()}
+                    {doc.doc_type} • {doc.content_type ?? ""} • {formatDateTimeBR(doc.created_at)}
                   </p>
                 </div>
                 <button

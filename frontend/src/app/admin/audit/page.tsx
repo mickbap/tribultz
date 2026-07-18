@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeBR } from "@/lib/formatDateTimeBR";
 import { useAdminData } from "@/lib/useAdminData";
 
 type AuditEntry = {
@@ -48,7 +49,7 @@ export default function AdminAuditPage() {
             <tbody className="divide-y divide-slate-100">
               {data.items.map((e) => (
                 <tr key={e.id} className="hover:bg-slate-50">
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-500">{new Date(e.created_at).toLocaleString("pt-BR")}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-500">{formatDateTimeBR(e.created_at)}</td>
                   <td className="px-4 py-3 text-slate-700">{e.actor_email}</td>
                   <td className="px-4 py-3 font-medium text-slate-900">{ACTION_LABEL[e.action] ?? e.action}</td>
                   <td className="px-4 py-3 text-slate-600">

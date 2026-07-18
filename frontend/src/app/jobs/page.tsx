@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
 import { getJobs } from "@/lib/api";
 import { exportEvidenceZipAndDownload } from "@/lib/export/evidenceExportUi";
+import { formatDateTimeBR } from "@/lib/formatDateTimeBR";
 import { Job, JobStatus } from "@/lib/types";
 
 type PeriodFilter = "24h" | "7d" | "30d" | "all";
@@ -159,7 +160,7 @@ export default function JobsPage() {
                     <td className="px-2 py-2">
                       <StatusBadge status={job.status} />
                     </td>
-                    <td className="px-2 py-2 text-slate-500">{new Date(job.createdAt).toLocaleString()}</td>
+                    <td className="px-2 py-2 text-slate-500">{formatDateTimeBR(job.createdAt)}</td>
                     <td className="px-2 py-2">
                       <div className="flex flex-wrap items-center gap-3">
                         <Link href={`/jobs/${job.id}`} className="text-tribultz-700 hover:underline">

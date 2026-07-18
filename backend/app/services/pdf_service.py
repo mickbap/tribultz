@@ -5,12 +5,28 @@ from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, FileSystemLoader
 
 logger = logging.getLogger(__name__)
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
+
+# Armazenamento permanece UTC (datetime.now(timezone.utc)) — conversão para
+# America/Sao_Paulo acontece só na borda de apresentação do laudo, nunca no
+# storage. Ver knowledge/engineering/tempo-e-auditoria.md no Brain.
+BRASILIA_TZ = ZoneInfo("America/Sao_Paulo")
+
+
+def _format_brasilia(instant_utc: datetime) -> str:
+    """Converte um instante UTC aware para string de exibição em America/Sao_Paulo."""
+    return instant_utc.astimezone(BRASILIA_TZ).strftime("%d/%m/%Y %H:%M horário de Brasília")
+
+
+def _generated_at_brasilia() -> str:
+    return _format_brasilia(datetime.now(timezone.utc))
+
 
 _jinja_env = Environment(
     loader=FileSystemLoader(str(TEMPLATES_DIR)),
@@ -64,7 +80,7 @@ def generate_validation_report_pdf(
     Falls back to HTML-only if WeasyPrint is not installed.
     """
     template = _jinja_env.get_template("report_validation.html")
-    now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+    now = _generated_at_brasilia()
 
     # Categorize findings by severity
     errors = [f for f in findings if f.get("severity") == "ERROR"]
@@ -128,7 +144,7 @@ def generate_batch_report_pdf(
     Returns a dict with keys: bytes, storage_key, file_size.
     """
     template = _jinja_env.get_template("report_batch.html")
-    now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+    now = _generated_at_brasilia()
 
     # Summary stats
     total = len(invoices)

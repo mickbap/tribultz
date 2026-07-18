@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
 import { ComplianceScore, getAudits, getComplianceScore, getJobs, getSplitPaymentSummary, listExceptionRequests } from "@/lib/api";
 import type { SplitPaymentSummary } from "@/lib/api";
+import { formatDateTimeBR } from "@/lib/formatDateTimeBR";
 import { AuditLog, ExceptionRequest, Finding, Job } from "@/lib/types";
 import { getAccountType, getTenantId, getTenants, type StoredTenant } from "@/lib/storage";
 
@@ -359,7 +360,7 @@ export default function DashboardPage() {
                     <Link href={`/jobs/${job.id}`} className="text-sm font-medium text-tribultz-700 hover:underline">
                       {job.id}
                     </Link>
-                    <p className="text-xs text-slate-500">{new Date(job.createdAt).toLocaleString()}</p>
+                    <p className="text-xs text-slate-500">{formatDateTimeBR(job.createdAt)}</p>
                   </div>
                   <StatusBadge status={job.status} />
                 </li>
@@ -388,7 +389,7 @@ export default function DashboardPage() {
                       Ver na auditoria
                     </Link>
                   </div>
-                  <p className="text-xs text-slate-500">{new Date(audit.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-slate-500">{formatDateTimeBR(audit.createdAt)}</p>
                 </li>
               ))}
             </ul>

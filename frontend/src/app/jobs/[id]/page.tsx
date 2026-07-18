@@ -13,6 +13,7 @@ import { RegimeComparison } from "@/components/jobs/RegimeComparison";
 import { getDocumentDownloadUrl, getJob, listDocuments } from "@/lib/api";
 import type { DocumentResponse } from "@/lib/api";
 import { exportEvidenceZipAndDownload } from "@/lib/export/evidenceExportUi";
+import { formatDateTimeBR } from "@/lib/formatDateTimeBR";
 import { Job, Finding } from "@/lib/types";
 
 /**
@@ -163,11 +164,11 @@ export default function JobDetailPage() {
             </div>
             <div>
               <p className="text-xs uppercase text-slate-500">Criado em</p>
-              <p className="mt-1 text-slate-700">{new Date(job.createdAt).toLocaleString()}</p>
+              <p className="mt-1 text-slate-700">{formatDateTimeBR(job.createdAt)}</p>
             </div>
             <div>
               <p className="text-xs uppercase text-slate-500">Atualizado em</p>
-              <p className="mt-1 text-slate-700">{new Date(job.updatedAt).toLocaleString()}</p>
+              <p className="mt-1 text-slate-700">{formatDateTimeBR(job.updatedAt)}</p>
             </div>
           </section>
 
@@ -242,7 +243,7 @@ export default function JobDetailPage() {
                       <p className="truncate font-medium text-slate-800">
                         XML corrigido — {doc.original_filename ?? doc.storage_key.split("/").pop()}
                       </p>
-                      <p className="text-xs text-slate-500">Criado em: {new Date(doc.created_at).toLocaleString()}</p>
+                      <p className="text-xs text-slate-500">Criado em: {formatDateTimeBR(doc.created_at)}</p>
                     </div>
                     <button
                       type="button"
