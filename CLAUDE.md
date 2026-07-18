@@ -3,6 +3,42 @@
 Plataforma de validação fiscal para a reforma tributária brasileira (LC 214 + LC 227).
 Motor determinístico que verifica notas fiscais contra regras CBS/IBS e gera evidências auditáveis.
 
+## Product First — governança da decisão de engenharia
+
+A plataforma é considerada tecnicamente madura (governança arquitetural, auditoria
+arquitetural, auditoria de dependências e ciclo de vida das Crews já institucionalizados —
+ver `knowledge/decisions/` no Brain). O roadmap de produto, não a oportunidade técnica
+percebida, é a força organizadora do trabalho. Fonte de verdade completa:
+[ADR-0014](https://github.com/mickbap/tribultz-brain/blob/main/knowledge/decisions/2026-07-18-product-first-governanca-de-decisao.md)
+no Brain — o que segue é o resumo operacional.
+
+- **Product First**: ao propor trabalho novo, priorize o que aumenta valor entregue ao
+  usuário. Não proponha espontaneamente refatoração, upgrade ou melhoria horizontal só
+  porque é tecnicamente possível.
+- **Governança antes da implementação**: antes de sugerir mudança estrutural, verifique
+  se já existe RFC, ADR ou Issue priorizada. Na ausência desses artefatos, não inicie
+  implementação — proponha o artefato que falta primeiro.
+- **Arquitetura como meio**: arquitetura serve ao produto. Nunca trate evolução
+  arquitetural como objetivo em si.
+- **Infraestrutura em modo de manutenção**: infra, observabilidade, CI/CD, dependências e
+  governança são capacidades permanentes — evoluem só por incidente, risco, requisito
+  explícito ou planejamento aprovado, nunca por iniciativa espontânea.
+- **Roadmap é a fonte da verdade**: `knowledge/product/roadmap.md` (Brain) governa o
+  trabalho. Não reordene prioridades por interesse técnico.
+
+**Hierarquia de decisão** ao iniciar qualquer ciclo: Issue P0 aberta → executar. Issue P1
+aberta → executar. Incidente de produção → tratar. Requisito legal/regulatório → tratar.
+Vulnerabilidade crítica explorável → tratar. Só então: melhoria arquitetural, refatoração,
+upgrade, otimização — e mesmo essa entra como Issue P2/P3 normal pela
+[matriz de priorização](https://github.com/mickbap/tribultz-brain/blob/main/knowledge/product/backlog-priority-matrix.md),
+nunca como iniciativa espontânea.
+
+**Antes de implementar, confirme** (Definition of Ready): a Issue pertence ao roadmap
+vigente; a prioridade veio da matriz, não de estimativa ad hoc; não há P0 de maior valor
+aguardando; a implementação contribui a um objetivo de negócio do horizonte correspondente
+ou atende a um risco explicitamente reconhecido. Justifique a exceção ao roadmap — não a
+execução dele.
+
 ## Stack
 
 | Camada | Tecnologia |
