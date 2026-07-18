@@ -418,6 +418,15 @@ def validate_xml(
     aliq_ibs = _first_tag(xml, ["AliquotaIBS", "pIBSUF", "pIBSMun"])
     base_calculo = _first_tag(xml, ["BaseCalculo", "vBC"])
 
+    # NFS-e — grupo IBSCBS da DPS, NT 004 v2.00/005/007 (#406). indZFMALC sinaliza
+    # operação com alíquota zero de CBS (Zona Franca de Manaus/Área de Livre
+    # Comércio). vPis/vCofins: a partir da NT 007/2026 informam apenas o valor
+    # DEVIDO (não retido) — tolerado no parser mas sem regra de cálculo própria
+    # (sem fórmula oficial confirmada; não inventar checagem especulativa).
+    ind_zfmalc = _first_tag(xml, ["indZFMALC", "IndZFMALC"])
+    v_pis = _first_tag(xml, ["vPis", "ValorPis"])
+    v_cofins = _first_tag(xml, ["vCofins", "ValorCofins"])
+
     ibscbs_tot = _first_tag(xml, ["IBSCBSTot"])  # grupo W03 (totais IBS/CBS) — #403
 
     # ── Rules 1-3: Format checks ────────────────────────────────────────────
@@ -532,6 +541,67 @@ def validate_xml(
     else:
         _calc_check(base_calculo, aliq_cbs, valor_cbs, "CBS", "IBSCBS_CALC_CBS")
         _calc_check(base_calculo, aliq_ibs, valor_ibs, "IBS", "IBSCBS_CALC_IBS")
+
+    # ── Rule: INDZFMALC_CBS_ZERO — indZFMALC ativo exige CBS zero (NFS-e, NT 007/2026, #406) ──
+    # indZFMALC sinaliza operação sob benefício de alíquota zero de CBS (ZFM/ALC, LC
+    # 214/2025). Sem esta checagem, o motor não teria como evitar falso-positivo
+    # (cobrar CBS) nem falso-negativo (não notar CBS indevidamente cobrado) numa
+    # operação ZFM/ALC legítima. WARNING: a própria plataforma nacional NFS-e ainda
+    # não valida este campo (preenchimento com validação desativada) — nosso valor
+    # é sinalizar o que a plataforma ainda não sinaliza, não reproduzir rejeição dura.
+    if doc_type == "NFSE" and ind_zfmalc and ind_zfmalc["value"].strip().lower() in ("1", "true", "s", "sim"):
+        _zfmalc_cbs = valor_cbs if not has_ibscbs else v_cbs
+        if _zfmalc_cbs:
+            try:
+                _zfmalc_cbs_val = float(_zfmalc_cbs["value"])
+            except (ValueError, TypeError):
+                _zfmalc_cbs_val = 0.0
+            if _zfmalc_cbs_val > 0.01:
+                ev_id = "E_XML_INDZFMALC_CBS_ZERO"
+                _add(
+                    Finding(
+                        id="F_INDZFMALC_CBS_ZERO", severity="WARNING", rule_id="INDZFMALC_CBS_ZERO",
+                        title=f'indZFMALC ativo, mas CBS = R$ {_zfmalc_cbs_val:.2f} (esperado zero)',
+                        where=FindingWhere(field=_zfmalc_cbs["tag"], xpath=_xpath(_zfmalc_cbs["tag"], doc_type), snippet=_zfmalc_cbs["snippet"]),
+                        recommendation=(
+                            "indZFMALC indica operação com benefício de alíquota zero de CBS "
+                            "(Zona Franca de Manaus/Área de Livre Comércio, LC 214/2025, art. sobre ZFM/ALC). "
+                            "Com o indicador ativo, o valor de CBS deve ser zero. "
+                            "NT 007/2026 (SE/CGNFS-e) — validação ainda desativada na plataforma nacional; "
+                            "checagem preventiva do Tribultz."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="indZFMALC × CBS incoerente", xpath=_xpath(_zfmalc_cbs["tag"], doc_type), snippet=_zfmalc_cbs["snippet"]),
+                )
+
+    # ── Rule: PIS_COFINS_DEVIDO_NEGATIVO — vPis/vCofins devidos não podem ser < 0 (NT 007/2026, #406) ──
+    # A partir da NT 007/2026, vPis/vCofins informam apenas o valor DEVIDO (não mais
+    # retido) — um valor devido negativo é logicamente incoerente. Checagem de formato
+    # mínima; não há fórmula oficial de cálculo confirmada para validar o valor exato
+    # (não implementada para evitar regra especulativa — ver #406 para follow-up).
+    for _tag_result, _label, _fid in ((v_pis, "vPis", "PIS_COFINS_DEVIDO_NEGATIVO_PIS"), (v_cofins, "vCofins", "PIS_COFINS_DEVIDO_NEGATIVO_COFINS")):
+        if _tag_result:
+            try:
+                _val = float(_tag_result["value"])
+            except (ValueError, TypeError):
+                continue
+            if _val < 0:
+                ev_id = f"E_XML_{_fid}"
+                _add(
+                    Finding(
+                        id=f"F_{_fid}", severity="WARNING", rule_id="PIS_COFINS_DEVIDO_NEGATIVO",
+                        title=f"{_label} negativo (R$ {_val:.2f}) — a partir da NT 007/2026 informa valor devido, não retenção",
+                        where=FindingWhere(field=_tag_result["tag"], xpath=_xpath(_tag_result["tag"], doc_type), snippet=_tag_result["snippet"]),
+                        recommendation=(
+                            f"{_label} passou a informar apenas o valor DEVIDO (NT 007/2026, SE/CGNFS-e) — "
+                            "um valor devido não pode ser negativo. Se o XML ainda trata este campo como "
+                            "retenção (semântica anterior), corrija para o valor devido."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label=f"{_label} — valor devido negativo", xpath=_xpath(_tag_result["tag"], doc_type), snippet=_tag_result["snippet"]),
+                )
 
     # ── Rules 11-13: IBS split (NF-e only) ──────────────────────────────────
 

@@ -1208,3 +1208,104 @@ test("#403 IBSCBS_TOTAL: recommendation cita códigos oficiais W56-10/1091 e W47
   assert.ok(f, "IBSCBS_TOTAL esperado (total CBS divergente)");
   assert.ok(f!.recommendation?.includes("1091"), "recommendation deve citar Rejeição 1091");
 });
+
+// ── #406 — NT 007/2026 (SE/CGNFS-e): indZFMALC + vPis/vCofins devidos ────────
+// 3 fixtures conforme DoD: serviço comum (caminho feliz), locação de imóvel
+// (nova operação documentável) e operação ZFM (indZFMALC).
+
+const NFSE_SERVICO_COMUM = `<NFS-e><infNfse>
+  <PrestadorServico><RazaoSocial>X</RazaoSocial></PrestadorServico>
+  <TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>
+  <PrestacaoServico>
+    <Servico>
+      <CodigoServico>123456</CodigoServico>
+      <cClassTrib>654321</cClassTrib>
+      <CST>090</CST><NCM>84713012</NCM><CEST>2104900</CEST>
+    </Servico>
+    <Valores>
+      <BaseCalculo>10000.00</BaseCalculo>
+      <AliquotaCBS>0.0010</AliquotaCBS><ValorCBS>10.00</ValorCBS>
+      <AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>90.00</ValorIBS>
+    </Valores>
+  </PrestacaoServico>
+</infNfse></NFS-e>`;
+
+const NFSE_LOCACAO_IMOVEL = `<NFS-e><infNfse>
+  <PrestadorServico><RazaoSocial>Imobiliária Z</RazaoSocial></PrestadorServico>
+  <TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>
+  <PrestacaoServico>
+    <Servico>
+      <TipoOperacao>LOCACAO_IMOVEL</TipoOperacao>
+      <CodigoServico>310101</CodigoServico>
+      <cClassTrib>654321</cClassTrib>
+      <CST>090</CST><NCM>84713012</NCM><CEST>2104900</CEST>
+    </Servico>
+    <Valores>
+      <BaseCalculo>5000.00</BaseCalculo>
+      <AliquotaCBS>0.0010</AliquotaCBS><ValorCBS>5.00</ValorCBS>
+      <AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>45.00</ValorIBS>
+      <ValorPis>1.65</ValorPis><ValorCofins>7.60</ValorCofins>
+    </Valores>
+  </PrestacaoServico>
+</infNfse></NFS-e>`;
+
+function nfseZfm(valorCbs: string): string {
+  return `<NFS-e><infNfse>
+    <PrestadorServico><RazaoSocial>Distribuidora ZFM</RazaoSocial></PrestadorServico>
+    <TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>
+    <PrestacaoServico>
+      <Servico>
+        <CodigoServico>123456</CodigoServico>
+        <cClassTrib>654321</cClassTrib>
+        <CST>090</CST><NCM>84713012</NCM><CEST>2104900</CEST>
+      </Servico>
+      <Valores>
+        <IndZFMALC>1</IndZFMALC>
+        <BaseCalculo>10000.00</BaseCalculo>
+        <AliquotaCBS>0.0000</AliquotaCBS><ValorCBS>${valorCbs}</ValorCBS>
+        <AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>90.00</ValorIBS>
+      </Valores>
+    </PrestacaoServico>
+  </infNfse></NFS-e>`;
+}
+
+function nfseFindings(xml: string, rule: string) {
+  return validateXmlWithRules({ tenantId: "t", documentType: "NFSE", xml }).findings.filter((f) => f.rule_id === rule);
+}
+
+test("#406 serviço comum: caminho feliz, sem findings novos", () => {
+  assert.equal(nfseFindings(NFSE_SERVICO_COMUM, "INDZFMALC_CBS_ZERO").length, 0);
+  assert.equal(nfseFindings(NFSE_SERVICO_COMUM, "PIS_COFINS_DEVIDO_NEGATIVO").length, 0);
+});
+
+test("#406 locação de imóvel: nova operação documentável não quebra o parser", () => {
+  const result = validateXmlWithRules({ tenantId: "t", documentType: "NFSE", xml: NFSE_LOCACAO_IMOVEL });
+  const fatals = result.findings.filter((f) => f.severity === "FATAL");
+  assert.deepEqual(fatals.map((f) => f.rule_id), []);
+  assert.equal(nfseFindings(NFSE_LOCACAO_IMOVEL, "PIS_COFINS_DEVIDO_NEGATIVO").length, 0);
+});
+
+test("#406 INDZFMALC_CBS_ZERO: ZFM com CBS zero → sem finding", () => {
+  assert.equal(nfseFindings(nfseZfm("0.00"), "INDZFMALC_CBS_ZERO").length, 0);
+});
+
+test("#406 INDZFMALC_CBS_ZERO: ZFM com CBS > 0 → WARNING", () => {
+  const f = nfseFindings(nfseZfm("10.00"), "INDZFMALC_CBS_ZERO");
+  assert.ok(f.some((x) => x.id === "F_INDZFMALC_CBS_ZERO" && x.severity === "WARNING"));
+});
+
+test("#406 PIS_COFINS_DEVIDO_NEGATIVO: vPis negativo → WARNING", () => {
+  const xml = NFSE_SERVICO_COMUM.replace("</Valores>", "<ValorPis>-5.00</ValorPis></Valores>");
+  const f = nfseFindings(xml, "PIS_COFINS_DEVIDO_NEGATIVO");
+  assert.ok(f.some((x) => x.id === "F_PIS_COFINS_DEVIDO_NEGATIVO_PIS" && x.severity === "WARNING"));
+});
+
+test("#406 PIS_COFINS_DEVIDO_NEGATIVO: vCofins negativo → WARNING", () => {
+  const xml = NFSE_SERVICO_COMUM.replace("</Valores>", "<ValorCofins>-3.00</ValorCofins></Valores>");
+  const f = nfseFindings(xml, "PIS_COFINS_DEVIDO_NEGATIVO");
+  assert.ok(f.some((x) => x.id === "F_PIS_COFINS_DEVIDO_NEGATIVO_COFINS" && x.severity === "WARNING"));
+});
+
+test("#406 PIS_COFINS_DEVIDO_NEGATIVO: valores positivos (locação) → sem finding", () => {
+  assert.equal(nfseFindings(NFSE_LOCACAO_IMOVEL, "PIS_COFINS_DEVIDO_NEGATIVO").length, 0);
+});

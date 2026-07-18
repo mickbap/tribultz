@@ -121,6 +121,112 @@ class TestNfseValidation:
         assert "IBSCBS_MISSING" in rules
 
 
+class TestNfseNt007:
+    """NT 007/2026 (SE/CGNFS-e): indZFMALC + vPis/vCofins devidos (#406).
+
+    3 fixtures conforme DoD: serviço comum (caminho feliz), locação de imóvel
+    (nova operação documentável — só prova que o parser não quebra) e operação
+    ZFM (indZFMALC).
+    """
+
+    # Fixture 1 — serviço comum, sem benefício ZFM/ALC.
+    _SERVICO_COMUM = """<NFS-e><infNfse>
+      <PrestadorServico><RazaoSocial>X</RazaoSocial></PrestadorServico>
+      <TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>
+      <PrestacaoServico>
+        <Servico>
+          <CodigoServico>123456</CodigoServico>
+          <cClassTrib>654321</cClassTrib>
+          <CST>090</CST><NCM>84713012</NCM><CEST>2104900</CEST>
+        </Servico>
+        <Valores>
+          <BaseCalculo>10000.00</BaseCalculo>
+          <AliquotaCBS>0.0010</AliquotaCBS><ValorCBS>10.00</ValorCBS>
+          <AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>90.00</ValorIBS>
+        </Valores>
+      </PrestacaoServico>
+    </infNfse></NFS-e>"""
+
+    # Fixture 2 — locação de imóvel (perfil de operação novo via NT 007/2026).
+    _LOCACAO_IMOVEL = """<NFS-e><infNfse>
+      <PrestadorServico><RazaoSocial>Imobiliária Z</RazaoSocial></PrestadorServico>
+      <TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>
+      <PrestacaoServico>
+        <Servico>
+          <TipoOperacao>LOCACAO_IMOVEL</TipoOperacao>
+          <CodigoServico>310101</CodigoServico>
+          <cClassTrib>654321</cClassTrib>
+          <CST>090</CST><NCM>84713012</NCM><CEST>2104900</CEST>
+        </Servico>
+        <Valores>
+          <BaseCalculo>5000.00</BaseCalculo>
+          <AliquotaCBS>0.0010</AliquotaCBS><ValorCBS>5.00</ValorCBS>
+          <AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>45.00</ValorIBS>
+          <ValorPis>1.65</ValorPis><ValorCofins>7.60</ValorCofins>
+        </Valores>
+      </PrestacaoServico>
+    </infNfse></NFS-e>"""
+
+    # Fixture 3 — operação ZFM (indZFMALC), com o parâmetro de CBS declarado.
+    def _operacao_zfm(self, valor_cbs: str) -> str:
+        return f"""<NFS-e><infNfse>
+          <PrestadorServico><RazaoSocial>Distribuidora ZFM</RazaoSocial></PrestadorServico>
+          <TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>
+          <PrestacaoServico>
+            <Servico>
+              <CodigoServico>123456</CodigoServico>
+              <cClassTrib>654321</cClassTrib>
+              <CST>090</CST><NCM>84713012</NCM><CEST>2104900</CEST>
+            </Servico>
+            <Valores>
+              <IndZFMALC>1</IndZFMALC>
+              <BaseCalculo>10000.00</BaseCalculo>
+              <AliquotaCBS>0.0000</AliquotaCBS><ValorCBS>{valor_cbs}</ValorCBS>
+              <AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>90.00</ValorIBS>
+            </Valores>
+          </PrestacaoServico>
+        </infNfse></NFS-e>"""
+
+    def test_servico_comum_caminho_feliz_sem_findings_novos(self):
+        result = validate_xml(self._SERVICO_COMUM)
+        rules = {f.rule_id for f in result.findings}
+        assert "INDZFMALC_CBS_ZERO" not in rules
+        assert "PIS_COFINS_DEVIDO_NEGATIVO" not in rules
+
+    def test_locacao_imovel_nao_quebra_o_parser(self):
+        # Nova operação documentável (NT 007/2026) — só precisa não quebrar
+        # nem virar FATAL espúrio; vPis/vCofins positivos não disparam a regra.
+        result = validate_xml(self._LOCACAO_IMOVEL)
+        fatals = [f for f in result.findings if f.severity == "FATAL"]
+        assert fatals == [], f"Inesperado: {[f.rule_id for f in fatals]}"
+        assert "PIS_COFINS_DEVIDO_NEGATIVO" not in {f.rule_id for f in result.findings}
+
+    def test_zfm_com_cbs_zero_sem_finding(self):
+        result = validate_xml(self._operacao_zfm(valor_cbs="0.00"))
+        assert "INDZFMALC_CBS_ZERO" not in {f.rule_id for f in result.findings}
+
+    def test_zfm_com_cbs_maior_que_zero_warning(self):
+        result = validate_xml(self._operacao_zfm(valor_cbs="10.00"))
+        f = [x for x in result.findings if x.rule_id == "INDZFMALC_CBS_ZERO"]
+        assert any(x.id == "F_INDZFMALC_CBS_ZERO" and x.severity == "WARNING" for x in f)
+
+    def test_pis_negativo_warning(self):
+        xml = self._SERVICO_COMUM.replace("</Valores>", "<ValorPis>-5.00</ValorPis></Valores>")
+        result = validate_xml(xml)
+        f = [x for x in result.findings if x.rule_id == "PIS_COFINS_DEVIDO_NEGATIVO"]
+        assert any(x.id == "F_PIS_COFINS_DEVIDO_NEGATIVO_PIS" and x.severity == "WARNING" for x in f)
+
+    def test_cofins_negativo_warning(self):
+        xml = self._SERVICO_COMUM.replace("</Valores>", "<ValorCofins>-3.00</ValorCofins></Valores>")
+        result = validate_xml(xml)
+        f = [x for x in result.findings if x.rule_id == "PIS_COFINS_DEVIDO_NEGATIVO"]
+        assert any(x.id == "F_PIS_COFINS_DEVIDO_NEGATIVO_COFINS" and x.severity == "WARNING" for x in f)
+
+    def test_pis_cofins_positivos_sem_finding(self):
+        result = validate_xml(self._LOCACAO_IMOVEL)
+        assert "PIS_COFINS_DEVIDO_NEGATIVO" not in {f.rule_id for f in result.findings}
+
+
 # ── NF-e validation ──────────────────────────────────────────────────────────
 
 
