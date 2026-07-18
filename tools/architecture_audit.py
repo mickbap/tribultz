@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Auditoria arquitetural automatizada — ADR-0013 / Ordem Técnica de
-institucionalização da governança (2026-07-18).
+institucionalização da governança (2026-07-18) + Ordem Técnica de Auditoria
+Contínua da Arquitetura (2026-07-18).
 
 Verifica, contra o estado real do repositório (não contra memória de quem
 audita):
@@ -12,16 +13,24 @@ audita):
     código — best-effort, pulado com aviso se ../tribultz-brain não existir
     (a ausência do Brain não bloqueia a auditoria)
 
+Cada achado carrega uma severidade (Crítico/Alto/Médio/Baixo) — a política
+que define essa classificação vive em
+knowledge/process/architecture-audit-policy.md no Brain; CATEGORY_SEVERITY
+abaixo é a aplicação dela em código. Hoje a auditoria roda em modo
+informativo no CI (não bloqueia merge nem quando encontra Crítico) — ver a
+seção "Integração ao CI" da política.
+
 Uso:
     cd backend && source .venv/bin/activate && python ../tools/architecture_audit.py
 
-Saída: relatório em texto no stdout. Exit code 0 se zero achados, 1 se houver
-qualquer achado (para uso futuro em CI — ver docstring do módulo, PARTE III
-da Ordem Técnica: a ausência de integração ao CI não bloqueia esta entrega).
+Saída: relatório em texto no stdout (mais anotações ::warning::/::error:: do
+GitHub Actions quando GITHUB_ACTIONS=true). Exit code 0 se zero achados, 1 se
+houver qualquer achado.
 """
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from dataclasses import dataclass
@@ -30,6 +39,31 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BACKEND = REPO_ROOT / "backend"
 BRAIN_ROOT = REPO_ROOT.parent / "tribultz-brain"
+
+SEVERITY_CRITICO = "Crítico"
+SEVERITY_ALTO = "Alto"
+SEVERITY_MEDIO = "Médio"
+SEVERITY_BAIXO = "Baixo"
+
+# Fonte da política: knowledge/process/architecture-audit-policy.md (Brain).
+# Categoria sem entrada aqui cai em SEVERITY_MEDIO (default seguro em
+# check_severity — nem alarme demais, nem passa despercebido).
+CATEGORY_SEVERITY: dict[str, str] = {
+    "crew-sem-classificacao": SEVERITY_CRITICO,
+    "crew-fora-do-inventario-brain": SEVERITY_CRITICO,
+    "crew-documentada-inexistente": SEVERITY_CRITICO,
+    "router-documentado-inexistente": SEVERITY_CRITICO,
+    "task-nao-registrada": SEVERITY_ALTO,
+    "router-fora-da-doc": SEVERITY_ALTO,
+    "celery-autodiscover-nao-encontrado": SEVERITY_ALTO,
+    "claude-md-formato-inesperado": SEVERITY_ALTO,
+    "ferramenta-orfa": SEVERITY_MEDIO,
+    "brain-nao-encontrado": SEVERITY_BAIXO,
+}
+
+
+def severity_of(category: str) -> str:
+    return CATEGORY_SEVERITY.get(category, SEVERITY_MEDIO)
 
 
 @dataclass(frozen=True)
@@ -256,7 +290,15 @@ CHECKS = [
 ]
 
 
+def _emit_gha_annotation(finding: Finding) -> None:
+    level = "error" if severity_of(finding.category) == SEVERITY_CRITICO else "warning"
+    title = f"[{severity_of(finding.category)}] {finding.category}"
+    message = finding.message.replace("\n", " ").replace("::", ": ")
+    print(f"::{level} title={title}::{message}")
+
+
 def main() -> int:
+    in_ci = os.environ.get("GITHUB_ACTIONS") == "true"
     all_findings: list[Finding] = []
     print("=" * 70)
     print("Auditoria Arquitetural — Tribultz (ADR-0013)")
@@ -268,12 +310,23 @@ def main() -> int:
         status = "OK" if not findings else f"{len(findings)} achado(s)"
         print(f"\n[{status}] {title}")
         for f in findings:
-            print(f"  - ({f.category}) {f.message}")
+            print(f"  - [{severity_of(f.category)}] ({f.category}) {f.message}")
+            if in_ci:
+                _emit_gha_annotation(f)
 
     print("\n" + "=" * 70)
     real_findings = [f for f in all_findings if f.category not in ("brain-nao-encontrado",)]
     if real_findings:
-        print(f"RESULTADO: {len(real_findings)} achado(s) que exigem atenção.")
+        by_severity: dict[str, int] = {}
+        for f in real_findings:
+            sev = severity_of(f.category)
+            by_severity[sev] = by_severity.get(sev, 0) + 1
+        breakdown = ", ".join(
+            f"{by_severity[s]} {s}"
+            for s in (SEVERITY_CRITICO, SEVERITY_ALTO, SEVERITY_MEDIO, SEVERITY_BAIXO)
+            if s in by_severity
+        )
+        print(f"RESULTADO: {len(real_findings)} achado(s) que exigem atenção ({breakdown}).")
         return 1
     print("RESULTADO: nenhum achado. Arquitetura consistente com o inventário.")
     return 0
