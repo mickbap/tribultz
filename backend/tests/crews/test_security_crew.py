@@ -1,8 +1,7 @@
 """Tests for the Security Crew (SOC + CloudSec + SRE) — zero coverage before this file.
 
 Crew.kickoff is monkeypatched globally (crewai.Crew) so real Agent/Task
-construction (YAML-driven) runs for real, but no network call happens —
-mirrors the seam already used in test_chatops_resilience.py.
+construction (YAML-driven) runs for real, but no network call happens.
 """
 
 from __future__ import annotations

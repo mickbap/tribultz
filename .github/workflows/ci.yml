@@ -86,10 +86,14 @@ jobs:
           python - << 'PY'
           import crewai
           import litellm
-          from app.crews.chatops_crew import TribultzChatOpsCrew
+          from app.crews.crm_engagement_crew import CRMEngagementCrew
+          from app.crews.security_crew import TribultzSecurityCrew
+          from app.crews.nfe_validation_crew import NFeValidationCrew
           print("crewai import ok")
           print("litellm import ok")
-          print("chatops crew import ok", bool(TribultzChatOpsCrew))
+          print("crm engagement crew import ok", bool(CRMEngagementCrew))
+          print("security crew import ok", bool(TribultzSecurityCrew))
+          print("nfe validation crew import ok", bool(NFeValidationCrew))
           PY
       - name: Wait for services healthy
         run: |

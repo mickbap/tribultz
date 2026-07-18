@@ -9,7 +9,7 @@ Motor determinístico que verifica notas fiscais contra regras CBS/IBS e gera ev
 |--------|------------|
 | Frontend | Next.js 16, React 19, TypeScript 5, Tailwind CSS 3, tsx --test |
 | Backend | FastAPI, SQLAlchemy, Alembic, Python 3.12 |
-| AI/Agents | CrewAI 1.10 (ParseNFSeXMLTool, ValidateFiscalRulesTool), LiteLLM |
+| AI/Agents | CrewAI 1.10 (CRM Engagement em produção; Security Crew interna; NFe Validation dormante — ver `knowledge/engineering/crews.md` no Brain), LiteLLM |
 | Workers | Celery 5.4 + Redis 7 (task queue / beat scheduler) |
 | Database | PostgreSQL 16 (multi-tenant, UUID PKs, tenant_id FK em todas as tabelas) |
 | Storage | MinIO (S3-compatible) |
@@ -20,7 +20,7 @@ Motor determinístico que verifica notas fiscais contra regras CBS/IBS e gera ev
 
 ```
 frontend/          Next.js app (app router)
-  src/app/         Páginas: validate-xml, audit, chat, closing, dashboard, jobs, report, settings,
+  src/app/         Páginas: validate-xml, audit, closing, dashboard, jobs, report, settings,
                    admin (painel superadmin: visão geral, tenants, usuários, uso, saúde, audit log), blog
   src/lib/         Lógica de validação (xmlRules), export (bundle, zip), closing (aggregate),
                    contentLint (corretor fiscal do blog), soroSync (Soro RSS→MDX), useAdminData
@@ -31,16 +31,18 @@ backend/           FastAPI
                    classtrib, compliance, credits, documents, exceptions, feedback,
                    founding_partners, health, jobs, lgpd, ncm_suggest, news, public, public_api,
                    reports, simulator, sped, split_payment, support, tasks, validate,
-                   validate_xml, validation. Chat não é mais endpoint REST — virou crew CrewAI
-                   (app/crews/chatops_crew.py) desde a migration 2026_04_11_0010.
-  app/crews/       CrewAI crews (chatops, devops, security audit)
+                   validate_xml, validation. Chat foi descontinuado como produto (mai/2026) e o
+                   código remanescente removido (ADR-0012, ver `knowledge/decisions/` no Brain).
+  app/crews/       CrewAI crews — crm_engagement_crew (Produção), security_crew (Produção
+                   Interna), nfe_validation_crew (Dormante). Classificação oficial e políticas em
+                   `knowledge/engineering/crews.md` no Brain.
   app/tasks/       10 tasks Celery (validate, report, simulation, reconciliation, hubspot,
                    security_audit — órfã, sem beat/autodiscover, ver runbook —, billing, sped,
                    compliance, crm)
   app/tools/       ERP connector, HubSpot, Postgres, S3, validation
   tests/           pytest
 
-crews/             CrewAI crews (chatops, devops)
+crews/             Configs YAML (agents/tasks) das crews em app/crews/ — nfe_validation, security
 database/          README — schema é 100% Alembic (backend/app/alembic); schema.sql aposentado (#409)
 infra/             docker-compose.yml
 tools/qa_gates/    run_gates.py — QA automation
