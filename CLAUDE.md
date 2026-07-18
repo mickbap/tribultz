@@ -46,6 +46,10 @@ crews/             Configs YAML (agents/tasks) das crews em app/crews/ — nfe_v
 database/          README — schema é 100% Alembic (backend/app/alembic); schema.sql aposentado (#409)
 infra/             docker-compose.yml
 tools/qa_gates/    run_gates.py — QA automation
+tools/architecture_audit.py   Auditoria arquitetural (ADR-0013) — Crews sem classificação,
+                               tasks Celery não registradas, tools órfãs, routers vs. CLAUDE.md,
+                               sincronia com o Brain. `cd backend && source .venv/bin/activate
+                               && python ../tools/architecture_audit.py`
 docs/sprints/      Histórico de sprints e relatórios de entrega
 docs/infra/operations_runbook.md   Arquitetura, fluxo de deploy/rollback, recuperação de
                                     ambiente, checklist de auditoria operacional
