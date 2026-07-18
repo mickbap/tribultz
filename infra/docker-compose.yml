@@ -50,8 +50,13 @@ services:
       retries: 5
 
   # ── MinIO (S3-compatible storage) ─────────────────────────
+  # Tag fixada (era :latest — build não-reprodutível, achado da auditoria de
+  # dependências 2026-07-18). RELEASE.2025-09-07T16-13-09Z é a mesma imagem
+  # que :latest resolve hoje (confirmado via Docker Hub — MinIO não publica
+  # imagem nova desde então). Atualizar deliberadamente via PR quando uma
+  # release nova for avaliada, não por pull automático.
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     restart: unless-stopped
     networks: [tribultz]
     env_file:

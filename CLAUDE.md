@@ -10,7 +10,7 @@ Motor determinístico que verifica notas fiscais contra regras CBS/IBS e gera ev
 | Frontend | Next.js 16, React 19, TypeScript 5, Tailwind CSS 3, tsx --test |
 | Backend | FastAPI, SQLAlchemy, Alembic, Python 3.12 |
 | AI/Agents | CrewAI 1.10 (CRM Engagement em produção; Security Crew interna; NFe Validation dormante — ver `knowledge/engineering/crews.md` no Brain), LiteLLM |
-| Workers | Celery 5.4 + Redis 7 (task queue / beat scheduler) |
+| Workers | Celery 5.6 + Redis 7 (task queue / beat scheduler) |
 | Database | PostgreSQL 16 (multi-tenant, UUID PKs, tenant_id FK em todas as tabelas) |
 | Storage | MinIO (S3-compatible) |
 | Infra | Docker Compose (db, redis, minio, api, worker, beat) |
@@ -66,7 +66,7 @@ docs/infra/operations_runbook.md   Arquitetura, fluxo de deploy/rollback, recupe
 - **Testes backend**: `cd backend && source .venv/bin/activate && python -m pytest tests/ -q`
 - **Lint backend**: `ruff check app/ tests/`
 - **Build frontend**: `cd frontend && npm run build`
-- **Type check backend**: `npx pyright@1.1.386`
+- **Type check backend**: `npx pyright@1.1.411`
 
 ## Gates (obrigatório antes de PR)
 

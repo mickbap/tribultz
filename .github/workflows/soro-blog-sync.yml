@@ -20,9 +20,9 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
 
@@ -37,7 +37,7 @@ jobs:
         run: npx tsx scripts/soro-sync.ts
 
       - name: Abrir PR de revisão
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: soro-sync/auto
           title: "chore(blog): novos artigos do Soro para revisão"
