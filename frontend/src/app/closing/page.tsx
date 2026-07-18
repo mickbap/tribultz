@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/common/Skeleton";
 import { Toast } from "@/components/common/Toast";
 import { getAudits, getJobs, listExceptionRequests } from "@/lib/api";
 import { createClosingSnapshot } from "@/lib/closing/aggregate";
+import { formatDateTimeBR } from "@/lib/formatDateTimeBR";
 import { AuditLog, ExceptionRequest, Job } from "@/lib/types";
 
 export default function ClosingPage() {
@@ -35,7 +36,7 @@ export default function ClosingPage() {
         <h1 className="text-2xl font-bold text-slate-900">Painel de Fechamento</h1>
         <p className="text-sm text-slate-500">Janela de 7 dias com consolidação de jobs, auditoria e exceções.</p>
         <p className="text-xs text-slate-400">
-          Janela ativa: {new Date(snapshot.since).toLocaleString()} até {new Date(snapshot.until).toLocaleString()}
+          Janela ativa: {formatDateTimeBR(snapshot.since)} até {formatDateTimeBR(snapshot.until)}
         </p>
       </header>
 
@@ -88,7 +89,7 @@ export default function ClosingPage() {
                     </Link>
                     <span className="text-xs text-slate-500">{row.status}</span>
                   </div>
-                  <p className="text-xs text-slate-500">{new Date(row.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-slate-500">{formatDateTimeBR(row.createdAt)}</p>
                 </li>
               ))}
             </ul>
@@ -110,7 +111,7 @@ export default function ClosingPage() {
               {snapshot.recentAuditRows.map((row) => (
                 <li key={row.id} className="rounded border border-slate-100 p-2">
                   <p className="text-sm font-medium text-slate-800">{row.action}</p>
-                  <p className="text-xs text-slate-500">{new Date(row.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-slate-500">{formatDateTimeBR(row.createdAt)}</p>
                   <div className="mt-1 flex flex-wrap gap-3">
                     <Link href={`/audit?audit_id=${encodeURIComponent(row.id)}`} className="text-xs text-tribultz-700 hover:underline">
                       Ver audit

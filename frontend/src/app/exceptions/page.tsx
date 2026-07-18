@@ -5,6 +5,7 @@ import { JsonViewer } from "@/components/common/JsonViewer";
 import { Skeleton } from "@/components/common/Skeleton";
 import { Toast } from "@/components/common/Toast";
 import { decideExceptionRequest, listExceptionRequests } from "@/lib/api";
+import { formatDateTimeBR } from "@/lib/formatDateTimeBR";
 import { ExceptionRequest } from "@/lib/types";
 
 export default function ExceptionsPage() {
@@ -102,7 +103,7 @@ export default function ExceptionsPage() {
                     <td className="px-2 py-2 font-mono text-xs">{item.job_id}</td>
                     <td className="px-2 py-2 font-mono text-xs">{item.finding_id}</td>
                     <td className="px-2 py-2">{item.status}</td>
-                    <td className="px-2 py-2 text-slate-600">{new Date(item.created_at).toLocaleString()}</td>
+                    <td className="px-2 py-2 text-slate-600">{formatDateTimeBR(item.created_at)}</td>
                     <td className="px-2 py-2">
                       <button
                         type="button"

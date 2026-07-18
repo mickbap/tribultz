@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { listReports, getReportDownloadUrl, ReportListItem } from "@/lib/api";
+import { formatDateTimeBR } from "@/lib/formatDateTimeBR";
 
 export default function ReportPage() {
   const [reports, setReports] = useState<ReportListItem[]>([]);
@@ -114,7 +115,7 @@ export default function ReportPage() {
                     {r.job_id ? r.job_id.slice(0, 8) + "…" : "—"}
                   </td>
                   <td className="px-4 py-3 text-slate-600">
-                    {new Date(r.created_at).toLocaleString("pt-BR")}
+                    {formatDateTimeBR(r.created_at)}
                   </td>
                   <td className="px-4 py-3 text-slate-600">
                     {r.file_size != null ? (r.file_size / 1024).toFixed(1) + " KB" : "—"}

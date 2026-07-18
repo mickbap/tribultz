@@ -7,7 +7,13 @@ import uuid
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services.pdf_service import generate_validation_report_pdf, generate_batch_report_pdf
+from datetime import datetime, timezone
+
+from app.services.pdf_service import (
+    generate_validation_report_pdf,
+    generate_batch_report_pdf,
+    _format_brasilia,
+)
 
 
 client = TestClient(app)
@@ -93,6 +99,48 @@ class TestPdfServiceValidation:
         h2 = hashlib.sha256(canonical.encode()).hexdigest()
         assert h1 == h2
         assert len(h1) == 64  # SHA-256 hex length
+
+
+class TestPdfServiceTimezone:
+    """#419 — laudo PDF apresenta horário de Brasília, não UTC.
+
+    Storage continua UTC aware (datetime.now(timezone.utc)) — só a borda de
+    apresentação converte, conforme knowledge/engineering/tempo-e-auditoria.md.
+    """
+
+    def test_utc_instant_converts_to_sao_paulo_deterministically(self):
+        # 2026-06-15 12:00 UTC -> horário de verão não se aplica no Brasil
+        # desde 2019; America/Sao_Paulo é UTC-3 o ano inteiro -> 09:00.
+        instant = datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc)
+        assert _format_brasilia(instant) == "15/06/2026 09:00 horário de Brasília"
+
+    def test_label_says_brasilia_not_utc(self):
+        instant = datetime(2026, 1, 1, 0, 0, tzinfo=timezone.utc)
+        result = _format_brasilia(instant)
+        assert "horário de Brasília" in result
+        assert "UTC" not in result
+
+    def test_date_rolls_back_across_midnight_boundary(self):
+        # 2026-03-01 02:00 UTC -> 2026-02-28 23:00 em São Paulo (UTC-3):
+        # o dia muda, não só a hora — é exatamente o bug que o laudo tinha.
+        instant = datetime(2026, 3, 1, 2, 0, tzinfo=timezone.utc)
+        assert _format_brasilia(instant) == "28/02/2026 23:00 horário de Brasília"
+
+    def test_validation_pdf_report_shows_brasilia_label(self):
+        result = generate_validation_report_pdf(
+            company_name="Empresa Teste LTDA",
+            cnpj=CNPJ,
+            reference_period="2026-03",
+            job_id=JOB_ID,
+            findings=[],
+            overall_status="CONFORME",
+        )
+        # HTML fallback (sem WeasyPrint) ou PDF real — ambos carregam o texto
+        # gerado pelo template; se for HTML puro dá pra inspecionar direto.
+        data = result["bytes"]
+        if data.startswith(b"<!DOCTYPE"):
+            assert "horário de Brasília".encode("utf-8") in data
+            assert b"UTC" not in data
 
 
 class TestPdfServiceBatch:

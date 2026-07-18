@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/common/Skeleton";
 import { Toast } from "@/components/common/Toast";
 import { getAudits } from "@/lib/api";
 import { exportEvidenceZipAndDownload } from "@/lib/export/evidenceExportUi";
+import { formatDateTimeBR } from "@/lib/formatDateTimeBR";
 import { AuditLog } from "@/lib/types";
 
 function AuditContent() {
@@ -110,7 +111,7 @@ function AuditContent() {
               <tbody>
                 {filtered.map((item) => (
                   <tr key={item.id} className="border-b border-slate-100">
-                    <td className="px-2 py-2 text-slate-600">{new Date(item.createdAt).toLocaleString()}</td>
+                    <td className="px-2 py-2 text-slate-600">{formatDateTimeBR(item.createdAt)}</td>
                     <td className="px-2 py-2 font-medium text-slate-800">{item.action}</td>
                     <td className="px-2 py-2 text-slate-600">{item.jobId ?? "-"}</td>
                     <td className="px-2 py-2">

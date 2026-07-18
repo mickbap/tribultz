@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Toast } from "@/components/common/Toast";
 import { API_BASE } from "@/lib/api";
+import { formatDateTimeBR } from "@/lib/formatDateTimeBR";
 import { getToken, getTenantId } from "@/lib/storage";
 
 interface ApiKey {
@@ -187,7 +188,7 @@ export default function ApiSettingsPage() {
                   </td>
                   <td className="px-5 py-3 text-xs text-slate-400">
                     {k.last_used_at
-                      ? new Date(k.last_used_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+                      ? formatDateTimeBR(k.last_used_at)
                       : "Nunca usado"}
                   </td>
                   <td className="px-5 py-3">
