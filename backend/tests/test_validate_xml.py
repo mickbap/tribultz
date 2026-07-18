@@ -897,6 +897,55 @@ class TestClasstribCstCompat:
         assert self._find(self._nfe("999999", "000")) == []
 
 
+class TestMonofasicoGrupoUB:
+    """Grupo UB84 (gIBSCBSMono) — subgrupos exigidos pelo cClassTrib, NT 2025.002 v1.50 (#404).
+
+    Códigos reais confirmados ao vivo na fonte SVRS (2026-07-18): 620004 exige
+    gMonoRet (mono_retido_anteriormente), 620003 exige gMonoDif (mono_diferimento);
+    620001 não exige nenhum subgrupo (caso "padrão", fora de escopo desta entrega).
+    Vigência: FATAL a partir de 04/01/2027; antes disso, WARNING (antecipação).
+    """
+
+    def _nfe(self, code, cst="620", grupo_extra="", dh_emi="2026-06-01T10:00:00-03:00"):
+        return (
+            f'<nfeProc><NFe><infNFe><ide><mod>55</mod><dhEmi>{dh_emi}</dhEmi></ide>'
+            '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            '<det nItem="1"><prod><NCM>27101259</NCM><vProd>1000.00</vProd></prod>'
+            f'<imposto><IBSCBS><CST>{cst}</CST><cClassTrib>{code}</cClassTrib>'
+            f'<gIBSCBS><vBC>1000.00</vBC></gIBSCBS>{grupo_extra}</IBSCBS></imposto></det>'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml):
+        return [f for f in validate_xml(xml, "NFE").findings if f.rule_id == "MONOFASICO_GRUPO_UB"]
+
+    def test_caminho_feliz_gmonoret_presente_sem_finding(self):
+        xml = self._nfe("620004", grupo_extra="<gMonoRet><qBCMonoRet>500.00</qBCMonoRet></gMonoRet>")
+        assert self._find(xml) == []
+
+    def test_erro_gmonoret_ausente_warning_antes_da_vigencia(self):
+        xml = self._nfe("620004")  # exige gMonoRet, não presente
+        f = self._find(xml)
+        assert any(x.id == "F_MONOFASICO_GRUPO_UB_GMONORET" and x.severity == "WARNING" for x in f)
+
+    def test_erro_gmonodif_ausente_warning_antes_da_vigencia(self):
+        xml = self._nfe("620003")  # exige gMonoDif, não presente
+        f = self._find(xml)
+        assert any(x.id == "F_MONOFASICO_GRUPO_UB_GMONODIF" and x.severity == "WARNING" for x in f)
+
+    def test_codigo_sem_exigencia_de_subgrupo_sem_finding(self):
+        # 620001 (própria) não ativa nenhum indicador mono_* — nenhum grupo exigido.
+        assert self._find(self._nfe("620001")) == []
+
+    def test_apos_vigencia_severidade_fatal(self):
+        xml = self._nfe("620004", dh_emi="2027-02-01T10:00:00-03:00")
+        f = self._find(xml)
+        assert any(x.id == "F_MONOFASICO_GRUPO_UB_GMONORET" and x.severity == "FATAL" for x in f)
+
+    def test_classtrib_desconhecido_sem_finding(self):
+        assert self._find(self._nfe("999999")) == []
+
+
 # ── #403: Grupo W03 (IBSCBSTot) — NT 2025.002-RTC v1.40, W34-10/W34-20 ────────
 # W34-20 → Rejeição 1119 (IBSCBSTot ausente com item IBS/CBS);
 # W34-10 → Rejeição 1118 (IBSCBSTot sem nenhum item IBS/CBS);

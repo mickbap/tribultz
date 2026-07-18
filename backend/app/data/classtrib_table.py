@@ -98,6 +98,30 @@ def classtrib_expected_aliquota_2026(code: str) -> tuple[float, float] | None:
     return round(exp_cbs, 6), round(exp_ibs, 6)
 
 
+def classtrib_monofasico_grupos(code: str) -> dict[str, bool] | None:
+    """Indica quais subgrupos do UB84 (gIBSCBSMono) o cClassTrib exige — NT 2025.002 v1.50, #404.
+
+    Fonte SVRS: IndMonoRetem (gMonoReten — sujeita à retenção, UB90), IndMonoRet
+    (gMonoRet — retida anteriormente, UB94), IndMonoDif (gMonoDif — diferimento,
+    UB99). Retorna None se o código for desconhecido, ou um dict sempre com as
+    três chaves (False quando o cClassTrib não exige aquele subgrupo).
+
+    Confirmado nesta entrega: o schema real não expõe indicador equivalente para
+    gMonoPadrao (UB84a) — parece ser o caso default quando nenhum dos três acima
+    se aplica. Essa checagem específica fica fora de escopo por falta de
+    confirmação 1:1 do gatilho oficial; não implementada para evitar regra
+    especulativa.
+    """
+    item = CLASSTRIB_BY_CODE.get(code)
+    if item is None:
+        return None
+    return {
+        "mono_retencao": bool(item.get("mono_retencao", False)),
+        "mono_retido_anteriormente": bool(item.get("mono_retido_anteriormente", False)),
+        "mono_diferimento": bool(item.get("mono_diferimento", False)),
+    }
+
+
 def classtrib_cst(code: str) -> str | None:
     """CST oficial registrado para o cClassTrib (fonte SVRS) — usado na Rejeição 1024.
 
