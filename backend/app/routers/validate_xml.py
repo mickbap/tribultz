@@ -344,6 +344,14 @@ _DEVOLUCAO_DFEREF_DATE = "2026-09-01"
 # WARNING (#404).
 _MONOFASICO_GRUPO_UB_DATE = "2027-01-04"
 
+# ── DANFE Simplificado Tipo 2 (tpImp=6) — NT 2026.002 v1.00, fase 2 ────────────
+# A partir de 03/08/2026 (produção), a NF-e (modelo 55) emitida com tpImp=6 (Ajuste
+# SINIEF 13/2026) só é admitida em operações de saída, internas, sem referência a
+# outro documento fiscal e com finalidade Normal — violação rejeita na SEFAZ
+# (códigos 706/707/708/715, ver regra DANFE_SIMPLIFICADO_RESTRICAO, #405). Antes da vigência
+# → WARNING (antecipação); pedagogical_mode mantém WARNING.
+_DANFE_T2_PRODUCAO_DATE = "2026-08-03"
+
 
 def validate_xml(
     xml: str,
@@ -1394,6 +1402,88 @@ def validate_xml(
                         evidence_ids=[ev_id],
                     ),
                     Evidence(id=ev_id, type="xml", label="ALC/ZFM — vTribRegCBS incoerente", xpath=_xpath("vTribRegCBS", doc_type), snippet=_vtrib["snippet"]),
+                )
+
+    # ── Rule: DANFE_SIMPLIFICADO_RESTRICAO — restrições do DANFE Simplificado Tipo 2 (NT 2026.002 v1.00, #405) ──
+    # tpImp=6 (modelo 55 apenas — Ajuste SINIEF 13/2026) restringe a nota a: saída
+    # (tpNF≠0), operação interna (idDest=1), sem NFref e finalidade Normal (finNFe=1).
+    # 4 restrições confirmadas com código de rejeição oficial e convergência de fontes
+    # independentes. Fora de escopo desta entrega (declarado no docs/, #405): o
+    # allowlist de CFOP específico (código de rejeição não confirmado nesta pesquisa)
+    # e o grupo de alerta cStat=120/PR13 (vive no protocolo de autorização da SEFAZ,
+    # não no XML emitido — fora do que este validador processa).
+    if doc_type == "NFE":
+        _tp_imp = _first_tag(xml, ["tpImp"])
+        if _tp_imp and _tp_imp["value"].strip() == "6":
+            _t2_em_date = emission_date["value"][:10] if emission_date else ""
+            _t2_vigente = bool(re.match(r"^\d{4}-\d{2}-\d{2}$", _t2_em_date)) and _t2_em_date >= _DANFE_T2_PRODUCAO_DATE
+            _t2_sev = "FATAL" if (_t2_vigente and not pedagogical_mode) else "WARNING"
+
+            _tp_nf = _first_tag(xml, ["tpNF"])
+            if _tp_nf and _tp_nf["value"].strip() == "0":
+                ev_id = "E_XML_DANFE_T2_ENTRADA"
+                _add(
+                    Finding(
+                        id="F_DANFE_T2_ENTRADA", severity=_t2_sev, rule_id="DANFE_SIMPLIFICADO_RESTRICAO",
+                        title="DANFE Simplificado Tipo 2 (tpImp=6) não é admitido em operação de entrada (tpNF=0)",
+                        where=FindingWhere(field="tpNF", xpath=_xpath("tpNF", doc_type), snippet=_tp_nf["snippet"]),
+                        recommendation=(
+                            "O DANFE Simplificado Tipo 2 (Ajuste SINIEF 13/2026) só é admitido em operações de "
+                            "saída. Corrija tpNF ou remova tpImp=6. SEFAZ: Rejeição 706 (regra B11-10)."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="DANFE T2 — operação de entrada não permitida", xpath=_xpath("tpNF", doc_type), snippet=_tp_nf["snippet"]),
+                )
+
+            _id_dest = _first_tag(xml, ["idDest"])
+            if _id_dest and _id_dest["value"].strip() != "1":
+                ev_id = "E_XML_DANFE_T2_INTERESTADUAL"
+                _add(
+                    Finding(
+                        id="F_DANFE_T2_INTERESTADUAL", severity=_t2_sev, rule_id="DANFE_SIMPLIFICADO_RESTRICAO",
+                        title="DANFE Simplificado Tipo 2 (tpImp=6) não é admitido em operação interestadual/exterior (idDest≠1)",
+                        where=FindingWhere(field="idDest", xpath=_xpath("idDest", doc_type), snippet=_id_dest["snippet"]),
+                        recommendation=(
+                            "O DANFE Simplificado Tipo 2 só é admitido em operações internas (idDest=1). "
+                            "Corrija idDest ou remova tpImp=6. SEFAZ: Rejeição 707 (regra B11a-10)."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="DANFE T2 — operação interestadual/exterior não permitida", xpath=_xpath("idDest", doc_type), snippet=_id_dest["snippet"]),
+                )
+
+            if re.search(r"<NFref(?=[\s>])", xml, re.IGNORECASE):
+                ev_id = "E_XML_DANFE_T2_NFREF"
+                _add(
+                    Finding(
+                        id="F_DANFE_T2_NFREF", severity=_t2_sev, rule_id="DANFE_SIMPLIFICADO_RESTRICAO",
+                        title="DANFE Simplificado Tipo 2 (tpImp=6) não pode referenciar outro documento fiscal (NFref)",
+                        where=FindingWhere(field="NFref", xpath=_xpath("NFref", doc_type), snippet=_tp_imp["snippet"]),
+                        recommendation=(
+                            "O DANFE Simplificado Tipo 2 não admite o grupo NFref (referência a outro documento "
+                            "fiscal). Remova o NFref ou o tpImp=6. SEFAZ: Rejeição 708 (regra BA01-10)."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="DANFE T2 — referência a documento fiscal não permitida", xpath=_xpath("NFref", doc_type), snippet=_tp_imp["snippet"]),
+                )
+
+            _fin_t2 = _first_tag(xml, ["finNFe"])
+            if _fin_t2 and _fin_t2["value"].strip() != "1":
+                ev_id = "E_XML_DANFE_T2_FINALIDADE"
+                _add(
+                    Finding(
+                        id="F_DANFE_T2_FINALIDADE", severity=_t2_sev, rule_id="DANFE_SIMPLIFICADO_RESTRICAO",
+                        title="DANFE Simplificado Tipo 2 (tpImp=6) exige finalidade Normal (finNFe=1)",
+                        where=FindingWhere(field="finNFe", xpath=_xpath("finNFe", doc_type), snippet=_fin_t2["snippet"]),
+                        recommendation=(
+                            "O DANFE Simplificado Tipo 2 só é admitido com finalidade Normal (finNFe=1). "
+                            "Corrija finNFe ou remova tpImp=6. SEFAZ: Rejeição 715 (regra B25-20)."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="DANFE T2 — finalidade não permitida", xpath=_xpath("finNFe", doc_type), snippet=_fin_t2["snippet"]),
                 )
 
     # ── NT v1.40 — anotar código de rejeição SEFAZ nas detecções (#311) ───────
