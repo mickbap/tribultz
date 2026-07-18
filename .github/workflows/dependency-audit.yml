@@ -1,0 +1,218 @@
+name: Dependency Audit
+
+# Auditoria contínua de dependências — institucionalizada pela Ordem Técnica
+# "Execução da Categoria A e Institucionalização da Auditoria de Dependências"
+# (2026-07-18), complemento da Auditoria de Dependências manual de 2026-07-18
+# (docs/sprints/2026-07-18_atualizacao_continua_dependencias.md).
+#
+# Roda pip-audit (backend) + npm audit (frontend) toda semana; na primeira
+# segunda-feira do mês, roda também a comparação de versões instaladas vs.
+# estáveis disponíveis e o inventário de imagens Docker / GitHub Actions.
+# Produz sempre um relatório em artifact. Nunca abre Pull Request — quando
+# há vulnerabilidade Alta/Crítica sem nenhuma versão de correção publicada,
+# abre (ou comenta, se já existir) uma Issue.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # toda segunda-feira, 06:00 UTC — foco em CVEs
+    - cron: "0 6 1 * *"   # dia 1 de cada mês, 06:00 UTC — revisão completa
+  workflow_dispatch:
+    inputs:
+      full_review:
+        description: "Forçar revisão completa (versões + infraestrutura), não só CVEs"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: dependency-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Determinar modo (semanal=CVEs / mensal=revisão completa)
+        id: mode
+        run: |
+          if [ "${{ github.event.schedule }}" = "0 6 1 * *" ] || [ "${{ inputs.full_review }}" = "true" ]; then
+            echo "full=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "full=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Python (pin)
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12.6"
+
+      - name: Setup Node (pin)
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22.12.0"
+
+      - name: Instalar dependências do backend + pip-audit
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip "uv==0.11.29"
+          uv pip install --system -r requirements.txt
+          uv pip install --system pip-audit
+
+      - name: pip-audit (backend)
+        working-directory: backend
+        run: |
+          pip-audit -r requirements.txt --format json > /tmp/pip-audit.json || true
+          pip-audit -r requirements.txt > /tmp/pip-audit.txt || true
+
+      - name: Instalar dependências do frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: npm audit (frontend)
+        working-directory: frontend
+        run: |
+          npm audit --json > /tmp/npm-audit.json || true
+          npm audit > /tmp/npm-audit.txt || true
+
+      - name: Comparação de versões — backend (revisão completa)
+        if: steps.mode.outputs.full == 'true'
+        working-directory: backend
+        run: |
+          python3 -m pip list --outdated --format json > /tmp/pip-outdated.json || echo "[]" > /tmp/pip-outdated.json
+          python3 - <<'PY'
+          import json
+          data = json.load(open("/tmp/pip-outdated.json"))
+          with open("/tmp/versions.md", "w") as f:
+              f.write("## Comparação de versões — Backend (pip)\n\n")
+              if not data:
+                  f.write("Nenhuma dependência instalada com atualização pendente.\n\n")
+              for d in data:
+                  f.write(f"- **{d['name']}**: {d['version']} → {d['latest_version']}\n")
+              f.write("\n")
+          PY
+
+      - name: Comparação de versões — frontend (revisão completa)
+        if: steps.mode.outputs.full == 'true'
+        working-directory: frontend
+        run: |
+          npm outdated --json > /tmp/npm-outdated.json 2>/dev/null || echo "{}" > /tmp/npm-outdated.json
+          python3 - <<'PY'
+          import json
+          try:
+              data = json.load(open("/tmp/npm-outdated.json"))
+          except json.JSONDecodeError:
+              data = {}
+          with open("/tmp/versions.md", "a") as f:
+              f.write("## Comparação de versões — Frontend (npm)\n\n")
+              if not data:
+                  f.write("Nenhuma dependência instalada com atualização pendente.\n\n")
+              for name, info in data.items():
+                  f.write(f"- **{name}**: {info.get('current')} → {info.get('latest')}\n")
+              f.write("\n")
+          PY
+
+      - name: Infraestrutura — imagens Docker e GitHub Actions (revisão completa)
+        if: steps.mode.outputs.full == 'true'
+        run: |
+          {
+            echo "## Infraestrutura"
+            echo ""
+            echo "### Imagens Docker em uso (infra/docker-compose.yml)"
+            grep -ohE 'image:.*' infra/docker-compose.yml | sed 's/^/- /'
+            echo ""
+            echo "### GitHub Actions em uso (.github/workflows/)"
+            grep -rohE 'uses: [A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[A-Za-z0-9._-]+' .github/workflows/*.yml | sed 's/^/- /' | sort -u
+            echo ""
+          } >> /tmp/versions.md
+
+      - name: Montar relatório
+        run: |
+          {
+            echo "# Relatório de Auditoria de Dependências — $(date -u +%Y-%m-%d)"
+            echo ""
+            echo "Modo: $( [ '${{ steps.mode.outputs.full }}' = 'true' ] && echo 'Revisão completa (mensal)' || echo 'Segurança (semanal)' )"
+            echo ""
+            echo "## Backend — pip-audit"
+            echo '```'
+            cat /tmp/pip-audit.txt
+            echo '```'
+            echo ""
+            echo "## Frontend — npm audit"
+            echo '```'
+            cat /tmp/npm-audit.txt
+            echo '```'
+            if [ -f /tmp/versions.md ]; then
+              echo ""
+              cat /tmp/versions.md
+            fi
+          } > /tmp/dependency-audit-report.md
+          cat /tmp/dependency-audit-report.md
+
+      - name: Upload relatório
+        uses: actions/upload-artifact@v7
+        with:
+          name: dependency-audit-report
+          path: /tmp/dependency-audit-report.md
+          retention-days: 90
+
+      - name: Verificar vulnerabilidade Alta/Crítica sem correção publicada
+        id: unfixed
+        run: |
+          python3 - <<'PY'
+          import json
+
+          lines = []
+
+          try:
+              pip_data = json.load(open("/tmp/pip-audit.json"))
+          except Exception:
+              pip_data = {"dependencies": []}
+          for dep in pip_data.get("dependencies", []):
+              for v in dep.get("vulns", []):
+                  if not v.get("fix_versions"):
+                      ids = ", ".join(v.get("aliases") or [v["id"]])
+                      lines.append(f"- **{dep['name']} {dep['version']}** (pip-audit): {ids} — nenhuma versão de correção publicada")
+
+          try:
+              npm_data = json.load(open("/tmp/npm-audit.json"))
+          except Exception:
+              npm_data = {"vulnerabilities": {}}
+          for name, v in (npm_data.get("vulnerabilities") or {}).items():
+              severity = v.get("severity")
+              if severity in ("high", "critical") and v.get("fixAvailable") is False:
+                  lines.append(f"- **{name}** (npm, {severity}): sem fix disponível em nenhuma versão")
+
+          with open("/tmp/unfixed.md", "w") as f:
+              f.write("\n".join(lines))
+
+          print(f"count={len(lines)}")
+          PY
+          {
+            echo "count<<EOF_UNFIXED"
+            python3 -c "print(len(open('/tmp/unfixed.md').read().splitlines()))"
+            echo "EOF_UNFIXED"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Abrir/atualizar Issue (vulnerabilidade sem correção conhecida)
+        if: steps.unfixed.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            cat /tmp/unfixed.md
+            echo ""
+            echo "Relatório completo (pip-audit + npm audit) no artifact \`dependency-audit-report\` deste run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } > /tmp/issue-body.md
+          TITLE="Auditoria de Dependências: vulnerabilidade sem correção conhecida"
+          EXISTING=$(gh issue list --search "$TITLE in:title" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body-file /tmp/issue-body.md
+          else
+            gh issue create --title "$TITLE" --label "security" --body-file /tmp/issue-body.md
+          fi
