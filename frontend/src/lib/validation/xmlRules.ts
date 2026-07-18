@@ -306,6 +306,15 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
   const aliquotaIbs = firstTag(xml, ["AliquotaIBS", "pIBSUF", "pIBSMun"]);
   const baseCalculo = firstTag(xml, ["BaseCalculo", "vBC"]);
 
+  // NFS-e — grupo IBSCBS da DPS, NT 004 v2.00/005/007 (#406). indZFMALC sinaliza
+  // operação com alíquota zero de CBS (Zona Franca de Manaus/Área de Livre
+  // Comércio). vPis/vCofins: a partir da NT 007/2026 informam apenas o valor
+  // DEVIDO (não retido) — sem fórmula oficial de cálculo confirmada, só
+  // checagem de formato (valor devido não pode ser negativo).
+  const indZfmalc = firstTag(xml, ["indZFMALC", "IndZFMALC"]);
+  const vPis = firstTag(xml, ["vPis", "ValorPis"]);
+  const vCofins = firstTag(xml, ["vCofins", "ValorCofins"]);
+
   // NF-e IBSCBS group fields
   const vBC = firstTag(xml, ["vBC"]);
   const pCBS = firstTag(xml, ["pCBS"]);
@@ -1200,6 +1209,70 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             makeEvidence({ id: evId, type: "xml", label: "ALC/ZFM — vTribRegCBS incoerente", xpath: inferXpath("vTribRegCBS", docType), snippet: vtrib.snippet }),
           );
         }
+      }
+    }
+  }
+
+  // ── Rule: INDZFMALC_CBS_ZERO — indZFMALC ativo exige CBS zero (NFS-e, NT 007/2026, #406) ──
+  // indZFMALC sinaliza operação sob benefício de alíquota zero de CBS (ZFM/ALC, LC
+  // 214/2025). WARNING: a própria plataforma nacional NFS-e ainda não valida este
+  // campo (preenchimento com validação desativada) — nosso valor é sinalizar o que
+  // a plataforma ainda não sinaliza, não reproduzir rejeição dura.
+  if (docType === "NFSE" && indZfmalc && /^(1|true|s|sim)$/i.test(indZfmalc.value.trim())) {
+    const zfmalcCbs = hasIbscbsGroup ? vCBS : valorCbs;
+    if (zfmalcCbs) {
+      const val = parseFloat(zfmalcCbs.value) || 0;
+      if (val > 0.01) {
+        const evId = makeEvidenceId("INDZFMALC_CBS_ZERO");
+        pushFindingAndEvidence(findings, evidences, evidenceById,
+          makeFinding({
+            id: "F_INDZFMALC_CBS_ZERO",
+            severity: "WARNING",
+            ruleId: "INDZFMALC_CBS_ZERO",
+            title: `indZFMALC ativo, mas CBS = R$ ${val.toFixed(2)} (esperado zero)`,
+            field: zfmalcCbs.tag,
+            xpath: inferXpath(zfmalcCbs.tag, docType),
+            snippet: zfmalcCbs.snippet,
+            evidenceId: evId,
+            recommendation:
+              "indZFMALC indica operação com benefício de alíquota zero de CBS (Zona Franca de Manaus/Área " +
+              "de Livre Comércio, LC 214/2025). Com o indicador ativo, o valor de CBS deve ser zero. " +
+              "NT 007/2026 (SE/CGNFS-e) — validação ainda desativada na plataforma nacional; checagem preventiva do Tribultz.",
+          }),
+          makeEvidence({ id: evId, type: "xml", label: "indZFMALC × CBS incoerente", xpath: inferXpath(zfmalcCbs.tag, docType), snippet: zfmalcCbs.snippet }),
+        );
+      }
+    }
+  }
+
+  // ── Rule: PIS_COFINS_DEVIDO_NEGATIVO — vPis/vCofins devidos não podem ser < 0 (NT 007/2026, #406) ──
+  // A partir da NT 007/2026, vPis/vCofins informam apenas o valor DEVIDO (não mais
+  // retido) — um valor devido negativo é logicamente incoerente. Sem fórmula oficial
+  // de cálculo confirmada para o valor exato — checagem de formato mínima.
+  for (const [tagResult, label, fid] of [
+    [vPis, "vPis", "PIS_COFINS_DEVIDO_NEGATIVO_PIS"],
+    [vCofins, "vCofins", "PIS_COFINS_DEVIDO_NEGATIVO_COFINS"],
+  ] as const) {
+    if (tagResult) {
+      const val = parseFloat(tagResult.value);
+      if (!Number.isNaN(val) && val < 0) {
+        const evId = makeEvidenceId(fid);
+        pushFindingAndEvidence(findings, evidences, evidenceById,
+          makeFinding({
+            id: `F_${fid}`,
+            severity: "WARNING",
+            ruleId: "PIS_COFINS_DEVIDO_NEGATIVO",
+            title: `${label} negativo (R$ ${val.toFixed(2)}) — a partir da NT 007/2026 informa valor devido, não retenção`,
+            field: tagResult.tag,
+            xpath: inferXpath(tagResult.tag, docType),
+            snippet: tagResult.snippet,
+            evidenceId: evId,
+            recommendation:
+              `${label} passou a informar apenas o valor DEVIDO (NT 007/2026, SE/CGNFS-e) — um valor devido ` +
+              "não pode ser negativo. Se o XML ainda trata este campo como retenção (semântica anterior), corrija para o valor devido.",
+          }),
+          makeEvidence({ id: evId, type: "xml", label: `${label} — valor devido negativo`, xpath: inferXpath(tagResult.tag, docType), snippet: tagResult.snippet }),
+        );
       }
     }
   }
