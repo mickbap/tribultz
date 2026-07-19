@@ -12,13 +12,21 @@ Fluxo (LC 214 art. 22, não-cumulatividade plena):
   disponível  = confirmed                    (crédito formalizado e não utilizado)
   em_risco    = failed                       (crédito potencialmente perdido)
 
-Fase 2, parte 1 (#258, esta entrega): drill-down por NF integrado a este
-dashboard (GET /documents, reaproveita SplitPaymentDoc/_to_doc de
-split_payment.py — mesma fonte de dado, não duplica) + export PDF com a
-trilha auditável por documento (GET /export.pdf).
+Fase 2, parte 1 (#258): drill-down por NF integrado a este dashboard
+(GET /documents, reaproveita SplitPaymentDoc/_to_doc de split_payment.py —
+mesma fonte de dado, não duplica) + export PDF com a trilha auditável por
+documento (GET /export.pdf).
 
-Fase 2, parte 2 (ainda pendente — ver issue de acompanhamento): IBS/CBS
-separados por NCM, tabela `credit_events` dedicada.
+Fase 2, parte 2 (#486, esta entrega): IBS e CBS reportados separadamente em
+cada categoria do fluxo (gerado/apropriado/disponível/em_risco), lendo
+`credit_value_ibs`/`credit_value_cbs` do `fiscal_metadata` (split_payment.py).
+Tabela `credit_events` dedicada foi avaliada e **deliberadamente adiada** —
+não existe hoje nenhuma fonte automática de evento discreto de crédito (nem
+extração de vCBS/vIBS do XML, nem integração com a Nota Nacional — ver
+Fase 2 de split_payment.py); todo o dado é entrada manual via
+`PATCH /split-payment/status/{id}`. Um livro-razão de eventos sem uma fonte
+real de eventos granulares seria estrutura vazia — construir quando a
+integração com a Nota Nacional (que geraria eventos de verdade) existir.
 """
 
 from __future__ import annotations
@@ -38,7 +46,7 @@ from app.api.deps import get_current_user
 from app.api.plan_gate import require_plan
 from app.database import get_db
 from app.models.auth import Tenant, User
-from app.routers.split_payment import SplitPaymentDoc, _to_doc
+from app.routers.split_payment import SplitPaymentDoc, _combined_credit_value, _to_doc
 
 router = APIRouter(prefix="/api/v1/credits", tags=["credits"])
 
@@ -49,12 +57,20 @@ class CreditPeriodRow(BaseModel):
     period: str                # "2026-05" ou "2026-Q2"
     generated_count: int
     generated_total: str       # R$ (string p/ evitar perda de precisão)
+    generated_total_ibs: str   # #486 — quebra por tributo
+    generated_total_cbs: str
     apropriated_count: int
     apropriated_total: str
+    apropriated_total_ibs: str
+    apropriated_total_cbs: str
     available_count: int
     available_total: str
+    available_total_ibs: str
+    available_total_cbs: str
     at_risk_count: int
     at_risk_total: str
+    at_risk_total_ibs: str
+    at_risk_total_cbs: str
 
 
 class CreditBalanceResponse(BaseModel):
@@ -84,6 +100,10 @@ def _compute_balance(
     """Agrega documents.split_payment_status por bucket de tempo.
 
     Usa date_trunc + COALESCE para extrair credit_value de fiscal_metadata.
+    O total combinado usa `credit_value` legado se presente; senão soma
+    `credit_value_ibs` + `credit_value_cbs` (#486) — mesma precedência de
+    `split_payment.py::_combined_credit_value`, replicada em SQL para agregar
+    sem trazer todas as linhas para Python.
     """
     trunc_unit = "month" if period_type == "month" else "quarter"
     rows = db.execute(
@@ -93,8 +113,14 @@ def _compute_balance(
                 split_payment_status AS status,
                 COUNT(*) AS cnt,
                 COALESCE(SUM(
-                    NULLIF(fiscal_metadata->>'credit_value', '')::numeric
-                ), 0) AS total
+                    COALESCE(
+                        NULLIF(fiscal_metadata->>'credit_value', '')::numeric,
+                        COALESCE(NULLIF(fiscal_metadata->>'credit_value_ibs', '')::numeric, 0)
+                        + COALESCE(NULLIF(fiscal_metadata->>'credit_value_cbs', '')::numeric, 0)
+                    )
+                ), 0) AS total,
+                COALESCE(SUM(NULLIF(fiscal_metadata->>'credit_value_ibs', '')::numeric), 0) AS total_ibs,
+                COALESCE(SUM(NULLIF(fiscal_metadata->>'credit_value_cbs', '')::numeric), 0) AS total_cbs
             FROM documents
             WHERE tenant_id = CAST(:tid AS uuid)
               AND split_payment_status IS NOT NULL
@@ -113,28 +139,42 @@ def _compute_balance(
         buckets.setdefault(bucket_iso, {})[status] = {
             "count": int(r["cnt"] or 0),
             "total": float(r["total"] or 0),
+            "total_ibs": float(r["total_ibs"] or 0),
+            "total_cbs": float(r["total_cbs"] or 0),
         }
+
+    _zero = {"count": 0, "total": 0.0, "total_ibs": 0.0, "total_cbs": 0.0}
 
     out: list[CreditPeriodRow] = []
     for bucket_iso in sorted(buckets.keys(), reverse=True):
         by_status = buckets[bucket_iso]
-        confirmed = by_status.get("confirmed", {"count": 0, "total": 0.0})
-        released = by_status.get("credit_released", {"count": 0, "total": 0.0})
-        failed = by_status.get("failed", {"count": 0, "total": 0.0})
+        confirmed = by_status.get("confirmed", dict(_zero))
+        released = by_status.get("credit_released", dict(_zero))
+        failed = by_status.get("failed", dict(_zero))
 
         gen_count = int(confirmed["count"] + released["count"])
         gen_total = float(confirmed["total"] + released["total"])
+        gen_ibs = float(confirmed["total_ibs"] + released["total_ibs"])
+        gen_cbs = float(confirmed["total_cbs"] + released["total_cbs"])
 
         out.append(CreditPeriodRow(
             period=_period_label(period_type, bucket_iso),
             generated_count=gen_count,
             generated_total=f"{gen_total:.2f}",
+            generated_total_ibs=f"{gen_ibs:.2f}",
+            generated_total_cbs=f"{gen_cbs:.2f}",
             apropriated_count=int(released["count"]),
             apropriated_total=f"{float(released['total']):.2f}",
+            apropriated_total_ibs=f"{float(released['total_ibs']):.2f}",
+            apropriated_total_cbs=f"{float(released['total_cbs']):.2f}",
             available_count=int(confirmed["count"]),
             available_total=f"{float(confirmed['total']):.2f}",
+            available_total_ibs=f"{float(confirmed['total_ibs']):.2f}",
+            available_total_cbs=f"{float(confirmed['total_cbs']):.2f}",
             at_risk_count=int(failed["count"]),
             at_risk_total=f"{float(failed['total']):.2f}",
+            at_risk_total_ibs=f"{float(failed['total_ibs']):.2f}",
+            at_risk_total_cbs=f"{float(failed['total_cbs']):.2f}",
         ))
 
     return out
@@ -202,18 +242,18 @@ def export_credit_balance_csv(
     writer = csv.writer(buf, delimiter=";")  # ; para compatibilidade Excel pt-BR
     writer.writerow([
         "PERIODO",
-        "GERADO_QTD", "GERADO_TOTAL_BRL",
-        "APROPRIADO_QTD", "APROPRIADO_TOTAL_BRL",
-        "DISPONIVEL_QTD", "DISPONIVEL_TOTAL_BRL",
-        "EM_RISCO_QTD", "EM_RISCO_TOTAL_BRL",
+        "GERADO_QTD", "GERADO_TOTAL_BRL", "GERADO_IBS_BRL", "GERADO_CBS_BRL",
+        "APROPRIADO_QTD", "APROPRIADO_TOTAL_BRL", "APROPRIADO_IBS_BRL", "APROPRIADO_CBS_BRL",
+        "DISPONIVEL_QTD", "DISPONIVEL_TOTAL_BRL", "DISPONIVEL_IBS_BRL", "DISPONIVEL_CBS_BRL",
+        "EM_RISCO_QTD", "EM_RISCO_TOTAL_BRL", "EM_RISCO_IBS_BRL", "EM_RISCO_CBS_BRL",
     ])
     for r in rows:
         writer.writerow([
             r.period,
-            r.generated_count, r.generated_total,
-            r.apropriated_count, r.apropriated_total,
-            r.available_count, r.available_total,
-            r.at_risk_count, r.at_risk_total,
+            r.generated_count, r.generated_total, r.generated_total_ibs, r.generated_total_cbs,
+            r.apropriated_count, r.apropriated_total, r.apropriated_total_ibs, r.apropriated_total_cbs,
+            r.available_count, r.available_total, r.available_total_ibs, r.available_total_cbs,
+            r.at_risk_count, r.at_risk_total, r.at_risk_total_ibs, r.at_risk_total_cbs,
         ])
 
     buf.seek(0)
@@ -268,7 +308,9 @@ def export_credit_balance_pdf(
             "filename": r.original_filename or str(r.id)[:8],
             "doc_type": r.doc_type,
             "status": r.split_payment_status,
-            "credit_value": fm.get("credit_value"),
+            "credit_value": _combined_credit_value(fm),
+            "credit_value_ibs": fm.get("credit_value_ibs"),
+            "credit_value_cbs": fm.get("credit_value_cbs"),
             "created_at": r.created_at.strftime("%d/%m/%Y") if r.created_at else "",
         })
 
@@ -277,6 +319,8 @@ def export_credit_balance_pdf(
             "period": row.period,
             "generated_count": row.generated_count,
             "generated_total": row.generated_total,
+            "generated_total_ibs": row.generated_total_ibs,
+            "generated_total_cbs": row.generated_total_cbs,
             "apropriated_total": row.apropriated_total,
             "available_total": row.available_total,
             "at_risk_total": row.at_risk_total,

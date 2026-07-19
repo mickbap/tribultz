@@ -94,7 +94,7 @@
 <div class="period-section">
   <h2>{{ p.period }}</h2>
   <div class="period-totals">
-    <span>Gerado: {{ p.generated_total|brl }}</span>
+    <span>Gerado: {{ p.generated_total|brl }} (IBS {{ p.generated_total_ibs|brl }} + CBS {{ p.generated_total_cbs|brl }})</span>
     <span>Apropriado: {{ p.apropriated_total|brl }}</span>
     <span>Disponível: {{ p.available_total|brl }}</span>
     <span>Em Risco: {{ p.at_risk_total|brl }}</span>
@@ -103,11 +103,13 @@
   <table>
     <thead>
       <tr>
-        <th style="width:35%">Documento</th>
-        <th style="width:15%">Modelo</th>
-        <th style="width:20%">Status</th>
-        <th style="width:15%">Data</th>
-        <th style="width:15%">Crédito</th>
+        <th style="width:26%">Documento</th>
+        <th style="width:11%">Modelo</th>
+        <th style="width:16%">Status</th>
+        <th style="width:12%">Data</th>
+        <th style="width:12%">IBS</th>
+        <th style="width:12%">CBS</th>
+        <th style="width:11%">Total</th>
       </tr>
     </thead>
     <tbody>
@@ -117,6 +119,8 @@
         <td>{{ d.doc_type }}</td>
         <td><span class="status-pill status-{{ d.status }}">{{ d.status }}</span></td>
         <td>{{ d.created_at }}</td>
+        <td>{{ d.credit_value_ibs|brl if d.credit_value_ibs else "—" }}</td>
+        <td>{{ d.credit_value_cbs|brl if d.credit_value_cbs else "—" }}</td>
         <td>{{ d.credit_value|brl if d.credit_value else "—" }}</td>
       </tr>
       {% endfor %}
