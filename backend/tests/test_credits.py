@@ -61,6 +61,15 @@ def client():
     app.dependency_overrides.pop(get_db, None)
 
 
+def _no_grant_result() -> MagicMock:
+    """resolve_effective_license (#487) faz um 2º execute() buscando EarlyGrant
+    ativo — sem grant, cai no plano da assinatura (comportamento pré-existente
+    destes testes). Mimetiza `select(EarlyGrant)...scalars().first() -> None`."""
+    result = MagicMock()
+    result.scalars.return_value.first.return_value = None
+    return result
+
+
 def _stub_active_profissional(session: MagicMock) -> None:
     """Make plan_gate._get_active_subscription return ('active', 'profissional')."""
     sub = MagicMock(status="active", current_period_end=None)
@@ -99,6 +108,7 @@ def test_credit_balance_month_aggregation(client):
     # First execute() in plan_gate already consumed; chain side_effect for second:
     session.execute.side_effect = [
         session.execute.return_value,  # plan_gate subscription query
+        _no_grant_result(),             # plan_gate grant check (#487)
         agg_result,                    # credits aggregation query
     ]
 
@@ -125,7 +135,7 @@ def test_credit_balance_empty(client):
     _stub_active_profissional(session)
     empty_result = MagicMock()
     empty_result.mappings.return_value.all.return_value = []
-    session.execute.side_effect = [session.execute.return_value, empty_result]
+    session.execute.side_effect = [session.execute.return_value, _no_grant_result(),empty_result]
 
     resp = tc.get("/api/v1/credits/balance")
     assert resp.status_code == 200
@@ -137,7 +147,7 @@ def test_credit_csv_export(client):
     _stub_active_profissional(session)
     agg_result = MagicMock()
     agg_result.mappings.return_value.all.return_value = _aggregation_rows()
-    session.execute.side_effect = [session.execute.return_value, agg_result]
+    session.execute.side_effect = [session.execute.return_value, _no_grant_result(),agg_result]
 
     resp = tc.get("/api/v1/credits/export.csv?period=month")
     assert resp.status_code == 200
@@ -166,7 +176,7 @@ def test_credit_balance_quarter_label(client):
     agg_result.mappings.return_value.all.return_value = [
         row(date(2026, 4, 1), "confirmed", 10, 5000.00),
     ]
-    session.execute.side_effect = [session.execute.return_value, agg_result]
+    session.execute.side_effect = [session.execute.return_value, _no_grant_result(),agg_result]
 
     resp = tc.get("/api/v1/credits/balance?period=quarter")
     assert resp.status_code == 200
@@ -174,10 +184,11 @@ def test_credit_balance_quarter_label(client):
 
 
 def test_credit_requires_plan(client):
-    """User sem subscription → 403."""
+    """User sem subscription e sem grant → 403."""
     tc, session = client
-    # Override the subscription query: return None
+    # Sem subscription (1ª query) e sem grant ativo (2ª query, #487)
     session.execute.return_value.first.return_value = None
+    session.execute.side_effect = [session.execute.return_value, _no_grant_result()]
 
     resp = tc.get("/api/v1/credits/balance")
     assert resp.status_code == 403
@@ -208,7 +219,7 @@ def test_credit_documents_drilldown_filters_by_period(client):
         _doc_row(filename="nfe-maio.xml", bucket=date(2026, 5, 1)),
         _doc_row(filename="nfe-abril.xml", bucket=date(2026, 4, 1)),
     ]
-    session.execute.side_effect = [session.execute.return_value, rows_result]
+    session.execute.side_effect = [session.execute.return_value, _no_grant_result(),rows_result]
 
     resp = tc.get("/api/v1/credits/documents?period=2026-05&period_type=month")
     assert resp.status_code == 200, resp.text
@@ -226,7 +237,7 @@ def test_credit_documents_drilldown_quarter_label(client):
     rows_result.all.return_value = [
         _doc_row(filename="nfe-q2.xml", bucket=date(2026, 4, 1)),
     ]
-    session.execute.side_effect = [session.execute.return_value, rows_result]
+    session.execute.side_effect = [session.execute.return_value, _no_grant_result(),rows_result]
 
     resp = tc.get("/api/v1/credits/documents?period=2026-Q2&period_type=quarter")
     assert resp.status_code == 200
@@ -239,7 +250,7 @@ def test_credit_documents_drilldown_empty_period(client):
 
     rows_result = MagicMock()
     rows_result.all.return_value = [_doc_row(bucket=date(2026, 5, 1))]
-    session.execute.side_effect = [session.execute.return_value, rows_result]
+    session.execute.side_effect = [session.execute.return_value, _no_grant_result(),rows_result]
 
     resp = tc.get("/api/v1/credits/documents?period=2026-06&period_type=month")
     assert resp.status_code == 200
@@ -262,7 +273,7 @@ def test_credit_export_pdf_returns_downloadable_file(client):
     tenant = MagicMock(name="Empresa Teste")
     tenant.name = "Empresa Teste"
 
-    session.execute.side_effect = [session.execute.return_value, balance_result, docs_result]
+    session.execute.side_effect = [session.execute.return_value, _no_grant_result(),balance_result, docs_result]
     session.get.return_value = tenant
 
     resp = tc.get("/api/v1/credits/export.pdf?period=month&months_back=6")

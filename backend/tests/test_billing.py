@@ -408,7 +408,10 @@ class TestValidateXmlTrialAccess:
         mock_db = MagicMock()
         mock_db.execute.return_value.scalar_one_or_none.return_value = mock_usage
 
-        with patch("app.api.plan_gate._get_active_subscription", return_value=(MagicMock(), mock_plan)):
+        # Patch _get_effective_plan (não _get_active_subscription): desde #487
+        # o plan gate também resolve Grant ativo via query real, que quebraria
+        # este mock_db não configurado para essa segunda consulta.
+        with patch("app.api.plan_gate._get_effective_plan", return_value=mock_plan):
             dep = check_usage_limit("validations")
             with pytest.raises(HTTPException) as exc:
                 dep(current_user=mock_user, db=mock_db)
@@ -425,7 +428,7 @@ class TestValidateXmlTrialAccess:
         mock_db = MagicMock()
         mock_db.execute.return_value.scalar_one_or_none.return_value = mock_usage
 
-        with patch("app.api.plan_gate._get_active_subscription", return_value=(MagicMock(), mock_plan)):
+        with patch("app.api.plan_gate._get_effective_plan", return_value=mock_plan):
             dep = check_usage_limit("validations")
             result = dep(current_user=mock_user, db=mock_db)
             assert result is mock_user
