@@ -295,7 +295,7 @@ export default function RegisterPage() {
         <p className="mt-1 text-sm font-medium text-tribultz-700">Garanta sua conformidade fiscal antes que a reforma tributária te pegue de surpresa.</p>
         {partnerCode && (
           <p className="mt-2 inline-block rounded-full bg-tribultz-50 px-3 py-1 text-xs font-medium text-tribultz-700">
-            Indicação: <span className="font-mono">{partnerCode}</span>
+            Indicação detectada no link: <span className="font-mono">{partnerCode}</span>
           </p>
         )}
 
@@ -412,6 +412,21 @@ export default function RegisterPage() {
               </div>
             </fieldset>
           )}
+
+          <label className="block text-sm">
+            <span className="mb-1 block text-slate-600">Código de Referência (opcional)</span>
+            <input
+              type="text"
+              value={partnerCode}
+              onChange={(e) => setPartnerCode(e.target.value.toUpperCase())}
+              placeholder="Ex.: KATIA"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono uppercase placeholder:font-sans placeholder:normal-case"
+              maxLength={32}
+            />
+            <span className="mt-1 block text-xs text-slate-400">
+              Foi indicado por um parceiro Tribultz? Informe o código que ele compartilhou com você.
+            </span>
+          </label>
 
           <label className="flex items-start gap-2 text-sm">
             <input type="checkbox" checked={lgpdConsent} onChange={(e) => setLgpdConsent(e.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300" />

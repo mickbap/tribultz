@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useAdminData, adminPost, adminRequest } from "@/lib/useAdminData";
 
 // Proveniência comercial (RFC-0025). Partner = origem, NUNCA comissão/contrato/financeiro.
@@ -31,6 +31,15 @@ type Partner = {
 };
 type Resp = { total: number; items: Partner[] };
 
+type ReferredTenant = {
+  id: string;
+  name: string;
+  is_active: boolean;
+  users: number;
+  created_at: string;
+};
+type TenantsResp = { total: number; items: ReferredTenant[] };
+
 const EMPTY = { type: "other", name: "", company: "", email: "", phone: "", code: "", notes: "" };
 
 export default function AdminPartnersPage() {
@@ -39,6 +48,28 @@ export default function AdminPartnersPage() {
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [referredByPartner, setReferredByPartner] = useState<Record<string, ReferredTenant[]>>({});
+  const [referredLoading, setReferredLoading] = useState<string | null>(null);
+
+  async function toggleExpand(p: Partner): Promise<void> {
+    if (expanded === p.id) {
+      setExpanded(null);
+      return;
+    }
+    setExpanded(p.id);
+    if (referredByPartner[p.id]) return;
+    setReferredLoading(p.id);
+    try {
+      const resp = await adminRequest<TenantsResp>("GET", `/api/v1/admin/tenants?partner_id=${p.id}&limit=200`);
+      setReferredByPartner((prev) => ({ ...prev, [p.id]: resp.items }));
+    } catch {
+      window.alert("Falha ao carregar empresas indicadas.");
+      setExpanded(null);
+    } finally {
+      setReferredLoading(null);
+    }
+  }
 
   function edit(p: Partner) {
     setEditing(p.id);
@@ -213,43 +244,91 @@ export default function AdminPartnersPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {data.items.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-mono text-xs text-slate-700">{p.code}</td>
-                  <td className="px-4 py-3 font-medium text-slate-900">{p.name}</td>
-                  <td className="px-4 py-3 text-slate-600">{TYPE_LABEL[p.type] ?? p.type}</td>
-                  <td className="px-4 py-3 text-slate-700">{p.companies}</td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                      {p.status === "active" ? "Ativo" : "Inativo"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.has_account ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
-                      {p.has_account ? "Criada" : "Sem conta"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button onClick={() => edit(p)} className="mr-2 rounded-lg border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">
-                      Editar
-                    </button>
-                    {!p.has_account && p.status === "active" && (
+                <Fragment key={p.id}>
+                  <tr className="hover:bg-slate-50">
+                    <td className="px-4 py-3 font-mono text-xs text-slate-700">{p.code}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900">{p.name}</td>
+                    <td className="px-4 py-3 text-slate-600">{TYPE_LABEL[p.type] ?? p.type}</td>
+                    <td className="px-4 py-3">
                       <button
-                        onClick={() => createAccount(p)}
-                        disabled={busy}
-                        className="mr-2 rounded-lg border border-blue-200 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                        onClick={() => void toggleExpand(p)}
+                        className="rounded-full border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                        disabled={p.companies === 0}
                       >
-                        Criar conta
+                        {p.companies} {expanded === p.id ? "▲" : p.companies > 0 ? "▼" : ""}
                       </button>
-                    )}
-                    <button
-                      onClick={() => toggleActive(p)}
-                      disabled={busy}
-                      className={`rounded-lg px-3 py-1 text-xs font-medium disabled:opacity-50 ${p.status === "active" ? "border border-red-200 text-red-600 hover:bg-red-50" : "border border-green-200 text-green-700 hover:bg-green-50"}`}
-                    >
-                      {p.status === "active" ? "Desativar" : "Reativar"}
-                    </button>
-                  </td>
-                </tr>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                        {p.status === "active" ? "Ativo" : "Inativo"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.has_account ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
+                        {p.has_account ? "Criada" : "Sem conta"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button onClick={() => edit(p)} className="mr-2 rounded-lg border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                        Editar
+                      </button>
+                      {!p.has_account && p.status === "active" && (
+                        <button
+                          onClick={() => createAccount(p)}
+                          disabled={busy}
+                          className="mr-2 rounded-lg border border-blue-200 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                        >
+                          Criar conta
+                        </button>
+                      )}
+                      <button
+                        onClick={() => toggleActive(p)}
+                        disabled={busy}
+                        className={`rounded-lg px-3 py-1 text-xs font-medium disabled:opacity-50 ${p.status === "active" ? "border border-red-200 text-red-600 hover:bg-red-50" : "border border-green-200 text-green-700 hover:bg-green-50"}`}
+                      >
+                        {p.status === "active" ? "Desativar" : "Reativar"}
+                      </button>
+                    </td>
+                  </tr>
+                  {expanded === p.id && (
+                    <tr className="bg-slate-50/60">
+                      <td colSpan={7} className="px-4 py-3">
+                        {referredLoading === p.id ? (
+                          <p className="text-xs text-slate-400">Carregando…</p>
+                        ) : (referredByPartner[p.id]?.length ?? 0) === 0 ? (
+                          <p className="text-xs text-slate-400">Nenhuma empresa indicada por este Partner ainda.</p>
+                        ) : (
+                          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="bg-slate-50 text-left text-[11px] uppercase tracking-wide text-slate-400">
+                                  <th className="px-3 py-2">Empresa</th>
+                                  <th className="px-3 py-2">Status</th>
+                                  <th className="px-3 py-2">Usuários</th>
+                                  <th className="px-3 py-2">Cadastrada em</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {referredByPartner[p.id]?.map((t) => (
+                                  <tr key={t.id} className="border-t border-slate-100">
+                                    <td className="px-3 py-2 font-medium text-slate-800">{t.name}</td>
+                                    <td className="px-3 py-2">
+                                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${t.is_active ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-600"}`}>
+                                        {t.is_active ? "Ativa" : "Inativa"}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-2 text-slate-600">{t.users}</td>
+                                    <td className="px-3 py-2 text-slate-500">{new Date(t.created_at).toLocaleDateString("pt-BR")}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
               {data.items.length === 0 && (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Nenhum Partner cadastrado.</td></tr>
