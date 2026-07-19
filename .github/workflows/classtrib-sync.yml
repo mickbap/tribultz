@@ -54,3 +54,43 @@ jobs:
             - (Follow-up) re-seed do DB `cclass_trib_items` (endpoint público `/classtrib`) — exige migration própria.
 
             Gerado por `.github/workflows/classtrib-sync.yml`.
+
+      # #446 — sem isto, uma falha (SVRS fora do ar, guard de diff abortando)
+      # passa despercebida: sem PR, sem e-mail, sem issue. Mesmo padrão de
+      # alerta via Resend já usado em monitor.yml.
+      - name: Alertar falha do sync (Resend)
+        if: failure()
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 - << 'PY'
+          import os, json, urllib.request, urllib.error
+
+          key = os.environ["RESEND_API_KEY"]
+          run_url = os.environ.get("RUN_URL", "")
+
+          payload = json.dumps({
+            "from": "noreply@tribultz.com.br",
+            "to":   ["mickel@tribultz.com.br"],
+            "subject": "[ALERTA] cClassTrib Data Sync falhou",
+            "html": f"<h2>Sync diário da tabela cClassTrib falhou</h2>"
+                    f"<p>Sem re-sync, o motor de validação fiscal decai silenciosamente "
+                    f"(regras de cClassTrib, incl. Rejeição 1024, deixam de cobrir códigos novos da SVRS).</p>"
+                    f"<p><a href='{run_url}'>Ver execução no GitHub Actions</a></p>",
+          }).encode()
+
+          req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=payload,
+            headers={
+              "Authorization": f"Bearer {key}",
+              "Content-Type":  "application/json",
+            },
+          )
+          try:
+            with urllib.request.urlopen(req, timeout=10) as r:
+              print("Alert sent:", r.status)
+          except urllib.error.HTTPError as e:
+            print("Resend error:", e.read().decode())
+          PY
