@@ -1455,10 +1455,9 @@ def validate_xml(
     # tpImp=6 (modelo 55 apenas — Ajuste SINIEF 13/2026) restringe a nota a: saída
     # (tpNF≠0), operação interna (idDest=1), sem NFref e finalidade Normal (finNFe=1).
     # 4 restrições confirmadas com código de rejeição oficial e convergência de fontes
-    # independentes. Fora de escopo desta entrega (declarado no docs/, #405): o
-    # allowlist de CFOP específico (código de rejeição não confirmado nesta pesquisa)
-    # e o grupo de alerta cStat=120/PR13 (vive no protocolo de autorização da SEFAZ,
-    # não no XML emitido — fora do que este validador processa).
+    # independentes. Allowlist de CFOP (5ª restrição) coberta por DANFE_SIMPLIFICADO_CFOP,
+    # abaixo (#482). Fora de escopo: o grupo de alerta cStat=120/PR13 (vive no protocolo
+    # de autorização da SEFAZ, não no XML emitido — fora do que este validador processa).
     if doc_type == "NFE":
         _tp_imp = _first_tag(xml, ["tpImp"])
         if _tp_imp and _tp_imp["value"].strip() == "6":
@@ -1531,6 +1530,32 @@ def validate_xml(
                         evidence_ids=[ev_id],
                     ),
                     Evidence(id=ev_id, type="xml", label="DANFE T2 — finalidade não permitida", xpath=_xpath("finNFe", doc_type), snippet=_fin_t2["snippet"]),
+                )
+
+            # ── Rule: DANFE_SIMPLIFICADO_CFOP — allowlist de CFOP (NT 2026.002 v1.00, #482) ──
+            # Regra I08-150 — Rejeição 725 (mesmo código já usado pela SEFAZ para "NFC-e com
+            # CFOP inválido", reaproveitado para NF-e+tpImp=6 — DANFE Simplificado Tipo 2
+            # estende a mesma semântica de venda direta ao consumidor da NFC-e ao NF-e mod. 55).
+            # Confirmado por 2 fontes independentes (fórum SPED Brasil + doc. Senior listando
+            # I08-150 entre as regras da NT 2026.002 v1.00) + a lista de CFOPs bate quase 1:1
+            # com a lista já documentada da Rejeição 725 de NFC-e (mesma fonte, +1 código: 5910).
+            _cfop_allowlist = {"5101", "5102", "5103", "5104", "5115", "5405", "5656", "5667", "5910", "5933"}
+            _bad_cfop = next((c for c in _all_tags(xml, "CFOP") if c["value"].strip() not in _cfop_allowlist), None)
+            if _bad_cfop:
+                ev_id = "E_XML_DANFE_T2_CFOP"
+                _add(
+                    Finding(
+                        id="F_DANFE_T2_CFOP", severity=_t2_sev, rule_id="DANFE_SIMPLIFICADO_CFOP",
+                        title=f"DANFE Simplificado Tipo 2 (tpImp=6) não admite CFOP {_bad_cfop['value']} — fora do allowlist de venda direta ao consumidor",
+                        where=FindingWhere(field="CFOP", xpath=_xpath("CFOP", doc_type), snippet=_bad_cfop["snippet"]),
+                        recommendation=(
+                            "O DANFE Simplificado Tipo 2 só admite CFOPs de venda direta ao consumidor: 5101, "
+                            "5102, 5103, 5104, 5115, 5405, 5656, 5667, 5910, 5933. Corrija o CFOP do item ou "
+                            "remova tpImp=6. SEFAZ: Rejeição 725 (regra I08-150)."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label="DANFE T2 — CFOP fora do allowlist", xpath=_xpath("CFOP", doc_type), snippet=_bad_cfop["snippet"]),
                 )
 
     # ── NT v1.40 — anotar código de rejeição SEFAZ nas detecções (#311) ───────
