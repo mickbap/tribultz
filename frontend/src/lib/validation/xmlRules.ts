@@ -313,11 +313,18 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
   // NFS-e — grupo IBSCBS da DPS, NT 004 v2.00/005/007 (#406). indZFMALC sinaliza
   // operação com alíquota zero de CBS (Zona Franca de Manaus/Área de Livre
   // Comércio). vPis/vCofins: a partir da NT 007/2026 informam apenas o valor
-  // DEVIDO (não retido) — sem fórmula oficial de cálculo confirmada, só
-  // checagem de formato (valor devido não pode ser negativo).
+  // DEVIDO (não retido).
   const indZfmalc = firstTag(xml, ["indZFMALC", "IndZFMALC"]);
   const vPis = firstTag(xml, ["vPis", "ValorPis"]);
   const vCofins = firstTag(xml, ["vCofins", "ValorCofins"]);
+
+  // Grupo "piscofins" (NFSe/infNFSe/DPS/infDPS/valores/trib/tribFed/piscofins) —
+  // vBCPisCofins/pAliqPis/pAliqCofins são campos irmãos de vPis/vCofins, todos
+  // opcionais (#480). Fórmula confirmada via fonte oficial + manual de integração
+  // pós-NT007 (ver comentário na regra PIS_COFINS_DEVIDO_CALC abaixo).
+  const baseCalculoPisCofins = firstTag(xml, ["vBCPisCofins", "BaseCalculoPisCofins"]);
+  const aliquotaPis = firstTag(xml, ["pAliqPis", "AliquotaPis"]);
+  const aliquotaCofins = firstTag(xml, ["pAliqCofins", "AliquotaCofins"]);
 
   // NF-e IBSCBS group fields
   const vBC = firstTag(xml, ["vBC"]);
@@ -1351,8 +1358,8 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
 
   // ── Rule: PIS_COFINS_DEVIDO_NEGATIVO — vPis/vCofins devidos não podem ser < 0 (NT 007/2026, #406) ──
   // A partir da NT 007/2026, vPis/vCofins informam apenas o valor DEVIDO (não mais
-  // retido) — um valor devido negativo é logicamente incoerente. Sem fórmula oficial
-  // de cálculo confirmada para o valor exato — checagem de formato mínima.
+  // retido) — um valor devido negativo é logicamente incoerente. Checagem de formato
+  // mínima, independente da checagem de valor exato (PIS_COFINS_DEVIDO_CALC, #480).
   for (const [tagResult, label, fid] of [
     [vPis, "vPis", "PIS_COFINS_DEVIDO_NEGATIVO_PIS"],
     [vCofins, "vCofins", "PIS_COFINS_DEVIDO_NEGATIVO_COFINS"],
@@ -1377,6 +1384,51 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
           }),
           makeEvidence({ id: evId, type: "xml", label: `${label} — valor devido negativo`, xpath: inferXpath(tagResult.tag, docType), snippet: tagResult.snippet }),
         );
+      }
+    }
+  }
+
+  // ── Rule: PIS_COFINS_DEVIDO_CALC — vPis/vCofins = base × alíquota (NT 007/2026, #480) ──
+  // Fórmula confirmada por fonte verificável (não especulada): a NT 007/2026
+  // (SE/CGNFS-e, 07/02/2026) atualiza o grupo "piscofins" (CST + tpRetPisCofins),
+  // mas não altera os campos pré-existentes vBCPisCofins/pAliqPis/pAliqCofins —
+  // confirmados via manual de integração NFS-e pós-NT007 e corroborados de forma
+  // independente (FocusNFe). Exemplo oficial: vBCPisCofins=988.33, pAliqPis=1.65
+  // (%) → vPis=16.31 (988.33 × 1.65 / 100, arredondamento bancário) — bate exato.
+  // Alíquotas em formato percentual (1.65 = 1,65%), não fração — por isso ÷100,
+  // ao contrário de IBSCBS_CALC (que usa fração). Tolerância R$0,01 (oficial).
+  // Campos opcionais — regra só dispara quando base e alíquota estão presentes
+  // (mesma degradação graciosa do IBSCBS_CALC). WARNING: a plataforma nacional
+  // NFS-e ainda não valida estes campos.
+  for (const [aliq, declared, label, fid] of [
+    [aliquotaPis, vPis, "vPis", "PIS_COFINS_DEVIDO_CALC_PIS"],
+    [aliquotaCofins, vCofins, "vCofins", "PIS_COFINS_DEVIDO_CALC_COFINS"],
+  ] as const) {
+    if (baseCalculoPisCofins && aliq && declared) {
+      const base = parseFloat(baseCalculoPisCofins.value);
+      const rate = parseFloat(aliq.value);
+      const val = parseFloat(declared.value);
+      if (!Number.isNaN(base) && !Number.isNaN(rate) && !Number.isNaN(val)) {
+        const expected = (base * rate) / 100;
+        if (Math.abs(val - expected) > 0.01) {
+          const evId = makeEvidenceId(fid);
+          pushFindingAndEvidence(findings, evidences, evidenceById,
+            makeFinding({
+              id: `F_${fid}`,
+              severity: "WARNING",
+              ruleId: "PIS_COFINS_DEVIDO_CALC",
+              title: `${label} incorreto — informado R$ ${val.toFixed(2)}, esperado R$ ${expected.toFixed(2)}`,
+              field: declared.tag,
+              xpath: inferXpath(declared.tag, docType),
+              snippet: declared.snippet,
+              evidenceId: evId,
+              recommendation:
+                `${label} deve ser base de cálculo (R$ ${base.toFixed(2)}) × alíquota (${rate.toFixed(2)}%) = R$ ${expected.toFixed(2)} ` +
+                "(NT 007/2026, tolerância R$ 0,01, arredondamento bancário). Validação ainda desativada na plataforma nacional NFS-e.",
+            }),
+            makeEvidence({ id: evId, type: "xml", label: `${label} — cálculo divergente`, xpath: inferXpath(declared.tag, docType), snippet: declared.snippet }),
+          );
+        }
       }
     }
   }
