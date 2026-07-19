@@ -1228,10 +1228,9 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
   // tpImp=6 (modelo 55 apenas — Ajuste SINIEF 13/2026) restringe a nota a: saída
   // (tpNF≠0), operação interna (idDest=1), sem NFref e finalidade Normal (finNFe=1).
   // 4 restrições confirmadas com código de rejeição oficial e convergência de fontes
-  // independentes. Fora de escopo desta entrega (declarado no docs/, #405): o
-  // allowlist de CFOP específico (código de rejeição não confirmado nesta pesquisa)
-  // e o grupo de alerta cStat=120/PR13 (vive no protocolo de autorização da SEFAZ,
-  // não no XML emitido — fora do que este validador processa).
+  // independentes. Allowlist de CFOP (5ª restrição) coberta por DANFE_SIMPLIFICADO_CFOP,
+  // abaixo (#482). Fora de escopo: o grupo de alerta cStat=120/PR13 (vive no protocolo
+  // de autorização da SEFAZ, não no XML emitido — fora do que este validador processa).
   if (docType === "NFE") {
     const tpImp = firstTag(xml, ["tpImp"]);
     if (tpImp && tpImp.value.trim() === "6") {
@@ -1319,6 +1318,36 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
               "Corrija finNFe ou remova tpImp=6. SEFAZ: Rejeição 715 (regra B25-20).",
           }),
           makeEvidence({ id: evId, type: "xml", label: "DANFE T2 — finalidade não permitida", xpath: inferXpath("finNFe", docType), snippet: finT2.snippet }),
+        );
+      }
+
+      // ── Rule: DANFE_SIMPLIFICADO_CFOP — allowlist de CFOP (NT 2026.002 v1.00, #482) ──
+      // Regra I08-150 — Rejeição 725 (mesmo código já usado pela SEFAZ para "NFC-e com
+      // CFOP inválido", reaproveitado para NF-e+tpImp=6 — DANFE Simplificado Tipo 2
+      // estende a mesma semântica de venda direta ao consumidor da NFC-e ao NF-e mod. 55).
+      // Confirmado por 2 fontes independentes (fórum SPED Brasil + doc. Senior listando
+      // I08-150 entre as regras da NT 2026.002 v1.00) + a lista de CFOPs bate quase 1:1
+      // com a lista já documentada da Rejeição 725 de NFC-e (mesma fonte, +1 código: 5910).
+      const cfopAllowlist = new Set(["5101", "5102", "5103", "5104", "5115", "5405", "5656", "5667", "5910", "5933"]);
+      const badCfop = allTags(xml, "CFOP").find((c) => !cfopAllowlist.has(c.value.trim()));
+      if (badCfop) {
+        const evId = makeEvidenceId("DANFE_T2_CFOP");
+        pushFindingAndEvidence(findings, evidences, evidenceById,
+          makeFinding({
+            id: "F_DANFE_T2_CFOP",
+            severity: sev,
+            ruleId: "DANFE_SIMPLIFICADO_CFOP",
+            title: `DANFE Simplificado Tipo 2 (tpImp=6) não admite CFOP ${badCfop.value} — fora do allowlist de venda direta ao consumidor`,
+            field: "CFOP",
+            xpath: inferXpath("CFOP", docType),
+            snippet: badCfop.snippet,
+            evidenceId: evId,
+            recommendation:
+              "O DANFE Simplificado Tipo 2 só admite CFOPs de venda direta ao consumidor: 5101, 5102, 5103, " +
+              "5104, 5115, 5405, 5656, 5667, 5910, 5933. Corrija o CFOP do item ou remova tpImp=6. " +
+              "SEFAZ: Rejeição 725 (regra I08-150).",
+          }),
+          makeEvidence({ id: evId, type: "xml", label: "DANFE T2 — CFOP fora do allowlist", xpath: inferXpath("CFOP", docType), snippet: badCfop.snippet }),
         );
       }
     }

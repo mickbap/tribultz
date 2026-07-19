@@ -1345,19 +1345,23 @@ test("#480 PIS_COFINS_DEVIDO_CALC: sem base/alíquota → regra não dispara", (
 
 // ── #405 — DANFE Simplificado Tipo 2 (tpImp=6, NT 2026.002 v1.00) ────────────
 function danfeT2Nfe(opts: {
-  tpImp?: string; tpNf?: string; idDest?: string; finNFe?: string; nfref?: boolean; dhEmi?: string; mod?: string;
+  tpImp?: string; tpNf?: string; idDest?: string; finNFe?: string; nfref?: boolean; dhEmi?: string; mod?: string; cfop?: string;
 } = {}): string {
-  const { tpImp = "6", tpNf = "1", idDest = "1", finNFe = "1", nfref = false, dhEmi = "2026-06-01", mod = "55" } = opts;
+  const { tpImp = "6", tpNf = "1", idDest = "1", finNFe = "1", nfref = false, dhEmi = "2026-06-01", mod = "55", cfop = "5102" } = opts;
   const ref = nfref ? "<NFref><refNFe>35260612345678000195550010000000011000000017</refNFe></NFref>" : "";
   return `<nfeProc><NFe><infNFe><ide><mod>${mod}</mod><tpImp>${tpImp}</tpImp><tpNF>${tpNf}</tpNF>` +
     `<idDest>${idDest}</idDest><finNFe>${finNFe}</finNFe><dhEmi>${dhEmi}T10:00:00-03:00</dhEmi>${ref}</ide>` +
     `<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>` +
-    `<det nItem="1"><prod><NCM>84713012</NCM><vProd>10.00</vProd></prod></det>` +
+    `<det nItem="1"><prod><CFOP>${cfop}</CFOP><NCM>84713012</NCM><vProd>10.00</vProd></prod></det>` +
     `</infNFe></NFe></nfeProc>`;
 }
 function danfeT2Findings(xml: string, documentType: "NFE" | "NFCE" = "NFE", pedagogicalMode = false) {
   return validateXmlWithRules({ tenantId: "t", documentType, xml, pedagogicalMode })
     .findings.filter((f) => f.rule_id === "DANFE_SIMPLIFICADO_RESTRICAO");
+}
+function danfeT2CfopFindings(xml: string, documentType: "NFE" | "NFCE" = "NFE", pedagogicalMode = false) {
+  return validateXmlWithRules({ tenantId: "t", documentType, xml, pedagogicalMode })
+    .findings.filter((f) => f.rule_id === "DANFE_SIMPLIFICADO_CFOP");
 }
 
 test("#405 DANFE T2 compliant (saída/interna/normal/sem NFref) → sem finding", () => {
@@ -1411,4 +1415,35 @@ test("#405 múltiplas violações geram múltiplos findings", () => {
   const f = danfeT2Findings(danfeT2Nfe({ tpNf: "0", idDest: "2", nfref: true, finNFe: "4" }));
   const ids = new Set(f.map((x) => x.id));
   assert.deepEqual(ids, new Set(["F_DANFE_T2_ENTRADA", "F_DANFE_T2_INTERESTADUAL", "F_DANFE_T2_NFREF", "F_DANFE_T2_FINALIDADE"]));
+});
+
+// ── #482 — DANFE_SIMPLIFICADO_CFOP: allowlist de CFOP (I08-150, Rejeição 725) ─
+// Mesmo código de "CFOP inválido" já usado pela SEFAZ para NFC-e, reaproveitado
+// para NF-e+tpImp=6. Confirmado via fórum SPED Brasil + doc. Senior (2026-07-20).
+
+test("#482 CFOP permitido → sem finding", () => {
+  assert.equal(danfeT2CfopFindings(danfeT2Nfe({ cfop: "5102" })).length, 0);
+});
+
+test("#482 CFOP fora do allowlist → Rejeição 725", () => {
+  const f = danfeT2CfopFindings(danfeT2Nfe({ cfop: "5949" }));
+  assert.ok(f.some((x) => x.id === "F_DANFE_T2_CFOP" && x.recommendation.includes("725") && x.title.includes("5949")));
+});
+
+test("#482 CFOP 5910 permitido (único CFOP extra vs. allowlist da Rejeição 725 de NFC-e)", () => {
+  assert.equal(danfeT2CfopFindings(danfeT2Nfe({ cfop: "5910" })).length, 0);
+});
+
+test("#482 tpImp≠6 → regra CFOP não dispara", () => {
+  assert.equal(danfeT2CfopFindings(danfeT2Nfe({ tpImp: "1", cfop: "5949" })).length, 0);
+});
+
+test("#482 CFOP inválido antes da vigência (03/08/2026) → WARNING", () => {
+  const f = danfeT2CfopFindings(danfeT2Nfe({ cfop: "5949", dhEmi: "2026-07-15" }));
+  assert.ok(f.length > 0 && f.every((x) => x.severity === "WARNING"));
+});
+
+test("#482 CFOP inválido após a vigência → FATAL", () => {
+  const f = danfeT2CfopFindings(danfeT2Nfe({ cfop: "5949", dhEmi: "2026-08-10" }));
+  assert.ok(f.some((x) => x.id === "F_DANFE_T2_CFOP" && x.severity === "FATAL"));
 });

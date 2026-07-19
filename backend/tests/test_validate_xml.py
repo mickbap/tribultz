@@ -1130,20 +1130,27 @@ class TestDanfeSimplificadoTipo2:
     mantém WARNING). Códigos de rejeição confirmados por múltiplas fontes
     independentes (tecnospeed, contabeis.com.br, lopesmachado — 2026-07-18):
     706 (B11-10), 707 (B11a-10), 708 (BA01-10), 715 (B25-20).
+
+    5ª restrição — allowlist de CFOP (DANFE_SIMPLIFICADO_CFOP, #482, 2026-07-20):
+    725 (I08-150), mesmo código de "CFOP inválido" já usado pela Rejeição 725
+    de NFC-e, reaproveitado para NF-e+tpImp=6.
     """
 
-    def _nfe(self, tp_imp="6", tp_nf="1", id_dest="1", fin_nfe="1", nfref=False, dh_emi="2026-06-01T10:00:00-03:00", mod="55"):
+    def _nfe(self, tp_imp="6", tp_nf="1", id_dest="1", fin_nfe="1", nfref=False, dh_emi="2026-06-01T10:00:00-03:00", mod="55", cfop="5102"):
         ref = '<NFref><refNFe>35260612345678000195550010000000011000000017</refNFe></NFref>' if nfref else ""
         return (
             f'<nfeProc><NFe><infNFe><ide><mod>{mod}</mod><tpImp>{tp_imp}</tpImp><tpNF>{tp_nf}</tpNF>'
             f'<idDest>{id_dest}</idDest><finNFe>{fin_nfe}</finNFe><dhEmi>{dh_emi}</dhEmi>{ref}</ide>'
             '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
-            '<det nItem="1"><prod><NCM>84713012</NCM><vProd>10.00</vProd></prod></det>'
+            f'<det nItem="1"><prod><CFOP>{cfop}</CFOP><NCM>84713012</NCM><vProd>10.00</vProd></prod></det>'
             '</infNFe></NFe></nfeProc>'
         )
 
     def _find(self, xml, dt="NFE", **kw):
         return [f for f in validate_xml(xml, dt, **kw).findings if f.rule_id == "DANFE_SIMPLIFICADO_RESTRICAO"]
+
+    def _find_cfop(self, xml, dt="NFE", **kw):
+        return [f for f in validate_xml(xml, dt, **kw).findings if f.rule_id == "DANFE_SIMPLIFICADO_CFOP"]
 
     def test_compliant_saida_interna_sem_finding(self):
         assert self._find(self._nfe()) == []
@@ -1191,6 +1198,34 @@ class TestDanfeSimplificadoTipo2:
         f = self._find(self._nfe(tp_nf="0", id_dest="2", nfref=True, fin_nfe="4"))
         ids = {x.id for x in f}
         assert ids == {"F_DANFE_T2_ENTRADA", "F_DANFE_T2_INTERESTADUAL", "F_DANFE_T2_NFREF", "F_DANFE_T2_FINALIDADE"}
+
+    # ── DANFE_SIMPLIFICADO_CFOP — allowlist de CFOP (NT 2026.002 v1.00, #482) ──
+    # Regra I08-150 — Rejeição 725 (mesmo código já usado pela SEFAZ para "NFC-e com
+    # CFOP inválido", reaproveitado para NF-e+tpImp=6). Confirmado via fórum SPED
+    # Brasil + doc. Senior (2026-07-20).
+
+    def test_cfop_permitido_sem_finding(self):
+        assert self._find_cfop(self._nfe(cfop="5102")) == []
+
+    def test_cfop_fora_do_allowlist_rejeitado(self):
+        f = self._find_cfop(self._nfe(cfop="5949"))
+        assert any(x.id == "F_DANFE_T2_CFOP" and "725" in x.recommendation and "5949" in x.title for x in f)
+
+    def test_cfop_5910_permitido(self):
+        # 5910 é o único CFOP extra do allowlist do DANFE T2 em relação ao allowlist
+        # pré-existente da Rejeição 725 de NFC-e.
+        assert self._find_cfop(self._nfe(cfop="5910")) == []
+
+    def test_cfop_tpimp_diferente_de_6_sem_finding(self):
+        assert self._find_cfop(self._nfe(tp_imp="1", cfop="5949")) == []
+
+    def test_cfop_antes_da_vigencia_warning(self):
+        f = self._find_cfop(self._nfe(cfop="5949", dh_emi="2026-07-15T10:00:00-03:00"))
+        assert f and all(x.severity == "WARNING" for x in f)
+
+    def test_cfop_apos_vigencia_fatal(self):
+        f = self._find_cfop(self._nfe(cfop="5949", dh_emi="2026-08-10T10:00:00-03:00"))
+        assert any(x.id == "F_DANFE_T2_CFOP" and x.severity == "FATAL" for x in f)
 
 
 # ── #403: Grupo W03 (IBSCBSTot) — NT 2025.002-RTC v1.40, W34-10/W34-20 ────────
