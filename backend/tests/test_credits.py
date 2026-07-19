@@ -6,7 +6,7 @@ Mocks DB Session and plan-gate (profissional) via dependency_overrides.
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
@@ -182,3 +182,91 @@ def test_credit_requires_plan(client):
     resp = tc.get("/api/v1/credits/balance")
     assert resp.status_code == 403
     assert "profissional" in resp.json()["detail"].lower()
+
+
+# ── #258 Fase 2, parte 1 — drill-down por NF + export PDF ─────────────────────
+
+def _doc_row(*, doc_id=None, filename="nfe-123.xml", doc_type="nfe", status="confirmed",
+             credit_value="150.00", created_at=None, bucket=None):
+    m = MagicMock()
+    m.id = doc_id or uuid.uuid4()
+    m.original_filename = filename
+    m.doc_type = doc_type
+    m.split_payment_status = status
+    m.fiscal_metadata = {"credit_value": credit_value} if credit_value is not None else {}
+    m.created_at = created_at or datetime(2026, 5, 10, tzinfo=timezone.utc)
+    m.bucket = bucket or date(2026, 5, 1)
+    return m
+
+
+def test_credit_documents_drilldown_filters_by_period(client):
+    tc, session = client
+    _stub_active_profissional(session)
+
+    rows_result = MagicMock()
+    rows_result.all.return_value = [
+        _doc_row(filename="nfe-maio.xml", bucket=date(2026, 5, 1)),
+        _doc_row(filename="nfe-abril.xml", bucket=date(2026, 4, 1)),
+    ]
+    session.execute.side_effect = [session.execute.return_value, rows_result]
+
+    resp = tc.get("/api/v1/credits/documents?period=2026-05&period_type=month")
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert len(body) == 1
+    assert body[0]["original_filename"] == "nfe-maio.xml"
+    assert body[0]["credit_value"] == "150.00"
+
+
+def test_credit_documents_drilldown_quarter_label(client):
+    tc, session = client
+    _stub_active_profissional(session)
+
+    rows_result = MagicMock()
+    rows_result.all.return_value = [
+        _doc_row(filename="nfe-q2.xml", bucket=date(2026, 4, 1)),
+    ]
+    session.execute.side_effect = [session.execute.return_value, rows_result]
+
+    resp = tc.get("/api/v1/credits/documents?period=2026-Q2&period_type=quarter")
+    assert resp.status_code == 200
+    assert len(resp.json()) == 1
+
+
+def test_credit_documents_drilldown_empty_period(client):
+    tc, session = client
+    _stub_active_profissional(session)
+
+    rows_result = MagicMock()
+    rows_result.all.return_value = [_doc_row(bucket=date(2026, 5, 1))]
+    session.execute.side_effect = [session.execute.return_value, rows_result]
+
+    resp = tc.get("/api/v1/credits/documents?period=2026-06&period_type=month")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_credit_export_pdf_returns_downloadable_file(client):
+    """PDF ou fallback HTML (WeasyPrint pode não estar disponível no ambiente de
+    teste) — o endpoint deve sempre devolver um arquivo anexável com trilha por NF."""
+    tc, session = client
+    _stub_active_profissional(session)
+
+    balance_result = MagicMock()
+    balance_result.mappings.return_value.all.return_value = [
+        {"bucket": date(2026, 5, 1), "status": "confirmed", "cnt": 1, "total": 150.00},
+    ]
+    docs_result = MagicMock()
+    docs_result.all.return_value = [_doc_row(filename="nfe-auditavel.xml", bucket=date(2026, 5, 1))]
+
+    tenant = MagicMock(name="Empresa Teste")
+    tenant.name = "Empresa Teste"
+
+    session.execute.side_effect = [session.execute.return_value, balance_result, docs_result]
+    session.get.return_value = tenant
+
+    resp = tc.get("/api/v1/credits/export.pdf?period=month&months_back=6")
+    assert resp.status_code == 200, resp.text
+    assert resp.headers["content-type"].startswith("application/pdf") or resp.headers["content-type"].startswith("text/html")
+    assert "attachment" in resp.headers["content-disposition"]
+    assert len(resp.content) > 0

@@ -12,15 +12,21 @@ Fluxo (LC 214 art. 22, não-cumulatividade plena):
   disponível  = confirmed                    (crédito formalizado e não utilizado)
   em_risco    = failed                       (crédito potencialmente perdido)
 
-Fase 2 (futuro): drill-down por NF, PDF, IBS/CBS separados por NCM,
-breakdown automático a partir de fiscal_metadata enriquecido.
+Fase 2, parte 1 (#258, esta entrega): drill-down por NF integrado a este
+dashboard (GET /documents, reaproveita SplitPaymentDoc/_to_doc de
+split_payment.py — mesma fonte de dado, não duplica) + export PDF com a
+trilha auditável por documento (GET /export.pdf).
+
+Fase 2, parte 2 (ainda pendente — ver issue de acompanhamento): IBS/CBS
+separados por NCM, tabela `credit_events` dedicada.
 """
 
 from __future__ import annotations
 
 import csv
 import io
-from typing import Literal
+from collections.abc import Sequence
+from typing import Any, Literal, cast
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
@@ -31,7 +37,8 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.api.plan_gate import require_plan
 from app.database import get_db
-from app.models.auth import User
+from app.models.auth import Tenant, User
+from app.routers.split_payment import SplitPaymentDoc, _to_doc
 
 router = APIRouter(prefix="/api/v1/credits", tags=["credits"])
 
@@ -133,6 +140,33 @@ def _compute_balance(
     return out
 
 
+def _documents_with_bucket(
+    db: Session,
+    tenant_id: str,
+    period_type: PeriodGranularity,
+    months_back: int,
+) -> Sequence[Any]:
+    """Documentos rastreados no Split Payment, com o bucket de período de cada
+    um — base tanto do drill-down (`GET /documents`) quanto do PDF auditável.
+    Reaproveita a mesma janela/condição de `_compute_balance`, só sem agregar.
+    """
+    trunc_unit = "month" if period_type == "month" else "quarter"
+    return db.execute(
+        text(f"""
+            SELECT
+                id, original_filename, doc_type, fiscal_metadata,
+                split_payment_status, created_at,
+                date_trunc('{trunc_unit}', created_at)::date AS bucket
+            FROM documents
+            WHERE tenant_id = CAST(:tid AS uuid)
+              AND split_payment_status IS NOT NULL
+              AND created_at >= (now() - (:months_back || ' months')::interval)
+            ORDER BY created_at DESC
+        """),
+        {"tid": tenant_id, "months_back": months_back},
+    ).all()
+
+
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
 @router.get(
@@ -187,5 +221,89 @@ def export_credit_balance_csv(
     return StreamingResponse(
         iter([buf.getvalue()]),
         media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get(
+    "/documents",
+    response_model=list[SplitPaymentDoc],
+    summary="Documentos (NFs) que compõem o crédito de um período — drill-down",
+    dependencies=[Depends(require_plan("profissional", "empresarial", "contador"))],
+)
+def get_credit_documents(
+    period: str = Query(..., description="Rótulo do período, ex.: '2026-07' (mês) ou '2026-Q3' (trimestre)"),
+    period_type: PeriodGranularity = Query("month"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[SplitPaymentDoc]:
+    """Rastreabilidade por NF (#258): qual documento compõe o saldo de um
+    período específico da tela `/credits`. Reaproveita `_to_doc`/`SplitPaymentDoc`
+    de `split_payment.py` — mesma fonte de dado, não duplica.
+    """
+    rows = _documents_with_bucket(db, str(current_user.tenant_id), period_type, months_back=36)
+    matching = [r for r in rows if _period_label(period_type, r.bucket.isoformat()) == period]
+    return [_to_doc(r) for r in matching]
+
+
+@router.get(
+    "/export.pdf",
+    summary="Exporta saldo de crédito em PDF com trilha auditável por NF",
+    dependencies=[Depends(require_plan("profissional", "empresarial", "contador"))],
+)
+def export_credit_balance_pdf(
+    period: PeriodGranularity = Query("month"),
+    months_back: int = Query(12, ge=1, le=36),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> StreamingResponse:
+    balance_rows = _compute_balance(db, str(current_user.tenant_id), period, months_back)
+    doc_rows = _documents_with_bucket(db, str(current_user.tenant_id), period, months_back)
+
+    docs_by_period: dict[str, list[dict[str, Any]]] = {}
+    for r in doc_rows:
+        label = _period_label(period, r.bucket.isoformat())
+        fm = r.fiscal_metadata if isinstance(r.fiscal_metadata, dict) else {}
+        docs_by_period.setdefault(label, []).append({
+            "filename": r.original_filename or str(r.id)[:8],
+            "doc_type": r.doc_type,
+            "status": r.split_payment_status,
+            "credit_value": fm.get("credit_value"),
+            "created_at": r.created_at.strftime("%d/%m/%Y") if r.created_at else "",
+        })
+
+    periods_payload = [
+        {
+            "period": row.period,
+            "generated_count": row.generated_count,
+            "generated_total": row.generated_total,
+            "apropriated_total": row.apropriated_total,
+            "available_total": row.available_total,
+            "at_risk_total": row.at_risk_total,
+            "documents": docs_by_period.get(row.period, []),
+        }
+        for row in balance_rows
+    ]
+
+    tenant = db.get(Tenant, current_user.tenant_id)
+    from app.services.pdf_service import generate_credit_report_pdf
+
+    result = generate_credit_report_pdf(
+        company_name=cast(str, tenant.name) if tenant is not None else "",
+        cnpj=cast(str, current_user.cnpj) if current_user.cnpj is not None else "",
+        period_type=period,
+        periods=periods_payload,
+    )
+
+    pdf_bytes = result["bytes"]
+    content_type = "application/pdf"
+    filename = f"credito-ibs-cbs-{period}.pdf"
+    if pdf_bytes[:15] == b"<!DOCTYPE html>":
+        content_type = "text/html; charset=utf-8"
+        filename = f"credito-ibs-cbs-{period}.html"
+
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type=content_type,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
