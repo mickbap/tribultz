@@ -4,7 +4,7 @@
  * Fonte única reutilizada por copy, blog e metadados (SEO/OG/Twitter), para que o
  * site nunca divirja do engine. Conta as regras de validação ATIVAS do
  * `xmlRules.ts`, excluindo os placeholders (lembretes que só emitem ALERT e não
- * validam nada). Hoje: 34 ruleIds distintos − 2 placeholders = 32.
+ * validam nada). Hoje: 36 ruleIds distintos − 2 placeholders = 34.
  *
  * Anti-drift: `rulesMeta.test.ts` extrai os ruleIds reais do `xmlRules.ts` e falha
  * se esta contagem sair de sincronia com o engine. Ao adicionar/remover uma regra,
@@ -15,7 +15,7 @@
 export const PLACEHOLDER_RULE_IDS: readonly string[] = ["BENEFITS_PLACEHOLDER", "NCM_PLACEHOLDER"];
 
 /** Quantidade canônica de regras determinísticas ativas. */
-export const RULES_COUNT = 33;
+export const RULES_COUNT = 34;
 
 /**
  * Rótulo padrão ancorado à autoridade externa (a NT define o conjunto de regras).

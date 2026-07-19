@@ -227,6 +227,75 @@ class TestNfseNt007:
         assert "PIS_COFINS_DEVIDO_NEGATIVO" not in {f.rule_id for f in result.findings}
 
 
+class TestPisCofinsDevidoCalc:
+    """PIS_COFINS_DEVIDO_CALC (#480): vPis/vCofins = base × alíquota.
+
+    Fixture com os valores do exemplo oficial (manual de integração NFS-e
+    pós-NT007/2026): vBCPisCofins=988.33, pAliqPis=1.65%, pAliqCofins=7.60%
+    → vPis=16.31, vCofins=75.11 (bate exato, arredondamento bancário).
+    """
+
+    _BASE = """<NFS-e><infNfse>
+      <PrestadorServico><RazaoSocial>X</RazaoSocial></PrestadorServico>
+      <TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>
+      <PrestacaoServico>
+        <Servico>
+          <CodigoServico>123456</CodigoServico>
+          <cClassTrib>654321</cClassTrib>
+          <CST>090</CST><NCM>84713012</NCM><CEST>2104900</CEST>
+        </Servico>
+        <Valores>
+          <BaseCalculo>10000.00</BaseCalculo>
+          <AliquotaCBS>0.0010</AliquotaCBS><ValorCBS>10.00</ValorCBS>
+          <AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>90.00</ValorIBS>
+          <vBCPisCofins>988.33</vBCPisCofins>
+          <pAliqPis>1.65</pAliqPis><pAliqCofins>7.60</pAliqCofins>
+          <vPis>{v_pis}</vPis><vCofins>{v_cofins}</vCofins>
+        </Valores>
+      </PrestacaoServico>
+    </infNfse></NFS-e>"""
+
+    def test_valores_corretos_sem_finding(self):
+        xml = self._BASE.format(v_pis="16.31", v_cofins="75.11")
+        result = validate_xml(xml)
+        assert "PIS_COFINS_DEVIDO_CALC" not in {f.rule_id for f in result.findings}
+
+    def test_vpis_divergente_warning(self):
+        xml = self._BASE.format(v_pis="20.00", v_cofins="75.11")
+        result = validate_xml(xml)
+        f = [x for x in result.findings if x.rule_id == "PIS_COFINS_DEVIDO_CALC"]
+        assert any(x.id == "F_PIS_COFINS_DEVIDO_CALC_PIS" and x.severity == "WARNING" for x in f)
+
+    def test_vcofins_divergente_warning(self):
+        xml = self._BASE.format(v_pis="16.31", v_cofins="80.00")
+        result = validate_xml(xml)
+        f = [x for x in result.findings if x.rule_id == "PIS_COFINS_DEVIDO_CALC"]
+        assert any(x.id == "F_PIS_COFINS_DEVIDO_CALC_COFINS" and x.severity == "WARNING" for x in f)
+
+    def test_sem_base_ou_aliquota_nao_dispara(self):
+        # Campos opcionais — sem vBCPisCofins/pAliqPis/pAliqCofins, a regra não
+        # deve tentar calcular nada (degradação graciosa, mesmo padrão do IBSCBS_CALC).
+        xml = """<NFS-e><infNfse>
+          <PrestadorServico><RazaoSocial>X</RazaoSocial></PrestadorServico>
+          <TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>
+          <PrestacaoServico>
+            <Servico>
+              <CodigoServico>123456</CodigoServico>
+              <cClassTrib>654321</cClassTrib>
+              <CST>090</CST><NCM>84713012</NCM><CEST>2104900</CEST>
+            </Servico>
+            <Valores>
+              <BaseCalculo>10000.00</BaseCalculo>
+              <AliquotaCBS>0.0010</AliquotaCBS><ValorCBS>10.00</ValorCBS>
+              <AliquotaIBS>0.0090</AliquotaIBS><ValorIBS>90.00</ValorIBS>
+              <ValorPis>1.65</ValorPis><ValorCofins>7.60</ValorCofins>
+            </Valores>
+          </PrestacaoServico>
+        </infNfse></NFS-e>"""
+        result = validate_xml(xml)
+        assert "PIS_COFINS_DEVIDO_CALC" not in {f.rule_id for f in result.findings}
+
+
 # ── NF-e validation ──────────────────────────────────────────────────────────
 
 

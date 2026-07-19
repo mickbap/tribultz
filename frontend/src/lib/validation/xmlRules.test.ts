@@ -1310,6 +1310,39 @@ test("#406 PIS_COFINS_DEVIDO_NEGATIVO: valores positivos (locação) → sem fin
   assert.equal(nfseFindings(NFSE_LOCACAO_IMOVEL, "PIS_COFINS_DEVIDO_NEGATIVO").length, 0);
 });
 
+// ── #480 — PIS_COFINS_DEVIDO_CALC: vPis/vCofins = base × alíquota ────────────
+// Fixture com os valores do exemplo oficial (manual de integração NFS-e
+// pós-NT007/2026): vBCPisCofins=988.33, pAliqPis=1.65%, pAliqCofins=7.60%
+// → vPis=16.31, vCofins=75.11 (bate exato, arredondamento bancário).
+
+function nfsePisCofinsCalc(vPis: string, vCofins: string): string {
+  return NFSE_SERVICO_COMUM.replace(
+    "</Valores>",
+    `<vBCPisCofins>988.33</vBCPisCofins><pAliqPis>1.65</pAliqPis><pAliqCofins>7.60</pAliqCofins>` +
+      `<vPis>${vPis}</vPis><vCofins>${vCofins}</vCofins></Valores>`,
+  );
+}
+
+test("#480 PIS_COFINS_DEVIDO_CALC: valores corretos → sem finding", () => {
+  assert.equal(nfseFindings(nfsePisCofinsCalc("16.31", "75.11"), "PIS_COFINS_DEVIDO_CALC").length, 0);
+});
+
+test("#480 PIS_COFINS_DEVIDO_CALC: vPis divergente → WARNING", () => {
+  const f = nfseFindings(nfsePisCofinsCalc("20.00", "75.11"), "PIS_COFINS_DEVIDO_CALC");
+  assert.ok(f.some((x) => x.id === "F_PIS_COFINS_DEVIDO_CALC_PIS" && x.severity === "WARNING"));
+});
+
+test("#480 PIS_COFINS_DEVIDO_CALC: vCofins divergente → WARNING", () => {
+  const f = nfseFindings(nfsePisCofinsCalc("16.31", "80.00"), "PIS_COFINS_DEVIDO_CALC");
+  assert.ok(f.some((x) => x.id === "F_PIS_COFINS_DEVIDO_CALC_COFINS" && x.severity === "WARNING"));
+});
+
+test("#480 PIS_COFINS_DEVIDO_CALC: sem base/alíquota → regra não dispara", () => {
+  // Campos opcionais — NFSE_LOCACAO_IMOVEL já tem ValorPis/ValorCofins sem
+  // vBCPisCofins/pAliqPis/pAliqCofins (degradação graciosa, mesmo padrão do IBSCBS_CALC).
+  assert.equal(nfseFindings(NFSE_LOCACAO_IMOVEL, "PIS_COFINS_DEVIDO_CALC").length, 0);
+});
+
 // ── #405 — DANFE Simplificado Tipo 2 (tpImp=6, NT 2026.002 v1.00) ────────────
 function danfeT2Nfe(opts: {
   tpImp?: string; tpNf?: string; idDest?: string; finNFe?: string; nfref?: boolean; dhEmi?: string; mod?: string;

@@ -429,11 +429,18 @@ def validate_xml(
     # NFS-e — grupo IBSCBS da DPS, NT 004 v2.00/005/007 (#406). indZFMALC sinaliza
     # operação com alíquota zero de CBS (Zona Franca de Manaus/Área de Livre
     # Comércio). vPis/vCofins: a partir da NT 007/2026 informam apenas o valor
-    # DEVIDO (não retido) — tolerado no parser mas sem regra de cálculo própria
-    # (sem fórmula oficial confirmada; não inventar checagem especulativa).
+    # DEVIDO (não retido).
     ind_zfmalc = _first_tag(xml, ["indZFMALC", "IndZFMALC"])
     v_pis = _first_tag(xml, ["vPis", "ValorPis"])
     v_cofins = _first_tag(xml, ["vCofins", "ValorCofins"])
+
+    # Grupo "piscofins" (NFSe/infNFSe/DPS/infDPS/valores/trib/tribFed/piscofins) —
+    # vBCPisCofins/pAliqPis/pAliqCofins são campos irmãos de vPis/vCofins, todos
+    # opcionais (#480). Fórmula confirmada via fonte oficial + manual de integração
+    # pós-NT007 (ver comentário na regra PIS_COFINS_DEVIDO_CALC abaixo).
+    base_pis_cofins = _first_tag(xml, ["vBCPisCofins", "BaseCalculoPisCofins"])
+    aliq_pis = _first_tag(xml, ["pAliqPis", "AliquotaPis"])
+    aliq_cofins = _first_tag(xml, ["pAliqCofins", "AliquotaCofins"])
 
     ibscbs_tot = _first_tag(xml, ["IBSCBSTot"])  # grupo W03 (totais IBS/CBS) — #403
 
@@ -586,8 +593,7 @@ def validate_xml(
     # ── Rule: PIS_COFINS_DEVIDO_NEGATIVO — vPis/vCofins devidos não podem ser < 0 (NT 007/2026, #406) ──
     # A partir da NT 007/2026, vPis/vCofins informam apenas o valor DEVIDO (não mais
     # retido) — um valor devido negativo é logicamente incoerente. Checagem de formato
-    # mínima; não há fórmula oficial de cálculo confirmada para validar o valor exato
-    # (não implementada para evitar regra especulativa — ver #406 para follow-up).
+    # mínima, independente da checagem de valor exato (PIS_COFINS_DEVIDO_CALC, #480).
     for _tag_result, _label, _fid in ((v_pis, "vPis", "PIS_COFINS_DEVIDO_NEGATIVO_PIS"), (v_cofins, "vCofins", "PIS_COFINS_DEVIDO_NEGATIVO_COFINS")):
         if _tag_result:
             try:
@@ -609,6 +615,47 @@ def validate_xml(
                         evidence_ids=[ev_id],
                     ),
                     Evidence(id=ev_id, type="xml", label=f"{_label} — valor devido negativo", xpath=_xpath(_tag_result["tag"], doc_type), snippet=_tag_result["snippet"]),
+                )
+
+    # ── Rule: PIS_COFINS_DEVIDO_CALC — vPis/vCofins = base × alíquota (NT 007/2026, #480) ──
+    # Fórmula confirmada por fonte verificável (não especulada): a NT 007/2026
+    # (SE/CGNFS-e, 07/02/2026) atualiza o grupo "piscofins" (CST + tpRetPisCofins),
+    # mas não altera os campos pré-existentes vBCPisCofins/pAliqPis/pAliqCofins —
+    # confirmados via manual de integração NFS-e pós-NT007 e corroborados de forma
+    # independente (FocusNFe). Exemplo oficial: vBCPisCofins=988.33, pAliqPis=1.65
+    # (%) → vPis=16.31 (988.33 × 1.65 / 100, arredondamento bancário) — bate exato.
+    # Alíquotas em formato percentual (1.65 = 1,65%), não fração — por isso ÷100,
+    # ao contrário de IBSCBS_CALC (que usa fração). Tolerância R$0,01 (oficial).
+    # Campos opcionais — regra só dispara quando base e alíquota estão presentes
+    # (mesma degradação graciosa do IBSCBS_CALC). WARNING: a plataforma nacional
+    # NFS-e ainda não valida estes campos.
+    for _aliq, _declared, _label, _fid in (
+        (aliq_pis, v_pis, "vPis", "PIS_COFINS_DEVIDO_CALC_PIS"),
+        (aliq_cofins, v_cofins, "vCofins", "PIS_COFINS_DEVIDO_CALC_COFINS"),
+    ):
+        if base_pis_cofins and _aliq and _declared:
+            try:
+                _base = float(base_pis_cofins["value"])
+                _rate = float(_aliq["value"])
+                _val = float(_declared["value"])
+            except (ValueError, TypeError):
+                continue
+            _expected = (_base * _rate) / 100
+            if abs(_val - _expected) > 0.01:
+                ev_id = f"E_XML_{_fid}"
+                _add(
+                    Finding(
+                        id=f"F_{_fid}", severity="WARNING", rule_id="PIS_COFINS_DEVIDO_CALC",
+                        title=f"{_label} incorreto — informado R$ {_val:.2f}, esperado R$ {_expected:.2f}",
+                        where=FindingWhere(field=_declared["tag"], xpath=_xpath(_declared["tag"], doc_type), snippet=_declared["snippet"]),
+                        recommendation=(
+                            f"{_label} deve ser base de cálculo (R$ {_base:.2f}) × alíquota ({_rate:.2f}%) = "
+                            f"R$ {_expected:.2f} (NT 007/2026, tolerância R$ 0,01, arredondamento bancário). "
+                            "Validação ainda desativada na plataforma nacional NFS-e."
+                        ),
+                        evidence_ids=[ev_id],
+                    ),
+                    Evidence(id=ev_id, type="xml", label=f"{_label} — cálculo divergente", xpath=_xpath(_declared["tag"], doc_type), snippet=_declared["snippet"]),
                 )
 
     # ── Rules 11-13: IBS split (NF-e only) ──────────────────────────────────
