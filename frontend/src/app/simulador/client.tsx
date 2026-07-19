@@ -291,6 +291,28 @@ export function SimuladorClient() {
                 </div>
               </div>
 
+              {/* Split Payment — simulação fundamentada no Ato Conjunto RFB/CGIBS nº 2/2026 */}
+              <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-5">
+                <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-indigo-500">
+                  Split Payment — o que seria segregado automaticamente
+                </p>
+                <p className="text-2xl font-extrabold text-indigo-900 md:text-3xl">{fmtR$(result.regime_novo.total)}</p>
+                <p className="mt-2 text-xs leading-relaxed text-indigo-700">
+                  A partir de 2027 (fase B2B voluntária, cronograma declarado — ainda não vigente),
+                  esse valor de CBS + IBS poderia ser segregado automaticamente no pagamento e
+                  recolhido direto ao governo, sem passar pelo caixa da empresa, via Plataforma
+                  Pública do Split Payment. No <strong>Modelo Inteligente</strong> descrito no
+                  Manual de Integração, o valor segregado é exatamente o CBS/IBS já destacado no
+                  documento fiscal vinculado ao pagamento — o mesmo número calculado acima.
+                </p>
+                <p className="mt-2 text-[11px] leading-relaxed text-indigo-400">
+                  Fonte: Ato Conjunto RFB/CGIBS nº 2/2026 (27/05/2026, DOU 03/06/2026) — Manual de
+                  Integração e Swagger da Plataforma Pública do Split Payment, publicados em{" "}
+                  consumo.tributos.gov.br. Simulação ilustrativa da Tribultz — não é integração
+                  operacional com a Plataforma Pública nem disponibilidade antecipada de produto.
+                </p>
+              </div>
+
               {/* Delta */}
               <div className={`flex flex-col gap-1 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between ${deltaBg} ${deltaBorder}`}>
                 <div>

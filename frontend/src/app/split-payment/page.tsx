@@ -79,6 +79,9 @@ export default function SplitPaymentPage() {
         <p className="text-sm text-slate-500">
           Rastreabilidade de crédito CBS/IBS por NF — LC 214 art. 22. O crédito só é liberado após confirmação do pagamento do imposto.
         </p>
+        <p className="mt-1 text-xs text-slate-400">
+          O mecanismo de segregação automática (Plataforma Pública do Split Payment) entra em vigor a partir de 2027, fase B2B voluntária — Ato Conjunto RFB/CGIBS nº 2/2026 (Manual de Integração e Swagger, consumo.tributos.gov.br). Este painel rastreia o crédito manualmente até lá.
+        </p>
       </header>
 
       {summary ? (
