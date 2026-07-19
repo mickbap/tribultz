@@ -12,6 +12,7 @@ from app.api.deps import get_current_user
 from app.database import get_db
 from app.models.auth import User
 from app.models.billing import Plan, Subscription, UsageTracking
+from app.models.founding_partner import resolve_effective_license
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ def require_plan(*allowed_slugs: str) -> Callable:
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db),
     ) -> User:
-        sub, plan = _get_active_subscription(db, current_user)
+        plan = _get_effective_plan(db, current_user)
         slug = cast(str, plan.slug) if plan else None
 
         if slug not in allowed_slugs:
@@ -48,7 +49,7 @@ def check_usage_limit(usage_type: str) -> Callable:
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db),
     ) -> User:
-        sub, plan = _get_active_subscription(db, current_user)
+        plan = _get_effective_plan(db, current_user)
         if not plan:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -138,11 +139,32 @@ def increment_usage(db: Session, user_id: object, tenant_id: object, usage_type:
 
 
 def get_plan_slug(db: Session, user: User) -> str | None:
-    """Return the active plan slug for a user, or None if no active subscription."""
-    _, plan = _get_active_subscription(db, user)
+    """Return the effective plan slug for a user (Grant Adapter aware), or None."""
+    plan = _get_effective_plan(db, user)
     if plan is None:
         return None
     return str(plan.slug)
+
+
+def _get_effective_plan(db: Session, user: User) -> Any:
+    """Resolve o Plan efetivo do usuário — Grant ativo (ADR-0008, Grant Adapter)
+    tem precedência sobre a assinatura, mesmo ponto único de resolução já usado
+    no login (`auth.py`: ``resolve_effective_license``). Sem isso, um Early
+    Adopter com Grant ativo (sem Subscription — RNF002) nunca passava em
+    `require_plan`/`check_usage_limit`/`get_plan_slug`, apesar do JWT reportar
+    o plano correto (#487).
+
+    Ator ``partner`` (RFC-0026) não tem ``tenant_id`` — não há Grant possível,
+    devolve a assinatura como está (tipicamente None).
+    """
+    _sub, sub_plan = _get_active_subscription(db, user)
+    if user.tenant_id is None:
+        return sub_plan
+    base_slug = cast(str, sub_plan.slug) if sub_plan is not None else ""
+    effective_slug, source = resolve_effective_license(db, cast(Any, user.tenant_id), base_slug)
+    if source == "subscription":
+        return sub_plan
+    return db.execute(select(Plan).where(Plan.slug == effective_slug)).scalar_one_or_none()
 
 
 def _get_active_subscription(db: Session, user: User) -> tuple[Any, Any]:

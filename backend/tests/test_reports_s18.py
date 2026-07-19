@@ -68,7 +68,10 @@ def _mock_plan():
 @pytest.fixture()
 def client_auth():
     app.dependency_overrides[get_current_user] = _override_current_user
-    with patch("app.api.plan_gate._get_active_subscription", return_value=(MagicMock(), _mock_plan())):
+    # Patch _get_effective_plan (não _get_active_subscription): desde #487 o
+    # plan gate também resolve Grant ativo (resolve_effective_license), que
+    # faria uma 2ª query real contra o mock_db não configurado para isso.
+    with patch("app.api.plan_gate._get_effective_plan", return_value=_mock_plan()):
         yield TestClient(app)
     app.dependency_overrides.pop(get_current_user, None)
 
