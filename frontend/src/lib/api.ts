@@ -684,3 +684,30 @@ export async function downloadCreditCsv(
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.blob();
 }
+
+// ── Credits — drill-down por NF + export PDF (#258 Fase 2, parte 1) ─────────
+
+export async function getCreditDocuments(
+  period: string,
+  periodType: "month" | "quarter" = "month",
+): Promise<SplitPaymentDoc[]> {
+  return apiFetch(
+    `/api/v1/credits/documents?period=${encodeURIComponent(period)}&period_type=${periodType}`,
+  );
+}
+
+export async function downloadCreditPdf(
+  period: "month" | "quarter" = "month",
+  monthsBack: number = 12,
+): Promise<{ blob: Blob; isHtmlFallback: boolean }> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/credits/export.pdf?period=${period}&months_back=${monthsBack}`,
+    {
+      headers: { Authorization: `Bearer ${getToken()}`, "X-Tenant-Id": getTenantId() },
+      cache: "no-store",
+    },
+  );
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  const contentType = res.headers.get("content-type") ?? "";
+  return { blob: await res.blob(), isHtmlFallback: contentType.includes("text/html") };
+}

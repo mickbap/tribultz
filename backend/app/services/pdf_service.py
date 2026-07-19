@@ -128,6 +128,64 @@ def generate_validation_report_pdf(
     }
 
 
+def generate_credit_report_pdf(
+    *,
+    company_name: str,
+    cnpj: str,
+    period_type: str,
+    periods: list[dict],
+    storage_key: str = "",
+) -> dict:
+    """Render the credit dashboard (#258) as a PDF with per-document (NF) audit
+    trail — cada período traz a lista de documentos que compõem o saldo.
+
+    Returns a dict with keys: bytes, storage_key, file_size.
+    Falls back to HTML-only if WeasyPrint is not installed.
+    """
+    template = _jinja_env.get_template("report_credits.html")
+    now = _generated_at_brasilia()
+
+    def _sum(key: str) -> float:
+        total = 0.0
+        for p in periods:
+            try:
+                total += float(p.get(key, 0) or 0)
+            except (TypeError, ValueError):
+                pass
+        return total
+
+    html = template.render(
+        company_name=company_name,
+        cnpj=cnpj,
+        period_type="Mensal" if period_type == "month" else "Trimestral",
+        generated_at=now,
+        periods=periods,
+        total_generated=_sum("generated_total"),
+        total_apropriated=_sum("apropriated_total"),
+        total_available=_sum("available_total"),
+        total_at_risk=_sum("at_risk_total"),
+    )
+
+    try:
+        from weasyprint import HTML
+        pdf_bytes: bytes = HTML(string=html).write_pdf()  # type: ignore[assignment]
+        logger.info("Credit report PDF generated (%d bytes)", len(pdf_bytes))
+        if storage_key:
+            _persist_to_s3(storage_key, pdf_bytes, "application/pdf")
+    except (ImportError, OSError):
+        logger.warning("WeasyPrint unavailable (missing GTK/system libs), returning HTML fallback")
+        pdf_bytes = html.encode("utf-8")
+        if storage_key:
+            html_key = storage_key.replace(".pdf", ".html") if storage_key.endswith(".pdf") else storage_key + ".html"
+            _persist_to_s3(html_key, pdf_bytes, "text/html")
+
+    return {
+        "bytes": pdf_bytes,
+        "storage_key": storage_key,
+        "file_size": len(pdf_bytes),
+    }
+
+
 def generate_batch_report_pdf(
     *,
     company_name: str,
