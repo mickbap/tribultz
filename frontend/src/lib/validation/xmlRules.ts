@@ -102,6 +102,10 @@ const PF_CNPJ_REQUIRED_DATE = "2026-07-01";
 // exclusivamente via grupo DFeReferenciado (v1.40, Rejeição 321 — VC02-14/VC03-20).
 const DEVOLUCAO_DFEREF_DATE = "2026-09-01";
 
+// DANFE Simplificado Tipo 2 (tpImp=6, NT 2026.002 v1.00): a partir de 03/08/2026 (produção,
+// fase 2), a NF-e (modelo 55) restringe-se a saída/interna/sem NFref/finalidade Normal (#405).
+const DANFE_T2_PRODUCAO_DATE = "2026-08-03";
+
 // ── CST table (NT 2025.002-RTC) ────────────────────────────────────────────
 export const CST_TABLE: Record<string, { group: string | null; description: string }> = {
   "000": { group: "gIBSCBS", description: "Tributação normal (ad valorem)" },
@@ -1209,6 +1213,106 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             makeEvidence({ id: evId, type: "xml", label: "ALC/ZFM — vTribRegCBS incoerente", xpath: inferXpath("vTribRegCBS", docType), snippet: vtrib.snippet }),
           );
         }
+      }
+    }
+  }
+
+  // ── Rule: DANFE_SIMPLIFICADO_RESTRICAO — restrições do DANFE Simplificado Tipo 2 (NT 2026.002 v1.00, #405) ──
+  // tpImp=6 (modelo 55 apenas — Ajuste SINIEF 13/2026) restringe a nota a: saída
+  // (tpNF≠0), operação interna (idDest=1), sem NFref e finalidade Normal (finNFe=1).
+  // 4 restrições confirmadas com código de rejeição oficial e convergência de fontes
+  // independentes. Fora de escopo desta entrega (declarado no docs/, #405): o
+  // allowlist de CFOP específico (código de rejeição não confirmado nesta pesquisa)
+  // e o grupo de alerta cStat=120/PR13 (vive no protocolo de autorização da SEFAZ,
+  // não no XML emitido — fora do que este validador processa).
+  if (docType === "NFE") {
+    const tpImp = firstTag(xml, ["tpImp"]);
+    if (tpImp && tpImp.value.trim() === "6") {
+      const emDate = emissionDate?.value?.slice(0, 10) ?? "";
+      const vigente = /^\d{4}-\d{2}-\d{2}$/.test(emDate) && emDate >= DANFE_T2_PRODUCAO_DATE;
+      const sev: FindingSeverity = vigente && !pedMode ? "FATAL" : "WARNING";
+
+      const tpNf = firstTag(xml, ["tpNF"]);
+      if (tpNf && tpNf.value.trim() === "0") {
+        const evId = makeEvidenceId("DANFE_T2_ENTRADA");
+        pushFindingAndEvidence(findings, evidences, evidenceById,
+          makeFinding({
+            id: "F_DANFE_T2_ENTRADA",
+            severity: sev,
+            ruleId: "DANFE_SIMPLIFICADO_RESTRICAO",
+            title: "DANFE Simplificado Tipo 2 (tpImp=6) não é admitido em operação de entrada (tpNF=0)",
+            field: "tpNF",
+            xpath: inferXpath("tpNF", docType),
+            snippet: tpNf.snippet,
+            evidenceId: evId,
+            recommendation:
+              "O DANFE Simplificado Tipo 2 (Ajuste SINIEF 13/2026) só é admitido em operações de saída. " +
+              "Corrija tpNF ou remova tpImp=6. SEFAZ: Rejeição 706 (regra B11-10).",
+          }),
+          makeEvidence({ id: evId, type: "xml", label: "DANFE T2 — operação de entrada não permitida", xpath: inferXpath("tpNF", docType), snippet: tpNf.snippet }),
+        );
+      }
+
+      const idDest = firstTag(xml, ["idDest"]);
+      if (idDest && idDest.value.trim() !== "1") {
+        const evId = makeEvidenceId("DANFE_T2_INTERESTADUAL");
+        pushFindingAndEvidence(findings, evidences, evidenceById,
+          makeFinding({
+            id: "F_DANFE_T2_INTERESTADUAL",
+            severity: sev,
+            ruleId: "DANFE_SIMPLIFICADO_RESTRICAO",
+            title: "DANFE Simplificado Tipo 2 (tpImp=6) não é admitido em operação interestadual/exterior (idDest≠1)",
+            field: "idDest",
+            xpath: inferXpath("idDest", docType),
+            snippet: idDest.snippet,
+            evidenceId: evId,
+            recommendation:
+              "O DANFE Simplificado Tipo 2 só é admitido em operações internas (idDest=1). " +
+              "Corrija idDest ou remova tpImp=6. SEFAZ: Rejeição 707 (regra B11a-10).",
+          }),
+          makeEvidence({ id: evId, type: "xml", label: "DANFE T2 — operação interestadual/exterior não permitida", xpath: inferXpath("idDest", docType), snippet: idDest.snippet }),
+        );
+      }
+
+      if (/<NFref(?=[\s>])/i.test(xml)) {
+        const evId = makeEvidenceId("DANFE_T2_NFREF");
+        pushFindingAndEvidence(findings, evidences, evidenceById,
+          makeFinding({
+            id: "F_DANFE_T2_NFREF",
+            severity: sev,
+            ruleId: "DANFE_SIMPLIFICADO_RESTRICAO",
+            title: "DANFE Simplificado Tipo 2 (tpImp=6) não pode referenciar outro documento fiscal (NFref)",
+            field: "NFref",
+            xpath: inferXpath("NFref", docType),
+            snippet: tpImp.snippet,
+            evidenceId: evId,
+            recommendation:
+              "O DANFE Simplificado Tipo 2 não admite o grupo NFref (referência a outro documento fiscal). " +
+              "Remova o NFref ou o tpImp=6. SEFAZ: Rejeição 708 (regra BA01-10).",
+          }),
+          makeEvidence({ id: evId, type: "xml", label: "DANFE T2 — referência a documento fiscal não permitida", xpath: inferXpath("NFref", docType), snippet: tpImp.snippet }),
+        );
+      }
+
+      const finT2 = firstTag(xml, ["finNFe"]);
+      if (finT2 && finT2.value.trim() !== "1") {
+        const evId = makeEvidenceId("DANFE_T2_FINALIDADE");
+        pushFindingAndEvidence(findings, evidences, evidenceById,
+          makeFinding({
+            id: "F_DANFE_T2_FINALIDADE",
+            severity: sev,
+            ruleId: "DANFE_SIMPLIFICADO_RESTRICAO",
+            title: "DANFE Simplificado Tipo 2 (tpImp=6) exige finalidade Normal (finNFe=1)",
+            field: "finNFe",
+            xpath: inferXpath("finNFe", docType),
+            snippet: finT2.snippet,
+            evidenceId: evId,
+            recommendation:
+              "O DANFE Simplificado Tipo 2 só é admitido com finalidade Normal (finNFe=1). " +
+              "Corrija finNFe ou remova tpImp=6. SEFAZ: Rejeição 715 (regra B25-20).",
+          }),
+          makeEvidence({ id: evId, type: "xml", label: "DANFE T2 — finalidade não permitida", xpath: inferXpath("finNFe", docType), snippet: finT2.snippet }),
+        );
       }
     }
   }

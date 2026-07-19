@@ -1052,6 +1052,78 @@ class TestMonofasicoGrupoUB:
         assert self._find(self._nfe("999999")) == []
 
 
+class TestDanfeSimplificadoTipo2:
+    """DANFE Simplificado Tipo 2 (tpImp=6) — NT 2026.002 v1.00, fase 2 (#405).
+
+    Modelo 55 (NF-e) apenas — Ajuste SINIEF 13/2026. Restrito a saída (tpNF≠0),
+    operação interna (idDest=1), sem NFref e finalidade Normal (finNFe=1).
+    Vigência produção 03/08/2026: WARNING antes, FATAL depois (pedagogical_mode
+    mantém WARNING). Códigos de rejeição confirmados por múltiplas fontes
+    independentes (tecnospeed, contabeis.com.br, lopesmachado — 2026-07-18):
+    706 (B11-10), 707 (B11a-10), 708 (BA01-10), 715 (B25-20).
+    """
+
+    def _nfe(self, tp_imp="6", tp_nf="1", id_dest="1", fin_nfe="1", nfref=False, dh_emi="2026-06-01T10:00:00-03:00", mod="55"):
+        ref = '<NFref><refNFe>35260612345678000195550010000000011000000017</refNFe></NFref>' if nfref else ""
+        return (
+            f'<nfeProc><NFe><infNFe><ide><mod>{mod}</mod><tpImp>{tp_imp}</tpImp><tpNF>{tp_nf}</tpNF>'
+            f'<idDest>{id_dest}</idDest><finNFe>{fin_nfe}</finNFe><dhEmi>{dh_emi}</dhEmi>{ref}</ide>'
+            '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            '<det nItem="1"><prod><NCM>84713012</NCM><vProd>10.00</vProd></prod></det>'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml, dt="NFE", **kw):
+        return [f for f in validate_xml(xml, dt, **kw).findings if f.rule_id == "DANFE_SIMPLIFICADO_RESTRICAO"]
+
+    def test_compliant_saida_interna_sem_finding(self):
+        assert self._find(self._nfe()) == []
+
+    def test_compliant_nao_presencial_sem_finding(self):
+        # indPres não é checado por esta regra — só as 4 restrições estruturais.
+        assert self._find(self._nfe(tp_nf="1", id_dest="1", fin_nfe="1")) == []
+
+    def test_entrada_rejeitada(self):
+        f = self._find(self._nfe(tp_nf="0"))
+        assert any(x.id == "F_DANFE_T2_ENTRADA" and "706" in x.recommendation for x in f)
+
+    def test_interestadual_rejeitada(self):
+        f = self._find(self._nfe(id_dest="2"))
+        assert any(x.id == "F_DANFE_T2_INTERESTADUAL" and "707" in x.recommendation for x in f)
+
+    def test_nfref_rejeitada(self):
+        f = self._find(self._nfe(nfref=True))
+        assert any(x.id == "F_DANFE_T2_NFREF" and "708" in x.recommendation for x in f)
+
+    def test_finalidade_nao_normal_rejeitada(self):
+        f = self._find(self._nfe(fin_nfe="2"))
+        assert any(x.id == "F_DANFE_T2_FINALIDADE" and "715" in x.recommendation for x in f)
+
+    def test_tpimp_diferente_de_6_sem_finding(self):
+        assert self._find(self._nfe(tp_imp="1", tp_nf="0", id_dest="2", nfref=True, fin_nfe="2")) == []
+
+    def test_nfce_nao_se_aplica(self):
+        # DANFE Simplificado Tipo 2 é exclusivo do modelo 55 — NFC-e (modelo 65) fora de escopo.
+        assert self._find(self._nfe(tp_nf="0", mod="65"), dt="NFCE") == []
+
+    def test_antes_da_vigencia_warning(self):
+        f = self._find(self._nfe(tp_nf="0", dh_emi="2026-07-15T10:00:00-03:00"))
+        assert f and all(x.severity == "WARNING" for x in f)
+
+    def test_apos_vigencia_fatal(self):
+        f = self._find(self._nfe(tp_nf="0", dh_emi="2026-08-10T10:00:00-03:00"))
+        assert any(x.id == "F_DANFE_T2_ENTRADA" and x.severity == "FATAL" for x in f)
+
+    def test_pedagogical_mantem_warning(self):
+        f = self._find(self._nfe(tp_nf="0", dh_emi="2026-08-10T10:00:00-03:00"), pedagogical_mode=True)
+        assert f and all(x.severity == "WARNING" for x in f)
+
+    def test_multiplas_violacoes_geram_multiplos_findings(self):
+        f = self._find(self._nfe(tp_nf="0", id_dest="2", nfref=True, fin_nfe="4"))
+        ids = {x.id for x in f}
+        assert ids == {"F_DANFE_T2_ENTRADA", "F_DANFE_T2_INTERESTADUAL", "F_DANFE_T2_NFREF", "F_DANFE_T2_FINALIDADE"}
+
+
 # ── #403: Grupo W03 (IBSCBSTot) — NT 2025.002-RTC v1.40, W34-10/W34-20 ────────
 # W34-20 → Rejeição 1119 (IBSCBSTot ausente com item IBS/CBS);
 # W34-10 → Rejeição 1118 (IBSCBSTot sem nenhum item IBS/CBS);

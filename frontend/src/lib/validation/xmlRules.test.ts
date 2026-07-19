@@ -1309,3 +1309,73 @@ test("#406 PIS_COFINS_DEVIDO_NEGATIVO: vCofins negativo → WARNING", () => {
 test("#406 PIS_COFINS_DEVIDO_NEGATIVO: valores positivos (locação) → sem finding", () => {
   assert.equal(nfseFindings(NFSE_LOCACAO_IMOVEL, "PIS_COFINS_DEVIDO_NEGATIVO").length, 0);
 });
+
+// ── #405 — DANFE Simplificado Tipo 2 (tpImp=6, NT 2026.002 v1.00) ────────────
+function danfeT2Nfe(opts: {
+  tpImp?: string; tpNf?: string; idDest?: string; finNFe?: string; nfref?: boolean; dhEmi?: string; mod?: string;
+} = {}): string {
+  const { tpImp = "6", tpNf = "1", idDest = "1", finNFe = "1", nfref = false, dhEmi = "2026-06-01", mod = "55" } = opts;
+  const ref = nfref ? "<NFref><refNFe>35260612345678000195550010000000011000000017</refNFe></NFref>" : "";
+  return `<nfeProc><NFe><infNFe><ide><mod>${mod}</mod><tpImp>${tpImp}</tpImp><tpNF>${tpNf}</tpNF>` +
+    `<idDest>${idDest}</idDest><finNFe>${finNFe}</finNFe><dhEmi>${dhEmi}T10:00:00-03:00</dhEmi>${ref}</ide>` +
+    `<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>` +
+    `<det nItem="1"><prod><NCM>84713012</NCM><vProd>10.00</vProd></prod></det>` +
+    `</infNFe></NFe></nfeProc>`;
+}
+function danfeT2Findings(xml: string, documentType: "NFE" | "NFCE" = "NFE", pedagogicalMode = false) {
+  return validateXmlWithRules({ tenantId: "t", documentType, xml, pedagogicalMode })
+    .findings.filter((f) => f.rule_id === "DANFE_SIMPLIFICADO_RESTRICAO");
+}
+
+test("#405 DANFE T2 compliant (saída/interna/normal/sem NFref) → sem finding", () => {
+  assert.equal(danfeT2Findings(danfeT2Nfe()).length, 0);
+});
+
+test("#405 DANFE T2 entrada (tpNF=0) → Rejeição 706", () => {
+  const f = danfeT2Findings(danfeT2Nfe({ tpNf: "0" }));
+  assert.ok(f.some((x) => x.id === "F_DANFE_T2_ENTRADA" && x.recommendation.includes("706")));
+});
+
+test("#405 DANFE T2 interestadual (idDest=2) → Rejeição 707", () => {
+  const f = danfeT2Findings(danfeT2Nfe({ idDest: "2" }));
+  assert.ok(f.some((x) => x.id === "F_DANFE_T2_INTERESTADUAL" && x.recommendation.includes("707")));
+});
+
+test("#405 DANFE T2 com NFref → Rejeição 708", () => {
+  const f = danfeT2Findings(danfeT2Nfe({ nfref: true }));
+  assert.ok(f.some((x) => x.id === "F_DANFE_T2_NFREF" && x.recommendation.includes("708")));
+});
+
+test("#405 DANFE T2 finalidade não normal (finNFe=2) → Rejeição 715", () => {
+  const f = danfeT2Findings(danfeT2Nfe({ finNFe: "2" }));
+  assert.ok(f.some((x) => x.id === "F_DANFE_T2_FINALIDADE" && x.recommendation.includes("715")));
+});
+
+test("#405 tpImp≠6 → regra não dispara mesmo com violações", () => {
+  assert.equal(danfeT2Findings(danfeT2Nfe({ tpImp: "1", tpNf: "0", idDest: "2", nfref: true, finNFe: "2" })).length, 0);
+});
+
+test("#405 NFC-e (modelo 65) → regra não se aplica", () => {
+  assert.equal(danfeT2Findings(danfeT2Nfe({ tpNf: "0", mod: "65" }), "NFCE").length, 0);
+});
+
+test("#405 antes da vigência (03/08/2026) → WARNING", () => {
+  const f = danfeT2Findings(danfeT2Nfe({ tpNf: "0", dhEmi: "2026-07-15" }));
+  assert.ok(f.length > 0 && f.every((x) => x.severity === "WARNING"));
+});
+
+test("#405 após a vigência → FATAL", () => {
+  const f = danfeT2Findings(danfeT2Nfe({ tpNf: "0", dhEmi: "2026-08-10" }));
+  assert.ok(f.some((x) => x.id === "F_DANFE_T2_ENTRADA" && x.severity === "FATAL"));
+});
+
+test("#405 pedagogicalMode mantém WARNING após a vigência", () => {
+  const f = danfeT2Findings(danfeT2Nfe({ tpNf: "0", dhEmi: "2026-08-10" }), "NFE", true);
+  assert.ok(f.length > 0 && f.every((x) => x.severity === "WARNING"));
+});
+
+test("#405 múltiplas violações geram múltiplos findings", () => {
+  const f = danfeT2Findings(danfeT2Nfe({ tpNf: "0", idDest: "2", nfref: true, finNFe: "4" }));
+  const ids = new Set(f.map((x) => x.id));
+  assert.deepEqual(ids, new Set(["F_DANFE_T2_ENTRADA", "F_DANFE_T2_INTERESTADUAL", "F_DANFE_T2_NFREF", "F_DANFE_T2_FINALIDADE"]));
+});
