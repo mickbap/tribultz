@@ -31,6 +31,8 @@ function totals(rows: CreditPeriodRow[]) {
     rows.reduce((acc, r) => acc + parseFloat(String(r[k] ?? "0") || "0"), 0);
   return {
     generated: sum("generated_total"),
+    generatedIbs: sum("generated_total_ibs"),
+    generatedCbs: sum("generated_total_cbs"),
     apropriated: sum("apropriated_total"),
     available: sum("available_total"),
     at_risk: sum("at_risk_total"),
@@ -183,7 +185,7 @@ export default function CreditsPage() {
           <SummaryCard
             label="Gerado"
             value={fmtBrl(agg.generated.toFixed(2))}
-            hint="Confirmado + Apropriado"
+            hint={`IBS ${fmtBrl(agg.generatedIbs.toFixed(2))} + CBS ${fmtBrl(agg.generatedCbs.toFixed(2))}`}
             className="border-emerald-200 bg-emerald-50 text-emerald-900"
           />
           <SummaryCard
@@ -274,6 +276,9 @@ export default function CreditsPage() {
                     <td className="px-4 py-3 text-right font-mono">
                       {fmtBrl(r.generated_total)}
                       <span className="ml-1 text-xs text-slate-400">({r.generated_count})</span>
+                      <div className="text-[10px] font-sans text-slate-400">
+                        IBS {fmtBrl(r.generated_total_ibs)} · CBS {fmtBrl(r.generated_total_cbs)}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right font-mono">
                       {fmtBrl(r.apropriated_total)}
@@ -307,7 +312,9 @@ export default function CreditsPage() {
                                   <th className="px-3 py-2">Modelo</th>
                                   <th className="px-3 py-2">Status</th>
                                   <th className="px-3 py-2">Data</th>
-                                  <th className="px-3 py-2 text-right">Crédito</th>
+                                  <th className="px-3 py-2 text-right">IBS</th>
+                                  <th className="px-3 py-2 text-right">CBS</th>
+                                  <th className="px-3 py-2 text-right">Total</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -322,6 +329,12 @@ export default function CreditsPage() {
                                     </td>
                                     <td className="px-3 py-2 text-slate-500">
                                       {d.created_at ? new Date(d.created_at).toLocaleDateString("pt-BR") : "—"}
+                                    </td>
+                                    <td className="px-3 py-2 text-right font-mono text-slate-700">
+                                      {d.credit_value_ibs ? fmtBrl(d.credit_value_ibs) : "—"}
+                                    </td>
+                                    <td className="px-3 py-2 text-right font-mono text-slate-700">
+                                      {d.credit_value_cbs ? fmtBrl(d.credit_value_cbs) : "—"}
                                     </td>
                                     <td className="px-3 py-2 text-right font-mono text-slate-700">
                                       {d.credit_value ? fmtBrl(d.credit_value) : "—"}

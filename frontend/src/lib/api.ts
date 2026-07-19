@@ -606,6 +606,8 @@ export type SplitPaymentDoc = {
   doc_type: string;
   split_payment_status: "pending" | "confirmed" | "credit_released" | "failed";
   credit_value: string | null;
+  credit_value_ibs: string | null;
+  credit_value_cbs: string | null;
   credit_due_date: string | null;
   created_at: string;
   days_pending: number | null;
@@ -635,7 +637,13 @@ export async function listSplitPaymentDocs(status?: string): Promise<SplitPaymen
 
 export async function updateSplitPaymentStatus(
   documentId: string,
-  payload: { status: string; credit_value?: string; credit_due_date?: string },
+  payload: {
+    status: string;
+    credit_value?: string;
+    credit_value_ibs?: string;
+    credit_value_cbs?: string;
+    credit_due_date?: string;
+  },
 ): Promise<SplitPaymentDoc> {
   return apiFetch(`/api/v1/split-payment/status/${encodeURIComponent(documentId)}`, {
     method: "PATCH",
@@ -650,12 +658,20 @@ export type CreditPeriodRow = {
   period: string;
   generated_count: number;
   generated_total: string;
+  generated_total_ibs: string;
+  generated_total_cbs: string;
   apropriated_count: number;
   apropriated_total: string;
+  apropriated_total_ibs: string;
+  apropriated_total_cbs: string;
   available_count: number;
   available_total: string;
+  available_total_ibs: string;
+  available_total_cbs: string;
   at_risk_count: number;
   at_risk_total: string;
+  at_risk_total_ibs: string;
+  at_risk_total_cbs: string;
 };
 
 export type CreditBalanceResponse = {

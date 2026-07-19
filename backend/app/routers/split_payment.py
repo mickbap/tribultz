@@ -4,6 +4,13 @@ GET  /api/v1/split-payment/summary          → totais por status (gated: profis
 GET  /api/v1/split-payment/status/{doc_id}  → status + crédito de um documento
 PATCH /api/v1/split-payment/status/{doc_id} → atualizar status manualmente (fase 1)
 
+Crédito IBS/CBS discriminado (#486): `credit_value_ibs`/`credit_value_cbs` no
+`fiscal_metadata`, precedência sobre o `credit_value` combinado legado — quem
+informa os dois valores discriminados não precisa (nem deve) também informar
+o total, que é sempre derivado (`_combined_credit_value`). Continua entrada
+manual — não existe hoje extração automática de vCBS/vIBS do XML para o
+Document (`documents.py::_extract_xml_metadata` não captura esses campos).
+
 Fase 2 (não implementada aqui): Celery beat task que consulta Nota Nacional
 (NT 2025.002) para atualizar status automaticamente.
 """
@@ -38,7 +45,9 @@ class SplitPaymentDoc(BaseModel):
     original_filename: Optional[str]
     doc_type: str
     split_payment_status: str
-    credit_value: Optional[str]       # CBS + IBS (R$), from fiscal_metadata
+    credit_value: Optional[str]       # CBS + IBS (R$) — total, derivado se ibs/cbs informados
+    credit_value_ibs: Optional[str]   # IBS (R$), from fiscal_metadata (#486)
+    credit_value_cbs: Optional[str]   # CBS (R$), from fiscal_metadata (#486)
     credit_due_date: Optional[str]    # ISO date, from fiscal_metadata
     created_at: str
     days_pending: Optional[int]       # days since created_at if still pending
@@ -46,7 +55,9 @@ class SplitPaymentDoc(BaseModel):
 
 class SplitPaymentStatusUpdate(BaseModel):
     status: str
-    credit_value: Optional[str] = None    # R$ total CBS+IBS
+    credit_value: Optional[str] = None        # R$ total CBS+IBS (legado — use ibs/cbs quando souber discriminar)
+    credit_value_ibs: Optional[str] = None    # R$ IBS (#486)
+    credit_value_cbs: Optional[str] = None    # R$ CBS (#486)
     credit_due_date: Optional[str] = None  # ISO date (expected confirmation)
 
 
@@ -65,6 +76,21 @@ class SplitPaymentSummary(BaseModel):
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+def _combined_credit_value(fm: dict[str, Any]) -> Optional[str]:
+    """Total CBS+IBS: usa `credit_value` legado se presente; senão soma os dois
+    valores discriminados (#486) — nunca os dois ao mesmo tempo por engano."""
+    if fm.get("credit_value") is not None:
+        return fm["credit_value"]
+    ibs = fm.get("credit_value_ibs")
+    cbs = fm.get("credit_value_cbs")
+    if ibs is None and cbs is None:
+        return None
+    try:
+        return f"{float(ibs or 0) + float(cbs or 0):.2f}"
+    except (TypeError, ValueError):
+        return None
+
+
 def _to_doc(row: Any) -> SplitPaymentDoc:
     fm = row.fiscal_metadata if isinstance(row.fiscal_metadata, dict) else {}
     created_at_str = row.created_at.isoformat() if row.created_at else ""
@@ -77,7 +103,9 @@ def _to_doc(row: Any) -> SplitPaymentDoc:
         original_filename=row.original_filename,
         doc_type=row.doc_type,
         split_payment_status=row.split_payment_status,
-        credit_value=fm.get("credit_value"),
+        credit_value=_combined_credit_value(fm),
+        credit_value_ibs=fm.get("credit_value_ibs"),
+        credit_value_cbs=fm.get("credit_value_cbs"),
         credit_due_date=fm.get("credit_due_date"),
         created_at=created_at_str,
         days_pending=days_pending,
@@ -89,7 +117,7 @@ def _sum_credit(rows: list[Any]) -> str:
     for r in rows:
         fm = r.fiscal_metadata if isinstance(r.fiscal_metadata, dict) else {}
         try:
-            total += float(fm.get("credit_value") or 0)
+            total += float(_combined_credit_value(fm) or 0)
         except (ValueError, TypeError):
             pass
     return f"{total:.2f}"
@@ -244,7 +272,15 @@ def update_split_payment_status(
 
     # Merge fiscal_metadata updates
     fm: dict[str, Any] = dict(row.fiscal_metadata) if isinstance(row.fiscal_metadata, dict) else {}
-    if body.credit_value is not None:
+    if body.credit_value_ibs is not None or body.credit_value_cbs is not None:
+        # Discriminado (#486) tem precedência — remove o combinado legado para
+        # não ficar um valor obsoleto/divergente coexistindo com o novo par.
+        fm.pop("credit_value", None)
+        if body.credit_value_ibs is not None:
+            fm["credit_value_ibs"] = body.credit_value_ibs
+        if body.credit_value_cbs is not None:
+            fm["credit_value_cbs"] = body.credit_value_cbs
+    elif body.credit_value is not None:
         fm["credit_value"] = body.credit_value
     if body.credit_due_date is not None:
         fm["credit_due_date"] = body.credit_due_date

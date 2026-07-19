@@ -159,7 +159,7 @@ export default function SplitPaymentPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Documento</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Data</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Crédito CBS+IBS</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Crédito IBS / CBS</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Ação</th>
               </tr>
             </thead>
@@ -188,7 +188,16 @@ export default function SplitPaymentPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right font-mono font-medium text-slate-700">
-                      {fmtBrl(doc.credit_value)}
+                      {doc.credit_value_ibs || doc.credit_value_cbs ? (
+                        <>
+                          <div className="text-xs text-slate-500">
+                            IBS {fmtBrl(doc.credit_value_ibs)} · CBS {fmtBrl(doc.credit_value_cbs)}
+                          </div>
+                          <div>{fmtBrl(doc.credit_value)}</div>
+                        </>
+                      ) : (
+                        fmtBrl(doc.credit_value)
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <select
