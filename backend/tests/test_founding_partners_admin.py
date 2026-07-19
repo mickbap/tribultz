@@ -105,7 +105,7 @@ def test_fluxo_completo_grant(client, session):
     hoje = date(2026, 7, 8)
     # 1. Admite empresa já com Grant (Plano Contador, vigência).
     r = client.post("/api/v1/admin/founding-partners", json={
-        "empresa": "Contabilidade Duquesa", "email": email, "origem": "microsoft_forms",
+        "empresa": "Contabilidade Duquesa", "email": email, "origem": "indicacao",
         "initial_password": "SenhaForte1", "responsavel": "Kátia",
         "grant": {"plan_slug": "contador", "starts_on": hoje.isoformat(), "ends_on": (hoje + timedelta(days=30)).isoformat()},
     })

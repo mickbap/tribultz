@@ -71,3 +71,18 @@ export async function adminRequest<T = unknown>(
   }
   return (await res.json().catch(() => ({}))) as T;
 }
+
+/** Mutação autenticada multipart/form-data (upload de arquivo). Sem Content-Type
+ * manual — o browser define o boundary. Retorna o JSON da resposta. */
+export async function adminUpload<T = unknown>(path: string, form: FormData): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${getToken()}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(detail.detail ?? `Erro ${res.status}`);
+  }
+  return (await res.json().catch(() => ({}))) as T;
+}

@@ -1,20 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useAdminData, adminPost } from "@/lib/useAdminData";
 
-// Command Center dos Founding Partners (RFC-0017 + ADR-0008). O Grant concede o
-// Plano Contador por uma vigência, sem assinatura ASAAS — autorização operacional.
-const ORIGINS: { value: string; label: string }[] = [
-  { value: "microsoft_forms", label: "Microsoft Forms" },
-  { value: "indicacao", label: "Indicação" },
+// Cockpit Operacional do Programa Early Adopters (RFC-0024) — Tela 01. Sobre a
+// fundação RFC-0017/ADR-0008: o Grant concede o Plano Contador por uma
+// vigência, sem assinatura ASAAS — autorização operacional, nunca cobrança.
+export const ORIGINS: { value: string; label: string }[] = [
   { value: "linkedin", label: "LinkedIn" },
+  { value: "instagram", label: "Instagram" },
+  { value: "indicacao", label: "Indicação" },
+  { value: "cliente_6tech", label: "Cliente 6tech" },
+  { value: "google", label: "Google" },
   { value: "site", label: "Site" },
-  { value: "contato_direto", label: "Contato direto" },
   { value: "evento", label: "Evento" },
   { value: "outro", label: "Outro" },
 ];
-const ORIGIN_LABEL = Object.fromEntries(ORIGINS.map((o) => [o.value, o.label]));
+export const ORIGIN_LABEL = Object.fromEntries(ORIGINS.map((o) => [o.value, o.label]));
+export const RECOGNITION_LABEL: Record<string, string> = {
+  early_adopter: "Early Adopter",
+  founding_partner: "Founding Partner",
+};
 
 type Grant = {
   id: string;
@@ -23,7 +30,7 @@ type Grant = {
   ends_at: string;
   status: string;
 };
-type EarlyAdopter = {
+export type EarlyAdopter = {
   id: string;
   empresa: string;
   email: string;
@@ -34,6 +41,9 @@ type EarlyAdopter = {
   grant_ends_at: string | null;
   active_grant_id: string | null;
   grants: Grant[];
+  proxima_acao: string | null;
+  owner_email: string | null;
+  recognition: string;
 };
 type Resp = { total: number; items: EarlyAdopter[] };
 
@@ -49,7 +59,7 @@ const EMPTY = {
   cnpj: "",
   responsavel: "",
   telefone: "",
-  origem: "microsoft_forms",
+  origem: "linkedin",
   initial_password: "",
   starts_on: today(),
   ends_on: today(90),
@@ -217,32 +227,44 @@ export default function FoundingPartnersPage() {
                 <th className="px-4 py-3">Empresa</th>
                 <th className="px-4 py-3">Responsável</th>
                 <th className="px-4 py-3">Origem</th>
-                <th className="px-4 py-3">Licença efetiva</th>
-                <th className="px-4 py-3">Programa</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Próxima ação</th>
+                <th className="px-4 py-3">Owner</th>
                 <th className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {data.items.map((ea) => (
                 <tr key={ea.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-900">{ea.empresa}<div className="text-xs text-slate-400">{ea.email}</div></td>
+                  <td className="px-4 py-3 font-medium text-slate-900">
+                    <Link href={`/admin/founding-partners/${ea.id}`} className="hover:underline">{ea.empresa}</Link>
+                    <div className="text-xs text-slate-400">{ea.email}</div>
+                    {ea.recognition === "founding_partner" && (
+                      <span className="mt-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">Founding Partner</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-slate-600">{ea.responsavel ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600">{ORIGIN_LABEL[ea.origem] ?? ea.origem}</td>
                   <td className="px-4 py-3">
-                    {ea.effective_plan ? (
-                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                        {ea.effective_plan} · até {new Date(ea.grant_ends_at as string).toLocaleDateString("pt-BR")}
-                      </span>
-                    ) : (
-                      <span className="text-slate-300">sem concessão ativa</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ea.status === "active" ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-600"}`}>
+                    <div className={`mb-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${ea.status === "active" ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-600"}`}>
                       {ea.status === "active" ? "Ativo" : "Encerrado"}
-                    </span>
+                    </div>
+                    <div>
+                      {ea.effective_plan ? (
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                          {ea.effective_plan} · até {new Date(ea.grant_ends_at as string).toLocaleDateString("pt-BR")}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-300">sem concessão ativa</span>
+                      )}
+                    </div>
                   </td>
+                  <td className="px-4 py-3 text-slate-600">{ea.proxima_acao ?? <span className="text-slate-300">—</span>}</td>
+                  <td className="px-4 py-3 text-slate-600">{ea.owner_email ?? <span className="text-slate-300">—</span>}</td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <Link href={`/admin/founding-partners/${ea.id}`} className="mr-2 rounded-lg border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                      Ver perfil
+                    </Link>
                     {ea.status === "active" && (
                       <>
                         {ea.active_grant_id ? (
@@ -263,7 +285,7 @@ export default function FoundingPartnersPage() {
                 </tr>
               ))}
               {data.items.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Nenhum Founding Partner ainda.</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Nenhum Founding Partner ainda.</td></tr>
               )}
             </tbody>
           </table>

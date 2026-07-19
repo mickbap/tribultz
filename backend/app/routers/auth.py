@@ -178,6 +178,14 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Marca 1º/último login (RFC-0024): alimenta a jornada do cockpit Early
+    # Adopters sem tabela adicional — evento genérico de User, não exclusivo de EA.
+    _now = datetime.now(timezone.utc)
+    if user.first_login_at is None:
+        user.first_login_at = _now  # type: ignore[assignment]
+    user.last_login_at = _now  # type: ignore[assignment]
+    db.commit()
+
     # Ator partner (Programa de Parceiros, RFC-0026): não tem tenant, billing
     # nem Grant/licença — sai cedo, antes de qualquer resolução tenant-scoped
     # (o restante deste handler assume tenant_id válido).

@@ -84,6 +84,11 @@ class User(Base):
     email_verified = Column(Boolean, nullable=False, default=False)
     email_verification_token = Column(String(500), nullable=True)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
+    # Marcados a cada login bem-sucedido (RFC-0024): alimentam "Primeiro/Último
+    # login" da jornada do cockpit Early Adopters sem tabela adicional.
+    # first_login_at grava só na transição NULL→preenchido; last_login_at sempre.
+    first_login_at = Column(DateTime(timezone=True), nullable=True)
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
