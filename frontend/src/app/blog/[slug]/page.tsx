@@ -40,7 +40,8 @@ export async function generateMetadata({
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt,
       authors: [post.author.name],
-      ...(post.coverImage ? { images: [post.coverImage] } : {}),
+      // og:image vem do arquivo opengraph-image.tsx deste segmento; os
+      // coverImage do frontmatter apontam para PNGs que não existem (#502).
     },
   };
 }

@@ -26,6 +26,33 @@ const WA_URL = `https://wa.me/${WA_NUMBER}?text=${WA_MSG}`;
 const WA_REJEICAO = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Olá! Estou com Rejeição 1024 na NF-e (cClassTrib incorreto) e preciso de ajuda urgente.")}`;
 const WA_ERP = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Olá! Preciso integrar CBS/IBS ao meu ERP (TOTVS/SAP/Omie/Linx) e quero entender como a Tribultz pode ajudar.")}`;
 
+/**
+ * Fonte única do FAQ: alimenta a seção visível E o JSON-LD FAQPage abaixo.
+ * O Google exige que o conteúdo do schema esteja visível na página (#502).
+ */
+const FAQ_ITEMS = [
+  {
+    q: "O que é a Rejeição 1024 na NF-e com CBS/IBS?",
+    a: "A Rejeição 1024 ocorre quando o cClassTrib informado na NF-e é incompatível com o CST do produto, tornando-se o erro mais comum desde janeiro/2026. A Tribultz valida essa compatibilidade automaticamente antes da emissão e indica a correção necessária.",
+  },
+  {
+    q: "Quando começam as penalidades por erro em CBS/IBS?",
+    a: "As penalidades efetivas por erros de CBS/IBS em NF-e começam em agosto/2026, encerrando o período educacional da Receita Federal. Empresas com cClassTrib incorreto ficarão sujeitas a autuações e multas.",
+  },
+  {
+    q: "Como classificar o NCM correto para o cClassTrib na Reforma Tributária?",
+    a: "O cClassTrib é determinado pelo capítulo NCM e pelo regime tributário aplicável (padrão, reduzido, cesta básica, imune, etc). A Tribultz valida a compatibilidade CST × cClassTrib (a fonte da Rejeição 1024) e calcula CBS/IBS com evidência auditável da base legal; a sugestão automática de cClassTrib a partir do NCM está em ativação e deve ser validada.",
+  },
+  {
+    q: "Como integrar CBS/IBS no TOTVS, SAP, Omie ou Linx?",
+    a: "A Tribultz exporta o catálogo de produtos validado nos formatos TOTVS Protheus, SAP Business One, Omie, Linx e CSV genérico, prontos para importação direta no ERP sem alterações manuais.",
+  },
+  {
+    q: "O que é o split payment e quando entra em vigor?",
+    a: "O split payment é o mecanismo de retenção automática de IBS/CBS no momento do pagamento (Pix, boleto, transferência bancária), previsto para entrar em vigor em 2027. Impacta diretamente o capital de giro — empresas devem modelar o impacto antes do prazo.",
+  },
+];
+
 const JSON_LD = {
   "@context": "https://schema.org",
   "@graph": [
@@ -47,33 +74,11 @@ const JSON_LD = {
     },
     {
       "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "O que é a Rejeição 1024 na NF-e com CBS/IBS?",
-          "acceptedAnswer": { "@type": "Answer", "text": "A Rejeição 1024 ocorre quando o cClassTrib informado na NF-e é incompatível com o CST do produto, tornando-se o erro mais comum desde janeiro/2026. A Tribultz valida essa compatibilidade automaticamente antes da emissão e indica a correção necessária." },
-        },
-        {
-          "@type": "Question",
-          "name": "Quando começam as penalidades por erro em CBS/IBS?",
-          "acceptedAnswer": { "@type": "Answer", "text": "As penalidades efetivas por erros de CBS/IBS em NF-e começam em agosto/2026, encerrando o período educacional da Receita Federal. Empresas com cClassTrib incorreto ficarão sujeitas a autuações e multas." },
-        },
-        {
-          "@type": "Question",
-          "name": "Como classificar o NCM correto para o cClassTrib na Reforma Tributária?",
-          "acceptedAnswer": { "@type": "Answer", "text": "O cClassTrib é determinado pelo capítulo NCM e pelo regime tributário aplicável (padrão, reduzido, cesta básica, imune, etc). A Tribultz valida a compatibilidade CST × cClassTrib (a fonte da Rejeição 1024) e calcula CBS/IBS com evidência auditável da base legal; a sugestão automática de cClassTrib a partir do NCM está em ativação e deve ser validada." },
-        },
-        {
-          "@type": "Question",
-          "name": "Como integrar CBS/IBS no TOTVS, SAP, Omie ou Linx?",
-          "acceptedAnswer": { "@type": "Answer", "text": "A Tribultz exporta o catálogo de produtos validado nos formatos TOTVS Protheus, SAP Business One, Omie, Linx e CSV genérico, prontos para importação direta no ERP sem alterações manuais." },
-        },
-        {
-          "@type": "Question",
-          "name": "O que é o split payment e quando entra em vigor?",
-          "acceptedAnswer": { "@type": "Answer", "text": "O split payment é o mecanismo de retenção automática de IBS/CBS no momento do pagamento (Pix, boleto, transferência bancária), previsto para entrar em vigor em 2027. Impacta diretamente o capital de giro — empresas devem modelar o impacto antes do prazo." },
-        },
-      ],
+      "mainEntity": FAQ_ITEMS.map((item) => ({
+        "@type": "Question",
+        "name": item.q,
+        "acceptedAnswer": { "@type": "Answer", "text": item.a },
+      })),
     },
   ],
 };
@@ -446,6 +451,29 @@ export default function HomePage() {
           <div className="mx-auto max-w-6xl px-4 md:px-6">
             <h2 className="mb-8 text-2xl font-bold text-[#24292E]">Últimas novidades</h2>
             <NewsFeed />
+          </div>
+        </section>
+
+        {/* FAQ — conteúdo visível espelha o JSON-LD FAQPage (fonte: FAQ_ITEMS) */}
+        <section className="py-24" style={{ background: "#F8FAFC" }} id="faq">
+          <div className="mx-auto max-w-3xl px-4 md:px-6">
+            <span className="text-xs font-semibold uppercase tracking-widest text-[#2044C7]">FAQ</span>
+            <h2 className="mb-10 mt-3 text-4xl font-extrabold leading-tight tracking-tight text-[#24292E]">
+              Perguntas frequentes
+            </h2>
+            <div className="flex flex-col gap-4">
+              {FAQ_ITEMS.map((item) => (
+                <details key={item.q} className="group rounded-2xl border border-slate-200 bg-white p-6">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-bold text-[#24292E]">
+                    {item.q}
+                    <span className="text-[#2956E3] transition-transform group-open:rotate-45" aria-hidden="true">
+                      +
+                    </span>
+                  </summary>
+                  <p className="mt-4 text-sm leading-relaxed text-[#334155]">{item.a}</p>
+                </details>
+              ))}
+            </div>
           </div>
         </section>
 
