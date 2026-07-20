@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
 import { Toast } from "@/components/common/Toast";
 import { listSplitPaymentDocs, getSplitPaymentSummary, updateSplitPaymentStatus } from "@/lib/api";
@@ -36,6 +36,10 @@ function SummaryCard({ label, count, total, className }: { label: string; count:
   );
 }
 
+type CreditForm = { credit_value_ibs: string; credit_value_cbs: string; credit_due_date: string };
+
+const EMPTY_CREDIT_FORM: CreditForm = { credit_value_ibs: "", credit_value_cbs: "", credit_due_date: "" };
+
 export default function SplitPaymentPage() {
   const [docs, setDocs] = useState<SplitPaymentDoc[]>([]);
   const [summary, setSummary] = useState<SplitPaymentSummary | null>(null);
@@ -43,6 +47,8 @@ export default function SplitPaymentPage() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [creditForm, setCreditForm] = useState<CreditForm>(EMPTY_CREDIT_FORM);
 
   function load(status: string) {
     setLoading(true);
@@ -67,6 +73,35 @@ export default function SplitPaymentPage() {
       getSplitPaymentSummary().then(setSummary).catch(() => {});
     } catch {
       setToast({ tone: "error", message: "Erro ao atualizar status" });
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  function openCreditEditor(doc: SplitPaymentDoc): void {
+    setEditingId(doc.document_id);
+    setCreditForm({
+      credit_value_ibs: doc.credit_value_ibs ?? "",
+      credit_value_cbs: doc.credit_value_cbs ?? "",
+      credit_due_date: doc.credit_due_date ?? "",
+    });
+  }
+
+  async function handleCreditSave(doc: SplitPaymentDoc): Promise<void> {
+    setUpdating(doc.document_id);
+    try {
+      const updated = await updateSplitPaymentStatus(doc.document_id, {
+        status: doc.split_payment_status,
+        credit_value_ibs: creditForm.credit_value_ibs || undefined,
+        credit_value_cbs: creditForm.credit_value_cbs || undefined,
+        credit_due_date: creditForm.credit_due_date || undefined,
+      });
+      setDocs((prev) => prev.map((d) => d.document_id === doc.document_id ? updated : d));
+      setToast({ tone: "success", message: "Crédito registrado" });
+      setEditingId(null);
+      getSplitPaymentSummary().then(setSummary).catch(() => {});
+    } catch {
+      setToast({ tone: "error", message: "Erro ao registrar crédito" });
     } finally {
       setUpdating(null);
     }
@@ -169,8 +204,10 @@ export default function SplitPaymentPage() {
             <tbody>
               {docs.map((doc) => {
                 const isAtRisk = doc.split_payment_status === "pending" && (doc.days_pending ?? 0) > 5;
+                const isEditing = editingId === doc.document_id;
                 return (
-                  <tr key={doc.document_id} className={`border-t border-slate-100 ${isAtRisk ? "bg-red-50" : ""}`}>
+                <Fragment key={doc.document_id}>
+                  <tr className={`border-t border-slate-100 ${isAtRisk ? "bg-red-50" : ""}`}>
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-800 truncate max-w-[200px]">
                         {doc.original_filename ?? doc.doc_type}
@@ -203,19 +240,84 @@ export default function SplitPaymentPage() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <select
-                        disabled={updating === doc.document_id}
-                        value={doc.split_payment_status}
-                        onChange={(e) => void handleStatusChange(doc, e.target.value)}
-                        className="rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 disabled:opacity-50"
-                      >
-                        <option value="pending">Pendente</option>
-                        <option value="confirmed">Confirmado</option>
-                        <option value="credit_released">Crédito Liberado</option>
-                        <option value="failed">Em Risco</option>
-                      </select>
+                      <div className="flex flex-col gap-1.5">
+                        <select
+                          disabled={updating === doc.document_id}
+                          value={doc.split_payment_status}
+                          onChange={(e) => void handleStatusChange(doc, e.target.value)}
+                          className="rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 disabled:opacity-50"
+                        >
+                          <option value="pending">Pendente</option>
+                          <option value="confirmed">Confirmado</option>
+                          <option value="credit_released">Crédito Liberado</option>
+                          <option value="failed">Em Risco</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => isEditing ? setEditingId(null) : openCreditEditor(doc)}
+                          className="text-left text-xs font-medium text-tribultz-600 hover:text-tribultz-700 hover:underline"
+                        >
+                          {isEditing ? "Cancelar" : "Editar crédito"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
+                  {isEditing && (
+                    <tr className="border-t border-slate-100 bg-slate-50">
+                      <td colSpan={5} className="px-4 py-4">
+                        <div className="flex flex-wrap items-end gap-3">
+                          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                            Crédito IBS (R$)
+                            <input
+                              type="number" step="0.01" inputMode="decimal"
+                              value={creditForm.credit_value_ibs}
+                              onChange={(e) => setCreditForm((f) => ({ ...f, credit_value_ibs: e.target.value }))}
+                              className="w-32 rounded border border-slate-300 px-2 py-1.5 text-sm text-slate-700"
+                              placeholder="0.00"
+                            />
+                          </label>
+                          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                            Crédito CBS (R$)
+                            <input
+                              type="number" step="0.01" inputMode="decimal"
+                              value={creditForm.credit_value_cbs}
+                              onChange={(e) => setCreditForm((f) => ({ ...f, credit_value_cbs: e.target.value }))}
+                              className="w-32 rounded border border-slate-300 px-2 py-1.5 text-sm text-slate-700"
+                              placeholder="0.00"
+                            />
+                          </label>
+                          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                            Data prevista de confirmação
+                            <input
+                              type="date"
+                              value={creditForm.credit_due_date}
+                              onChange={(e) => setCreditForm((f) => ({ ...f, credit_due_date: e.target.value }))}
+                              className="rounded border border-slate-300 px-2 py-1.5 text-sm text-slate-700"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            disabled={updating === doc.document_id}
+                            onClick={() => void handleCreditSave(doc)}
+                            className="rounded-lg bg-tribultz-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-tribultz-700 disabled:opacity-50"
+                          >
+                            {updating === doc.document_id ? "Salvando…" : "Salvar"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingId(null)}
+                            className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                        <p className="mt-2 text-[11px] text-slate-400">
+                          O crédito combinado (IBS + CBS) é derivado automaticamente — não precisa informar separado.
+                        </p>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
                 );
               })}
             </tbody>
