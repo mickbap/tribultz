@@ -14,7 +14,8 @@ SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
 # Fingerprints das chaves autorizadas na VM (públicos — não são segredo).
 # Ao adicionar uma máquina, autorize a chave em ~/.ssh/authorized_keys na VM e liste aqui.
 KEY_FPS="SHA256:ydI3GwtHcGHjUvcCzFQgOp7zypbiVwqqiicGlhun7gg=tribultz-infra (Windows)
-SHA256:6DqZCh26dT2Ce0KPD8ZwMXPtZ9++3siBctZKD1E+8ig=tribultz-infra (Mac)"
+SHA256:6DqZCh26dT2Ce0KPD8ZwMXPtZ9++3siBctZKD1E+8ig=tribultz-infra (Mac)
+SHA256:9JtQfvh8yIebGMewdoenxW92w0XtRXJ/A8Ru9CYy9D0=tribultz-infra (MacBook Mickel)"
 API="https://api.tribultz.com.br"
 FRONTEND="https://tribultz.com.br"
 
