@@ -59,6 +59,7 @@ Direto e com senso de urgência, ancorado em **fato real**: "Rejeição 1024", "
 - **"Já tenho ERP/contador."** → "A Tribultz valida antes de emitir e gera o laudo que seu contador anexa. Tem API pra integrar ao ERP (Profissional+)."
 - **"Por que não exporta no grátis?"** → "Na tela você vê tudo de graça. O **documento auditável** que comprova perante o fisco é o que entregamos no plano pago."
 - **"Garante que não tomo multa?"** → "Não prometemos imunidade. Entregamos a validação e a **evidência auditável** que sustentam a correção — a decisão final é sua/do seu contador."
+- **"O TOTVS/meu ERP deixa eu customizar as regras. Vocês não?"** → "De propósito, não. As mesmas regras valem pra todo cliente — ninguém, nem a Tribultz, ajusta o motor caso a caso. É isso que torna o laudo uma **segunda opinião independente**: se desse pra configurar, deixava de valer como evidência imparcial perante o fisco."
 
 ## CTAs
 - Primário: **testar grátis** (cadastro).

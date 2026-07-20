@@ -89,6 +89,10 @@ Agressivo e direto, ancorado em **fato regulatório real**:
 - *"Vocês garantem que não tomo multa?"* → "Não prometemos imunidade. Entregamos a
   validação e a **evidência auditável** que sustentam a correção — a decisão final
   é sua/do seu contador."
+- *"O TOTVS/meu ERP deixa eu customizar as regras. Vocês não?"* → "De propósito, não.
+  As mesmas regras valem pra todo cliente — ninguém, nem a Tribultz, ajusta o motor
+  caso a caso. É isso que torna o laudo uma **segunda opinião independente**: se
+  desse pra configurar, deixava de valer como evidência imparcial perante o fisco."
 
 # CTAs
 - Primário: **testar grátis** (cadastro/trial).
