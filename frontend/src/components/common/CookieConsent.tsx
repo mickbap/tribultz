@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   CONSENT_OPEN_EVENT,
-  REFUSE_REDIRECT_URL,
   getStoredConsent,
   setConsent,
 } from "@/lib/consent";
@@ -16,7 +15,8 @@ import {
  * - Pode ser reaberto a qualquer momento pelo link "Preferências de cookies"
  *   no rodapé (via evento `CONSENT_OPEN_EVENT`).
  * - "Aceitar": concede o analytics_storage e fecha.
- * - "Recusar": mantém o analytics negado e leva o usuário para fora do site.
+ * - "Recusar": mantém o analytics negado e fecha — a navegação segue normal
+ *   (LGPD art. 8º §3º: o consentimento deve ser livre, nunca condição de acesso).
  */
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
@@ -42,7 +42,6 @@ export default function CookieConsent() {
   function refuse() {
     setConsent("denied");
     setVisible(false);
-    window.location.href = REFUSE_REDIRECT_URL;
   }
 
   return (
@@ -56,8 +55,7 @@ export default function CookieConsent() {
         <p className="text-sm text-slate-600">
           Usamos cookies essenciais para o funcionamento da plataforma e, com seu
           consentimento, cookies de análise (Google Analytics) para entender o uso e
-          melhorar o produto. Ao recusar, você será redirecionado para fora do site.
-          Veja a{" "}
+          melhorar o produto. Veja a{" "}
           <Link href="/cookies" className="font-medium text-blue-600 underline hover:text-blue-700">
             Política de Cookies
           </Link>
@@ -69,7 +67,7 @@ export default function CookieConsent() {
             onClick={refuse}
             className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Recusar e sair
+            Recusar
           </button>
           <button
             type="button"
