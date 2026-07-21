@@ -5,8 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Toast } from "@/components/common/Toast";
-import { ComplianceScore, getAudits, getComplianceScore, getJobs, getSplitPaymentSummary, listExceptionRequests } from "@/lib/api";
-import type { SplitPaymentSummary } from "@/lib/api";
+import UpgradeGate from "@/components/common/UpgradeGate";
+import { ComplianceScore, getAudits, getComplianceScore, getJobs, getRiskPatterns, getSplitPaymentSummary, listExceptionRequests } from "@/lib/api";
+import type { RiskPatternReport, SplitPaymentSummary } from "@/lib/api";
 import { formatDateTimeBR } from "@/lib/formatDateTimeBR";
 import { AuditLog, ExceptionRequest, Finding, Job } from "@/lib/types";
 import { getAccountType, getTenantId, getTenants, type StoredTenant } from "@/lib/storage";
@@ -90,6 +91,79 @@ function TrendChart({ data }: { data: TrendDay[] }) {
         );
       })}
     </div>
+  );
+}
+
+const SEVERITY_CLASSES: Record<string, string> = {
+  FATAL: "bg-red-100 text-red-700",
+  WARNING: "bg-amber-100 text-amber-700",
+  ALERT: "bg-blue-100 text-blue-700",
+};
+
+/**
+ * Padrão de risco agregado (#442, Gap 4 vs. TOTVS/IOB) — cruza findings entre
+ * documentos/período (ex. "N notas com Rejeição 1024 nos últimos 30 dias"),
+ * diferente da validação 1:1 documento a documento. Fetch próprio (não entra
+ * no Promise.allSettled do painel) porque só carrega quando o UpgradeGate
+ * (Profissional+) já liberou o render.
+ */
+function RiskPatternCard() {
+  const [report, setReport] = useState<RiskPatternReport | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getRiskPatterns(30, 8)
+      .then(setReport)
+      .catch(() => setReport(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const totals = useMemo(() => {
+    if (!report) return { fatal: 0, warning: 0, alert: 0 };
+    return report.daily_trend.reduce(
+      (acc, d) => ({ fatal: acc.fatal + d.fatal, warning: acc.warning + d.warning, alert: acc.alert + d.alert }),
+      { fatal: 0, warning: 0, alert: 0 },
+    );
+  }, [report]);
+
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="mb-1 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-slate-700">Padrão de Risco (30 dias)</h2>
+      </div>
+      <p className="mb-3 text-xs text-slate-500">
+        Regras que mais geraram findings cruzando todos os documentos do período — não é validação 1:1.
+      </p>
+      {loading ? (
+        <Skeleton className="h-32 w-full" />
+      ) : !report || report.top_rules.length === 0 ? (
+        <p className="text-sm text-slate-500">Sem findings recorrentes no período.</p>
+      ) : (
+        <>
+          <ul className="space-y-2">
+            {report.top_rules.map((rule, idx) => (
+              <li key={`${rule.rule_id}-${rule.severity}`} className="flex items-center justify-between rounded border border-slate-100 p-2">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
+                    {idx + 1}
+                  </span>
+                  <span className="font-mono text-sm">{rule.rule_id}</span>
+                  <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${SEVERITY_CLASSES[rule.severity] ?? "bg-slate-100 text-slate-600"}`}>
+                    {rule.severity}
+                  </span>
+                </div>
+                <span className="text-sm font-semibold text-slate-700">{rule.count}x</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex gap-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
+            <span>Total no período: <strong className="text-red-600">{totals.fatal} FATAL</strong></span>
+            <span><strong className="text-amber-600">{totals.warning} WARNING</strong></span>
+            <span><strong className="text-blue-600">{totals.alert} ALERT</strong></span>
+          </div>
+        </>
+      )}
+    </section>
   );
 }
 
@@ -340,6 +414,13 @@ export default function DashboardPage() {
           )}
         </section>
       </div>
+
+      <UpgradeGate
+        requiredPlan="profissional"
+        message="Padrão de risco agregado (últimos 30 dias, cruzando todos os documentos do tenant) disponível a partir do plano Profissional."
+      >
+        <RiskPatternCard />
+      </UpgradeGate>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-xl border border-slate-200 bg-white p-4">

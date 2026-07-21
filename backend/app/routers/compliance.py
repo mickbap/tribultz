@@ -6,7 +6,7 @@ GET /api/v1/compliance/score/history — histórico dos últimos 12 meses
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -15,10 +15,18 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.api.plan_gate import require_plan
 from app.database import get_db
 from app.models.auth import User
 
 router = APIRouter(prefix="/api/v1/compliance", tags=["compliance"])
+
+# Job types cujo `result` tem o formato plano `{"findings": [...]}` usado pela
+# agregação de risk-patterns. SPED (`sped_validation`) guarda achados em
+# `result.produtos`, formato diferente — fica de fora, não quebra a query
+# (o filtro job_type já exclui, e o guard jsonb_typeof abaixo é redundância
+# defensiva contra qualquer job_type futuro com `result` sem findings).
+_RISK_PATTERN_JOB_TYPES = ("validate_xml", "task_a_validate_cbs_ibs")
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -42,6 +50,25 @@ class ComplianceHistory(BaseModel):
     nfs_total: int
     findings_error: int
     credit_at_risk: float
+
+
+class RiskPatternRule(BaseModel):
+    rule_id: str
+    severity: str
+    count: int
+
+
+class RiskPatternDay(BaseModel):
+    date: str
+    fatal: int
+    warning: int
+    alert: int
+
+
+class RiskPatternReport(BaseModel):
+    period_days: int
+    top_rules: list[RiskPatternRule]
+    daily_trend: list[RiskPatternDay]
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -173,3 +200,85 @@ def get_score_history(
         "findings_error": current["findings_error"],
         "credit_at_risk": current["credit_at_risk"],
     }]
+
+
+@router.get(
+    "/risk-patterns",
+    response_model=RiskPatternReport,
+    summary="Padrão de risco agregado — findings recorrentes por regra/severidade no período",
+    dependencies=[Depends(require_plan("profissional", "empresarial", "contador"))],
+)
+def get_risk_patterns(
+    days: int = Query(30, ge=1, le=365, description="Janela de dias pra trás (default: 30)"),
+    top_n: int = Query(10, ge=1, le=50, description="Quantidade de regras no ranking"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Gap 4 vs. TOTVS (#442) — equivalente ao add-on "Inteligência Fiscal by
+    IOB": cruza findings entre documentos/período pra achar padrão de risco
+    recorrente, em vez de validar documento a documento (1:1). Agrega sobre
+    `jobs.result->'findings'` já persistido — não requer mudança no motor.
+
+    Substitui a agregação client-side do dashboard (`topRules`/`trendLast7Days`
+    em page.tsx), que só olhava os últimos 50 jobs sem filtro de data —
+    sub-reportava para qualquer tenant com mais volume que isso no período.
+    """
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    tenant_id = str(current_user.tenant_id)
+    job_types = list(_RISK_PATTERN_JOB_TYPES)
+
+    top_rows = db.execute(
+        text("""
+            SELECT
+                f.value->>'rule_id' AS rule_id,
+                COALESCE(f.value->>'severity', 'UNKNOWN') AS severity,
+                COUNT(*) AS cnt
+            FROM jobs j
+            CROSS JOIN LATERAL jsonb_array_elements(j.result->'findings') AS f
+            WHERE j.tenant_id = CAST(:tid AS uuid)
+              AND j.job_type = ANY(:job_types)
+              AND j.created_at >= :since
+              AND jsonb_typeof(j.result->'findings') = 'array'
+            GROUP BY 1, 2
+            ORDER BY cnt DESC
+            LIMIT :top_n
+        """),
+        {"tid": tenant_id, "job_types": job_types, "since": since, "top_n": top_n},
+    ).mappings().all()
+
+    trend_rows = db.execute(
+        text("""
+            SELECT
+                (j.created_at AT TIME ZONE 'UTC')::date AS day,
+                COALESCE(f.value->>'severity', 'UNKNOWN') AS severity,
+                COUNT(*) AS cnt
+            FROM jobs j
+            CROSS JOIN LATERAL jsonb_array_elements(j.result->'findings') AS f
+            WHERE j.tenant_id = CAST(:tid AS uuid)
+              AND j.job_type = ANY(:job_types)
+              AND j.created_at >= :since
+              AND jsonb_typeof(j.result->'findings') = 'array'
+            GROUP BY 1, 2
+            ORDER BY 1
+        """),
+        {"tid": tenant_id, "job_types": job_types, "since": since},
+    ).mappings().all()
+
+    by_day: dict[str, dict[str, int]] = {}
+    for row in trend_rows:
+        day = row["day"].isoformat()
+        bucket = by_day.setdefault(day, {"fatal": 0, "warning": 0, "alert": 0})
+        sev = str(row["severity"]).lower()
+        if sev in bucket:
+            bucket[sev] += int(row["cnt"])
+
+    return {
+        "period_days": days,
+        "top_rules": [
+            {"rule_id": r["rule_id"], "severity": r["severity"], "count": int(r["cnt"])}
+            for r in top_rows
+        ],
+        "daily_trend": [
+            {"date": day, **counts} for day, counts in sorted(by_day.items())
+        ],
+    }

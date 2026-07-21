@@ -31,6 +31,7 @@ export type PlanFeatures = {
   hasApiAccess: boolean;
   hasMultiCnpj: boolean;
   hasJustificativaFiscal: boolean; // Justificativa técnica + base legal por finding
+  hasRiskPatternReport: boolean; // Padrão de risco agregado por período (#442)
   trialDays: number | null;
 };
 
@@ -45,6 +46,7 @@ export const PLAN_FEATURES: Record<PlanSlug, PlanFeatures> = {
     hasApiAccess: false,
     hasMultiCnpj: false,
     hasJustificativaFiscal: false,
+    hasRiskPatternReport: false,
     trialDays: 3,
   },
   starter: {
@@ -57,6 +59,7 @@ export const PLAN_FEATURES: Record<PlanSlug, PlanFeatures> = {
     hasApiAccess: false,
     hasMultiCnpj: false,
     hasJustificativaFiscal: false,
+    hasRiskPatternReport: false,
     trialDays: null,
   },
   profissional: {
@@ -69,6 +72,7 @@ export const PLAN_FEATURES: Record<PlanSlug, PlanFeatures> = {
     hasApiAccess: true,
     hasMultiCnpj: false,
     hasJustificativaFiscal: true,
+    hasRiskPatternReport: true,
     trialDays: null,
   },
   empresarial: {
@@ -81,6 +85,7 @@ export const PLAN_FEATURES: Record<PlanSlug, PlanFeatures> = {
     hasApiAccess: true,
     hasMultiCnpj: true, // filiais — até 10 CNPJs
     hasJustificativaFiscal: true,
+    hasRiskPatternReport: true,
     trialDays: null,
   },
   contador: {
@@ -93,6 +98,7 @@ export const PLAN_FEATURES: Record<PlanSlug, PlanFeatures> = {
     hasApiAccess: true,
     hasMultiCnpj: true,
     hasJustificativaFiscal: true,
+    hasRiskPatternReport: true,
     trialDays: null,
   },
   admin: {
@@ -105,6 +111,7 @@ export const PLAN_FEATURES: Record<PlanSlug, PlanFeatures> = {
     hasApiAccess: true,
     hasMultiCnpj: true,
     hasJustificativaFiscal: true,
+    hasRiskPatternReport: true,
     trialDays: null,
   },
 };

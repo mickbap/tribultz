@@ -598,6 +598,18 @@ export async function getComplianceHistory(): Promise<ComplianceHistory[]> {
   return apiFetch("/api/v1/compliance/score/history");
 }
 
+export type RiskPatternRule = { rule_id: string; severity: string; count: number };
+export type RiskPatternDay = { date: string; fatal: number; warning: number; alert: number };
+export type RiskPatternReport = {
+  period_days: number;
+  top_rules: RiskPatternRule[];
+  daily_trend: RiskPatternDay[];
+};
+
+export async function getRiskPatterns(days = 30, topN = 10): Promise<RiskPatternReport> {
+  return apiFetch(`/api/v1/compliance/risk-patterns?days=${days}&top_n=${topN}`);
+}
+
 // ── Split Payment ────────────────────────────────────────────────────────────
 
 export type SplitPaymentDoc = {
