@@ -9,6 +9,11 @@ on:
   schedule:
     - cron: "0 8 * * *"   # diário, 08:00 UTC
   workflow_dispatch:
+    inputs:
+      test_alert:
+        description: "TEMPORÁRIO (#509) — força falha só pra validar o envio real do alerta. Reverter após uso."
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -30,6 +35,11 @@ jobs:
 
       - name: Install deps (httpx)
         run: pip install httpx
+
+      # TEMPORÁRIO (#509) — remover após validar o envio real do alerta.
+      - name: "[TESTE #509] Forçar falha para validar o alerta"
+        if: ${{ inputs.test_alert == true }}
+        run: exit 1
 
       - name: Re-sync cClassTrib (SVRS) → JSON
         run: python backend/scripts/resync_classtrib.py
