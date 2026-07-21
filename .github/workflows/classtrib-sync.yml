@@ -9,6 +9,11 @@ on:
   schedule:
     - cron: "0 8 * * *"   # diário, 08:00 UTC
   workflow_dispatch:
+    inputs:
+      test_alert:
+        description: "TEMPORÁRIO (#509) — força falha só pra validar o envio real do alerta. Reverter após uso."
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -30,6 +35,11 @@ jobs:
 
       - name: Install deps (httpx)
         run: pip install httpx
+
+      # TEMPORÁRIO (#509) — remover após validar o envio real do alerta.
+      - name: "[TESTE #509] Forçar falha para validar o alerta"
+        if: ${{ inputs.test_alert == true }}
+        run: exit 1
 
       - name: Re-sync cClassTrib (SVRS) → JSON
         run: python backend/scripts/resync_classtrib.py
@@ -86,11 +96,21 @@ jobs:
             headers={
               "Authorization": f"Bearer {key}",
               "Content-Type":  "application/json",
+              # Sem isto, o urllib manda "Python-urllib/3.x" como User-Agent — o WAF
+              # (Cloudflare) na frente da API do Resend bloqueia com 403 "error code:
+              # 1010" ("banned based on your browser's signature"). Confirmado em
+              # produção (2026-07-20): o alerta deste mesmo workflow nunca chegou a
+              # ser entregue na falha real do dia anterior, mesmo reportando sucesso
+              # no job — falha silenciosa do próprio mecanismo de último recurso.
+              "User-Agent": "tribultz-ci/1.0",
             },
           )
           try:
             with urllib.request.urlopen(req, timeout=10) as r:
               print("Alert sent:", r.status)
           except urllib.error.HTTPError as e:
-            print("Resend error:", e.read().decode())
+            # Antes só imprimia — o step reportava sucesso mesmo com a entrega
+            # falhando (mesmo incidente do 403/1010 acima). Falhar de verdade aqui
+            # é o que torna uma futura quebra do próprio alerta visível.
+            raise SystemExit(f"Resend error: {e.read().decode()}")
           PY
