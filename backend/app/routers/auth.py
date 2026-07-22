@@ -1,5 +1,4 @@
 import logging
-import re
 from datetime import datetime, timedelta, timezone
 from typing import cast
 from uuid import UUID
@@ -26,7 +25,7 @@ from app.core.security import (
 )
 from app.api.deps import get_current_user
 from app.services.captcha_service import verify_captcha
-from app.services.cnpj_validator import validate_cnpj
+from app.services.cnpj_validator import is_valid_cnpj_format, normalize_cnpj, validate_cnpj
 from app.services.email_service import send_verification_email, send_password_reset_email
 from app.services.rate_limit import RateLimiter
 
@@ -57,9 +56,13 @@ def _client_ip(request: Request) -> str:
 
 
 def _cnpj_to_slug(cnpj: str) -> str:
-    """Convert CNPJ digits to a tenant slug: 12345678000199 → cnpj-12345678000199."""
-    digits = re.sub(r"\D", "", cnpj)
-    return f"cnpj-{digits}"
+    """Convert CNPJ to a tenant slug: 12345678000199 → cnpj-12345678000199.
+
+    Preserva letras (CNPJ alfanumérico, RFB — produção 27/07/2026): descartar
+    non-digits colidiria dois CNPJs alfanuméricos diferentes que compartilhem
+    os mesmos dígitos.
+    """
+    return f"cnpj-{normalize_cnpj(cnpj)}"
 
 
 def _get_or_create_tenant_for_cnpj(
@@ -557,13 +560,6 @@ async def resend_verification(
 class AddCnpjRequest(BaseModel):
     cnpj: str
 
-    @classmethod
-    def validate_cnpj_format(cls, v: str) -> str:
-        digits = re.sub(r"\D", "", v)
-        if len(digits) != 14:
-            raise ValueError("CNPJ deve ter 14 dígitos.")
-        return digits
-
 
 @router.post("/add-cnpj")
 async def add_cnpj(
@@ -586,18 +582,21 @@ async def add_cnpj(
             detail="Apenas contas de contador podem adicionar CNPJs.",
         )
 
-    cnpj_digits = re.sub(r"\D", "", data.cnpj)
-    if len(cnpj_digits) != 14:
-        raise HTTPException(status_code=400, detail="CNPJ deve ter 14 dígitos.")
+    cnpj_normalized = normalize_cnpj(data.cnpj)
+    if not is_valid_cnpj_format(cnpj_normalized):
+        raise HTTPException(
+            status_code=400,
+            detail="CNPJ deve ter 14 caracteres (12 alfanuméricos + 2 dígitos verificadores).",
+        )
 
     # Validate CNPJ
-    cnpj_result = await validate_cnpj(cnpj_digits)
+    cnpj_result = await validate_cnpj(cnpj_normalized)
     if not cnpj_result.valid:
         raise HTTPException(status_code=400, detail="CNPJ inválido ou não encontrado na Receita Federal.")
     company_name = cnpj_result.company_name
 
     # Get or create tenant
-    tenant = _get_or_create_tenant_for_cnpj(db, cnpj_digits, company_name)
+    tenant = _get_or_create_tenant_for_cnpj(db, cnpj_normalized, company_name)
 
     # Check if association already exists
     existing = db.execute(
@@ -624,7 +623,7 @@ async def add_cnpj(
 
     logger.info(
         "cnpj_added",
-        extra={"user_id": str(user_id), "cnpj": cnpj_digits, "tenant_slug": cast(str, tenant.slug)},
+        extra={"user_id": str(user_id), "cnpj": cnpj_normalized, "tenant_slug": cast(str, tenant.slug)},
     )
 
     tenants = _get_user_tenants(db, user_id)

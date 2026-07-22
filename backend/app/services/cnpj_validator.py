@@ -7,6 +7,12 @@ Graceful degradation: if both APIs are unavailable, allow registration
 with a warning log (never block user registration due to external API).
 
 LRU cache (TTL 24h, max 500 entries) prevents excessive API calls in batch scenarios.
+
+Formato aceito: 14 caracteres — 12 alfanuméricos (raiz + ordem do
+estabelecimento) + 2 dígitos verificadores numéricos. A partir de 31/07/2026
+a Receita Federal emite CNPJ alfanumérico (NT Conjunta 2025.001, produção dos
+sistemas RFB em 27/07/2026) — CNPJs já existentes continuam 100% numéricos,
+formato subset do alfanumérico. Ver docs/context/reference_cnpj_alfanumerico.md.
 """
 
 import logging
@@ -66,8 +72,20 @@ class _CnpjCache:
 _cnpj_cache = _CnpjCache()
 
 
-def _digits_only(cnpj: str) -> str:
-    return re.sub(r"\D", "", cnpj)
+CNPJ_FORMAT_RE = re.compile(r"^[A-Z0-9]{12}\d{2}$")
+
+
+def normalize_cnpj(cnpj: str) -> str:
+    """Remove pontuação (., /, -, espaço) e uppercase — preserva letras.
+
+    CNPJ alfanumérico (RFB, produção 27/07/2026) usa letras nas 12 primeiras
+    posições; só os 2 dígitos verificadores finais continuam numéricos.
+    """
+    return re.sub(r"[.\-/\s]", "", cnpj).upper()
+
+
+def is_valid_cnpj_format(cnpj: str) -> bool:
+    return bool(CNPJ_FORMAT_RE.match(normalize_cnpj(cnpj)))
 
 
 async def validate_cnpj(cnpj: str) -> CnpjResult:
@@ -75,34 +93,34 @@ async def validate_cnpj(cnpj: str) -> CnpjResult:
 
     Uses LRU cache (24h TTL) to avoid repeated API calls for the same CNPJ.
     """
-    digits = _digits_only(cnpj)
-    if len(digits) != 14:
+    normalized = normalize_cnpj(cnpj)
+    if not is_valid_cnpj_format(normalized):
         return CnpjResult(
-            valid=False, cnpj=digits, company_name="", status="",
-            error="CNPJ deve ter 14 dígitos.",
+            valid=False, cnpj=normalized, company_name="", status="",
+            error="CNPJ deve ter 14 caracteres (12 alfanuméricos + 2 dígitos verificadores).",
         )
 
     # Check cache first
-    cached = _cnpj_cache.get(digits)
+    cached = _cnpj_cache.get(normalized)
     if cached is not None:
         return cached
 
     # Try BrasilAPI first
-    result = await _try_brasilapi(digits)
+    result = await _try_brasilapi(normalized)
     if result is not None:
-        _cnpj_cache.put(digits, result)
+        _cnpj_cache.put(normalized, result)
         return result
 
     # Fallback to ReceitaWS
-    result = await _try_receitaws(digits)
+    result = await _try_receitaws(normalized)
     if result is not None:
-        _cnpj_cache.put(digits, result)
+        _cnpj_cache.put(normalized, result)
         return result
 
     # Both APIs failed — allow with warning (don't cache failures)
-    logger.warning("cnpj_validation_unavailable", extra={"cnpj": digits})
+    logger.warning("cnpj_validation_unavailable", extra={"cnpj": normalized})
     return CnpjResult(
-        valid=True, cnpj=digits, company_name="", status="API_UNAVAILABLE",
+        valid=True, cnpj=normalized, company_name="", status="API_UNAVAILABLE",
         error="",
     )
 
