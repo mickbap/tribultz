@@ -53,6 +53,13 @@ class Settings(BaseSettings):
     GA4_MEASUREMENT_ID: str = "G-KJ986WZ5ZJ"
     GA4_MP_API_SECRET: str = ""
 
+    # ── Cloudflare Analytics (tráfego do site, painel admin) ────────────────
+    # Sem token → seção do dashboard degrada graciosamente (sem quebrar o resto).
+    # Token: Cloudflare → Meu Perfil → API Tokens → Custom Token
+    #   (Zone:Analytics:Read + Zone:Zone:Read, escopo só para o zone abaixo).
+    CLOUDFLARE_ANALYTICS_TOKEN: str = ""
+    CLOUDFLARE_ZONE_ID: str = "0dca11f87046e628725aba0347548ccf"
+
     # ── Turnstile (CAPTCHA) ─────────────────────────────────
     TURNSTILE_SECRET_KEY: str = ""
     CAPTCHA_ENABLED: bool = False

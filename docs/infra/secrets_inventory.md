@@ -48,6 +48,13 @@ curl -s -o /dev/null -w '%{http_code}\n' --aws-sigv4 "aws:amz:$(g S3_REGION):s3"
 # Cloudflare — espera-se "success":true e "status":"active"
 curl -s -H "Authorization: Bearer <token>" https://api.cloudflare.com/client/v4/user/tokens/verify
 
+# Cloudflare Analytics (tráfego do site, painel admin, #518) — token dedicado,
+# escopo Zone:Analytics:Read + Zone:Zone:Read só na zona tribultz.com.br —
+# espera-se "success":true e um objeto "data" com viewer.zones
+curl -s -X POST https://api.cloudflare.com/client/v4/graphql \
+  -H "Authorization: Bearer $(g CLOUDFLARE_ANALYTICS_TOKEN)" -H "Content-Type: application/json" \
+  -d '{"query":"query($z:string!){viewer{zones(filter:{zoneTag:$z}){httpRequests1dGroups(limit:1){uniq{uniques}}}}}","variables":{"z":"0dca11f87046e628725aba0347548ccf"}}'
+
 # Magalu CLI e SSH
 mgc virtual-machine instances list --api-key <key>
 ssh -i ~/.ssh/id_ed25519 ubuntu@201.54.20.18 'echo ok'
@@ -58,6 +65,16 @@ Para comparar cópia local com a VM sem expor valores, compare o md5 de cada val
 ## Estado em 2026-07-15
 
 Válidos: Magalu (API key, SSH, Object Storage), Cloudflare, Turnstile, Asaas produção, OpenRouter, HubSpot, GitHub.
+
+## Pendência (2026-07-22): `CLOUDFLARE_ANALYTICS_TOKEN`
+
+Gerado e testado (E2E, local) para a seção de tráfego do site no painel admin
+(#518) — token dedicado, escopo mínimo (`Zone:Analytics:Read` + `Zone:Zone:Read`
+só na zona `tribultz.com.br`), sem custo. **Ainda não adicionado a
+`/opt/tribultz/.env` na VM** — até isso acontecer, o painel admin em produção
+mostra a seção como "não configurado" (degradação graciosa, não quebra o
+resto do dashboard). `CLOUDFLARE_ZONE_ID` (`0dca11f87046e628725aba0347548ccf`)
+não é segredo — já tem default no `app/config.py`.
 
 > 🔒 **Ordem vigente (2026-07-15): NÃO rotacionar, revogar nem encerrar sessão de credencial alguma enquanto o produto não escala.** Vale inclusive para as pendências listadas abaixo — inclusive as comprovadamente vazadas ou já revogadas. Documentar e seguir; não propor rotação de novo. O objetivo da fase é acesso livre e sem atrito a partir de Windows e Mac. Reavaliar quando o produto escalar.
 >
