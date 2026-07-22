@@ -184,7 +184,7 @@ def _redis_info(redis_url: str) -> dict[str, Any]:
 
 
 @router.get("/dashboard")
-def admin_dashboard(
+async def admin_dashboard(
     db: Annotated[Session, Depends(get_db)],
     _admin: Annotated[User, Depends(_require_superadmin)],
 ):
@@ -252,7 +252,9 @@ def admin_dashboard(
 
     # ── Infra ────────────────────────────────────────────────
     from app.config import settings
+    from app.services.cloudflare_analytics import get_today_traffic
     redis_data = _redis_info(settings.REDIS_URL)
+    site_traffic = await get_today_traffic()
 
     db_status = "healthy"
     try:
@@ -310,6 +312,7 @@ def admin_dashboard(
             "db_status": db_status,
             "redis": redis_data,
         },
+        "site_traffic": site_traffic,
         "validations": {
             "today": validations_today,
             "month": validations_month,

@@ -44,6 +44,12 @@ type AdminStats = {
       uptime_days: number;
     };
   };
+  site_traffic: {
+    date: string;
+    uniques: number;
+    page_views: number;
+    requests: number;
+  } | null;
   validations: {
     today: number;
     month: number;
@@ -290,6 +296,32 @@ export default function AdminPage() {
           <MiniBar data={s.users.registrations_30d} label="Cadastros (ultimos 30 dias)" />
           <PlanDistributionTable data={s.users.plan_distribution} />
         </div>
+      </section>
+
+      {/* ── Trafego do Site ──────────────────── */}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Trafego do Site (hoje)
+        </h2>
+        {s.site_traffic ? (
+          <>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <StatCard label="Visitantes unicos (aprox.)" value={s.site_traffic.uniques} accent="blue" />
+              <StatCard label="Page views" value={s.site_traffic.page_views} />
+              <StatCard label="Requisicoes totais" value={s.site_traffic.requests} />
+            </div>
+            <p className="mt-2 text-xs text-slate-400">
+              Fonte: Cloudflare Zone Analytics. &quot;Visitantes unicos&quot; e uma aproximacao
+              de borda sobre todo o trafego HTTP da zona — inclui bots/crawlers, nao so
+              humanos (o plano Free nao filtra por bot-score).
+            </p>
+          </>
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500">
+            Cloudflare Analytics nao configurado (
+            <code className="text-xs">CLOUDFLARE_ANALYTICS_TOKEN</code>).
+          </div>
+        )}
       </section>
 
       {/* ── Financeiro ────────────────────────── */}
