@@ -2069,6 +2069,7 @@ async def _enrich_classtrib(xml: str) -> dict[str, bool | None] | None:
 
 async def _enrich_cnpj(xml: str) -> tuple[bool, str] | None:
     """Pre-fetch emitter CNPJ status for enrichment."""
+    from app.services.cnpj_validator import is_valid_cnpj_format
     from app.services.cnpj_validator import validate_cnpj as _validate_cnpj
 
     # Extract emitter CNPJ (first CNPJ in emit block, or first CNPJ in document)
@@ -2076,7 +2077,7 @@ async def _enrich_cnpj(xml: str) -> tuple[bool, str] | None:
     if not emit_block:
         return None
     cnpj_tag = _first_tag(emit_block["snippet"], ["CNPJ"])
-    if not cnpj_tag or not re.match(r"^\d{14}$", cnpj_tag["value"]):
+    if not cnpj_tag or not is_valid_cnpj_format(cnpj_tag["value"]):
         return None
     try:
         result = await _validate_cnpj(cnpj_tag["value"])

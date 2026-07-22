@@ -4,6 +4,8 @@ from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, EmailStr, field_validator
 
+from app.services.cnpj_validator import is_valid_cnpj_format, normalize_cnpj
+
 
 class TenantInfo(BaseModel):
     id: UUID
@@ -104,10 +106,10 @@ class UserRegister(BaseModel):
     def validate_cnpj(cls, v: str) -> str:
         if not v:
             return v
-        digits = re.sub(r"\D", "", v)
-        if len(digits) != 14:
-            raise ValueError("CNPJ deve ter 14 dígitos.")
-        return digits
+        normalized = normalize_cnpj(v)
+        if not is_valid_cnpj_format(normalized):
+            raise ValueError("CNPJ deve ter 14 caracteres (12 alfanuméricos + 2 dígitos verificadores).")
+        return normalized
 
     @field_validator("account_type")
     @classmethod
