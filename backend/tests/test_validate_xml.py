@@ -533,13 +533,14 @@ class TestImportIbscbsRequired:
         assert self._find(self._nfe(cfop="3102", no_ibscbs=True)) == []
 
 
-# ── Item 3: PF_CONTRIB_CNPJ — PF contribuinte deve ter CNPJ (Comunicado CGIBS/RFB 01/2025) ──
+# ── Item 3: PF_CONTRIB_CNPJ — PF contribuinte deve ter CNPJ (Decreto 13.075/2026) ──
 
 
 class TestPfContribCnpj:
-    """A partir de 01/07/2026 a PF contribuinte de IBS/CBS deve ter CNPJ (emissão por CPF
-    não permitida, LC 214 art. 251). Enquadramento não verificável do XML → ALERT:
-    emitente CPF + data ≥ 01/07/2026."""
+    """Comunicado Conjunto CGIBS/RFB 01/2025 previa 01/07/2026; o Decreto 13.075/2026
+    (altera o Decreto 12.955/2026 art. 239) adiou para 01/01/2027 a PF contribuinte de
+    IBS/CBS ter CNPJ (emissão por CPF não permitida a partir daí, LC 214 art. 251).
+    Enquadramento não verificável do XML → ALERT: emitente CPF + data ≥ 01/01/2027."""
 
     def _nfe(self, ident, dh=None):
         dh_xml = f"<dhEmi>{dh}</dhEmi>" if dh else ""
@@ -554,13 +555,17 @@ class TestPfContribCnpj:
     def _find(self, xml, doc="NFE"):
         return [f for f in validate_xml(xml, doc).findings if f.rule_id == "PF_CONTRIB_CNPJ"]
 
-    def test_emit_cpf_apos_01_07_2026_alert(self):
-        f = self._find(self._nfe("<CPF>12345678909</CPF>", "2026-07-01T10:00:00-03:00"))
+    def test_emit_cpf_apos_01_01_2027_alert(self):
+        f = self._find(self._nfe("<CPF>12345678909</CPF>", "2027-01-01T10:00:00-03:00"))
         assert f and f[0].severity == "ALERT"
-        assert "Comunicado Conjunto CGIBS/RFB" in f[0].recommendation
+        assert "Decreto 13.075/2026" in f[0].recommendation
 
-    def test_emit_cpf_antes_de_01_07_2026_sem_finding(self):
-        assert self._find(self._nfe("<CPF>12345678909</CPF>", "2026-06-30T10:00:00-03:00")) == []
+    def test_emit_cpf_antes_de_01_01_2027_sem_finding(self):
+        assert self._find(self._nfe("<CPF>12345678909</CPF>", "2026-12-31T10:00:00-03:00")) == []
+
+    def test_emit_cpf_em_01_07_2026_prazo_antigo_adiado_sem_finding(self):
+        # Prazo original (Comunicado Conjunto 01/2025) — adiado pelo Decreto 13.075/2026.
+        assert self._find(self._nfe("<CPF>12345678909</CPF>", "2026-07-01T10:00:00-03:00")) == []
 
     def test_emit_cnpj_sem_finding(self):
         assert self._find(self._nfe("<CNPJ>12345678000195</CNPJ>", "2026-08-10T10:00:00-03:00")) == []
@@ -574,7 +579,7 @@ class TestPfContribCnpj:
 
     def test_nfse_prestador_cpf_alert(self):
         xml = (
-            '<NFS-e><infNfse><DataEmissao>2026-07-15T10:00:00</DataEmissao>'
+            '<NFS-e><infNfse><DataEmissao>2027-02-01T10:00:00</DataEmissao>'
             '<PrestadorServico><RazaoSocial>X</RazaoSocial><CPF>98765432100</CPF></PrestadorServico>'
             '<TomadorServico><RazaoSocial>Y</RazaoSocial></TomadorServico>'
             '<PrestacaoServico><Servico><CodigoServico>123456</CodigoServico><cClassTrib>654321</cClassTrib>'

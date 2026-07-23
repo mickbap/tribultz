@@ -327,10 +327,12 @@ def _within_no_penalty_window(emission_date: dict | None) -> bool:
 
 
 # ── Comunicado Conjunto CGIBS/RFB nº 01/2025 — CNPJ p/ PF contribuinte ───────
-# A partir de 01/07/2026, a PF contribuinte de IBS/CBS deve se inscrever no CNPJ e não
-# pode emitir documento fiscal por CPF (LC 214 art. 251). O enquadramento como
+# Previa 01/07/2026; o Decreto 13.075/2026 (altera o Decreto 12.955/2026, art. 239)
+# adiou para 01/01/2027 a PF contribuinte de IBS/CBS ter que se inscrever no CNPJ e
+# não poder emitir documento fiscal por CPF (LC 214 art. 251). O enquadramento como
 # contribuinte não é verificável do XML → ALERT informativo (verificar enquadramento).
-_PF_CNPJ_REQUIRED_DATE = "2026-07-01"
+# Não editar sem checar se um decreto mais recente adiou de novo.
+_PF_CNPJ_REQUIRED_DATE = "2027-01-01"
 
 # ── NF-e de devolução: referência à nota original por item via DFeReferenciado ──
 # v1.40: a partir de 01/09/2026, a devolução (finNFe=4) referencia a nota original
@@ -1244,12 +1246,14 @@ def validate_xml(
                         title="Emitente pessoa física (CPF) — verificar obrigação de inscrição no CNPJ",
                         where=FindingWhere(field="emit/CPF", xpath=_xpath("CPF", doc_type), snippet=emit_cpf["snippet"]),
                         recommendation=(
-                            "Emitente identificado por CPF. A partir de 01/07/2026, a pessoa física "
-                            "contribuinte de IBS/CBS deve se inscrever no CNPJ e não pode emitir documento "
-                            "fiscal por CPF (Comunicado Conjunto CGIBS/RFB nº 01/2025; LC 214 art. 251). "
-                            "Verifique o enquadramento como contribuinte (atividade econômica habitual; "
-                            "locação com mais de 3 imóveis e renda anual acima de R$ 240 mil) e, se for o "
-                            "caso, providencie a inscrição no CNPJ. A inscrição não transforma a PF em PJ."
+                            "Emitente identificado por CPF. A partir de 01/01/2027 (Decreto 13.075/2026, "
+                            "que alterou o Decreto 12.955/2026 art. 239 e adiou o prazo original do "
+                            "Comunicado Conjunto CGIBS/RFB nº 01/2025), a pessoa física contribuinte de "
+                            "IBS/CBS deve se inscrever no CNPJ e não pode emitir documento fiscal por CPF "
+                            "(LC 214 art. 251). Verifique o enquadramento como contribuinte (atividade "
+                            "econômica habitual; locação com mais de 3 imóveis e renda anual acima de "
+                            "R$ 240 mil) e, se for o caso, providencie a inscrição no CNPJ. A inscrição "
+                            "não transforma a PF em PJ."
                         ),
                         evidence_ids=[ev_id],
                     ),
