@@ -96,7 +96,10 @@ function isWithinNoPenaltyWindow(emissionDate: string | undefined): boolean {
 // no CNPJ e não pode emitir documento fiscal por CPF (LC 214 art. 251). O enquadramento
 // como contribuinte (atividade habitual; locação com >3 imóveis e renda > R$ 240 mil/ano)
 // não é verificável do XML — por isso a regra é ALERT informativo (verificar enquadramento).
-const PF_CNPJ_REQUIRED_DATE = "2026-07-01";
+// Decreto 13.075/2026 (altera o Decreto 12.955/2026, art. 239) adiou de
+// 01/07/2026 para 01/01/2027 — não editar sem checar se um decreto mais
+// recente adiou de novo.
+const PF_CNPJ_REQUIRED_DATE = "2027-01-01";
 
 // NF-e de devolução (finNFe=4): a partir de 01/09/2026 referencia a nota original por item,
 // exclusivamente via grupo DFeReferenciado (v1.40, Rejeição 321 — VC02-14/VC03-20).
@@ -957,10 +960,12 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
   }
 
   // ── Rule: PF_CONTRIB_CNPJ — PF contribuinte deve se inscrever no CNPJ (#item3) ──
-  // Comunicado Conjunto CGIBS/RFB nº 01/2025 + LC 214 art. 251: a partir de
-  // 01/07/2026 a PF contribuinte de IBS/CBS deve ter CNPJ (emissão por CPF não é
-  // permitida). Verificável do XML: emitente identificado por CPF + data ≥ 01/07/2026.
-  // O enquadramento como contribuinte não é verificável → ALERT informativo.
+  // Comunicado Conjunto CGIBS/RFB nº 01/2025 + LC 214 art. 251 previam 01/07/2026;
+  // o Decreto 13.075/2026 (altera o Decreto 12.955/2026, art. 239) adiou para
+  // 01/01/2027 a PF contribuinte de IBS/CBS ter CNPJ (emissão por CPF não é
+  // permitida a partir daí). Verificável do XML: emitente identificado por CPF +
+  // data ≥ 01/01/2027. O enquadramento como contribuinte não é verificável →
+  // ALERT informativo.
   {
     const emitBlock = firstTag(xml, ["emit", "PrestadorServico", "prest", "Prestador"]);
     const emDate = emissionDate?.value?.slice(0, 10) ?? "";
@@ -981,12 +986,14 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             snippet: emitCpf.snippet,
             evidenceId: evId,
             recommendation:
-              `Emitente identificado por CPF. A partir de 01/07/2026, a pessoa física ` +
-              `contribuinte de IBS/CBS deve se inscrever no CNPJ e não pode emitir documento ` +
-              `fiscal por CPF (Comunicado Conjunto CGIBS/RFB nº 01/2025; LC 214 art. 251). ` +
-              `Verifique o enquadramento como contribuinte (atividade econômica habitual; ` +
-              `locação com mais de 3 imóveis e renda anual acima de R$ 240 mil) e, se for o ` +
-              `caso, providencie a inscrição no CNPJ. A inscrição não transforma a PF em PJ.`,
+              `Emitente identificado por CPF. A partir de 01/01/2027 (Decreto 13.075/2026, ` +
+              `que alterou o Decreto 12.955/2026 art. 239 e adiou o prazo original do ` +
+              `Comunicado Conjunto CGIBS/RFB nº 01/2025), a pessoa física contribuinte de ` +
+              `IBS/CBS deve se inscrever no CNPJ e não pode emitir documento fiscal por CPF ` +
+              `(LC 214 art. 251). Verifique o enquadramento como contribuinte (atividade ` +
+              `econômica habitual; locação com mais de 3 imóveis e renda anual acima de ` +
+              `R$ 240 mil) e, se for o caso, providencie a inscrição no CNPJ. A inscrição ` +
+              `não transforma a PF em PJ.`,
           }),
           makeEvidence({ id: evId, type: "xml", label: "Emitente PF (CPF) — verificar CNPJ", xpath: inferXpath("CPF", docType), snippet: emitCpf.snippet }),
         );
