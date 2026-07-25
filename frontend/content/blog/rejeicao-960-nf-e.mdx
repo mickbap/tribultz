@@ -1,0 +1,62 @@
+---
+title: "Como corrigir a rejeição 960 NF-e antes de emitir"
+description: "Entenda a rejeição 960 NF-e, identifique divergências entre desoneração e redução da base e previna retrabalho antes da emissão fiscal e controle fiscal."
+slug: "rejeicao-960-nf-e"
+category: "Reforma Tributária"
+author:
+  name: "Equipe Tribultz"
+  jobTitle: "Conteúdo Fiscal"
+  url: "https://tribultz.com.br/sobre"
+publishedAt: "2026-07-24T06:15:58.000Z"
+tags: []
+coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/76fc4d86-d528-4294-a3c6-020f77cb3995/d8049955-7d7b-4aa1-9c92-e9ec045bf007.webp"
+legalRefs: []
+soroGuid: "d8049955-7d7b-4aa1-9c92-e9ec045bf007"
+---
+
+{/* Gerado pelo Soro — REVISAR antes do merge: precisão fiscal, legalRefs, tags, category. */}
+
+<p>Uma NF-e pronta para faturamento pode ser barrada por uma divergência aparentemente pequena entre campos de ICMS. A rejeição 960 NF-e ocorre quando o valor informado de ICMS desonerado não corresponde ao percentual de redução de base de cálculo informado no documento, conforme as regras de validação aplicáveis. Na prática, o problema costuma expor algo maior: parâmetros fiscais, cálculo no ERP e dados enviados no XML não estão falando a mesma linguagem.</p>
+<p>Para uma operação que depende de expedição, faturamento e integração entre áreas, tratar esse retorno como mero erro de transmissão é um equívoco. A correção pontual pode liberar uma nota, mas não elimina a causa que poderá reaparecer no próximo pedido com a mesma combinação fiscal.</p>
+<h2>O que significa a rejeição 960 NF-e</h2>
+<p>A rejeição está relacionada à coerência matemática e tributária entre a redução da base de cálculo do ICMS e o valor de ICMS desonerado destacado no item da NF-e. Os campos mais envolvidos, em regra, são `pRedBC`, `vBC`, `pICMS`, `vICMS` e `vICMSDeson`.</p>
+<p>Quando há uma situação tributária que prevê redução de base e desoneração nos termos da legislação aplicável, o valor desonerado não pode ser preenchido como um abatimento comercial, uma estimativa manual ou um valor herdado de outro cenário. Ele precisa refletir a memória de cálculo correspondente à operação.</p>
+<p>A validação da autorização fiscal compara os dados transmitidos. Se a relação esperada entre percentual de redução, base tributável, alíquota e desoneração não for atendida dentro dos critérios previstos na regra vigente, a NF-e é rejeitada. O retorno pode indicar o número do item afetado, o que ajuda no diagnóstico, mas não substitui a análise da origem do cálculo.</p>
+<p>Também é essencial verificar a versão aplicável do leiaute, das regras de validação e da documentação oficial. Regras fiscais evoluem, e uma parametrização que funcionava em determinado contexto pode não ser adequada a outro produto, operação, período ou ambiente.</p>
+<h2>Por que a rejeição 960 acontece na prática</h2>
+<p>A causa raramente está apenas no XML final. O XML é a evidência do que o ERP calculou e transmitiu. Portanto, a investigação deve começar pelos parâmetros que formaram aquele item fiscal.</p>
+<h3>Cálculo de desoneração desconectado da redução de base</h3>
+<p>Este é o cenário mais direto. O ERP aplica o percentual de redução de base no cálculo do ICMS devido, mas o valor de ICMS desonerado é obtido por outra fórmula, por uma regra genérica ou por um valor previamente gravado no cadastro. O resultado pode até parecer razoável na tela, mas falha na validação estrutural do documento.</p>
+<p>A lógica é simples: a redução de base altera a parcela sobre a qual o ICMS é calculado. Logo, o valor desonerado precisa guardar coerência com essa redução, segundo o enquadramento tributário utilizado. A fórmula específica depende do tratamento legal da operação e da regra técnica vigente. Por isso, copiar valores entre documentos ou ajustar o campo manualmente sem revisar a premissa fiscal tende a criar novas inconsistências.</p>
+<h3>Arredondamento feito em etapas diferentes</h3>
+<p>Diferenças de casas decimais também são frequentes. Um sistema pode arredondar a base reduzida antes de aplicar a alíquota; outro pode manter mais precisão interna e arredondar apenas no valor final. Se o cálculo do valor desonerado seguir uma ordem diferente da usada para o ICMS do item, surge uma divergência.</p>
+<p>Não basta decidir que o arredondamento deve ocorrer. É preciso definir onde ele ocorre, aplicar o mesmo padrão nas rotinas envolvidas e validar o resultado no XML. Em catálogos extensos, uma customização antiga ou uma exceção de regra fiscal pode produzir variações difíceis de perceber até a rejeição interromper a emissão.</p>
+<h3>Cadastro fiscal incompleto ou reaproveitado</h3>
+<p>Outra origem recorrente é o reaproveitamento de configurações entre produtos ou naturezas de operação que parecem semelhantes, mas não possuem o mesmo tratamento tributário. NCM, origem, CST, benefício fiscal quando aplicável, alíquotas e percentuais de redução precisam estar coerentes com a operação concreta.</p>
+<p>Um cadastro pode conter um percentual de redução válido para determinada saída, enquanto a regra de desoneração permanece vinculada a um cenário anterior. A nota é emitida com os dois elementos, porém sem consistência entre eles. A SEFAZ não avalia se a intenção do emissor era correta: ela valida os campos e as regras do documento transmitido.</p>
+<h3>Regra fiscal correta no produto, mas incorreta na operação</h3>
+<p>O mesmo item pode ter tratamentos distintos conforme destino, finalidade, cliente, regime aplicável ou natureza da circulação. Por isso, manter uma regra apenas no cadastro do produto nem sempre resolve. A decisão fiscal precisa considerar o conjunto da operação.</p>
+<p>Esse é um ponto crítico em empresas com múltiplos estabelecimentos, canais e fluxos de venda. Quanto maior a quantidade de combinações possíveis, menor a confiabilidade de controles baseados em memória operacional ou ajustes feitos somente quando ocorre uma rejeição.</p>
+<h2>Como diagnosticar e corrigir a rejeição 960 NF-e</h2>
+<p>A correção deve seguir uma sequência que preserve rastreabilidade. Comece pelo item indicado no retorno e compare o <a href="https://tribultz.com.br/blog/api-validacao-xml-nfe-na-pratica">XML rejeitado</a> com os parâmetros fiscais usados pelo ERP naquele momento. Não parta da premissa de que o valor destacado está errado sem entender como ele foi formado.</p>
+<h3>1. Confirme o enquadramento tributário do item</h3>
+<p>Verifique se a situação tributária informada admite, no caso concreto, a combinação de redução de base e ICMS desonerado. Revise a natureza da operação, a tributação do produto, a origem da mercadoria e os parâmetros aplicados ao destinatário. Quando houver benefício fiscal ou particularidade estadual, a documentação oficial e a orientação técnica da empresa devem sustentar o tratamento adotado.</p>
+<p>Essa etapa não é apenas formal. Se o enquadramento estiver errado, recalcular o valor desonerado pode fazer o XML passar por uma validação e, ainda assim, manter uma decisão fiscal inadequada.</p>
+<h3>2. Refaça a memória de cálculo com os dados do XML</h3>
+<p>Analise os valores efetivamente transmitidos: valor da operação, base de cálculo, percentual de redução, alíquota, ICMS calculado e ICMS desonerado. Em seguida, confronte-os com a regra parametrizada no ERP.</p>
+<p>O objetivo é identificar se a divergência nasceu de uma fórmula, de um percentual incorreto, de uma base calculada de forma distinta ou de arredondamento. Registre essa memória de cálculo. Sem evidência, a equipe corrige o documento atual, mas perde a referência necessária para revisar os próximos casos.</p>
+<h3>3. Ajuste a origem da regra, não apenas o XML</h3>
+<p>Se a divergência vier do cadastro, da matriz fiscal ou de uma regra de cálculo, a correção deve ocorrer na origem. Alterar exclusivamente o arquivo da nota pode ser justificável em processos específicos, mas não deve virar rotina. Uma correção manual recorrente transfere o risco para o time fiscal e reduz a previsibilidade do faturamento.</p>
+<p>Após o ajuste, gere novamente o XML e confira se todos os campos do grupo de ICMS permanecem coerentes. Mudanças no cálculo podem afetar outras validações, especialmente quando existem descontos, frete, despesas acessórias ou particularidades na composição da base.</p>
+<h3>4. Preserve a evidência da decisão</h3>
+<p>Guarde o retorno da rejeição, o XML anterior, a memória de cálculo e o registro da parametrização corrigida. Esse conjunto é útil para auditoria, revisão interna e alinhamento entre fiscal, TI, operações e contabilidade.</p>
+<p>A evidência técnica transforma uma ocorrência operacional em aprendizado controlado. Sem ela, a empresa depende da pessoa que resolveu o caso para explicar, semanas depois, por que uma regra foi modificada.</p>
+<h2>Prevenção da rejeição 960 NF-e começa antes da autorização</h2>
+<p>A forma mais eficiente de lidar com a rejeição 960 NF-e não é acelerar a correção após o bloqueio. É validar a coerência fiscal <a href="https://tribultz.com.br/blog/validacao-previa-ou-pos-emissao">antes da emissão</a>, quando ainda há tempo para revisar a decisão sem paralisar a operação.</p>
+<p>Isso exige uma disciplina que conecte cadastro de produtos, regras tributárias, parametrização do ERP e documento fiscal. O time fiscal define e revisa premissas; TI assegura que elas sejam implementadas de modo consistente; operações precisa de um fluxo que não dependa de intervenção manual a cada exceção. A governança aparece justamente nessa conexão.</p>
+<p>Uma camada de inteligência tributária entre o ERP e a autorização fiscal ajuda a antecipar divergências de cálculo e estrutura, gerando evidências para investigação. A Tribultz atua nesse ponto: verifica a coerência de dados fiscais e documentos antes da emissão, com rastreabilidade em arquivos PDF e JSON para apoiar controles internos e decisões mais seguras.</p>
+<p>O ganho não está em tratar a NF-e como um arquivo a ser corrigido. Está em tornar verificável a regra que gerou o documento. Isso reduz retrabalho, melhora a qualidade do cadastro e dá ao faturamento uma base mais previsível para operar conforme a legislação e a documentação técnica vigentes.</p>
+<h2>O que evitar ao receber essa rejeição</h2>
+<p>Evite alterar o `vICMSDeson` até que a nota seja autorizada sem revisar o percentual de redução e o enquadramento fiscal. Esse atalho pode mascarar uma inconsistência que retornará em outra operação. Também não use uma NF-e autorizada como modelo automático sem confirmar se os elementos tributários são equivalentes.</p>
+<p>Outro erro é tratar arredondamento como detalhe irrelevante. Em integrações entre sistemas, a precisão adotada por cada etapa precisa ser conhecida, documentada e testada. A diferença pode estar no cálculo do ERP, em uma integração intermediária ou na transformação do XML.</p>
+<p>A rejeição 960 não pede uma reação improvisada. Ela pede uma pergunta objetiva: qual regra fiscal e qual cálculo produziram este valor? Quando a empresa consegue responder com evidência técnica antes de transmitir a NF-e, a conformidade deixa de ser uma etapa de correção e passa a sustentar a continuidade operacional.</p>
