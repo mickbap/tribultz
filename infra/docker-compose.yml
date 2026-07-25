@@ -116,6 +116,14 @@ services:
     networks: [tribultz]
     <<: *backend-env
     command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
+    # Sobrescreve o HEALTHCHECK do Dockerfile (curl :8000/health) — worker não
+    # serve HTTP, sempre reportaria "unhealthy" por design, não por defeito (#522).
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     depends_on:
       db:
         condition: service_healthy
@@ -135,6 +143,11 @@ services:
     networks: [tribultz]
     <<: *backend-env
     command: ["celery", "-A", "app.celery_app", "beat", "--loglevel=info"]
+    # Sobrescreve o HEALTHCHECK do Dockerfile — beat não serve HTTP nem responde
+    # a inspect (é só o scheduler, sem RPC de worker) (#522). Sem checagem nativa
+    # equivalente; "container rodando" já é o sinal disponível.
+    healthcheck:
+      disable: true
     depends_on:
       db:
         condition: service_healthy
