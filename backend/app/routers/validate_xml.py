@@ -327,11 +327,13 @@ def _within_no_penalty_window(emission_date: dict | None) -> bool:
 
 
 # ── Comunicado Conjunto CGIBS/RFB nº 01/2025 — CNPJ p/ PF contribuinte ───────
-# Previa 01/07/2026; o Decreto 13.075/2026 (altera o Decreto 12.955/2026, art. 239)
-# adiou para 01/01/2027 a PF contribuinte de IBS/CBS ter que se inscrever no CNPJ e
-# não poder emitir documento fiscal por CPF (LC 214 art. 251). O enquadramento como
-# contribuinte não é verificável do XML → ALERT informativo (verificar enquadramento).
-# Não editar sem checar se um decreto mais recente adiou de novo.
+# Previa 01/07/2026; o Decreto 13.075/2026 (CBS, altera o Decreto 12.955/2026
+# art. 239) e a Resolução CGIBS nº 13/2026 (IBS, altera o art. 617 do
+# Regulamento do IBS/Resolução CGIBS nº 6/2026) adiaram, em conjunto, para
+# 01/01/2027 a PF contribuinte de IBS/CBS ter que se inscrever no CNPJ e não
+# poder emitir documento fiscal por CPF (LC 214 art. 251). O enquadramento
+# como contribuinte não é verificável do XML → ALERT informativo (verificar
+# enquadramento). Não editar sem checar se um ato mais recente adiou de novo.
 _PF_CNPJ_REQUIRED_DATE = "2027-01-01"
 
 # ── NF-e de devolução: referência à nota original por item via DFeReferenciado ──
@@ -1249,10 +1251,10 @@ def validate_xml(
                         title="Emitente pessoa física (CPF) — verificar obrigação de inscrição no CNPJ",
                         where=FindingWhere(field="emit/CPF", xpath=_xpath("CPF", doc_type), snippet=emit_cpf["snippet"]),
                         recommendation=(
-                            "Emitente identificado por CPF. A partir de 01/01/2027 (Decreto 13.075/2026, "
-                            "que alterou o Decreto 12.955/2026 art. 239 e adiou o prazo original do "
-                            "Comunicado Conjunto CGIBS/RFB nº 01/2025), a pessoa física contribuinte de "
-                            "IBS/CBS deve se inscrever no CNPJ e não pode emitir documento fiscal por CPF "
+                            "Emitente identificado por CPF. A partir de 01/01/2027 (Decreto 13.075/2026 "
+                            "para CBS + Resolução CGIBS nº 13/2026 para IBS, que adiaram em conjunto o "
+                            "prazo original do Comunicado Conjunto CGIBS/RFB nº 01/2025), a pessoa física "
+                            "contribuinte de IBS/CBS deve se inscrever no CNPJ e não pode emitir documento fiscal por CPF "
                             "(LC 214 art. 251). Verifique o enquadramento como contribuinte (atividade "
                             "econômica habitual; locação com mais de 3 imóveis e renda anual acima de "
                             "R$ 240 mil) e, se for o caso, providencie a inscrição no CNPJ. A inscrição "
