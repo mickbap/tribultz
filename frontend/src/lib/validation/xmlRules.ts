@@ -921,8 +921,10 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
   }
 
   // ── Rule: IMPORT_IBSCBS_REQUIRED — incidência na importação (#item2) ──────
-  // Decreto 12.955/2026 art. 65 (LC 214 art. 63): IBS/CBS incidem sobre a
-  // importação de bens e serviços independentemente de o importador ser habitual.
+  // Decreto 12.955/2026 art. 65 (CBS) + Resolução CGIBS nº 6/2026 art. 65 (IBS)
+  // — mesmo número de artigo nos dois regulamentos, publicados juntos em
+  // 30/04/2026 (LC 214 art. 63): IBS/CBS incidem sobre a importação de bens e
+  // serviços independentemente de o importador ser habitual.
   // Detecção: CFOP iniciando em "3" (entrada do exterior) OU grupo de importação
   // (<DI>/<DUIMP>). Export (CFOP 7xxx, imune) e internas ficam de fora.
   // Escopo: grupo IBSCBS presente porém zerado com CST tributável — o grupo ausente
@@ -951,7 +953,8 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             `Operação de importação (CFOP 3xxx ou grupo DI/DUIMP) com IBS/CBS zerado e ` +
             `CST ${cstValue || "(ausente)"} tributável. O IBS e a CBS incidem sobre a importação ` +
             `de bens e serviços independentemente de o importador ser habitual ` +
-            `(Decreto 12.955/2026 art. 65 / LC 214 art. 63). A alíquota deve corresponder à da ` +
+            `(Decreto 12.955/2026 art. 65 para CBS + Resolução CGIBS nº 6/2026 art. 65 ` +
+            `para IBS — mesmo artigo nos dois regulamentos; LC 214 art. 63). A alíquota deve corresponder à da ` +
             `operação interna com o mesmo bem/serviço (art. 469-470). Informe vCBS/vIBS ou ajuste o CST.`,
         }),
         makeEvidence({ id: evId, type: "xml", label: "Importação — IBS/CBS ausente", xpath: inferXpath("IBSCBS", docType), snippet: ibscbsBlock.snippet }),
