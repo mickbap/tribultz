@@ -5,6 +5,9 @@ on:
     - cron: "*/5 * * * *"   # a cada 5 minutos
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: monitor
   cancel-in-progress: true
