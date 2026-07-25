@@ -1196,8 +1196,10 @@ def validate_xml(
             )
 
     # ── Rule: IMPORT_IBSCBS_REQUIRED — incidência na importação (#item2) ──────
-    # Decreto 12.955/2026 art. 65 (LC 214 art. 63): IBS/CBS incidem sobre a importação
-    # de bens e serviços independentemente de o importador ser habitual. Detecção:
+    # Decreto 12.955/2026 art. 65 (CBS) + Resolução CGIBS nº 6/2026 art. 65 (IBS)
+    # — mesmo número de artigo nos dois regulamentos, publicados juntos em
+    # 30/04/2026 (LC 214 art. 63): IBS/CBS incidem sobre a importação de bens e
+    # serviços independentemente de o importador ser habitual. Detecção:
     # CFOP iniciando em "3" (entrada do exterior) OU grupo de importação (<DI>/<DUIMP>).
     # Export (CFOP 7xxx, imune) e internas ficam de fora. Escopo: grupo IBSCBS presente
     # porém zerado com CST tributável — grupo ausente já é coberto por IBSCBS_MISSING.
@@ -1221,7 +1223,8 @@ def validate_xml(
                         f'Operação de importação (CFOP 3xxx ou grupo DI/DUIMP) com IBS/CBS zerado e '
                         f'CST {cst_value or "(ausente)"} tributável. O IBS e a CBS incidem sobre a importação '
                         f'de bens e serviços independentemente de o importador ser habitual '
-                        f'(Decreto 12.955/2026 art. 65 / LC 214 art. 63). A alíquota deve corresponder à da '
+                        f'(Decreto 12.955/2026 art. 65 para CBS + Resolução CGIBS nº 6/2026 art. 65 '
+                        f'para IBS — mesmo artigo nos dois regulamentos; LC 214 art. 63). A alíquota deve corresponder à da '
                         f'operação interna com o mesmo bem/serviço (art. 469-470). Informe vCBS/vIBS ou ajuste o CST.'
                     ),
                     evidence_ids=[ev_id],
