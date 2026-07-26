@@ -32,7 +32,7 @@ _CACHE_TTL_SECONDS = 86_400 * 30  # 30 days
 
 _LLM_MODELS = [
     "openrouter/openai/gpt-oss-20b:free",
-    "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+    "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
     "openrouter/google/gemma-4-31b-it:free",
 ]
 
@@ -184,6 +184,7 @@ def _llm_classify(descricao: str) -> dict:
                 if "ncm" in data and "confidence" in data:
                     logger.info("ncm_suggest: model=%s ncm=%s confidence=%s", model, data.get("ncm"), data.get("confidence"))
                     return data
+            logger.warning("ncm_suggest: model=%s returned no usable JSON: %s", model, content[:200])
         except Exception as exc:
             logger.warning("ncm_suggest: model=%s failed: %s", model, str(exc)[:200])
             continue
