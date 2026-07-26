@@ -3,11 +3,13 @@ import Link from "next/link";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { WhatsAppLink } from "@/components/public/WhatsAppLink";
 import { PublicFooter } from "@/components/public/PublicFooter";
-import { NewsFeed } from "@/components/public/NewsFeed";
 import { RULES_COUNT, CLASSTRIB_COUNT } from "@/lib/validation/rulesMeta";
+import { getAllPosts } from "@/lib/blog";
 
 export const metadata: Metadata = {
-  title: "IBS e CBS sem Rejeição de NF-e — Compliance LC 214",
+  // title.template do layout raiz ("%s | Tribultz") não se aplica quando este
+  // page.tsx do mesmo segmento define seu próprio title (#503) — sufixo manual.
+  title: "IBS e CBS sem Rejeição de NF-e — Compliance LC 214 | Tribultz",
   description: `Rejeição 1024 por cClassTrib errado? Penalidades CBS/IBS a partir de agosto/2026. Valide CST × cClassTrib e ${RULES_COUNT} regras da Reforma, calcule CBS/IBS e exporte para TOTVS/SAP/Omie/Linx. 100 créditos API grátis.`,
   keywords: [
     "Rejeição 1024 NF-e", "cClassTrib CBS IBS", "NCM cClassTrib LC 214",
@@ -180,6 +182,8 @@ function HeroVisual() {
 }
 
 export default function HomePage() {
+  const recentPosts = getAllPosts().slice(0, 3);
+
   return (
     <>
       <PublicNavbar />
@@ -206,7 +210,7 @@ export default function HomePage() {
                 </div>
 
                 <h1 className="mb-5 text-5xl font-extrabold leading-[1.04] tracking-tight text-[#24292E] md:text-[3.5rem]">
-                  IBS e CBS sem erro.<br />
+                  IBS e CBS sem erro.<br />{" "}
                   Sem multa.{" "}
                   <span className="px-1" style={{ background: "linear-gradient(180deg, transparent 55%, #FFD600 55%)" }}>
                     Sem susto.
@@ -446,13 +450,34 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* NEWS */}
-        <section className="py-16">
-          <div className="mx-auto max-w-6xl px-4 md:px-6">
-            <h2 className="mb-8 text-2xl font-bold text-[#24292E]">Últimas novidades</h2>
-            <NewsFeed />
-          </div>
-        </section>
+        {/* BLOG — posts recentes em linguagem de usuário, não changelog interno (#503) */}
+        {recentPosts.length > 0 && (
+          <section className="py-16">
+            <div className="mx-auto max-w-6xl px-4 md:px-6">
+              <h2 className="mb-8 text-2xl font-bold text-[#24292E]">Do blog</h2>
+              <div className="grid gap-4 md:grid-cols-3">
+                {recentPosts.map((post) => (
+                  <article
+                    key={post.slug}
+                    className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
+                  >
+                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
+                      {post.category}
+                    </span>
+                    <h3 className="mt-4 text-lg font-semibold text-slate-900">
+                      <Link href={`/blog/${post.slug}`} className="hover:text-blue-700">
+                        {post.title}
+                      </Link>
+                    </h3>
+                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">
+                      {post.description}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* FAQ — conteúdo visível espelha o JSON-LD FAQPage (fonte: FAQ_ITEMS) */}
         <section className="py-24" style={{ background: "#F8FAFC" }} id="faq">
@@ -490,7 +515,7 @@ export default function HomePage() {
             <div className="grid items-center gap-12 md:grid-cols-[1.3fr_1fr]">
               <div>
                 <h2 className="mb-4 text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
-                  Comece <span style={{ color: "#FFD600" }}>grátis</span> hoje.<br />
+                  Comece <span style={{ color: "#FFD600" }}>grátis</span> hoje.<br />{" "}
                   Reforma chega em 2026.
                 </h2>
                 <p className="mb-8 text-lg leading-relaxed" style={{ color: "rgba(255,255,255,0.8)" }}>
