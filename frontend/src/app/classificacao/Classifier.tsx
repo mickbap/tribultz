@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { API_BASE } from "@/lib/api";
+import { API_BASE, fetchWithRetry } from "@/lib/api";
 
 const WA_NUMBER = "5551991881026";
 const WA_REJEICAO = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
@@ -44,7 +44,7 @@ export function Classifier() {
     setResult(null);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/public/ncm/suggest`, {
+      const res = await fetchWithRetry(`${API_BASE}/api/v1/public/ncm/suggest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ descricao: desc }),

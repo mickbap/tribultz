@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { API_BASE, createTransactionId } from "@/lib/api";
+import { API_BASE, createTransactionId, fetchWithRetry } from "@/lib/api";
 import { UF_LIST } from "@/lib/data/ufList";
 import { CST_LIST } from "@/lib/data/cstList";
 
@@ -80,9 +80,8 @@ function CalculadoraInner() {
       if (ncm.trim()) body.ncm_code = ncm.trim();
 
       const endpoint = `${API_BASE}/api/v1/public/calculadora/regime-geral`;
-      console.log("Endpoint da calculadora:", endpoint);
 
-      const res = await fetch(endpoint, {
+      const res = await fetchWithRetry(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -140,7 +139,7 @@ function CalculadoraInner() {
     setSuggestLoading(true);
     setSuggestResult(null);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/public/ncm/suggest`, {
+      const res = await fetchWithRetry(`${API_BASE}/api/v1/public/ncm/suggest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ descricao: suggestDesc.trim() }),

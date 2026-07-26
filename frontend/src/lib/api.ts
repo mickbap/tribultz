@@ -20,6 +20,28 @@ import { getTenantId, getToken } from "./storage";
 // which hits the Next.js server itself and returns 404.
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
+/**
+ * Retries only on network-level failures (fetch throwing — DNS, connection
+ * refused/reset, CORS). Never retries HTTP error responses (429/422/503 are
+ * real business responses, not transient blips) — those still reach the
+ * caller via a normal (non-ok) Response. Guards public tools (calculadora,
+ * classificacao) against brief gaps during a backend deploy/restart.
+ */
+export async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retries = 2,
+  delayMs = 600,
+): Promise<Response> {
+  try {
+    return await fetch(url, options);
+  } catch (err) {
+    if (retries <= 0) throw err;
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    return fetchWithRetry(url, options, retries - 1, delayMs * 2);
+  }
+}
+
 export function createTransactionId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
