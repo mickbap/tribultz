@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PublicNavbarMobileMenu } from "./PublicNavbarMobileMenu";
-import { PUBLIC_NAV_LINKS } from "./publicNavLinks";
+import { PUBLIC_NAV_LINKS, isNavGroup } from "./publicNavLinks";
 
 function TribultzLogo({ dark = false }: { dark?: boolean }) {
   const textColor = dark ? "#FFFFFF" : "#24292E";
@@ -25,11 +25,39 @@ export function PublicNavbar() {
         </Link>
 
         <nav className="hidden items-center gap-7 text-sm md:flex" aria-label="Navegação pública">
-          {PUBLIC_NAV_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className="font-medium text-slate-600 transition-colors hover:text-[#2956E3]">
-              {link.label}
-            </Link>
-          ))}
+          {PUBLIC_NAV_LINKS.map((entry) =>
+            isNavGroup(entry) ? (
+              <div key={entry.label} className="group relative">
+                <button
+                  type="button"
+                  className="flex items-center gap-1 font-medium text-slate-600 transition-colors hover:text-[#2956E3]"
+                  aria-haspopup="true"
+                >
+                  {entry.label}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+                <div
+                  className="invisible absolute left-0 top-full z-10 w-52 rounded-xl border border-slate-200 bg-white py-2 opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+                >
+                  {entry.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="block px-4 py-2 font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-[#2956E3]"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Link key={entry.href} href={entry.href} className="font-medium text-slate-600 transition-colors hover:text-[#2956E3]">
+                {entry.label}
+              </Link>
+            ),
+          )}
           <Link href="/login" className="font-medium text-slate-500 transition-colors hover:text-slate-800">
             Entrar
           </Link>
