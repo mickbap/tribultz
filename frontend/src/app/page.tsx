@@ -10,11 +10,13 @@ export const metadata: Metadata = {
   // title.template do layout raiz ("%s | Tribultz") não se aplica quando este
   // page.tsx do mesmo segmento define seu próprio title (#503) — sufixo manual.
   title: "IBS e CBS sem Rejeição de NF-e — Compliance LC 214 | Tribultz",
-  description: `Rejeição 1024 por cClassTrib errado? Penalidades CBS/IBS a partir de agosto/2026. Valide CST × cClassTrib e ${RULES_COUNT} regras da Reforma, calcule CBS/IBS e exporte para TOTVS/SAP/Omie/Linx. 100 créditos API grátis.`,
+  description: `Rejeição 1024 por cClassTrib errado? Penalidades CBS/IBS a partir de agosto/2026. Valide CST × cClassTrib e ${RULES_COUNT} regras de NF-e, NFC-e e NFS-e da Reforma (NT 2025.002-RTC v1.40 + NT 2026.002), calcule CBS/IBS e exporte para TOTVS/SAP/Omie/Linx. 100 créditos API grátis.`,
   keywords: [
     "Rejeição 1024 NF-e", "cClassTrib CBS IBS", "NCM cClassTrib LC 214",
     "penalidades CBS IBS 2026", "validação NF-e reform tributária",
     "compliance CBS IBS", "API NCM classificação", "TOTVS SAP Omie Linx CBS IBS",
+    "NT 2025.002 RTC v1.40", "DANFE Simplificado CBS IBS", "NFS-e CBS IBS",
+    "Simples Nacional MEI CBS IBS 2027", "split payment 2027",
   ],
   openGraph: {
     title: "IBS e CBS sem Rejeição de NF-e | Tribultz",
