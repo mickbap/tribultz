@@ -109,9 +109,15 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     <<: *common
-    # Celery worker não expõe HTTP — desabilita HEALTHCHECK do Dockerfile
+    # Celery worker não expõe HTTP — o HEALTHCHECK do Dockerfile (curl :8000/health)
+    # sempre reportaria "unhealthy" por design, não por defeito real (#522). Mesma
+    # checagem nativa já validada no docker-compose.yml de dev: inspect ping.
     healthcheck:
-      disable: true
+      test: ["CMD", "celery", "-A", "app.celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     command:
       - celery
       - -A
