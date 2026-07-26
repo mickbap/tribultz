@@ -33,7 +33,9 @@ _CACHE_TTL_SECONDS = 86_400 * 30  # 30 days
 _LLM_MODELS = [
     "openrouter/openai/gpt-oss-20b:free",
     "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
-    "openrouter/google/gemma-4-31b-it:free",
+    # gemma-4-31b-it:free ficou persistentemente rate-limited (429) em produção
+    # 2026-07-26 — troca por outra variante Gemma, endpoint upstream diferente.
+    "openrouter/google/gemma-4-26b-a4b-it:free",
 ]
 
 _SYSTEM_PROMPT = """\
@@ -171,7 +173,10 @@ def _llm_classify(descricao: str) -> dict:
                 ],
                 api_key=api_key,
                 base_url="https://openrouter.ai/api/v1",
-                max_tokens=150,
+                # 150 cortava modelos de raciocínio (gpt-oss, nemotron) no meio do
+                # "thinking", antes de emitirem o JSON final (confirmado em log de
+                # produção, 2026-07-26) — 500 dá espaço pro raciocínio + resposta.
+                max_tokens=500,
                 temperature=0.1,
                 timeout=20,
             )
