@@ -144,6 +144,19 @@ export default async function BlogPostPage({
         </article>
 
         <footer className="mt-16 border-t border-slate-100 pt-8">
+          {post.updatedAt && post.updatedAt !== post.publishedAt && (
+            <p className="mb-4 text-xs text-slate-500">
+              Atualizado em{" "}
+              <time dateTime={post.updatedAt}>
+                {new Date(post.updatedAt + "T00:00:00").toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </time>
+              {post.updateNote && <> — {post.updateNote}</>}
+            </p>
+          )}
           <Link
             href="/blog"
             className="text-sm font-semibold text-blue-700 hover:underline"
