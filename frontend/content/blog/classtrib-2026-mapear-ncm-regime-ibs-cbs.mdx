@@ -8,7 +8,8 @@ author:
   jobTitle: "Conteúdo Fiscal"
   url: "https://tribultz.com.br/sobre"
 publishedAt: "2026-06-05"
-updatedAt: "2026-06-05"
+updatedAt: "2026-07-26"
+updateNote: "NT 2025.002 citada como V1.36 (desatualizada) — corrigido para a versão vigente, v1.40. Referências à tabela cClassTrib SVRS deixaram de citar número de versão fixo, já que é re-sincronizada diariamente."
 tags:
   - cClassTrib
   - NCM
@@ -27,12 +28,12 @@ legalRefs:
     artigo: "Art. 348 §§ 3º e 4º"
     descricao: "Período educativo 2026 — alíquotas CBS 0,9% e IBS 0,1%."
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp227.htm"
-  - instrumento: "NT 2025.002 V1.36"
+  - instrumento: "NT 2025.002-RTC v1.40"
     artigo: "Seção 4.2"
     descricao: "Define a estrutura do campo cClassTrib, a tabela de CSTs válidos e as regras de rejeição 1024–1035."
-  - instrumento: "Tabela cClassTrib SVRS V1.36"
+  - instrumento: "Tabela cClassTrib SVRS"
     artigo: "—"
-    descricao: "Mapeamento oficial NCM → regime → cClassTrib. Atualizada em abril de 2026."
+    descricao: "Mapeamento oficial NCM → regime → cClassTrib, re-sincronizado diariamente da fonte oficial SVRS."
     link: "https://dfe-portal.svrs.rs.gov.br/Cff/ClassificacaoTributaria"
   - instrumento: "Convênio ICMS 142/2018"
     artigo: "Anexo I e II"
@@ -220,7 +221,7 @@ Acesse a tabela oficial em [dfe-portal.svrs.rs.gov.br](https://dfe-portal.svrs.r
 Confirme que os três primeiros dígitos do cClassTrib coincidem com o CST que será emitido no XML. Esse é o ponto exato que a SEFAZ valida para a [Rejeição 1024](/blog/rejeicao-1024-nfe-cbs-ibs-como-corrigir).
 
 **6. Atualize o cadastro e valide o XML**
-Insira o cClassTrib correto no cadastro do produto do ERP. Antes de emitir, valide o XML pelo [Diagnóstico NF-e da Tribultz](https://tribultz.com.br/diagnostico). A validação prévia aplica as 18 regras da NT 2025.002 e devolve um relatório de inconsistências com severidade e sugestão de correção — evitando que a Rejeição 1024 apareça só na SEFAZ, em produção, com operação já comprometida.
+Insira o cClassTrib correto no cadastro do produto do ERP. Antes de emitir, valide o XML pelo [Diagnóstico NF-e da Tribultz](https://tribultz.com.br/diagnostico). A validação prévia aplica as regras da NT 2025.002-RTC v1.40 e devolve um relatório de inconsistências com severidade e sugestão de correção — evitando que a Rejeição 1024 apareça só na SEFAZ, em produção, com operação já comprometida.
 
 ---
 
@@ -262,7 +263,7 @@ O [Classificador NCM → cClassTrib](https://tribultz.com.br/classificacao) da T
 
 1. Informe o NCM
 2. Selecione o tipo de operação (saída nacional, exportação, entidade beneficente...)
-3. O classificador consulta a tabela SVRS V1.36 e retorna o cClassTrib correto + CST compatível + base legal
+3. O classificador consulta a tabela SVRS (re-sincronizada diariamente) e retorna o cClassTrib correto + CST compatível + base legal
 
 Para volume, a API pública `POST /api/v1/public/classtrib/{ncm}` aceita requisições sem autenticação até 100/dia — suficiente para validar o cadastro de produtos de uma empresa de médio porte em uma tarde.
 

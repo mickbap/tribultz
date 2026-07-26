@@ -74,3 +74,23 @@ test("guard: conteúdo correto → sem findings", () => {
   );
   assert.equal(f.length, 0);
 });
+
+test("guard: NT 2025.002 V1.36 citada (vigente é v1.40) → erro NT_VERSAO_DESATUALIZADA", () => {
+  const f = lintBlogFiscal('instrumento: "NT 2025.002 V1.36"', valid);
+  assert.ok(f.some((x) => x.rule === "NT_VERSAO_DESATUALIZADA"));
+});
+
+test("guard: NT 2025.002-RTC v1.40 citada (vigente) → sem finding", () => {
+  const f = lintBlogFiscal('instrumento: "NT 2025.002-RTC v1.40"', valid);
+  assert.equal(f.filter((x) => x.rule === "NT_VERSAO_DESATUALIZADA").length, 0);
+});
+
+test("guard: NT 2026.002 v1.00 citada (vigente) → sem finding", () => {
+  const f = lintBlogFiscal("conforme a NT 2026.002 v1.00", valid);
+  assert.equal(f.filter((x) => x.rule === "NT_VERSAO_DESATUALIZADA").length, 0);
+});
+
+test("guard: NT sem versão vigente registrada (ex. NT 007/2026) → sem finding (não derruba por falta de dado)", () => {
+  const f = lintBlogFiscal("conforme a NT 999.999 v1.00", valid);
+  assert.equal(f.filter((x) => x.rule === "NT_VERSAO_DESATUALIZADA").length, 0);
+});

@@ -8,7 +8,8 @@ author:
   jobTitle: "Conteúdo Fiscal"
   url: "https://tribultz.com.br/sobre"
 publishedAt: "2026-06-05"
-updatedAt: "2026-06-05"
+updatedAt: "2026-07-26"
+updateNote: "NT 2025.002 citada como V1.36 (desatualizada) — corrigido para a versão vigente, v1.40. Seção sobre versões da tabela cClassTrib reescrita: removidas afirmações específicas não verificáveis sobre a V1.36, substituídas por explicação de que a tabela é re-sincronizada diariamente da fonte oficial SVRS."
 tags:
   - cClassTrib
   - NCM
@@ -27,15 +28,15 @@ legalRefs:
     artigo: "Art. 348 §§ 3º e 4º"
     descricao: "Período educativo 2026 — alíquotas reduzidas de CBS (0,9%) e IBS (0,1%) durante a fase de transição."
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp227.htm"
-  - instrumento: "NT 2025.002 V1.36"
-    artigo: "Regras 01–18"
+  - instrumento: "NT 2025.002-RTC v1.40"
+    artigo: "—"
     descricao: "Nota Técnica que define as regras de validação cClassTrib × CST, incluindo a Rejeição 1024 e estrutura do gIBSCBS."
   - instrumento: "Convênio ICMS 142/2018"
     artigo: "Anexo I e II"
     descricao: "Lista de NCMs sujeitos à substituição tributária — CEST obrigatório, relevante para cClassTrib em operações com ST."
-  - instrumento: "Tabela cClassTrib SVRS V1.36"
+  - instrumento: "Tabela cClassTrib SVRS"
     artigo: "—"
-    descricao: "Tabela oficial de classificação tributária CBS/IBS, atualizada em abril de 2026."
+    descricao: "Tabela oficial de classificação tributária CBS/IBS, re-sincronizada diariamente da fonte oficial."
     link: "https://dfe-portal.svrs.rs.gov.br/Cff/ClassificacaoTributaria"
 ---
 
@@ -117,7 +118,7 @@ Após identificar o cClassTrib, valide que os três primeiros dígitos coincidem
 
 ## Tabela de regimes e seus cClassTrib
 
-A tabela a seguir resume os principais regimes tributários CBS/IBS e os prefixos cClassTrib correspondentes na NT 2025.002 (versão V1.36, atualização de abril de 2026):
+A tabela a seguir resume os principais regimes tributários CBS/IBS e os prefixos cClassTrib correspondentes na NT 2025.002-RTC (versão vigente v1.40):
 
 | Regime (situação tributária oficial) | CST | Prefixo cClassTrib | Exemplos de produtos |
 |--------|-----|--------------------|---------------------|
@@ -174,19 +175,15 @@ Use a API pública da Tribultz (`POST /api/v1/public/classtrib/{ncm}`) ou a inte
 Importe o de-para (NCM → cClassTrib) pelo módulo de importação do seu ERP. ERPs como TOTVS, SAP e Omie já possuem campos específicos para cClassTrib na tabela de produtos.
 
 **5. Execute uma validação pré-emissão**
-Antes de voltar para produção, valide uma amostra de XMLs pelo [Diagnóstico NF-e da Tribultz](https://tribultz.com.br/diagnostico). O diagnóstico aplica as 18 regras da NT 2025.002 e destaca incompatibilidades cClassTrib × CST.
+Antes de voltar para produção, valide uma amostra de XMLs pelo [Diagnóstico NF-e da Tribultz](https://tribultz.com.br/diagnostico). O diagnóstico aplica as regras da NT 2025.002-RTC v1.40 e destaca incompatibilidades cClassTrib × CST.
 
 ---
 
-## Atenção: versões da tabela cClassTrib
+## Atenção: a tabela cClassTrib muda com frequência
 
-A tabela cClassTrib é atualizada periodicamente pela SVRS. A versão vigente em junho de 2026 é a **V1.36**, publicada em abril de 2026. Mudanças relevantes nessa versão:
+A SVRS atualiza a tabela cClassTrib com frequência — a tabela oficial usada pela Tribultz é re-sincronizada diariamente, não presa a uma versão fixa. Códigos novos são incluídos e códigos antigos podem ser descontinuados a qualquer momento, sem calendário fixo de publicação.
 
-- Inclusão de novos cClassTrib para dispositivos médicos com benefício fiscal (LC 214, art. 53)
-- Revisão dos cClassTrib para veículos elétricos (CST 200, alíquota reduzida)
-- Novos cClassTrib para ajustes de IBS em operações na Zona Franca de Manaus (CST 810)
-
-Se seu sistema foi configurado com uma versão anterior da tabela, alguns cClassTrib podem ter sido descontinuados, causando rejeição mesmo que a combinação CST × prefixo seja válida formalmente.
+Se seu sistema consulta uma cópia local da tabela (em vez de integrar com a fonte oficial ou com um serviço que sincroniza continuamente), alguns cClassTrib podem estar desatualizados — causando rejeição mesmo que a combinação CST × prefixo tenha sido válida no passado.
 
 ---
 
@@ -194,7 +191,7 @@ Se seu sistema foi configurado com uma versão anterior da tabela, alguns cClass
 
 | Ferramenta | O que valida | Limite gratuito |
 |------------|-------------|-----------------|
-| [Diagnóstico NF-e](https://tribultz.com.br/diagnostico) | 18 regras NT 2025.002 + cClassTrib | 20/dia |
+| [Diagnóstico NF-e](https://tribultz.com.br/diagnostico) | Regras da NT 2025.002-RTC v1.40 + cClassTrib | 20/dia |
 | [Classificador NCM](https://tribultz.com.br/classificacao) | NCM → cClassTrib + CST | 100/dia |
 | [Calculadora CBS/IBS](https://tribultz.com.br/calculadora) | Cálculo vCBS/vIBS por NCM + UF | 100/dia |
 | API pública `/classtrib/{ncm}` | Consulta programática | 100 req/dia |

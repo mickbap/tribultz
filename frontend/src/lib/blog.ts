@@ -20,6 +20,8 @@ export type PostFrontmatter = {
   author: PostAuthor;
   publishedAt: string;
   updatedAt?: string;
+  /** Referência curta do que mudou na atualização (ex.: "NT 2025.002-RTC v1.36 → v1.40"). Exibida no rodapé junto com updatedAt. */
+  updateNote?: string;
   tags: string[];
   coverImage?: string;
   legalRefs?: LegalRef[];

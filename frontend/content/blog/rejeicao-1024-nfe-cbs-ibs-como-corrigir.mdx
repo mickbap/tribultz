@@ -8,7 +8,8 @@ author:
   jobTitle: "Conteúdo Fiscal"
   url: "https://tribultz.com.br/sobre"
 publishedAt: "2026-06-05"
-updatedAt: "2026-06-05"
+updatedAt: "2026-07-26"
+updateNote: "NT 2025.002 citada como V1.36 (desatualizada) — corrigido para a versão vigente, v1.40. Referências à tabela cClassTrib SVRS deixaram de citar número de versão fixo, já que é re-sincronizada diariamente."
 tags:
   - "Rejeição 1024"
   - NF-e
@@ -19,7 +20,7 @@ tags:
   - "Reforma Tributária"
 coverImage: "https://tribultz.com.br/blog/og-rejeicao-1024.png"
 legalRefs:
-  - instrumento: "NT 2025.002 V1.36"
+  - instrumento: "NT 2025.002-RTC v1.40"
     artigo: "Regra 05"
     descricao: "Define a Rejeição 1024 — incompatibilidade entre CST declarado e os três primeiros dígitos do cClassTrib."
   - instrumento: "LC 214/2025"
@@ -31,9 +32,9 @@ legalRefs:
   - instrumento: "Ajuste SINIEF 31/2024"
     artigo: "Cláusula 3ª"
     descricao: "Altera o leiaute da NF-e para incluir o grupo gIBSCBS, campos cClassTrib, pCBS, vCBS, pIBS e vIBS por item."
-  - instrumento: "Tabela cClassTrib SVRS V1.36"
+  - instrumento: "Tabela cClassTrib SVRS"
     artigo: "—"
-    descricao: "Tabela oficial de mapeamento NCM × CST × cClassTrib, atualizada em abril de 2026."
+    descricao: "Tabela oficial de mapeamento NCM × CST × cClassTrib, re-sincronizada diariamente da fonte oficial."
     link: "https://dfe-portal.svrs.rs.gov.br/Cff/ClassificacaoTributaria"
 ---
 
@@ -155,11 +156,11 @@ Localize o campo `cClassTrib` no mesmo grupo `gIBSCBS`. Os três primeiros dígi
 
 **Passo 4 — Consulte o cClassTrib correto**
 
-Acesse [tribultz.com.br/classificacao](https://tribultz.com.br/classificacao), informe o NCM do produto e o regime tributário aplicável. O classificador retorna o cClassTrib correto e o CST compatível com base na tabela SVRS V1.36.
+Acesse [tribultz.com.br/classificacao](https://tribultz.com.br/classificacao), informe o NCM do produto e o regime tributário aplicável. O classificador retorna o cClassTrib correto e o CST compatível com base na tabela SVRS (re-sincronizada diariamente).
 
 **Passo 5 — Atualize o cadastro e reemita**
 
-Corrija o cClassTrib no cadastro do produto no ERP. Antes de reemitir, use o [Diagnóstico NF-e da Tribultz](https://tribultz.com.br/diagnostico) para validar o XML completo contra as 18 regras da NT 2025.002 — incluindo as camadas 2 e 3 da tabela acima.
+Corrija o cClassTrib no cadastro do produto no ERP. Antes de reemitir, use o [Diagnóstico NF-e da Tribultz](https://tribultz.com.br/diagnostico) para validar o XML completo contra as regras da NT 2025.002-RTC v1.40 — incluindo as camadas 2 e 3 da tabela acima.
 
 ---
 
@@ -208,7 +209,7 @@ ERPs cloud geralmente publicam a tabela cClassTrib via atualização automática
 
 ## Como o Tribultz previne a Rejeição 1024
 
-O [Diagnóstico NF-e](https://tribultz.com.br/diagnostico) da Tribultz aplica as 18 regras da NT 2025.002 antes da emissão, diretamente sobre o XML gerado pelo seu ERP:
+O [Diagnóstico NF-e](https://tribultz.com.br/diagnostico) da Tribultz aplica as regras da NT 2025.002-RTC v1.40 antes da emissão, diretamente sobre o XML gerado pelo seu ERP:
 
 | Regra validada | O que detecta |
 |---------------|---------------|

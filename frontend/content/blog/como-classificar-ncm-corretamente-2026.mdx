@@ -8,7 +8,8 @@ author:
   jobTitle: "Conteúdo Fiscal"
   url: "https://tribultz.com.br/sobre"
 publishedAt: "2026-06-05"
-updatedAt: "2026-06-05"
+updatedAt: "2026-07-26"
+updateNote: "NT 2025.002 citada como V1.36 (desatualizada) — corrigido para a versão vigente, v1.40. Referências à tabela cClassTrib SVRS deixaram de citar número de versão fixo, já que é re-sincronizada diariamente."
 tags:
   - NCM
   - TIPI
@@ -33,7 +34,7 @@ legalRefs:
     artigo: "Anexos I–VI"
     descricao: "Os produtos listados nos Anexos têm regime tributário CBS/IBS diferenciado — o NCM é o critério de enquadramento."
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
-  - instrumento: "NT 2025.002 V1.36"
+  - instrumento: "NT 2025.002-RTC v1.40"
     artigo: "Seção 4.2"
     descricao: "Define a obrigatoriedade do NCM correto como base para o cClassTrib na NF-e."
 ---
@@ -281,14 +282,14 @@ A multa por classificação incorreta de NCM varia de **75% a 150% do IPI** não
 
 O [Classificador NCM → cClassTrib](https://tribultz.com.br/classificacao) da Tribultz parte do NCM já classificado e automatiza os passos seguintes:
 
-1. Consulta a tabela cClassTrib SVRS V1.36
+1. Consulta a tabela cClassTrib SVRS (re-sincronizada diariamente)
 2. Retorna o cClassTrib correto para o NCM informado, considerando regime e tipo de operação
 3. Exibe o CST compatível e a base legal (qual Anexo da LC 214 se aplica)
 4. Disponibiliza o snippet XML pronto para inserção no ERP
 
 O classificador **não substitui a classificação do NCM em si** — essa ainda é responsabilidade do contador ou especialista fiscal. Mas ele elimina o passo manual e propenso a erro de mapear NCM → cClassTrib a partir da tabela SVRS.
 
-Para validação pré-emissão, o [Diagnóstico NF-e](https://tribultz.com.br/diagnostico) aplica as 18 regras da NT 2025.002 sobre o XML completo — incluindo a compatibilidade NCM × cClassTrib, cálculos de CBS/IBS e completude do grupo gIBSCBS.
+Para validação pré-emissão, o [Diagnóstico NF-e](https://tribultz.com.br/diagnostico) aplica as regras da NT 2025.002-RTC v1.40 sobre o XML completo — incluindo a compatibilidade NCM × cClassTrib, cálculos de CBS/IBS e completude do grupo gIBSCBS.
 
 Planos pagos (a partir de R$ 49,90/mês) oferecem acesso à API autenticada com até 50.000 consultas/mês, ideal para equipes de compliance que precisam revisar catálogos grandes de produtos antes de auditorias ou mudanças de leiaute da NF-e.
 

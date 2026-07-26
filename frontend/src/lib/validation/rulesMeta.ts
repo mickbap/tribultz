@@ -33,3 +33,15 @@ export const RULES_LABEL = `${RULES_COUNT} regras determinísticas alinhadas às
  * automaticamente porque o arquivo-fonte vive no backend (fora do build do frontend).
  */
 export const CLASSTRIB_COUNT = 164;
+
+/**
+ * Versão vigente de cada Nota Técnica coberta pelo motor — fonte única pro
+ * `blogFiscalLint` detectar posts do blog que citam uma versão desatualizada
+ * (achado real: 4 posts citando "NT 2025.002 V1.36" quando a vigente já é
+ * v1.40, 2026-07-26). Atualizar aqui sempre que o motor migrar pra versão
+ * nova de uma NT — o lint aponta sozinho todo post que ficou pra trás.
+ */
+export const NT_CURRENT_VERSION: Record<string, string> = {
+  "NT 2025.002": "1.40",
+  "NT 2026.002": "1.00",
+};
