@@ -25,6 +25,7 @@ class ProspectScoringRun(Base):
     )
     rubric_version = Column(String(32), nullable=False)
     rubric_checksum = Column(String(64), nullable=False)  # sha256 do YAML, detecta edição
+    rubric_snapshot = Column(JSONB, nullable=False, server_default="{}")  # pesos completos usados — reprodutibilidade total mesmo se o YAML mudar/sumir
     source_dump_reference = Column(String(32), nullable=False)
     params = Column(JSONB, nullable=False, server_default="{}")  # snapshot dos args da CLI
     candidate_count = Column(Integer, nullable=False)  # pós consolidação+dedup+supressão
