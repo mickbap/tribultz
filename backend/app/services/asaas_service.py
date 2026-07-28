@@ -219,6 +219,26 @@ class AsaasService:
     async def get_payment(self, payment_id: str) -> dict[str, Any]:
         return await self._request("GET", f"/v3/payments/{payment_id}")
 
+    async def refund_payment(
+        self,
+        payment_id: str,
+        value: float | None = None,
+        description: str = "",
+    ) -> dict[str, Any]:
+        """Estorna um pagamento confirmado/recebido (cartão ou PIX).
+
+        value=None reembolsa o valor total da cobrança (padrão da API).
+        Usado pelo direito de arrependimento de 7 dias (CDC art. 49, #4).
+        """
+        payload: dict[str, Any] = {}
+        if value is not None:
+            payload["value"] = value
+        if description:
+            payload["description"] = description
+        result = await self._request("POST", f"/v3/payments/{payment_id}/refund", json=payload)
+        logger.info("Asaas payment refunded: %s", payment_id)
+        return result
+
     async def get_pix_qr_code(self, payment_id: str) -> dict[str, Any]:
         """Returns {encodedImage: base64_png, payload: copy_paste_code, expirationDate}."""
         result = await self._request("GET", f"/v3/payments/{payment_id}/pixQrCode")
