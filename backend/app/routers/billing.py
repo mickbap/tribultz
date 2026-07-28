@@ -437,6 +437,26 @@ async def upgrade_plan(
     if not current_sub:
         raise HTTPException(status_code=400, detail="Nenhuma assinatura encontrada.")
 
+    # ── Proporcionalidade (Escopo 3.2) ──────────────────────────
+    # Crédito pelos dias não usados do plano atual, abatido do primeiro
+    # pagamento do novo plano. Sem crédito (ex.: upgrade a partir do trial,
+    # sem período pago corrente) → comportamento cheio, sem proporção.
+    old_plan = db.execute(
+        select(Plan).where(Plan.id == current_sub.plan_id)
+    ).scalar_one_or_none()
+    now = datetime.now(timezone.utc)
+    days_remaining = 0
+    if current_sub.current_period_end is not None:
+        period_end = cast(datetime, current_sub.current_period_end)
+        if period_end > now:
+            days_remaining = min(30, (period_end - now).days)
+
+    old_price_cents = cast(int, old_plan.price_cents) if old_plan is not None else 0
+    target_price_cents = cast(int, target_plan.price_cents)
+    credit_cents = (old_price_cents * days_remaining) // 30 if days_remaining > 0 else 0
+    prorated_charge_cents = max(0, target_price_cents - credit_cents)
+    has_proration = credit_cents > 0 and prorated_charge_cents < target_price_cents
+
     # Cancel old Asaas subscription if exists
     asaas_sub_id = cast(str, current_sub.asaas_subscription_id) if current_sub.asaas_subscription_id is not None else None
     if asaas_sub_id:
@@ -450,7 +470,7 @@ async def upgrade_plan(
     current_sub.cancelled_at = datetime.now(timezone.utc)  # type: ignore[assignment]
 
     # Create new Asaas payment
-    value = cast(int, target_plan.price_cents) / 100.0
+    value = target_price_cents / 100.0
     checkout_url = None
     pix_qr_code = None
     pix_copy_paste = None
@@ -474,21 +494,43 @@ async def upgrade_plan(
             )
             customer_id = cust["id"]
 
-        # Create recurring Asaas subscription (monthly)
-        sub_resp = await asaas.create_subscription(
-            customer_id=customer_id,
-            value=value,
-            billing_type=billing_type.upper(),
-            description=f"Upgrade Tribultz — {cast(str, target_plan.name)}",
-        )
-        new_asaas_sub_id = sub_resp["id"]
+        if has_proration:
+            # Cobrança avulsa proporcional agora; a assinatura recorrente (valor
+            # cheio) só gera o próximo pagamento quando o período antigo acabaria
+            # — evita cobrar o valor cheio duas vezes no mesmo ciclo.
+            prorated_payment = await asaas.create_payment(
+                customer_id=customer_id,
+                value=prorated_charge_cents / 100.0,
+                billing_type=billing_type.upper(),
+                description=f"Upgrade Tribultz — {cast(str, target_plan.name)} (proporcional)",
+            )
+            asaas_payment_id = prorated_payment["id"]
 
-        # Retrieve first payment created automatically by Asaas
-        sub_payments = await asaas.get_subscription_payments(new_asaas_sub_id)
-        if not sub_payments:
-            raise ValueError("Asaas subscription created but no payment found")
-        first_payment = sub_payments[0]
-        asaas_payment_id = first_payment["id"]
+            next_due = cast(datetime, current_sub.current_period_end).strftime("%Y-%m-%d")
+            sub_resp = await asaas.create_subscription(
+                customer_id=customer_id,
+                value=value,
+                billing_type=billing_type.upper(),
+                description=f"Assinatura Tribultz — {cast(str, target_plan.name)}",
+                next_due_date=next_due,
+            )
+            new_asaas_sub_id = sub_resp["id"]
+        else:
+            # Create recurring Asaas subscription (monthly)
+            sub_resp = await asaas.create_subscription(
+                customer_id=customer_id,
+                value=value,
+                billing_type=billing_type.upper(),
+                description=f"Upgrade Tribultz — {cast(str, target_plan.name)}",
+            )
+            new_asaas_sub_id = sub_resp["id"]
+
+            # Retrieve first payment created automatically by Asaas
+            sub_payments = await asaas.get_subscription_payments(new_asaas_sub_id)
+            if not sub_payments:
+                raise ValueError("Asaas subscription created but no payment found")
+            first_payment = sub_payments[0]
+            asaas_payment_id = first_payment["id"]
 
         if billing_type.upper() == "PIX":
             pix_data = await asaas.get_pix_qr_code(asaas_payment_id)
@@ -512,12 +554,13 @@ async def upgrade_plan(
     db.add(new_sub)
     db.flush()
 
-    # Create payment record
+    # Create payment record — valor proporcional quando há crédito do plano anterior
+    charged_cents = prorated_charge_cents if has_proration else target_price_cents
     new_payment = Payment(
         tenant_id=current_sub.tenant_id,
         subscription_id=new_sub.id,
         asaas_payment_id=asaas_payment_id,
-        amount_cents=cast(int, target_plan.price_cents),
+        amount_cents=charged_cents,
         status="pending",
         payment_method=billing_type.lower(),
         pix_qr_code=pix_qr_code,
@@ -533,6 +576,8 @@ async def upgrade_plan(
         "checkout_url": checkout_url,
         "pix_qr_code": pix_qr_code,
         "pix_copy_paste": pix_copy_paste,
+        "amount_charged_cents": charged_cents,
+        "prorated": has_proration,
     }
 
 
