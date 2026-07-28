@@ -46,7 +46,12 @@ def put_object(
     def _write() -> dict:
         client = _client()
         sha = hashlib.sha256(data).hexdigest()
-        extra: dict = {"ContentType": content_type}
+        # Criptografia em repouso explícita (Escopo 4.3, go-live de billing) —
+        # a doc oficial da Magalu Object Storage não confirma SSE por padrão
+        # especificamente para Object Storage, então não dependemos do default
+        # da infra. AES256 (SSE-S3) é suportado tanto por MinIO (dev) quanto
+        # por provedores S3-compatíveis em produção.
+        extra: dict = {"ContentType": content_type, "ServerSideEncryption": "AES256"}
         if metadata:
             extra["Metadata"] = metadata
         client.put_object(
@@ -94,7 +99,18 @@ def get_object_url(
     )
 
 
-# ── 3. Checksum ──────────────────────────────────────────────
+# ── 3. Delete Object ─────────────────────────────────────────
+def delete_object(
+    key: str,
+    bucket: Optional[str] = None,
+) -> None:
+    """Delete an object from S3/MinIO — usado pelo job de retenção (Escopo 4.3)."""
+    bucket = bucket or settings.S3_BUCKET
+    client = _client()
+    client.delete_object(Bucket=bucket, Key=key)
+
+
+# ── 4. Checksum ──────────────────────────────────────────────
 def checksum(
     key: str,
     bucket: Optional[str] = None,

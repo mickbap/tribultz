@@ -89,9 +89,13 @@ export default function PrivacyPage() {
       <section>
         <h2 className="text-lg font-semibold text-slate-900">5. Segurança e retenção</h2>
         <ul className="mt-3 list-disc space-y-2 pl-6">
-          <li>Criptografia em trânsito, isolamento por tenant e controles de acesso.</li>
+          <li>Criptografia em trânsito e em repouso, isolamento por tenant e controles de acesso.</li>
           <li>Logs de auditoria e rastreabilidade para operações críticas.</li>
-          <li>Retenção de dados fiscais e operacionais conforme exigência legal e contratual.</li>
+          <li>
+            Os XMLs e demais documentos fiscais enviados são retidos por <strong>12 meses</strong> a
+            partir do envio; depois disso, são apagados automaticamente do armazenamento e do banco
+            de dados.
+          </li>
           <li>
             Anonimização ou exclusão de dados pessoais quando a retenção não for mais necessária
             ou quando houver obrigação legal compatível com o pedido do titular.
