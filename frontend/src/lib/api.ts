@@ -89,6 +89,8 @@ type RegisterRequest = {
   captcha_token?: string;
   // Proveniência comercial (RFC-0025): código do Partner do link ?partner=/?ref=.
   partner_code?: string;
+  // Atribuição de diagnóstico gratuito (Escopo A): id do link ?diag= no PDF.
+  diag_id?: string;
 };
 
 type RegisterResponse = {

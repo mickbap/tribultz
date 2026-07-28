@@ -186,6 +186,55 @@ def generate_credit_report_pdf(
     }
 
 
+def generate_prospect_diagnostic_pdf(
+    *,
+    office_name: str,
+    invoices: list[dict],
+    trial_url: str,
+    storage_key: str = "",
+) -> dict:
+    """Diagnóstico gratuito p/ prospecção comercial direta (Escopo A, plano de
+    aquisição). Cada item de ``invoices`` é {label, status (PASS|FAIL),
+    fatal_findings: [{rule_id, title, recommendation}]} — reaproveita o
+    Finding já produzido por validate_xml(), sem lógica específica por regra.
+
+    Returns a dict with keys: bytes, storage_key, file_size.
+    """
+    template = _jinja_env.get_template("report_prospect_diagnostic.html")
+    now = _generated_at_brasilia()
+
+    total = len(invoices)
+    rejected = sum(1 for inv in invoices if inv.get("status") == "FAIL")
+
+    html = template.render(
+        office_name=office_name,
+        generated_at=now,
+        invoices=invoices,
+        total=total,
+        rejected=rejected,
+        trial_url=trial_url,
+    )
+
+    try:
+        from weasyprint import HTML
+        pdf_bytes: bytes = HTML(string=html).write_pdf()  # type: ignore[assignment]
+        logger.info("Prospect diagnostic PDF generated for %r (%d bytes)", office_name, len(pdf_bytes))
+        if storage_key:
+            _persist_to_s3(storage_key, pdf_bytes, "application/pdf")
+    except (ImportError, OSError):
+        logger.warning("WeasyPrint unavailable (missing GTK/system libs), returning HTML fallback")
+        pdf_bytes = html.encode("utf-8")
+        if storage_key:
+            html_key = storage_key.replace(".pdf", ".html") if storage_key.endswith(".pdf") else storage_key + ".html"
+            _persist_to_s3(html_key, pdf_bytes, "text/html")
+
+    return {
+        "bytes": pdf_bytes,
+        "storage_key": storage_key,
+        "file_size": len(pdf_bytes),
+    }
+
+
 def generate_batch_report_pdf(
     *,
     company_name: str,

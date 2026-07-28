@@ -69,6 +69,10 @@ class UserRegister(BaseModel):
     # Proveniência comercial (RFC-0025): código do Partner que indicou a empresa,
     # capturado do link ?partner=/?ref=. Inválido/inativo NÃO bloqueia o cadastro.
     partner_code: str = ""
+    # Atribuição de diagnóstico gratuito (Escopo A, plano de aquisição comercial):
+    # id do ProspectDiagnostic capturado do link ?diag= no PDF. Inválido NÃO
+    # bloqueia o cadastro. Independente de partner_code (não é o mesmo conceito).
+    diag_id: str = ""
 
     @field_validator("phone")
     @classmethod
