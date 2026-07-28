@@ -18,7 +18,10 @@ milhões de linhas).
 Decisão de design explícita (não ambiguidade silenciosa): registros cuja matriz
 não está com situação cadastral ATIVA são excluídos de todo o universo de
 candidatos aqui, não só do Tier A — não há racional comercial para prospectar
-CNPJ baixado/suspenso/inapto em qualquer tier.
+CNPJ baixado/suspenso/inapto em qualquer tier. Esta decisão foi oficializada pela
+Ordem de Desenvolvimento Complementar à PO-2026-07-SALES-001 (item 7): situação
+cadastral é requisito de elegibilidade, não dimensão pontuada — substitui
+qualquer interpretação anterior do texto da PO original.
 
 Sócios: só a CONTAGEM por cnpj_basico é mantida — nome e CPF de sócio nunca são
 persistidos (minimização LGPD; a Receita já mascara parcialmente o CPF, mas o

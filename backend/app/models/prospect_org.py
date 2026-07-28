@@ -52,6 +52,10 @@ class ProspectOrg(Base):
     email = Column(String(255), nullable=True)
     email_domain = Column(String(255), nullable=True)
     email_domain_category = Column(String(20), nullable=True)  # ausente|gratuito|dominio_generico|dominio_nominal
+    # Tipo do endereço (Ordem Complementar, item 6) — independente do domínio:
+    # contato/comercial/financeiro/fiscal/suporte/nome_sobrenome/outro/ausente.
+    # Peso baixo na rubrica (rubric_v2.yaml), só para desempate.
+    email_type = Column(String(20), nullable=True)
 
     # ── Fatos da RF carregados só para não bloquear a Fase 2 (enriquecimento) ──
     cnpj_matriz = Column(String(14), nullable=False)
