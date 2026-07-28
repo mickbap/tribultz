@@ -1,0 +1,21 @@
+# Tolerâncias da guarda de sanidade da ingestão (Ordem Complementar à
+# PO-2026-07-SALES-001, item 1). Editável sem mudar código — mesmo padrão da
+# rubrica de score (versionado, mas este arquivo É editado in-place, pois não
+# precisa de reprodutibilidade histórica exata como a rubrica: uma tolerância
+# recalibrada vale para as próximas execuções, não precisa "congelar" o passado).
+#
+# Qualquer violação aborta a execução com erro explícito — nunca um warning.
+
+min_target_cnae_found: 1000
+max_target_cnae_found: 500000
+
+# Proporção mínima de "ativas" sobre o total de CNAE-alvo encontrado.
+min_ativas_ratio: 0.5
+
+# Variação relativa máxima vs. a última execução bem-sucedida com o mesmo
+# --target-cnaes. Sem execução anterior compatível, esta checagem é pulada.
+max_relative_change_vs_last_run: 0.5
+
+# Proporção máxima de linhas malformadas (nº de campos diferente do esperado)
+# por arquivo antes de considerar que o layout mudou parcialmente.
+max_malformed_row_ratio: 0.01
