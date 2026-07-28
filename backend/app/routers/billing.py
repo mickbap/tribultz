@@ -231,7 +231,7 @@ async def asaas_webhook(
                 send_ops_alert(
                     "Pagamento confirmado",
                     f"Usuário: {confirmed_user.email}\nPlano: {confirmed_plan.name}\n"
-                    f"Valor: R$ {int(confirmed_plan.price_cents) / 100:.2f}\n"
+                    f"Valor: R$ {cast(int, confirmed_plan.price_cents) / 100:.2f}\n"
                     f"Método: {payment.payment_method}\nAsaas payment id: {asaas_payment_id}",
                 )
             # CRM sync: move deal to closedwon
