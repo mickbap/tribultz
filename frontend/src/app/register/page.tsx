@@ -77,6 +77,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [billingType, setBillingType] = useState<"PIX" | "CREDIT_CARD">("PIX");
   const [lgpdConsent, setLgpdConsent] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [multiTenantConsent, setMultiTenantConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -120,6 +121,10 @@ export default function RegisterPage() {
       setToast({ tone: "error", msg: "Você deve aceitar a Política de Privacidade para prosseguir." });
       return false;
     }
+    if (!termsAccepted) {
+      setToast({ tone: "error", msg: "Você deve aceitar os Termos de Uso para prosseguir." });
+      return false;
+    }
     if ((planSlug === "empresarial" || planSlug === "contador") && !multiTenantConsent) {
       setToast({ tone: "error", msg: "Você deve aceitar o termo de Responsabilidade Multi-Tenant para prosseguir." });
       return false;
@@ -152,7 +157,8 @@ export default function RegisterPage() {
         account_type: accountType,
         plan_slug: planSlug,
         billing_type: billingType,
-        lgpd_consent: true,
+        lgpd_consent: lgpdConsent,
+        terms_accepted: termsAccepted,
         tenant_slug: "",
         captcha_token: captchaToken,
         partner_code: partnerCode || undefined,
@@ -434,6 +440,15 @@ export default function RegisterPage() {
               Li e concordo com a{" "}
               <Link href="/privacy" target="_blank" className="font-medium text-tribultz-700 underline">Política de Privacidade</Link>{" "}
               e autorizo o tratamento dos meus dados pessoais e financeiros conforme a LGPD (Lei 13.709/2018).
+            </span>
+          </label>
+
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300" />
+            <span className="text-slate-600">
+              Li e concordo com os{" "}
+              <Link href="/terms" target="_blank" className="font-medium text-tribultz-700 underline">Termos de Uso</Link>{" "}
+              da Tribultz.
             </span>
           </label>
 

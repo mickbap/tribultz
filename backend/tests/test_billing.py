@@ -208,6 +208,7 @@ class TestUserRegisterValidation:
             "plan_slug": "trial",
             "billing_type": "PIX",
             "lgpd_consent": True,
+            "terms_accepted": True,
             "tenant_slug": "default",
         }
         defaults.update(overrides)
@@ -256,6 +257,10 @@ class TestUserRegisterValidation:
     def test_lgpd_consent_required(self):
         with pytest.raises(ValueError):
             UserRegister(**self._base_data(lgpd_consent=False))
+
+    def test_terms_accepted_required(self):
+        with pytest.raises(ValueError):
+            UserRegister(**self._base_data(terms_accepted=False))
 
     def test_account_type_invalid(self):
         with pytest.raises(ValueError):

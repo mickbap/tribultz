@@ -322,6 +322,7 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         )
 
     # Create user
+    consent_at = datetime.now(timezone.utc)
     user = User(
         tenant_id=tenant.id,
         email=data.email,
@@ -331,7 +332,9 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         phone=data.phone or None,
         account_type=data.account_type,
         role="admin" if data.account_type == "empresa" else "contador",
-        lgpd_consent_at=datetime.now(timezone.utc),
+        lgpd_consent_at=consent_at,
+        terms_accepted_at=consent_at,
+        consent_ip=ip,
         email_verified=False,
     )
     db.add(user)

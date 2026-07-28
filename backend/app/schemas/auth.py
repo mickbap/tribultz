@@ -62,6 +62,7 @@ class UserRegister(BaseModel):
     plan_slug: str = "trial"  # trial | starter | profissional | contador
     billing_type: str = "PIX"  # PIX | CREDIT_CARD (boleto not supported)
     lgpd_consent: bool = False
+    terms_accepted: bool = False
     tenant_slug: str = "default"
     captcha_token: str = ""
     # Proveniência comercial (RFC-0025): código do Partner que indicou a empresa,
@@ -124,6 +125,15 @@ class UserRegister(BaseModel):
         if not v:
             raise ValueError(
                 "Consentimento LGPD obrigatório para cadastro."
+            )
+        return v
+
+    @field_validator("terms_accepted")
+    @classmethod
+    def validate_terms_accepted(cls, v: bool) -> bool:
+        if not v:
+            raise ValueError(
+                "Aceite dos Termos de Uso obrigatório para cadastro."
             )
         return v
 
