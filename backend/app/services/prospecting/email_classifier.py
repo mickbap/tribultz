@@ -1,8 +1,11 @@
-"""Classifica o domínio de e-mail de um escritório contábil (PO-2026-07-SALES-001,
-Fase 1). Determinístico, sem chamada externa nem IA — exigência explícita da PO
-para o pré-score.
+"""Classifica o e-mail de um escritório contábil (PO-2026-07-SALES-001, Fase 1;
+tipo do endereço adicionado pela Ordem Complementar, item 6). Determinístico,
+sem chamada externa nem IA.
 
-Categorias: ausente | gratuito | dominio_generico | dominio_nominal.
+Dois conceitos independentes, cada um com sua própria classificação:
+- classify_domain(): ausente | gratuito | dominio_generico | dominio_nominal.
+- classify_email_type(): contato | comercial | financeiro | fiscal | suporte |
+  nome_sobrenome | outro | ausente — peso baixo na rubrica, só para desempate.
 """
 
 from __future__ import annotations
@@ -79,3 +82,45 @@ def classify_domain(
     if any(t in root or root in t for t in tokens):
         return "dominio_nominal"
     return "dominio_generico"
+
+
+# Prefixos de papel/função do endereço (parte antes do @) — independente do
+# domínio. Ordem importa: "fiscal" é checado antes de "contabil" fazer parte
+# de "contabilidade" via _GENERIC_SUFFIXES não se aplicar aqui (lista própria).
+_ROLE_PREFIXES: dict[str, tuple[str, ...]] = {
+    "fiscal": ("fiscal", "tributos", "tributario"),
+    "financeiro": ("financeiro", "cobranca", "faturamento", "boleto"),
+    "comercial": ("comercial", "vendas", "sales", "negocios", "orcamento"),
+    "suporte": ("suporte", "support", "atendimento", "sac", "ajuda"),
+    "contato": ("contato", "contact", "info", "geral"),
+}
+
+
+def _looks_like_personal_name(local: str) -> bool:
+    """Heurística determinística para "nome.sobrenome" — sem lista de nomes
+    própria: dois ou mais tokens alfabéticos (>=2 letras) separados por
+    ./_/- e nada mais (evita casar "joao123" ou "contato.geral")."""
+    parts = re.split(r"[._-]", local)
+    if len(parts) < 2:
+        return False
+    return all(p.isalpha() and len(p) >= 2 for p in parts)
+
+
+def classify_email_type(email: str | None) -> str:
+    """Retorna: ausente | fiscal | financeiro | comercial | suporte | contato |
+    nome_sobrenome | outro. Peso baixo na rubrica — só auxilia desempate entre
+    registros semelhantes (Ordem Complementar, item 6)."""
+    if not email or "@" not in email:
+        return "ausente"
+    local = _strip_accents(email.split("@", 1)[0].strip().lower())
+    if not local:
+        return "ausente"
+
+    for type_name, prefixes in _ROLE_PREFIXES.items():
+        if any(local == p or local.startswith(p) for p in prefixes):
+            return type_name
+
+    if _looks_like_personal_name(local):
+        return "nome_sobrenome"
+
+    return "outro"

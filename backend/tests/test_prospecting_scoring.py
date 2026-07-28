@@ -40,6 +40,7 @@ def _base_input(
     capital_social: Decimal = Decimal("100000"),
     data_inicio_atividade: date | None = date(2015, 1, 1),  # ~11 anos
     email_domain_category: str = "dominio_nominal",
+    email_type: str = "ausente",
     qtd_estabelecimentos: int = 3,
     uf: str = "RS",
     razao_social: str = "Escritório Modelo Contabilidade Ltda",
@@ -52,6 +53,7 @@ def _base_input(
         capital_social=capital_social,
         data_inicio_atividade=data_inicio_atividade,
         email_domain_category=email_domain_category,
+        email_type=email_type,
         qtd_estabelecimentos=qtd_estabelecimentos,
         uf=uf,
         razao_social=razao_social,
@@ -115,12 +117,18 @@ class TestMeiCapInvariant:
 
 
 class TestBreakdownAndJustification:
-    def test_breakdown_has_all_six_dimensions(self):
+    def test_breakdown_has_all_seven_dimensions(self):
         result = compute_score(_base_input(), RUBRIC)
         assert set(result.breakdown) == {
             "socios", "porte", "capital_social", "idade_anos",
-            "email_domain_category", "estabelecimentos", "geografia",
+            "email_domain_category", "estabelecimentos", "geografia", "email_type",
         }
+
+    def test_email_type_defaults_to_ausente_and_scores_zero_on_rubric_v1(self):
+        # rubric_v1.yaml não define email_type — get_weight() cai em 0,
+        # compatibilidade retroativa automática (Ordem Complementar, item 6).
+        result = compute_score(_base_input(), RUBRIC)
+        assert result.breakdown["email_type"] == 0
 
     def test_justification_mentions_mei_when_applicable(self):
         result = compute_score(_base_input(opcao_mei=True), RUBRIC)
@@ -138,3 +146,28 @@ class TestBreakdownAndJustification:
 def test_socios_bucketing_matches_rubric_keys(qtd_socios, expected_key_weight):
     result = compute_score(_base_input(qtd_socios=qtd_socios), RUBRIC)
     assert result.breakdown["socios"] == RUBRIC.get_weight("socios", expected_key_weight)
+
+
+class TestRubricV2EmailType:
+    """Ordem Complementar, item 6 — email_type é dimensão nova só em rubric_v2.yaml."""
+
+    RUBRIC_V2 = load_rubric(version="v2")
+
+    def test_v2_loads_with_email_type_dimension(self):
+        assert "email_type" in self.RUBRIC_V2.scoring
+
+    def test_email_type_weight_is_low_by_design(self):
+        # Peso baixo (-1 a 2) — item 6 explicitamente pede que sirva só de
+        # desempate, nunca dominar o score como email_domain_category/porte.
+        weights = self.RUBRIC_V2.scoring["email_type"]
+        assert all(-1 <= w <= 2 for w in weights.values())
+
+    def test_nome_sobrenome_scores_higher_than_outro_on_v2(self):
+        base_score = compute_score(_base_input(email_type="outro"), self.RUBRIC_V2).score
+        nominal_score = compute_score(_base_input(email_type="nome_sobrenome"), self.RUBRIC_V2).score
+        assert nominal_score >= base_score
+
+    def test_v1_still_scores_email_type_as_zero(self):
+        # Compatibilidade retroativa: v1 nunca precisou ser editado.
+        result = compute_score(_base_input(email_type="nome_sobrenome"), RUBRIC)
+        assert result.breakdown["email_type"] == 0

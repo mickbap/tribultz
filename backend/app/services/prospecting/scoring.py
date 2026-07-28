@@ -31,6 +31,10 @@ class ScoreInput:
     qtd_estabelecimentos: int
     uf: str
     razao_social: str = ""
+    # Tipo do endereço (Ordem Complementar, item 6) — independente do domínio.
+    # Peso baixo por design (rubric_v2.yaml): só auxilia desempate. rubric_v1.yaml
+    # não define esta dimensão — get_weight() cai em 0, sem quebrar nada.
+    email_type: str = "ausente"
     as_of: date = field(default_factory=date.today)
 
 
@@ -100,6 +104,7 @@ def compute_score(inp: ScoreInput, rubric: Rubric) -> ScoreResult:
         "estabelecimentos", _estabelecimentos_key(inp.qtd_estabelecimentos)
     )
     breakdown["geografia"] = rubric.get_weight("geografia", inp.uf)
+    breakdown["email_type"] = rubric.get_weight("email_type", inp.email_type)
 
     raw = rubric.base_score + sum(breakdown.values())
     score = max(0, min(100, raw))
@@ -150,6 +155,14 @@ def _build_justification(inp: ScoreInput, breakdown: dict[str, int]) -> str:
         parts.append("empresa consolidada (10+ anos)")
     elif idade < 1:
         parts.append("empresa recém-aberta")
+
+    # Tipo de e-mail é critério de desempate (peso baixo) — só entra na
+    # justificativa quando é um sinal positivo relevante (nome_sobrenome/fiscal),
+    # não para toda categoria (evita poluir a frase com "outro"/"contato").
+    if inp.email_type == "nome_sobrenome":
+        parts.append("e-mail nominal (nome.sobrenome)")
+    elif inp.email_type == "fiscal":
+        parts.append("e-mail de área fiscal")
 
     sentence = ", ".join(parts)
     return sentence[0].upper() + sentence[1:] + "."

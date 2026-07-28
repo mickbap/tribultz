@@ -76,6 +76,16 @@ class TestBuildConsolidatedOrgs:
         assert beta.email_domain_category == "gratuito"
         assert delta.email_domain_category == "ausente"  # sem correio_eletronico no fixture
 
+    def test_email_type_classified_independently_of_domain(self):
+        # Ordem Complementar, item 6 — dimensão separada de email_domain_category.
+        orgs = build_consolidated_orgs(FIXTURE_DIR, dump_reference="2026-07-fixture")
+        alpha = next(o for o in orgs if o.cnpj_basico == "10000000")
+        beta = next(o for o in orgs if o.cnpj_basico == "20000000")
+        delta = next(o for o in orgs if o.cnpj_basico == "40000000")
+        assert alpha.email_type == "contato"  # contato@alphacontabilidade.com.br
+        assert beta.email_type == "outro"  # beta@gmail.com
+        assert delta.email_type == "ausente"  # sem correio_eletronico
+
     def test_source_dump_reference_is_stamped_on_every_org(self):
         orgs = build_consolidated_orgs(FIXTURE_DIR, dump_reference="2026-07-fixture")
         assert all(o.source_dump_reference == "2026-07-fixture" for o in orgs)

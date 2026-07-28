@@ -38,7 +38,11 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Optional
 
-from app.services.prospecting.email_classifier import classify_domain, extract_domain
+from app.services.prospecting.email_classifier import (
+    classify_domain,
+    classify_email_type,
+    extract_domain,
+)
 from app.services.prospecting.rf_parser import (
     SITUACAO_CADASTRAL_ATIVA,
     iter_empresas,
@@ -87,6 +91,7 @@ class ConsolidatedOrg:
     email: Optional[str]
     email_domain: Optional[str]
     email_domain_category: str
+    email_type: str
     cnae_principal: str
     cnaes_secundarios: list[str]
     source_dump_reference: str
@@ -167,6 +172,7 @@ def _consolidate_estabelecimentos(
             email=email,
             email_domain=domain,
             email_domain_category="ausente",  # recomputado após razão social ser conhecida
+            email_type=classify_email_type(email),  # não depende da razão social, já pode ser calculado aqui
             cnae_principal=matriz["cnae_fiscal_principal"],
             cnaes_secundarios=parse_cnaes_secundarios(matriz["cnae_fiscal_secundaria"]),
             source_dump_reference="",  # preenchido por build_consolidated_orgs
