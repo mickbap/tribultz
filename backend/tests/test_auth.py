@@ -1,7 +1,7 @@
 import pytest
 import os
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from app.database import get_db
@@ -217,3 +217,87 @@ def test_login_nonexistent_email(client, test_user):
     )
     assert response.status_code == 401
     assert response.json()["detail"] == "Email ou senha incorretos"
+
+
+# ── /add-cnpj — limite numérico por plano (Escopo 3.5 do go-live de billing) ──
+
+
+def _contador_with_plan(session, plan_slug: str):
+    """Cria um usuário account_type=contador com assinatura no plano informado
+    e 1 UserTenant já existente (o próprio tenant, is_default=True) — estado
+    real de qualquer conta contador recém-criada."""
+    import uuid
+    from app.models.billing import Plan, Subscription
+
+    tenant = Tenant(name="Escritório Contábil Teste", slug=f"contador-{uuid.uuid4()}")
+    session.add(tenant)
+    session.flush()
+
+    user = User(
+        email=f"contador-{uuid.uuid4()}@test.com",
+        full_name="Contador Teste",
+        password_hash=get_password_hash("password123"),
+        tenant_id=tenant.id,
+        role="contador",
+        account_type="contador",
+        email_verified=True,
+    )
+    session.add(user)
+    session.flush()
+
+    session.add(UserTenant(user_id=user.id, tenant_id=tenant.id, role="contador", is_default=True))
+
+    plan = session.execute(select(Plan).where(Plan.slug == plan_slug)).scalar_one()
+    session.add(Subscription(
+        tenant_id=tenant.id, user_id=user.id, plan_id=plan.id, status="active",
+    ))
+    session.commit()
+    session.refresh(user)
+    return user, tenant
+
+
+def test_add_cnpj_blocks_when_plan_limit_reached(client, session):
+    """Plano Profissional (max_cnpj=1): usuário já tem 1 CNPJ (o próprio) —
+    /add-cnpj deve bloquear com 403 antes de chamar a Receita Federal."""
+    user, tenant = _contador_with_plan(session, "profissional")
+
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": user.email, "password": "password123", "tenant_slug": tenant.slug},
+    )
+    assert login.status_code == 200
+
+    response = client.post(
+        "/api/v1/auth/add-cnpj",
+        json={"cnpj": "11222333000181"},
+        headers={"Authorization": f"Bearer {login.json()['access_token']}"},
+    )
+    assert response.status_code == 403
+    assert "Limite" in response.json()["detail"]
+
+
+def test_add_cnpj_allows_when_under_plan_limit(client, session):
+    """Plano Empresarial (max_cnpj=10): usuário com 1 CNPJ ainda tem margem —
+    /add-cnpj deve passar da checagem de limite (chega a validar o CNPJ)."""
+    from unittest.mock import AsyncMock, patch
+    from app.services.cnpj_validator import CnpjResult
+
+    user, tenant = _contador_with_plan(session, "empresarial")
+
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": user.email, "password": "password123", "tenant_slug": tenant.slug},
+    )
+    assert login.status_code == 200
+
+    mock_result = CnpjResult(
+        valid=True, cnpj="11222333000181", company_name="Cliente Teste Ltda",
+        status="ATIVA", error="",
+    )
+    with patch("app.routers.auth.validate_cnpj", new=AsyncMock(return_value=mock_result)):
+        response = client.post(
+            "/api/v1/auth/add-cnpj",
+            json={"cnpj": "11222333000181"},
+            headers={"Authorization": f"Bearer {login.json()['access_token']}"},
+        )
+    assert response.status_code == 200
