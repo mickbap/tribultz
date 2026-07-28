@@ -5,12 +5,13 @@ from datetime import datetime, timezone
 from typing import Annotated, Any, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.config import settings
 from app.core.security import get_password_hash
 from app.database import get_db
 from app.models.admin_audit import AdminAuditLog
@@ -23,6 +24,10 @@ from app.models.partner import (
     Partner,
     normalize_partner_code,
 )
+from app.models.prospect_diagnostic import ProspectDiagnostic
+from app.routers.validate_xml import validate_xml
+from app.services.pdf_service import generate_prospect_diagnostic_pdf
+from app.tools import s3_tool
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
@@ -838,3 +843,168 @@ def admin_set_tenant_partner(
     )
     db.commit()
     return {"id": str(tenant.id), "partner_id": str(body.partner_id) if body.partner_id else None}
+
+
+# ── Prospect Diagnostics (Escopo A, plano de aquisição comercial) ──────
+# Ferramenta interna: sobe 10-20 XMLs de um escritório contábil prospect e
+# gera um PDF auditável sem que o prospect precise ter conta. O PDF termina
+# com um link de trial atribuído (?diag=<id>) — ver _attach_prospect_diagnostic
+# em auth.py para a captura no /register.
+
+_PROSPECT_PRESIGNED_TTL = 3600  # uso interno (superadmin) — não precisa ser tão curto quanto o do cliente final
+
+
+class ProspectDiagnosticInvoiceResult(BaseModel):
+    label: str
+    status: str  # PASS | FAIL
+    fatal_count: int
+
+
+class ProspectDiagnosticResponse(BaseModel):
+    id: UUID
+    office_name: str
+    invoice_count: int
+    rejected_count: int
+    download_url: str
+    trial_url: str
+    invoices: list[ProspectDiagnosticInvoiceResult]
+
+
+@router.post("/prospect-diagnostics", response_model=ProspectDiagnosticResponse)
+async def create_prospect_diagnostic(
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+    office_name: str = Form(...),
+    files: list[UploadFile] = File(...),
+) -> ProspectDiagnosticResponse:
+    """Valida os XMLs de um prospect com o motor determinístico e gera um PDF
+    auditável (findings FATAL, base legal, data da penalidade) com link de
+    trial atribuído no final."""
+    office_name = office_name.strip()
+    if not office_name:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nome do escritório é obrigatório.")
+    if not files:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Envie ao menos um XML.")
+    if len(files) > 20:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Máximo de 20 XMLs por diagnóstico.")
+
+    invoices: list[dict[str, Any]] = []
+    for upload in files:
+        raw = await upload.read()
+        try:
+            xml_content = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            xml_content = raw.decode("latin-1", errors="replace")
+        try:
+            result = validate_xml(xml_content)
+        except Exception:
+            logger.exception("Falha ao validar XML de prospect: %s", upload.filename)
+            continue
+        fatal_findings = [
+            {"rule_id": f.rule_id, "title": f.title, "recommendation": f.recommendation}
+            for f in result.findings
+            if f.severity == "FATAL"
+        ]
+        invoices.append({
+            "label": upload.filename or "nota.xml",
+            "status": "FAIL" if fatal_findings else "PASS",
+            "fatal_findings": fatal_findings,
+        })
+
+    if not invoices:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum XML pôde ser processado.")
+
+    rejected_count = sum(1 for inv in invoices if inv["status"] == "FAIL")
+
+    diagnostic = ProspectDiagnostic(
+        office_name=office_name,
+        created_by_user_id=_admin.id,
+        invoice_count=len(invoices),
+        rejected_count=rejected_count,
+    )
+    db.add(diagnostic)
+    db.flush()
+
+    storage_key = f"prospect-diagnostics/{diagnostic.id}.pdf"
+    trial_url = f"{settings.FRONTEND_URL}/register?diag={diagnostic.id}"
+
+    try:
+        generate_prospect_diagnostic_pdf(
+            office_name=office_name,
+            invoices=invoices,
+            trial_url=trial_url,
+            storage_key=storage_key,
+        )
+    except Exception:
+        logger.exception("Falha ao gerar PDF de diagnóstico de prospect")
+        raise HTTPException(status_code=500, detail="Erro ao gerar PDF do diagnóstico.")
+
+    diagnostic.storage_key = storage_key  # type: ignore[assignment]
+    _audit(
+        db, _admin, "prospect_diagnostic.create", "prospect_diagnostic", diagnostic.id,
+        {"office_name": office_name, "invoice_count": len(invoices), "rejected_count": rejected_count},
+    )
+    db.commit()
+    db.refresh(diagnostic)
+
+    try:
+        download_url = s3_tool.get_object_url(key=storage_key, expires_in=_PROSPECT_PRESIGNED_TTL)
+    except Exception:
+        logger.exception("Erro ao gerar URL presigned para storage_key=%s", storage_key)
+        raise HTTPException(status_code=503, detail="PDF gerado, mas falhou ao criar o link de download.")
+
+    return ProspectDiagnosticResponse(
+        id=diagnostic.id,  # type: ignore[arg-type]
+        office_name=office_name,
+        invoice_count=len(invoices),
+        rejected_count=rejected_count,
+        download_url=download_url,
+        trial_url=trial_url,
+        invoices=[
+            ProspectDiagnosticInvoiceResult(
+                label=inv["label"], status=inv["status"], fatal_count=len(inv["fatal_findings"])
+            )
+            for inv in invoices
+        ],
+    )
+
+
+@router.get("/prospect-diagnostics")
+def list_prospect_diagnostics(
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+    limit: int = 50,
+) -> dict[str, Any]:
+    rows = db.execute(
+        select(ProspectDiagnostic).order_by(ProspectDiagnostic.created_at.desc()).limit(limit)
+    ).scalars().all()
+    return {
+        "total": len(rows),
+        "items": [
+            {
+                "id": str(r.id),
+                "office_name": r.office_name,
+                "invoice_count": r.invoice_count,
+                "rejected_count": r.rejected_count,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.get("/prospect-diagnostics/{diagnostic_id}/download")
+def download_prospect_diagnostic(
+    diagnostic_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(_require_superadmin)],
+) -> dict[str, str]:
+    diagnostic = db.get(ProspectDiagnostic, diagnostic_id)
+    if diagnostic is None or not cast(str, diagnostic.storage_key):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Diagnóstico não encontrado.")
+    try:
+        download_url = s3_tool.get_object_url(key=cast(str, diagnostic.storage_key), expires_in=_PROSPECT_PRESIGNED_TTL)
+    except Exception:
+        logger.exception("Erro ao gerar URL presigned para diagnóstico %s", diagnostic_id)
+        raise HTTPException(status_code=503, detail="Erro ao gerar URL de download.")
+    return {"download_url": download_url}
