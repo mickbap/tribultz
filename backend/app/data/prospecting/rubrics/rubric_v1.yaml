@@ -1,0 +1,81 @@
+# Rubrica de pré-score — Fase 1 (PO-2026-07-SALES-001)
+#
+# Versão imutável: uma vez publicada, nunca é editada in-place. Uma recalibração
+# gera um arquivo novo (rubric_v2.yaml, ...) para que reprocessar uma lista antiga
+# com outra rubrica e comparar estatisticamente os resultados (Fase 4, futura)
+# permaneça possível. Cada execução real de score_and_select.py grava a versão +
+# o checksum sha256 deste arquivo em prospect_scoring_runs.
+#
+# Fórmula de agregação (não especificada pela PO — decisão documentada aqui):
+#   score = clamp(base_score + soma dos pesos de cada dimensão, 0, 100)
+# MEI e e-mail ausente usam peso -100 propositalmente: devem dominar qualquer
+# outra pontuação positiva e levar o score para perto de 0, independentemente
+# da calibração das demais dimensões. Além disso, um guard de código (não só de
+# rubrica) força tier <= B quando opcao_mei é verdadeiro — o critério de aceite
+# "nenhum Tier A pode ser MEI" nunca depende só do peso -100 aqui.
+
+version: v1
+description: "Rubrica de pré-score Fase 1 — Plano Contador (PO-2026-07-SALES-001)"
+
+base_score: 50
+
+tiers:
+  A: {min: 80}
+  B: {min: 60}
+  C: {min: 40}
+  D: {min: 0}
+
+scoring:
+  # Quantidade de sócios (Sócios.csv, contagem por cnpj_basico)
+  socios:
+    "1": 2
+    "2": 6
+    "3_or_more": 10
+
+  # Porte (Empresas.csv) mesclado com o indicador MEI (Simples.csv) — quando
+  # opcao_mei é verdadeiro, a chave "mei" é usada em vez do código de porte
+  # (ver scoring.py: MEI não é um dos 4 códigos de porte, é um flag separado).
+  porte:
+    mei: -100
+    "00": 0
+    "01": 3
+    "03": 8
+    "05": 12
+
+  # Capital social (Empresas.csv), em reais
+  capital_social:
+    faixas:
+      - {ate: 5000, peso: 0}
+      - {ate: 50000, peso: 4}
+      - {ate: 200000, peso: 8}
+      - {acima: 200000, peso: 12}
+
+  # Idade da empresa em anos, a partir de data_inicio_atividade (Estabelecimentos.csv)
+  idade_anos:
+    faixas:
+      - {ate: 1, peso: -3}
+      - {ate: 3, peso: 2}
+      - {ate: 10, peso: 6}
+      - {acima: 10, peso: 10}
+
+  # Categoria do domínio de e-mail (ver email_classifier.py)
+  email_domain_category:
+    ausente: -100
+    gratuito: 2
+    dominio_generico: 7
+    dominio_nominal: 12
+
+  # Quantidade de estabelecimentos (matriz + filiais) do CNPJ básico
+  estabelecimentos:
+    "1": 0
+    "2_3": 5
+    "4_plus": 10
+
+  # UF do estabelecimento matriz. "default" cobre qualquer UF não listada
+  # explicitamente — nunca falha por rubrica incompleta.
+  geografia:
+    default: 0
+    RS: 10
+    SC: 7
+    PR: 6
+    SP: 5
