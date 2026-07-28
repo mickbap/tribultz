@@ -35,6 +35,7 @@ class Plan(Base):
     has_dashboard = Column(Boolean, nullable=False, default=False)
     has_api_access = Column(Boolean, nullable=False, default=False)
     has_multi_cnpj = Column(Boolean, nullable=False, default=False)
+    max_cnpj = Column(Integer, nullable=False, default=1)  # 1|1|1|10|50 (trial..contador)
     trial_days = Column(Integer, nullable=True)  # 3 for trial, NULL otherwise
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(
