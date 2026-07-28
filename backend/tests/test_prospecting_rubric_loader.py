@@ -6,6 +6,7 @@ import yaml
 from app.services.prospecting.rubric_loader import (
     RubricValidationError,
     load_rubric,
+    load_rubric_from_snapshot,
 )
 
 
@@ -67,3 +68,27 @@ class TestLoadRubricValidation:
     def test_no_version_and_no_path_raises(self):
         with pytest.raises(RubricValidationError):
             load_rubric()
+
+
+class TestRubricSnapshotRoundTrip:
+    def test_to_snapshot_and_back_preserves_scoring_fields(self):
+        original = load_rubric(version="v1")
+        snapshot = original.to_snapshot()
+        reconstructed = load_rubric_from_snapshot(snapshot)
+
+        assert reconstructed.version == original.version
+        assert reconstructed.checksum == original.checksum
+        assert reconstructed.base_score == original.base_score
+        assert reconstructed.tiers == original.tiers
+        assert reconstructed.scoring == original.scoring
+
+    def test_reconstructed_rubric_scores_identically(self):
+        original = load_rubric(version="v1")
+        reconstructed = load_rubric_from_snapshot(original.to_snapshot())
+
+        assert reconstructed.get_weight("geografia", "RS") == original.get_weight("geografia", "RS")
+        assert reconstructed.tier_for_score(85) == original.tier_for_score(85)
+
+    def test_snapshot_missing_required_keys_raises(self):
+        with pytest.raises(RubricValidationError, match="checksum"):
+            load_rubric_from_snapshot({"version": "v1", "base_score": 50, "tiers": {}, "scoring": {}})
