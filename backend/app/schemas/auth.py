@@ -63,6 +63,7 @@ class UserRegister(BaseModel):
     billing_type: str = "PIX"  # PIX | CREDIT_CARD (boleto not supported)
     lgpd_consent: bool = False
     terms_accepted: bool = False
+    refund_policy_accepted: bool = False
     tenant_slug: str = "default"
     captcha_token: str = ""
     # Proveniência comercial (RFC-0025): código do Partner que indicou a empresa,
@@ -134,6 +135,15 @@ class UserRegister(BaseModel):
         if not v:
             raise ValueError(
                 "Aceite dos Termos de Uso obrigatório para cadastro."
+            )
+        return v
+
+    @field_validator("refund_policy_accepted")
+    @classmethod
+    def validate_refund_policy_accepted(cls, v: bool) -> bool:
+        if not v:
+            raise ValueError(
+                "Aceite da Política de Reembolso obrigatório para cadastro."
             )
         return v
 

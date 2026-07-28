@@ -494,7 +494,7 @@ export default function PricingPage() {
             {[
               {
                 q: "Posso cancelar a qualquer momento?",
-                a: "Sim. Sem fidelidade, sem multa. Cancele pelo painel e mantenha o acesso até o fim do período pago.",
+                a: "Sim. Sem fidelidade, sem multa. Nos primeiros 7 dias, reembolso integral (direito de arrependimento, CDC art. 49). Depois disso, cancele pelo painel e mantenha o acesso até o fim do período pago.",
               },
               {
                 q: "Quais formas de pagamento são aceitas?",

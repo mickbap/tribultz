@@ -209,6 +209,7 @@ class TestUserRegisterValidation:
             "billing_type": "PIX",
             "lgpd_consent": True,
             "terms_accepted": True,
+            "refund_policy_accepted": True,
             "tenant_slug": "default",
         }
         defaults.update(overrides)
@@ -261,6 +262,10 @@ class TestUserRegisterValidation:
     def test_terms_accepted_required(self):
         with pytest.raises(ValueError):
             UserRegister(**self._base_data(terms_accepted=False))
+
+    def test_refund_policy_accepted_required(self):
+        with pytest.raises(ValueError):
+            UserRegister(**self._base_data(refund_policy_accepted=False))
 
     def test_account_type_invalid(self):
         with pytest.raises(ValueError):

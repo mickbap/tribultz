@@ -84,6 +84,7 @@ type RegisterRequest = {
   billing_type: string;
   lgpd_consent: boolean;
   terms_accepted: boolean;
+  refund_policy_accepted: boolean;
   tenant_slug: string;
   captcha_token?: string;
   // Proveniência comercial (RFC-0025): código do Partner do link ?partner=/?ref=.

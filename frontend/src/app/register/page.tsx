@@ -78,6 +78,7 @@ export default function RegisterPage() {
   const [billingType, setBillingType] = useState<"PIX" | "CREDIT_CARD">("PIX");
   const [lgpdConsent, setLgpdConsent] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [refundPolicyAccepted, setRefundPolicyAccepted] = useState(false);
   const [multiTenantConsent, setMultiTenantConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -125,6 +126,10 @@ export default function RegisterPage() {
       setToast({ tone: "error", msg: "Você deve aceitar os Termos de Uso para prosseguir." });
       return false;
     }
+    if (!refundPolicyAccepted) {
+      setToast({ tone: "error", msg: "Você deve aceitar a Política de Reembolso para prosseguir." });
+      return false;
+    }
     if ((planSlug === "empresarial" || planSlug === "contador") && !multiTenantConsent) {
       setToast({ tone: "error", msg: "Você deve aceitar o termo de Responsabilidade Multi-Tenant para prosseguir." });
       return false;
@@ -159,6 +164,7 @@ export default function RegisterPage() {
         billing_type: billingType,
         lgpd_consent: lgpdConsent,
         terms_accepted: termsAccepted,
+        refund_policy_accepted: refundPolicyAccepted,
         tenant_slug: "",
         captcha_token: captchaToken,
         partner_code: partnerCode || undefined,
@@ -449,6 +455,15 @@ export default function RegisterPage() {
               Li e concordo com os{" "}
               <Link href="/terms" target="_blank" className="font-medium text-tribultz-700 underline">Termos de Uso</Link>{" "}
               da Tribultz.
+            </span>
+          </label>
+
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" checked={refundPolicyAccepted} onChange={(e) => setRefundPolicyAccepted(e.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300" />
+            <span className="text-slate-600">
+              Li e concordo com a{" "}
+              <Link href="/refund-policy" target="_blank" className="font-medium text-tribultz-700 underline">Política de Reembolso</Link>{" "}
+              (direito de arrependimento de 7 dias, CDC art. 49).
             </span>
           </label>
 

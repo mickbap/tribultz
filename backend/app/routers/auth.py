@@ -334,6 +334,7 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         role="admin" if data.account_type == "empresa" else "contador",
         lgpd_consent_at=consent_at,
         terms_accepted_at=consent_at,
+        refund_policy_accepted_at=consent_at,
         consent_ip=ip,
         email_verified=False,
     )
