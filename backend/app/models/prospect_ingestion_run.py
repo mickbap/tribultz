@@ -50,7 +50,7 @@ class ProspectIngestionRun(Base):
     # Proveniência/layout
     file_count = Column(Integer, nullable=True)
     files_sha256 = Column(JSONB, nullable=True)  # {nome_do_arquivo: sha256}
-    layout_signature = Column(String(64), nullable=True)  # ex.: "estabelecimentos:30campos"
+    layout_signature = Column(Text, nullable=True)  # ex.: "empresas:7campos;estabelecimentos:30campos;..."
 
     status = Column(String(24), nullable=False, server_default="running")
     error_message = Column(Text, nullable=True)

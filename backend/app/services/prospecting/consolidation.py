@@ -45,6 +45,7 @@ from app.services.prospecting.email_classifier import (
 )
 from app.services.prospecting.rf_parser import (
     SITUACAO_CADASTRAL_ATIVA,
+    RowCounts,
     iter_empresas,
     iter_estabelecimentos,
     iter_simples,
@@ -97,13 +98,36 @@ class ConsolidatedOrg:
     source_dump_reference: str
 
 
+@dataclass(frozen=True)
+class ConsolidationMetrics:
+    """Volume em cada etapa do pipeline — insumo da guarda de sanidade e do
+    relatório de auditoria (Ordem Complementar, itens 1 e 8)."""
+
+    total_estabelecimentos_scanned: int
+    total_target_cnae_found: int
+    total_ativas: int
+    total_consolidated: int
+
+
+@dataclass(frozen=True)
+class ConsolidationResult:
+    orgs: list[ConsolidatedOrg]
+    metrics: ConsolidationMetrics
+
+
 def discover_target_cnpj_basicos(
-    dump_dir: Path, target_cnaes: frozenset[str] = TARGET_CNAES
+    dump_dir: Path,
+    target_cnaes: frozenset[str] = TARGET_CNAES,
+    counts: Optional[RowCounts] = None,
 ) -> set[str]:
     """Pass 1: cnpj_basico cujo CNAE principal OU secundário de QUALQUER
-    estabelecimento bate com um CNAE-alvo."""
+    estabelecimento bate com um CNAE-alvo.
+
+    counts, quando passado, acumula total/malformed de TODAS as linhas de
+    Estabelecimentos varridas — usado pela guarda de sanidade e pela checagem
+    de proporção de linhas malformadas (Ordem Complementar, itens 1 e 2)."""
     target: set[str] = set()
-    for row in iter_estabelecimentos(dump_dir):
+    for row in iter_estabelecimentos(dump_dir, counts):
         secundarias = set(parse_cnaes_secundarios(row["cnae_fiscal_secundaria"]))
         if row["cnae_fiscal_principal"] in target_cnaes or secundarias & target_cnaes:
             target.add(row["cnpj_basico"])
@@ -214,11 +238,17 @@ def build_consolidated_orgs(
     *,
     dump_reference: str,
     target_cnaes: frozenset[str] = TARGET_CNAES,
-) -> list[ConsolidatedOrg]:
+    estab_row_counts: Optional[RowCounts] = None,
+) -> ConsolidationResult:
     """Orquestra o pipeline completo de consolidação: Parser -> Normalização ->
     Consolidação (do diagrama da PO). Deduplicação e supressão vêm depois,
-    em módulos separados (dedup.py, suppression.py)."""
-    target_set = discover_target_cnpj_basicos(dump_dir, target_cnaes)
+    em módulos separados (dedup.py, suppression.py).
+
+    estab_row_counts, quando passado (objeto RowCounts do chamador), acumula
+    total/malformed de Estabelecimentos — o chamador (ingest_cnpj_dump.py) lê
+    esse objeto depois para a guarda de sanidade e a checagem de layout
+    parcialmente mudado (Ordem Complementar, itens 1 e 2)."""
+    target_set = discover_target_cnpj_basicos(dump_dir, target_cnaes, counts=estab_row_counts)
     logger.info("Pass 1: %d cnpj_basico candidatos (CNAE alvo)", len(target_set))
 
     orgs = _consolidate_estabelecimentos(dump_dir, target_set)
@@ -232,4 +262,10 @@ def build_consolidated_orgs(
         org.source_dump_reference = dump_reference
         org.email_domain_category = classify_domain(org.email, org.razao_social, org.nome_fantasia)
 
-    return list(orgs.values())
+    metrics = ConsolidationMetrics(
+        total_estabelecimentos_scanned=estab_row_counts.total if estab_row_counts else 0,
+        total_target_cnae_found=len(target_set),
+        total_ativas=len(orgs),
+        total_consolidated=len(orgs),
+    )
+    return ConsolidationResult(orgs=list(orgs.values()), metrics=metrics)

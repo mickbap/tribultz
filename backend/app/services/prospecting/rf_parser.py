@@ -76,16 +76,34 @@ def iter_dump_files(dump_dir: Path, prefix: str) -> list[Path]:
     return sorted(dump_dir.glob(f"{prefix}*"))
 
 
-def _iter_rows(path: Path, fields: tuple[str, ...]) -> Iterator[dict[str, str]]:
+@dataclass
+class RowCounts:
+    """Contador mutável passado por referência — permite ao chamador ler
+    total/malformed depois de consumir o iterador (ex.: para o guard de
+    sanidade e a checagem de proporção de linhas malformadas, Ordem
+    Complementar, itens 1 e 2)."""
+
+    total: int = 0
+    malformed: int = 0
+
+
+def _iter_rows(
+    path: Path, fields: tuple[str, ...], counts: Optional["RowCounts"] = None
+) -> Iterator[dict[str, str]]:
     """Itera as linhas de um arquivo da RF em streaming, nunca carregando tudo em
     memória. Linhas com número de colunas diferente do esperado são logadas e
     puladas — um dump de dezenas de milhões de linhas não pode falhar inteiro
-    por uma linha malformada.
+    por uma linha malformada (a proporção agregada é checada por quem chama,
+    via RowCounts — ver layout_check.check_malformed_ratio).
     """
     with path.open("r", encoding="latin-1", errors="replace", newline="") as fh:
         reader = csv.reader(fh, delimiter=";")
         for line_no, row in enumerate(reader, start=1):
+            if counts is not None:
+                counts.total += 1
             if len(row) != len(fields):
+                if counts is not None:
+                    counts.malformed += 1
                 logger.warning(
                     "Linha malformada ignorada: %s:%d (esperado %d campos, veio %d)",
                     path.name, line_no, len(fields), len(row),
@@ -94,24 +112,26 @@ def _iter_rows(path: Path, fields: tuple[str, ...]) -> Iterator[dict[str, str]]:
             yield dict(zip(fields, row))
 
 
-def iter_empresas(dump_dir: Path) -> Iterator[dict[str, str]]:
+def iter_empresas(dump_dir: Path, counts: Optional["RowCounts"] = None) -> Iterator[dict[str, str]]:
     for path in iter_dump_files(dump_dir, "Empresas"):
-        yield from _iter_rows(path, EMPRESAS_FIELDS)
+        yield from _iter_rows(path, EMPRESAS_FIELDS, counts)
 
 
-def iter_estabelecimentos(dump_dir: Path) -> Iterator[dict[str, str]]:
+def iter_estabelecimentos(
+    dump_dir: Path, counts: Optional["RowCounts"] = None
+) -> Iterator[dict[str, str]]:
     for path in iter_dump_files(dump_dir, "Estabelecimentos"):
-        yield from _iter_rows(path, ESTABELECIMENTOS_FIELDS)
+        yield from _iter_rows(path, ESTABELECIMENTOS_FIELDS, counts)
 
 
-def iter_simples(dump_dir: Path) -> Iterator[dict[str, str]]:
+def iter_simples(dump_dir: Path, counts: Optional["RowCounts"] = None) -> Iterator[dict[str, str]]:
     for path in iter_dump_files(dump_dir, "Simples"):
-        yield from _iter_rows(path, SIMPLES_FIELDS)
+        yield from _iter_rows(path, SIMPLES_FIELDS, counts)
 
 
-def iter_socios(dump_dir: Path) -> Iterator[dict[str, str]]:
+def iter_socios(dump_dir: Path, counts: Optional["RowCounts"] = None) -> Iterator[dict[str, str]]:
     for path in iter_dump_files(dump_dir, "Socios"):
-        yield from _iter_rows(path, SOCIOS_FIELDS)
+        yield from _iter_rows(path, SOCIOS_FIELDS, counts)
 
 
 def load_municipios(dump_dir: Path) -> dict[str, str]:
