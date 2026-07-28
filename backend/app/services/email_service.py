@@ -343,6 +343,22 @@ def send_payment_overdue_email(to_email: str, user_name: str) -> bool:
     )
 
 
+def send_ops_alert(subject: str, body: str) -> bool:
+    """Alerta interno para contato@tribultz.com.br em eventos críticos de billing
+    (pagamento confirmado, recusado, atrasado, reembolsado, cancelamento).
+
+    Substitui o WhatsApp Business API (Escopo 5.1, go-live de billing) — nunca
+    chegou a ser integrado, então este é o canal real de alerta ao time.
+    """
+    return _send_email(
+        to_email="contato@tribultz.com.br",
+        subject=f"[Tribultz] {subject}",
+        html_body=f"<pre>{body}</pre>",
+        text_body=body,
+        log_url=f"{settings.FRONTEND_URL}/admin",
+    )
+
+
 def send_staff_ticket_notification(ticket_title: str, user_email: str, priority: str) -> bool:
     """Notify contato@tribultz.com.br when a new ticket is opened."""
     priority_labels = {"low": "Baixa", "medium": "Média", "high": "Alta", "critical": "Crítica"}

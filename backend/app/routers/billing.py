@@ -14,7 +14,7 @@ from app.models.admin_audit import AdminAuditLog
 from app.models.auth import User
 from app.models.billing import Payment, Plan, Subscription, UsageTracking
 from app.services.asaas_service import asaas
-from app.services.email_service import send_payment_confirmation_email
+from app.services.email_service import send_ops_alert, send_payment_confirmation_email
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +92,10 @@ async def asaas_webhook(
                 from app.tasks.task_crm import crm_sync, crm_engagement
                 crm_sync.delay(user_id=str(cancelled_sub.user_id), event_type="subscription_cancelled")
                 crm_engagement.delay(user_id=str(cancelled_sub.user_id), event_type="subscription_cancelled")
+                send_ops_alert(
+                    "Assinatura cancelada",
+                    f"Subscription {sub_id} (user {cancelled_sub.user_id}) foi cancelada via webhook Asaas.",
+                )
         return {"status": "ok", "action": "subscription_cancelled"}
 
     # ── SUBSCRIPTION_CREATED / SUBSCRIPTION_UPDATED (no payment id either) ──
@@ -224,6 +228,12 @@ async def asaas_webhook(
                     amount_cents=int(confirmed_plan.price_cents),  # type: ignore[arg-type]
                     payment_method=str(payment.payment_method),
                 )
+                send_ops_alert(
+                    "Pagamento confirmado",
+                    f"Usuário: {confirmed_user.email}\nPlano: {confirmed_plan.name}\n"
+                    f"Valor: R$ {int(confirmed_plan.price_cents) / 100:.2f}\n"
+                    f"Método: {payment.payment_method}\nAsaas payment id: {asaas_payment_id}",
+                )
             # CRM sync: move deal to closedwon
             from app.tasks.task_crm import crm_sync
             crm_sync.delay(user_id=str(sub.user_id), event_type="payment_confirmed")
@@ -266,6 +276,11 @@ async def asaas_webhook(
                 from app.tasks.task_crm import crm_sync, crm_engagement
                 crm_sync.delay(user_id=str(sub_overdue.user_id), event_type="payment_overdue")
                 crm_engagement.delay(user_id=str(sub_overdue.user_id), event_type="payment_overdue")
+                send_ops_alert(
+                    "Pagamento em atraso",
+                    f"Payment {asaas_payment_id} (user {sub_overdue.user_id}) marcado como overdue. "
+                    "Assinatura movida para past_due.",
+                )
 
         return {"status": "ok", "action": "payment_overdue"}
 
@@ -291,6 +306,11 @@ async def asaas_webhook(
             if sub_declined:
                 from app.tasks.task_crm import crm_engagement
                 crm_engagement.delay(user_id=str(sub_declined.user_id), event_type="payment_overdue")
+                send_ops_alert(
+                    "Cartão recusado",
+                    f"Payment {asaas_payment_id} (user {sub_declined.user_id}) teve captura recusada. "
+                    "Asaas reprocessará automaticamente (até 5 tentativas em ~2 dias).",
+                )
         return {"status": "ok", "action": "payment_declined"}
 
     # ── PAYMENT_REFUNDED / PAYMENT_PARTIALLY_REFUNDED ──
@@ -315,6 +335,12 @@ async def asaas_webhook(
             )
             db.commit()
             logger.warning("Payment %s refunded, access revoked — verificar manualmente", asaas_payment_id)
+            if sub_refunded:
+                send_ops_alert(
+                    "Reembolso processado — verificar",
+                    f"Payment {asaas_payment_id} (user {sub_refunded.user_id}) foi reembolsado pela Asaas. "
+                    "Assinatura cancelada e acesso revogado automaticamente.",
+                )
         return {"status": "ok", "action": "payment_refunded"}
 
     logger.info("Webhook event %s not handled, ignoring", event)
@@ -668,6 +694,12 @@ async def cancel_subscription_endpoint(
             detail={"user_id": str(current_user.id), "refunded_cents": refunded_cents},
         )
         db.commit()
+
+        send_ops_alert(
+            "Direito de arrependimento exercido (CDC art. 49)",
+            f"Usuário: {current_user.email}\nSubscription: {sub.id}\n"
+            f"Reembolsado: R$ {refunded_cents / 100:.2f}\nAcesso revogado imediatamente.",
+        )
 
         return {
             "status": "cancelled",
