@@ -78,6 +78,38 @@ def _plan_distribution(db: Session) -> list[dict[str, Any]]:
         return []
 
 
+def _active_plan_distribution(db: Session) -> list[dict[str, Any]]:
+    """Assinantes ATIVOS por plano (Escopo 5.2, go-live billing) — distinto de
+    _plan_distribution, que conta todo status (trial/cancelled inclusive)."""
+    try:
+        rows = db.execute(
+            select(Plan.slug, func.count(Subscription.id).label("cnt"))
+            .select_from(Subscription)
+            .join(Plan, Subscription.plan_id == Plan.id)
+            .where(Subscription.status == "active")
+            .group_by(Plan.slug)
+        ).fetchall()
+        return [{"plan": r.slug, "count": r.cnt} for r in rows]
+    except Exception:
+        return []
+
+
+def _churn_rate_month(db: Session, month_start: datetime, active_count: int) -> tuple[int, float]:
+    """Churn do mês (Escopo 5.2): cancelamentos no mês / (ativos + cancelados
+    no mês) — aproxima a taxa mensal sem precisar de snapshot histórico do
+    tamanho da base no início do mês. Retorna (cancelled_month, rate_pct)."""
+    cancelled_month = _safe_count(
+        db,
+        select(func.count(Subscription.id)).where(
+            Subscription.cancelled_at.isnot(None),
+            Subscription.cancelled_at >= month_start,
+        ),
+    )
+    denominator = active_count + cancelled_month
+    rate = round(cancelled_month / denominator * 100, 2) if denominator > 0 else 0.0
+    return cancelled_month, rate
+
+
 def _revenue_by_plan(db: Session, month_start: datetime) -> list[dict[str, Any]]:
     """Revenue per plan this month (from confirmed payments)."""
     try:
@@ -210,6 +242,8 @@ async def admin_dashboard(
     )
     total_tenants = _safe_count(db, select(func.count(Tenant.id)))
 
+    cancelled_month, churn_rate_month = _churn_rate_month(db, month_start, paid_count)
+
     registrations_today = _safe_count(
         db, select(func.count(User.id)).where(User.created_at >= today_start)
     )
@@ -297,6 +331,9 @@ async def admin_dashboard(
             "registrations_today": registrations_today,
             "registrations_30d": _registrations_last_30_days(db),
             "plan_distribution": _plan_distribution(db),
+            "active_plan_distribution": _active_plan_distribution(db),
+            "churn_rate_month_pct": churn_rate_month,
+            "cancelled_month": cancelled_month,
         },
         "revenue": {
             "mrr_cents": mrr_cents,

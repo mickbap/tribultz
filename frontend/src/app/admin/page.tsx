@@ -24,6 +24,9 @@ type AdminStats = {
     registrations_today: number;
     registrations_30d: DayStat[];
     plan_distribution: PlanDist[];
+    active_plan_distribution: PlanDist[];
+    churn_rate_month_pct: number;
+    cancelled_month: number;
   };
   revenue: {
     mrr_cents: number;
@@ -131,7 +134,7 @@ function MiniBar({ data, label }: { data: DayStat[]; label: string }) {
   );
 }
 
-function PlanDistributionTable({ data }: { data: PlanDist[] }) {
+function PlanDistributionTable({ data, title = "Distribuicao por plano" }: { data: PlanDist[]; title?: string }) {
   const total = data.reduce((s, d) => s + d.count, 0) || 1;
   const colors: Record<string, string> = {
     trial: "bg-slate-400",
@@ -143,7 +146,7 @@ function PlanDistributionTable({ data }: { data: PlanDist[] }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
-        Distribuicao por plano
+        {title}
       </p>
       {/* Bar */}
       <div className="mb-3 flex h-4 overflow-hidden rounded-full bg-slate-100">
@@ -296,6 +299,12 @@ export default function AdminPage() {
           <MiniBar data={s.users.registrations_30d} label="Cadastros (ultimos 30 dias)" />
           <PlanDistributionTable data={s.users.plan_distribution} />
         </div>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <PlanDistributionTable
+            data={s.users.active_plan_distribution}
+            title="Assinantes ativos por plano"
+          />
+        </div>
       </section>
 
       {/* ── Trafego do Site ──────────────────── */}
@@ -351,6 +360,12 @@ export default function AdminPage() {
             label="Pendentes / Atrasados"
             value={`${s.revenue.pending_count} / ${s.revenue.overdue_count}`}
             accent={s.revenue.overdue_count > 0 ? "red" : undefined}
+          />
+          <StatCard
+            label="Churn (mes)"
+            value={`${s.users.churn_rate_month_pct.toFixed(1)}%`}
+            sub={`${s.users.cancelled_month} cancelamento(s) no mes`}
+            accent={s.users.churn_rate_month_pct > 5 ? "red" : undefined}
           />
         </div>
         {s.revenue.by_plan.length > 0 && (
