@@ -7,7 +7,11 @@ from alembic import context
 
 from app.database import Base
 from app.config import settings
-from app.models import api_key, auth, billing, documents, feedback, founding_partner, jobs, news, partner, prospect_diagnostic, reports  # noqa: F401
+from app.models import (  # noqa: F401
+    api_key, auth, billing, documents, feedback, founding_partner, jobs, news,
+    partner, prospect_diagnostic, prospect_org, prospect_scoring_run,
+    prospect_suppression, reports,
+)
 
 # Import models to register them with metadata
 
