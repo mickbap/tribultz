@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -580,6 +580,24 @@ async def add_cnpj(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Apenas contas de contador podem adicionar CNPJs.",
+        )
+
+    # Limite numérico de CNPJs por plano (Escopo 3.5 do go-live de billing,
+    # 28/07/2026) — Trial/Starter/Profissional=1, Empresarial=10, Contador=50.
+    from app.api.plan_gate import get_effective_plan
+    plan = get_effective_plan(db, user)
+    max_cnpj = int(plan.max_cnpj) if plan is not None else 1
+    current_cnpj_count = db.execute(
+        select(func.count(UserTenant.id)).where(UserTenant.user_id == user_id)
+    ).scalar() or 0
+    if current_cnpj_count >= max_cnpj:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                f"Limite de {max_cnpj} CNPJ(s) do seu plano atingido. "
+                "Faça upgrade para adicionar mais empresas."
+            ),
+            headers={"X-Upgrade-Required": "true"},
         )
 
     cnpj_normalized = normalize_cnpj(data.cnpj)

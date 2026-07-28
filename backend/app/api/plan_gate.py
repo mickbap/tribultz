@@ -146,6 +146,11 @@ def get_plan_slug(db: Session, user: User) -> str | None:
     return str(plan.slug)
 
 
+def get_effective_plan(db: Session, user: User) -> Any:
+    """Public wrapper — resolve o Plan completo (não só o slug) do usuário."""
+    return _get_effective_plan(db, user)
+
+
 def _get_effective_plan(db: Session, user: User) -> Any:
     """Resolve o Plan efetivo do usuário — Grant ativo (ADR-0008, Grant Adapter)
     tem precedência sobre a assinatura, mesmo ponto único de resolução já usado
