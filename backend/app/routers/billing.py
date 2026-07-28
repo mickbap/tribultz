@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.database import get_db
+from app.models.admin_audit import AdminAuditLog
 from app.models.auth import User
 from app.models.billing import Payment, Plan, Subscription, UsageTracking
 from app.services.asaas_service import asaas
@@ -18,6 +19,31 @@ from app.services.email_service import send_payment_confirmation_email
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/billing", tags=["billing"])
+
+
+def _audit_billing_event(
+    db: Session,
+    *,
+    event: str,
+    target_type: str,
+    target_id: str,
+    detail: dict,
+) -> None:
+    """Log a billing webhook event to AdminAuditLog (12 meses de retenção, Escopo 5.3).
+
+    Eventos de webhook não têm um admin como ator — actor_email marca a
+    origem como o próprio gateway, para diferenciar de ações manuais.
+    """
+    db.add(
+        AdminAuditLog(
+            actor_user_id=None,
+            actor_email="system:asaas-webhook",
+            action=event,
+            target_type=target_type,
+            target_id=target_id,
+            detail=detail,
+        )
+    )
 
 
 # ── Webhook (public, no auth) ──────────────────────────────────
@@ -56,6 +82,10 @@ async def asaas_webhook(
                 .where(Subscription.asaas_subscription_id == sub_id)
                 .values(status="cancelled", cancelled_at=datetime.now(timezone.utc))
             )
+            _audit_billing_event(
+                db, event=event, target_type="subscription", target_id=sub_id,
+                detail={"user_id": str(cancelled_sub.user_id)} if cancelled_sub else {},
+            )
             db.commit()
             logger.info("Subscription %s cancelled via webhook", sub_id)
             if cancelled_sub:
@@ -63,6 +93,20 @@ async def asaas_webhook(
                 crm_sync.delay(user_id=str(cancelled_sub.user_id), event_type="subscription_cancelled")
                 crm_engagement.delay(user_id=str(cancelled_sub.user_id), event_type="subscription_cancelled")
         return {"status": "ok", "action": "subscription_cancelled"}
+
+    # ── SUBSCRIPTION_CREATED / SUBSCRIPTION_UPDATED (no payment id either) ──
+    # A assinatura já é criada pelo próprio app (endpoint /upgrade) — estes eventos
+    # são só confirmação/sincronização do lado da Asaas, registrados para auditoria.
+    if event in ("SUBSCRIPTION_CREATED", "SUBSCRIPTION_UPDATED"):
+        sub_data = body.get("subscription", {})
+        sub_id = sub_data.get("id", "") if isinstance(sub_data, dict) else ""
+        if sub_id:
+            _audit_billing_event(
+                db, event=event, target_type="subscription", target_id=sub_id,
+                detail={"raw": sub_data} if isinstance(sub_data, dict) else {},
+            )
+            db.commit()
+        return {"status": "ok", "action": event.lower()}
 
     if not asaas_payment_id:
         logger.info("Webhook %s without payment id, skipping", event)
@@ -151,6 +195,10 @@ async def asaas_webhook(
                     sub.user_id, asaas_payment_id,
                 )
 
+        _audit_billing_event(
+            db, event=event, target_type="payment", target_id=asaas_payment_id,
+            detail={"user_id": str(sub.user_id)} if sub else {},
+        )
         db.commit()
         logger.info("Payment %s confirmed, subscription activated", asaas_payment_id)
 
@@ -208,6 +256,10 @@ async def asaas_webhook(
                 .where(Subscription.id == payment.subscription_id)
                 .values(status="past_due")
             )
+            _audit_billing_event(
+                db, event=event, target_type="payment", target_id=asaas_payment_id,
+                detail={"user_id": str(sub_overdue.user_id)} if sub_overdue else {},
+            )
             db.commit()
             logger.info("Payment %s overdue, subscription past_due", asaas_payment_id)
             if sub_overdue:
@@ -216,6 +268,54 @@ async def asaas_webhook(
                 crm_engagement.delay(user_id=str(sub_overdue.user_id), event_type="payment_overdue")
 
         return {"status": "ok", "action": "payment_overdue"}
+
+    # ── PAYMENT_CREDIT_CARD_CAPTURE_REFUSED (cartão recusado) ──
+    # Asaas já reprocessa a cobrança automaticamente (5 tentativas em ~2 dias:
+    # 8h/14h/20h no vencimento + 2 tentativas no dia seguinte) antes de emitir
+    # PAYMENT_OVERDUE — não suspendemos aqui, só registramos e avisamos.
+    if event == "PAYMENT_CREDIT_CARD_CAPTURE_REFUSED":
+        payment = db.execute(
+            select(Payment).where(Payment.asaas_payment_id == asaas_payment_id)
+        ).scalar_one_or_none()
+        if payment and cast(str, payment.status) not in ("confirmed", "failed"):
+            payment.status = "failed"  # type: ignore[assignment]
+            sub_declined = db.execute(
+                select(Subscription).where(Subscription.id == payment.subscription_id)
+            ).scalar_one_or_none()
+            _audit_billing_event(
+                db, event=event, target_type="payment", target_id=asaas_payment_id,
+                detail={"user_id": str(sub_declined.user_id)} if sub_declined else {},
+            )
+            db.commit()
+            logger.info("Payment %s card declined, Asaas will retry automatically", asaas_payment_id)
+            if sub_declined:
+                from app.tasks.task_crm import crm_engagement
+                crm_engagement.delay(user_id=str(sub_declined.user_id), event_type="payment_overdue")
+        return {"status": "ok", "action": "payment_declined"}
+
+    # ── PAYMENT_REFUNDED / PAYMENT_PARTIALLY_REFUNDED ──
+    if event in ("PAYMENT_REFUNDED", "PAYMENT_PARTIALLY_REFUNDED"):
+        payment = db.execute(
+            select(Payment).where(Payment.asaas_payment_id == asaas_payment_id)
+        ).scalar_one_or_none()
+        if payment and cast(str, payment.status) != "refunded":
+            payment.status = "refunded"  # type: ignore[assignment]
+            sub_refunded = db.execute(
+                select(Subscription).where(Subscription.id == payment.subscription_id)
+            ).scalar_one_or_none()
+            if sub_refunded and cast(str, sub_refunded.status) not in ("cancelled",):
+                db.execute(
+                    update(Subscription)
+                    .where(Subscription.id == payment.subscription_id)
+                    .values(status="cancelled", cancelled_at=datetime.now(timezone.utc))
+                )
+            _audit_billing_event(
+                db, event=event, target_type="payment", target_id=asaas_payment_id,
+                detail={"user_id": str(sub_refunded.user_id)} if sub_refunded else {},
+            )
+            db.commit()
+            logger.warning("Payment %s refunded, access revoked — verificar manualmente", asaas_payment_id)
+        return {"status": "ok", "action": "payment_refunded"}
 
     logger.info("Webhook event %s not handled, ignoring", event)
     return {"status": "ignored", "reason": "unhandled event"}
