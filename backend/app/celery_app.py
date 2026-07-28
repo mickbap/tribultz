@@ -47,6 +47,10 @@ celery.conf.update(
             "task": "crm.audit",
             "schedule": crontab(minute="0", hour="9"),  # daily at 09:00 BRT
         },
+        "purge-expired-documents-monthly": {
+            "task": "documents.purge_expired",
+            "schedule": crontab(minute="30", hour="2", day_of_month="1"),  # 1st of month at 02:30
+        },
     },
 )
 
@@ -60,5 +64,6 @@ celery.autodiscover_tasks([
     "app.tasks.task_g_billing",
     "app.tasks.task_h_sped",
     "app.tasks.task_i_compliance",
+    "app.tasks.task_j_retention",
     "app.tasks.task_crm",
 ])
