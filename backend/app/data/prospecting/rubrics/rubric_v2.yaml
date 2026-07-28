@@ -1,0 +1,80 @@
+# Rubrica de pré-score — v2 (Ordem Complementar à PO-2026-07-SALES-001, item 6)
+#
+# Idêntica a rubric_v1.yaml, com uma dimensão nova: email_type ("tipo do
+# e-mail", independente de email_domain_category, "domínio do e-mail" — a PO
+# original pedia os dois separadamente, só o domínio tinha sido implementado
+# na Fase 1). Pesos propositalmente baixos (-1 a 2): o objetivo declarado na
+# ordem é só auxiliar desempate entre registros semelhantes, nunca dominar o
+# score como email_domain_category/porte já fazem.
+#
+# v1 continua válido e imutável (histórico) — Rubric.get_weight() já cai em 0
+# para uma dimensão inteira ausente da rubrica carregada, então v1 nunca
+# precisou de edição para isso. v2 passa a ser a versão recomendada no README.
+
+version: v2
+description: "Rubrica de pré-score v2 — adiciona tipo do e-mail (Ordem Complementar, item 6)"
+
+base_score: 50
+
+tiers:
+  A: {min: 80}
+  B: {min: 60}
+  C: {min: 40}
+  D: {min: 0}
+
+scoring:
+  socios:
+    "1": 2
+    "2": 6
+    "3_or_more": 10
+
+  porte:
+    mei: -100
+    "00": 0
+    "01": 3
+    "03": 8
+    "05": 12
+
+  capital_social:
+    faixas:
+      - {ate: 5000, peso: 0}
+      - {ate: 50000, peso: 4}
+      - {ate: 200000, peso: 8}
+      - {acima: 200000, peso: 12}
+
+  idade_anos:
+    faixas:
+      - {ate: 1, peso: -3}
+      - {ate: 3, peso: 2}
+      - {ate: 10, peso: 6}
+      - {acima: 10, peso: 10}
+
+  email_domain_category:
+    ausente: -100
+    gratuito: 2
+    dominio_generico: 7
+    dominio_nominal: 12
+
+  estabelecimentos:
+    "1": 0
+    "2_3": 5
+    "4_plus": 10
+
+  geografia:
+    default: 0
+    RS: 10
+    SC: 7
+    PR: 6
+    SP: 5
+
+  # Tipo do endereço de e-mail (independente do domínio) — Ordem Complementar,
+  # item 6. Peso baixo por design: só desempate.
+  email_type:
+    ausente: 0
+    outro: 0
+    contato: 0
+    suporte: 0
+    comercial: 1
+    financeiro: 1
+    fiscal: 2
+    nome_sobrenome: 2

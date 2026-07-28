@@ -58,6 +58,7 @@ def _score_input_from_org(org: ProspectOrg) -> ScoreInput:
         capital_social=org.capital_social,
         data_inicio_atividade=org.data_inicio_atividade,
         email_domain_category=org.email_domain_category or "ausente",
+        email_type=org.email_type or "ausente",
         qtd_estabelecimentos=org.qtd_estabelecimentos,
         uf=org.uf,
         razao_social=org.razao_social,

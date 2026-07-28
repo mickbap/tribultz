@@ -43,7 +43,8 @@ _UPSERT_COLUMNS = (
     "data_inicio_atividade", "qtd_socios", "qtd_estabelecimentos", "uf",
     "municipio_codigo", "municipio_nome", "logradouro", "numero", "complemento",
     "bairro", "cep", "ddd_telefone1", "telefone1", "email", "email_domain",
-    "email_domain_category", "cnae_principal", "cnaes_secundarios", "source_dump_reference",
+    "email_domain_category", "email_type", "cnae_principal", "cnaes_secundarios",
+    "source_dump_reference",
 )
 
 
