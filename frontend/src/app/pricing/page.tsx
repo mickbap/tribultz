@@ -497,10 +497,6 @@ export default function PricingPage() {
                 a: "Sim. Sem fidelidade, sem multa. Cancele pelo painel e mantenha o acesso até o fim do período pago.",
               },
               {
-                q: "O ambiente é sandbox agora. Quando vai para produção?",
-                a: "O billing está em sandbox enquanto validamos os fluxos. Pagamentos de teste não geram cobranças reais.",
-              },
-              {
                 q: "Quais formas de pagamento são aceitas?",
                 a: "PIX e cartão de crédito, ambos com aprovação instantânea.",
               },
