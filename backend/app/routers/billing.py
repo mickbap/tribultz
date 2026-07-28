@@ -586,7 +586,14 @@ async def cancel_subscription_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Cancel the current subscription."""
+    """Cancel the current subscription.
+
+    Direito de arrependimento (CDC art. 49, Política de Reembolso, #4): se o
+    cancelamento ocorre até 7 dias da primeira assinatura do usuário —
+    contratação "fora do estabelecimento comercial" — reembolsa integralmente
+    tudo que foi pago no período e revoga o acesso imediatamente. Depois dos
+    7 dias, comportamento padrão: sem reembolso, acesso até o fim do período.
+    """
     sub = db.execute(
         select(Subscription)
         .where(
@@ -608,8 +615,70 @@ async def cancel_subscription_endpoint(
         except Exception:
             logger.warning("Falha ao cancelar assinatura Asaas: %s", cancel_sub_id)
 
+    now = datetime.now(timezone.utc)
+
+    # Direito de arrependimento: ancorado na PRIMEIRA assinatura do usuário
+    # (não reseta a cada upgrade) — "durante o prazo de reflexão" (CDC art. 49).
+    earliest_sub = db.execute(
+        select(Subscription)
+        .where(Subscription.user_id == current_user.id)
+        .order_by(Subscription.created_at.asc())
+        .limit(1)
+    ).scalar_one_or_none()
+    contract_start = cast(datetime, earliest_sub.created_at) if earliest_sub is not None else now
+    within_withdrawal_window = (now - contract_start) <= timedelta(days=7)
+
+    refunded_cents = 0
+    if within_withdrawal_window:
+        confirmed_payments = db.execute(
+            select(Payment)
+            .join(Subscription, Payment.subscription_id == Subscription.id)
+            .where(
+                Subscription.user_id == current_user.id,
+                Payment.status == "confirmed",
+            )
+        ).scalars().all()
+
+        for payment in confirmed_payments:
+            try:
+                await asaas.refund_payment(
+                    cast(str, payment.asaas_payment_id),
+                    description="Direito de arrependimento (CDC art. 49) — cancelamento em até 7 dias.",
+                )
+                payment.status = "refunded"  # type: ignore[assignment]
+                refunded_cents += cast(int, payment.amount_cents)
+            except Exception:
+                logger.exception(
+                    "Falha ao estornar pagamento %s (direito de arrependimento)",
+                    payment.asaas_payment_id,
+                )
+
+        # Revoga acesso imediatamente — o contrato foi desfeito, não só cancelado
+        # para o futuro. Encerra TODAS as assinaturas não-canceladas do usuário.
+        db.execute(
+            update(Subscription)
+            .where(
+                Subscription.user_id == current_user.id,
+                Subscription.status != "cancelled",
+            )
+            .values(status="cancelled", cancelled_at=now, current_period_end=now)
+        )
+        _audit_billing_event(
+            db, event="WITHDRAWAL_REFUND_7_DAYS", target_type="subscription", target_id=str(sub.id),
+            detail={"user_id": str(current_user.id), "refunded_cents": refunded_cents},
+        )
+        db.commit()
+
+        return {
+            "status": "cancelled",
+            "message": "Cancelado dentro do prazo de arrependimento (7 dias). Reembolso integral processado.",
+            "access_until": now.isoformat(),
+            "refunded": True,
+            "refunded_cents": refunded_cents,
+        }
+
     sub.status = "cancelled"  # type: ignore[assignment]
-    sub.cancelled_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+    sub.cancelled_at = now  # type: ignore[assignment]
     # User keeps access until current_period_end — do NOT deactivate
     db.commit()
 
@@ -619,4 +688,6 @@ async def cancel_subscription_endpoint(
         "status": "cancelled",
         "message": "Assinatura cancelada. Acesso mantido até o fim do período atual.",
         "access_until": period_end,
+        "refunded": False,
+        "refunded_cents": 0,
     }

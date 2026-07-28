@@ -82,8 +82,9 @@ class User(Base):
     is_active = Column(Boolean, nullable=False, default=True)
     lgpd_consent_at = Column(DateTime(timezone=True), nullable=True)
     terms_accepted_at = Column(DateTime(timezone=True), nullable=True)
-    # IP no momento do aceite (LGPD + Termos, capturados juntos no /register) —
-    # Escopo 4.2 do go-live de billing: data, hora e IP do aceite.
+    refund_policy_accepted_at = Column(DateTime(timezone=True), nullable=True)
+    # IP no momento do aceite (LGPD + Termos + Reembolso, capturados juntos no
+    # /register) — Escopo 4.2 do go-live de billing: data, hora e IP do aceite.
     consent_ip = Column(String(45), nullable=True)  # cabe IPv6
     email_verified = Column(Boolean, nullable=False, default=False)
     email_verification_token = Column(String(500), nullable=True)
