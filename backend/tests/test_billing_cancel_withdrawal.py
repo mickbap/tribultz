@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, update
 from sqlalchemy.orm import sessionmaker
 
 from app.database import get_db
@@ -84,7 +84,7 @@ def _user_with_confirmed_subscription(session, *, subscription_created_at, perio
     session.flush()
     # created_at tem server_default — força a data desejada explicitamente
     session.execute(
-        Subscription.__table__.update()
+        update(Subscription)
         .where(Subscription.id == sub.id)
         .values(created_at=subscription_created_at)
     )
