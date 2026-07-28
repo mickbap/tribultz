@@ -109,6 +109,32 @@ def _attach_partner_from_code(db: Session, tenant: Tenant, raw_code: str) -> Non
     logger.info("partner attribution: tenant %s → partner %s", tenant.slug, code)
 
 
+def _attach_prospect_diagnostic(db: Session, tenant: Tenant, raw_diag_id: str) -> None:
+    """Captura a atribuição de diagnóstico gratuito (Escopo A, plano de
+    aquisição comercial) sem nunca bloquear o cadastro.
+
+    Vincula ``tenant.prospect_diagnostic_id`` ao ProspectDiagnostic cujo id
+    bate com o link ``?diag=`` no PDF. Id inválido/inexistente → apenas loga.
+    A origem é permanente, mesmo padrão do Partner (RFC-0025).
+    """
+    if not raw_diag_id:
+        return
+    if tenant.prospect_diagnostic_id is not None:
+        return  # origem já registrada — permanente, não sobrescreve
+    try:
+        diag_id = UUID(raw_diag_id)
+    except ValueError:
+        logger.info("prospect diagnostic attribution ignorada: id inválido %r", raw_diag_id)
+        return
+    from app.models.prospect_diagnostic import ProspectDiagnostic
+    diagnostic = db.get(ProspectDiagnostic, diag_id)
+    if diagnostic is None:
+        logger.info("prospect diagnostic attribution ignorada: id %s inexistente", diag_id)
+        return
+    tenant.prospect_diagnostic_id = diagnostic.id  # type: ignore[assignment]
+    logger.info("prospect diagnostic attribution: tenant %s → diagnostic %s", tenant.slug, diag_id)
+
+
 def _get_user_tenants(db: Session, user_id: UUID) -> list[TenantInfo]:
     """Get all tenants a user has access to."""
     rows = db.execute(
@@ -301,6 +327,8 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         tenant = _get_or_create_tenant_for_cnpj(db, data.cnpj, company_name)
         # Proveniência comercial (RFC-0025): captura não-bloqueante do Partner.
         _attach_partner_from_code(db, tenant, data.partner_code)
+        # Atribuição de diagnóstico gratuito (Escopo A): captura não-bloqueante.
+        _attach_prospect_diagnostic(db, tenant, data.diag_id)
     else:
         # Fallback to default tenant
         tenant = db.execute(

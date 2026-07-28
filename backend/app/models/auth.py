@@ -34,6 +34,15 @@ class Tenant(Base):
         ForeignKey("partners.id", ondelete="RESTRICT"),
         nullable=True,
     )
+    # Atribuição de qual diagnóstico gratuito (prospecção comercial direta)
+    # trouxe este cadastro — link ?diag= no PDF (ver auth.py). Opcional,
+    # permanente, ondelete=SET NULL: apagar o diagnóstico não deve apagar a
+    # Tenant. Não é o rastreio geral de canal/UTM (Escopo B, ainda não construído).
+    prospect_diagnostic_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("prospect_diagnostics.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     # Using server_default=func.now() for creation
     # Using onupdate=func.now() to ensure python-side updates trigger the timestamp update
     # Schema just says DEFAULT now(), so DB side auto-update depends on triggers (not present in standard schema dump).

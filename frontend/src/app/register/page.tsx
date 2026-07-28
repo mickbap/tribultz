@@ -87,17 +87,22 @@ export default function RegisterPage() {
   const [captchaToken, setCaptchaToken] = useState("");
   // Proveniência comercial (RFC-0025): captura o código do link ?partner=/?ref=.
   const [partnerCode, setPartnerCode] = useState("");
+  // Atribuição de diagnóstico gratuito (Escopo A): captura o id do link ?diag=
+  // no PDF. Independente do Partner acima — não é o mesmo conceito.
+  const [diagId, setDiagId] = useState("");
   const turnstileRef = useRef<TurnstileInstance>(null);
   const captchaConfigured = Boolean(TURNSTILE_SITE_KEY?.trim());
 
   const isPaidPlan = planSlug !== "trial";
 
   useEffect(() => {
-    // Lê ?partner=/?ref= no carregamento (client-only, seguro no build).
+    // Lê ?partner=/?ref= e ?diag= no carregamento (client-only, seguro no build).
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const code = params.get("partner") ?? params.get("ref");
     if (code) setPartnerCode(code.trim().toUpperCase());
+    const diag = params.get("diag");
+    if (diag) setDiagId(diag.trim());
   }, []);
 
   function validateStep1(): boolean {
@@ -168,6 +173,7 @@ export default function RegisterPage() {
         tenant_slug: "",
         captcha_token: captchaToken,
         partner_code: partnerCode || undefined,
+        diag_id: diagId || undefined,
       });
 
       track("sign_up", { method: accountType, plan: planSlug });

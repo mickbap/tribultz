@@ -11,6 +11,7 @@ const NAV = [
   { href: "/admin/tenants", label: "Tenants" },
   { href: "/admin/partners", label: "Parceiros" },
   { href: "/admin/founding-partners", label: "Founding Partners" },
+  { href: "/admin/prospeccao", label: "Prospecção" },
   { href: "/admin/users", label: "Usuários" },
   { href: "/admin/usage", label: "Uso & Operações" },
   { href: "/admin/system", label: "Saúde do sistema" },
