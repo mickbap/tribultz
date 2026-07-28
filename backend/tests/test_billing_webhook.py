@@ -292,6 +292,95 @@ class TestWebhookPaymentOverdue:
         assert r2.status_code == 200
 
 
+class TestWebhookPaymentCardDeclined:
+    def test_card_declined_marks_payment_failed_no_suspension(
+        self, client, db_session, billing_fixtures
+    ):
+        """PAYMENT_CREDIT_CARD_CAPTURE_REFUSED → payment.status=failed, subscription
+        untouched (Asaas retries automatically before PAYMENT_OVERDUE)."""
+        fx = billing_fixtures
+        payload = {
+            "event": "PAYMENT_CREDIT_CARD_CAPTURE_REFUSED",
+            "payment": {"id": fx["asaas_payment_id"]},
+        }
+        resp = client.post(
+            "/api/v1/billing/webhooks/asaas", json=payload, headers=WEBHOOK_HEADERS
+        )
+
+        assert resp.status_code == 200
+        assert resp.json()["action"] == "payment_declined"
+
+        db_session.expire_all()
+        assert db_session.get(Payment, fx["payment"].id).status == "failed"
+        assert db_session.get(Subscription, fx["subscription"].id).status == "pending"
+
+
+class TestWebhookPaymentRefunded:
+    def test_refund_marks_payment_and_cancels_subscription(
+        self, client, db_session, billing_fixtures
+    ):
+        """PAYMENT_REFUNDED → payment.status=refunded, subscription cancelled (access revoked)."""
+        fx = billing_fixtures
+        payload = {
+            "event": "PAYMENT_REFUNDED",
+            "payment": {"id": fx["asaas_payment_id"]},
+        }
+        resp = client.post(
+            "/api/v1/billing/webhooks/asaas", json=payload, headers=WEBHOOK_HEADERS
+        )
+
+        assert resp.status_code == 200
+        assert resp.json()["action"] == "payment_refunded"
+
+        db_session.expire_all()
+        assert db_session.get(Payment, fx["payment"].id).status == "refunded"
+        sub = db_session.get(Subscription, fx["subscription"].id)
+        assert sub.status == "cancelled"
+        assert sub.cancelled_at is not None
+
+    def test_partial_refund_treated_same_as_full(
+        self, client, db_session, billing_fixtures
+    ):
+        """PAYMENT_PARTIALLY_REFUNDED uses the same handling as PAYMENT_REFUNDED."""
+        fx = billing_fixtures
+        payload = {
+            "event": "PAYMENT_PARTIALLY_REFUNDED",
+            "payment": {"id": fx["asaas_payment_id"]},
+        }
+        resp = client.post(
+            "/api/v1/billing/webhooks/asaas", json=payload, headers=WEBHOOK_HEADERS
+        )
+        assert resp.status_code == 200
+        assert resp.json()["action"] == "payment_refunded"
+
+
+class TestWebhookSubscriptionCreatedUpdated:
+    def test_subscription_created_is_audited_not_ignored(
+        self, client, db_session, billing_fixtures
+    ):
+        """SUBSCRIPTION_CREATED is a sync/confirmation signal — audited, not 'ignored'."""
+        resp = client.post(
+            "/api/v1/billing/webhooks/asaas",
+            json={"event": "SUBSCRIPTION_CREATED", "subscription": {"id": "sub_new_001"}},
+            headers=WEBHOOK_HEADERS,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+        assert resp.json()["action"] == "subscription_created"
+
+    def test_subscription_updated_is_audited_not_ignored(
+        self, client, db_session, billing_fixtures
+    ):
+        resp = client.post(
+            "/api/v1/billing/webhooks/asaas",
+            json={"event": "SUBSCRIPTION_UPDATED", "subscription": {"id": "sub_upd_001"}},
+            headers=WEBHOOK_HEADERS,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+        assert resp.json()["action"] == "subscription_updated"
+
+
 class TestWebhookSubscriptionDeleted:
     def test_subscription_deleted_cancels(
         self, client, db_session, billing_fixtures
@@ -359,7 +448,7 @@ class TestWebhookRejectionAndEdgeCases:
         """Unknown event types must return 200+ignored gracefully."""
         resp = client.post(
             "/api/v1/billing/webhooks/asaas",
-            json={"event": "PAYMENT_REFUNDED", "payment": {"id": "pay_any"}},
+            json={"event": "PAYMENT_ANTICIPATED", "payment": {"id": "pay_any"}},
             headers=WEBHOOK_HEADERS,
         )
         assert resp.status_code == 200
