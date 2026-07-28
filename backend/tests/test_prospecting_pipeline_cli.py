@@ -193,11 +193,15 @@ class TestFullPipeline:
             assert cast(int, run.candidate_count) >= 3
             assert cast(int, run.selected_count) >= 3
             assert cast(str, run.output_uri) == str(output_path)
+            snapshot = cast(dict, run.rubric_snapshot)
+            assert snapshot["version"] == "v1"
+            assert "scoring" in snapshot and "tiers" in snapshot
         finally:
             session.close()
 
     def test_score_and_select_dry_run_writes_no_run_row(self, dump_reference, lenient_thresholds_path, tmp_path):
         ingest_cnpj_dump.main(_ingest_args(dump_reference, lenient_thresholds_path))
+        dedup_prospects.main([])
 
         output_path = tmp_path / "would_not_be_written.csv"
         rc = score_and_select.main(
@@ -224,6 +228,7 @@ class TestFullPipeline:
 
     def test_json_output_format(self, dump_reference, lenient_thresholds_path, tmp_path):
         ingest_cnpj_dump.main(_ingest_args(dump_reference, lenient_thresholds_path))
+        dedup_prospects.main([])
         output_path = tmp_path / "top.json"
         rc = score_and_select.main(
             [
@@ -397,3 +402,53 @@ class TestIngestionSafeguards:
             assert previous.total_target_cnae_found == 4  # não o 999_999 do outro target_cnaes
         finally:
             session.close()
+
+
+class TestSequencingGate:
+    """Ordem Complementar, item 4 — score_and_select.py não pode rodar sobre
+    dados parcialmente processados. Cobertura de unidade da regra em si está
+    em test_prospecting_score_sequencing.py; aqui cobrimos que main() de fato
+    aplica a trava e bloqueia antes de qualquer escrita."""
+
+    def test_blocked_without_dedup_after_ingest(self, dump_reference, lenient_thresholds_path, tmp_path):
+        rc_ingest = ingest_cnpj_dump.main(_ingest_args(dump_reference, lenient_thresholds_path))
+        assert rc_ingest == 0
+        # dedup_prospects.main([]) deliberadamente NÃO chamado aqui.
+
+        output_path = tmp_path / "would_not_be_written.csv"
+        rc_score = score_and_select.main(
+            [
+                "--rubric-version", "v1",
+                "--dump-reference", dump_reference,
+                "--output", str(output_path),
+            ]
+        )
+        assert rc_score == 1
+        assert not output_path.exists()
+
+        session = TestingSessionLocal()
+        try:
+            count = (
+                session.query(ProspectScoringRun)
+                .filter(ProspectScoringRun.source_dump_reference == dump_reference)
+                .count()
+            )
+            assert count == 0
+        finally:
+            session.close()
+
+    def test_passes_once_dedup_runs_after_ingest(self, dump_reference, lenient_thresholds_path, tmp_path):
+        ingest_cnpj_dump.main(_ingest_args(dump_reference, lenient_thresholds_path))
+        rc_dedup = dedup_prospects.main([])
+        assert rc_dedup == 0
+
+        output_path = tmp_path / "top.csv"
+        rc_score = score_and_select.main(
+            [
+                "--rubric-version", "v1",
+                "--dump-reference", dump_reference,
+                "--output", str(output_path),
+            ]
+        )
+        assert rc_score == 0
+        assert output_path.exists()

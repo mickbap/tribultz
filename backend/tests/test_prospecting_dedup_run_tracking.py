@@ -8,7 +8,9 @@ from __future__ import annotations
 import importlib
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
+from typing import cast
 
 import pytest
 from sqlalchemy import create_engine, select
@@ -65,13 +67,13 @@ class TestDedupRunTracking:
                 .first()
             )
             assert latest is not None
-            assert latest.status == "completed"
+            assert cast(str, latest.status) == "completed"
             assert latest.groups_merged is not None
             assert latest.orgs_merged is not None
             assert latest.domains_skipped_too_large is not None
             assert latest.started_at is not None
             assert latest.finished_at is not None
-            assert latest.finished_at >= latest.started_at
+            assert cast(datetime, latest.finished_at) >= cast(datetime, latest.started_at)
         finally:
             session.close()
 
@@ -87,6 +89,6 @@ class TestDedupRunTracking:
                 .first()
             )
             assert latest is not None
-            assert latest.status == "completed"
+            assert cast(str, latest.status) == "completed"
         finally:
             session.close()
