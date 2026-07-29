@@ -32,6 +32,8 @@ if str(_BACKEND_ROOT) not in sys.path:
 from sqlalchemy import select  # noqa: E402
 
 from app.database import SessionLocal  # noqa: E402
+from app.models.prospect_dedup_run import ProspectDedupRun  # noqa: E402
+from app.models.prospect_ingestion_run import ProspectIngestionRun  # noqa: E402
 from app.models.prospect_org import ProspectOrg  # noqa: E402
 from app.models.prospect_scoring_run import ProspectScoringRun  # noqa: E402
 from app.services.prospecting.rubric_loader import load_rubric  # noqa: E402
@@ -43,6 +45,40 @@ from app.services.prospecting.suppression import (  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("prospecting.score_and_select")
+
+
+class SequencingError(RuntimeError):
+    """Pontuação bloqueada — dados de entrada não estão totalmente processados
+    (Ordem Complementar, item 4: "não será permitido utilizar dados parcialmente
+    processados"). Sem flag de bypass."""
+
+
+def check_sequencing(db) -> None:
+    latest_ingestion = db.execute(
+        select(ProspectIngestionRun)
+        .where(ProspectIngestionRun.status == "completed")
+        .order_by(ProspectIngestionRun.finished_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+    if latest_ingestion is None:
+        raise SequencingError(
+            "Nenhuma execução de ingest_cnpj_dump.py concluída encontrada. "
+            "Rode a ingestão antes de pontuar."
+        )
+
+    latest_dedup = db.execute(
+        select(ProspectDedupRun)
+        .where(ProspectDedupRun.status == "completed")
+        .order_by(ProspectDedupRun.finished_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+    if latest_dedup is None or latest_dedup.finished_at < latest_ingestion.finished_at:
+        raise SequencingError(
+            "Nenhuma deduplicação concluída posterior à ingestão mais recente "
+            f"(ingestão concluída em {latest_ingestion.finished_at}). "
+            "Rode dedup_prospects.py antes de pontuar."
+        )
+
 
 CSV_FIELDS = [
     "cnpj_basico", "razao_social", "nome_fantasia", "municipio_nome", "uf",
@@ -122,6 +158,12 @@ def main(argv: list[str] | None = None) -> int:
     started_at = datetime.now(timezone.utc)
     db = SessionLocal()
     try:
+        try:
+            check_sequencing(db)
+        except SequencingError as exc:
+            logger.error("Pontuação bloqueada por sequenciamento: %s", exc)
+            return 1
+
         all_orgs = list(
             db.execute(select(ProspectOrg).where(ProspectOrg.dedup_status != "merged")).scalars().all()
         )
@@ -159,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
         run = ProspectScoringRun(
             rubric_version=rubric.version,
             rubric_checksum=rubric.checksum,
+            rubric_snapshot=rubric.to_snapshot(),
             source_dump_reference=args.dump_reference,
             params={
                 "top_n": args.top_n,
