@@ -46,12 +46,14 @@ const PLANS: { slug: PlanSlug; name: string; price: string; features: string[]; 
 ];
 
 function formatCnpj(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 14);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
-  if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
-  if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
-  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+  // CNPJ alfanumérico (RFB, produção 27/07/2026): as 12 primeiras posições
+  // aceitam letras, só os 2 dígitos verificadores finais são numéricos.
+  const chars = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 14);
+  if (chars.length <= 2) return chars;
+  if (chars.length <= 5) return `${chars.slice(0, 2)}.${chars.slice(2)}`;
+  if (chars.length <= 8) return `${chars.slice(0, 2)}.${chars.slice(2, 5)}.${chars.slice(5)}`;
+  if (chars.length <= 12) return `${chars.slice(0, 2)}.${chars.slice(2, 5)}.${chars.slice(5, 8)}/${chars.slice(8)}`;
+  return `${chars.slice(0, 2)}.${chars.slice(2, 5)}.${chars.slice(5, 8)}/${chars.slice(8, 12)}-${chars.slice(12)}`;
 }
 
 function formatPhone(value: string): string {
@@ -61,8 +63,8 @@ function formatPhone(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
-function cnpjDigits(formatted: string): string {
-  return formatted.replace(/\D/g, "");
+function normalizeCnpj(formatted: string): string {
+  return formatted.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
 }
 
 export default function RegisterPage() {
@@ -110,9 +112,9 @@ export default function RegisterPage() {
       setToast({ tone: "error", msg: "Preencha todos os campos obrigatórios." });
       return false;
     }
-    const digits = cnpjDigits(cnpj);
-    if (digits.length !== 14) {
-      setToast({ tone: "error", msg: "CNPJ deve ter 14 dígitos." });
+    const normalized = normalizeCnpj(cnpj);
+    if (normalized.length !== 14) {
+      setToast({ tone: "error", msg: "CNPJ deve ter 14 caracteres (12 alfanuméricos + 2 dígitos verificadores)." });
       return false;
     }
     if (password !== confirmPassword) {
@@ -162,7 +164,7 @@ export default function RegisterPage() {
         email: email.trim(),
         password,
         full_name: fullName.trim(),
-        cnpj: cnpjDigits(cnpj),
+        cnpj: normalizeCnpj(cnpj),
         phone: phone.replace(/\D/g, ""),
         account_type: accountType,
         plan_slug: planSlug,
@@ -376,7 +378,7 @@ export default function RegisterPage() {
               <span className="mb-1 block text-slate-600">
                 {planSlug === "contador" ? "CNPJ do escritório" : "CNPJ da empresa"}
               </span>
-              <input type="text" value={cnpj} onChange={(e) => setCnpj(formatCnpj(e.target.value))} placeholder="00.000.000/0000-00" className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono" inputMode="numeric" />
+              <input type="text" value={cnpj} onChange={(e) => setCnpj(formatCnpj(e.target.value))} placeholder="00.000.000/0000-00" className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono" inputMode="text" />
             </label>
             <label className="block text-sm">
               <span className="mb-1 block text-slate-600">Email corporativo</span>
