@@ -66,14 +66,14 @@ Para comparar cópia local com a VM sem expor valores, compare o md5 de cada val
 
 Válidos: Magalu (API key, SSH, Object Storage), Cloudflare, Turnstile, Asaas produção, OpenRouter, HubSpot, GitHub.
 
-## Pendência (2026-07-22): `CLOUDFLARE_ANALYTICS_TOKEN`
+## Resolvido (2026-07-29): `CLOUDFLARE_ANALYTICS_TOKEN`
 
 Gerado e testado (E2E, local) para a seção de tráfego do site no painel admin
 (#518) — token dedicado, escopo mínimo (`Zone:Analytics:Read` + `Zone:Zone:Read`
-só na zona `tribultz.com.br`), sem custo. **Ainda não adicionado a
-`/opt/tribultz/.env` na VM** — até isso acontecer, o painel admin em produção
-mostra a seção como "não configurado" (degradação graciosa, não quebra o
-resto do dashboard). `CLOUDFLARE_ZONE_ID` (`0dca11f87046e628725aba0347548ccf`)
+só na zona `tribultz.com.br`), sem custo. Adicionado a `/opt/tribultz/.env` na
+VM entre 22/07 e 29/07 (fora desta sessão); a cópia local do `.env.prod` estava
+desatualizada e foi resincronizada em 29/07 via `bash tools/check_access.sh`
+(seção 5 apontou o drift). `CLOUDFLARE_ZONE_ID` (`0dca11f87046e628725aba0347548ccf`)
 não é segredo — já tem default no `app/config.py`.
 
 > 🔒 **Ordem vigente (2026-07-15): NÃO rotacionar, revogar nem encerrar sessão de credencial alguma enquanto o produto não escala.** Vale inclusive para as pendências listadas abaixo — inclusive as comprovadamente vazadas ou já revogadas. Documentar e seguir; não propor rotação de novo. O objetivo da fase é acesso livre e sem atrito a partir de Windows e Mac. Reavaliar quando o produto escalar.
