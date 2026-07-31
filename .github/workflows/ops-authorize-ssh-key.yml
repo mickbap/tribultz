@@ -1,0 +1,75 @@
+name: Ops — Autorizar chave SSH na VM (break-glass)
+
+# Break-glass: autoriza uma chave PÚBLICA SSH no ~/.ssh/authorized_keys do usuário de
+# deploy da VM, usando o acesso SSH já autorizado do CI (secrets MAGALU_SSH_*). Serve
+# quando uma máquina nova precisa de acesso e nenhuma chave local está autorizada
+# (ex.: handoff de equipamento) — reconstrói o vetor SSH sem tocar na config Magalu da
+# instância, sem reboot e sem risco a dados. Espelha o padrão de ops-set-sentry.yml.
+#
+# Uso: Actions > este workflow > Run workflow > cole a linha da chave PÚBLICA. Ou:
+#   gh workflow run ops-authorize-ssh-key.yml -f pubkey='ssh-ed25519 AAAA... comentario'
+#
+# PRIVILEGIADO: qualquer pubkey no input é autorizada na PRODUÇÃO — restrito a quem pode
+# disparar workflows no repo. A pubkey não é segredo. Idempotente, faz backup antes.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pubkey:
+        description: "Linha da chave PÚBLICA SSH (ex.: ssh-ed25519 AAAA... comentario)"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ops-authorize-ssh-key
+
+jobs:
+  authorize:
+    name: Anexar pubkey ao authorized_keys da VM
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validar formato da pubkey
+        env:
+          PUBKEY: ${{ inputs.pubkey }}
+        run: |
+          if ! printf '%s\n' "$PUBKEY" | ssh-keygen -lf - >/dev/null 2>&1; then
+            echo "::error::input 'pubkey' não parece uma chave pública SSH válida"; exit 1
+          fi
+          echo "pubkey válida — fingerprint: $(printf '%s\n' "$PUBKEY" | ssh-keygen -lf -)"
+
+      - name: Configurar chave SSH (acesso autorizado do CI)
+        env:
+          SSH_KEY: ${{ secrets.MAGALU_SSH_KEY }}
+          SSH_HOST: ${{ secrets.MAGALU_SSH_HOST }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Anexar pubkey (idempotente, com backup)
+        env:
+          SSH_HOST: ${{ secrets.MAGALU_SSH_HOST }}
+          SSH_USER: ${{ secrets.MAGALU_SSH_USER }}
+          PUBKEY: ${{ inputs.pubkey }}
+        run: |
+          # base64 sem quebras blinda contra injeção via aspas no comentário da chave
+          PUBKEY_B64="$(printf '%s' "$PUBKEY" | base64 -w0)"
+          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" "bash -s" <<REMOTE
+          set -e
+          umask 077
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          AK="\$HOME/.ssh/authorized_keys"
+          touch "\$AK" && chmod 600 "\$AK"
+          KEY="\$(printf '%s' '${PUBKEY_B64}' | base64 -d)"
+          cp "\$AK" "\${AK}.bak.\$(date +%s)"
+          if grep -qxF "\$KEY" "\$AK"; then echo "resultado: chave JA estava autorizada (no-op)"; else printf '%s\n' "\$KEY" >> "\$AK"; echo "resultado: chave ADICIONADA"; fi
+          echo "usuario alvo: \$(id -un)   linhas em authorized_keys: \$(grep -c . "\$AK")"
+          REMOTE
+
+      - name: Limpar chave SSH
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
