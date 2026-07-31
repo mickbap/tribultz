@@ -4,18 +4,19 @@
 # Run: bash tools/check_access.sh
 # Requires: curl, ssh, bash. Opcionais: mgc, gh, vercel
 #
-# Não contém segredos e não escreve nenhum. Lê a API key da Magalu
-# de $MGC_API_KEY. Só faz chamadas de leitura.
+# Não contém segredos e não escreve nenhum. Acessa a Magalu via sessão do
+# 'mgc auth login' ou $MGC_API_KEY. Só faz chamadas de leitura.
 # ============================================================
 
 VM_HOST="201.54.20.18"
 VM_USER="ubuntu"
-SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_tribultz}"
 # Fingerprints das chaves autorizadas na VM (públicos — não são segredo).
-# Ao adicionar uma máquina, autorize a chave em ~/.ssh/authorized_keys na VM e liste aqui.
-KEY_FPS="SHA256:ydI3GwtHcGHjUvcCzFQgOp7zypbiVwqqiicGlhun7gg=tribultz-infra (Windows)
-SHA256:6DqZCh26dT2Ce0KPD8ZwMXPtZ9++3siBctZKD1E+8ig=tribultz-infra (Mac)
-SHA256:9JtQfvh8yIebGMewdoenxW92w0XtRXJ/A8Ru9CYy9D0=tribultz-infra (MacBook Mickel)"
+# Ao adicionar uma máquina: gere a chave e autorize a pública via workflow
+# ops-authorize-ssh-key.yml (Actions), depois liste o fingerprint aqui.
+KEY_FPS="SHA256:wmgdpFALqdZQVqtkfrIjgjBNRK2lqr8mQJ/ClUcgLps=id_tribultz (Mac — em uso)
+SHA256:ydI3GwtHcGHjUvcCzFQgOp7zypbiVwqqiicGlhun7gg=tribultz-infra (Windows — descartado)
+SHA256:6DqZCh26dT2Ce0KPD8ZwMXPtZ9++3siBctZKD1E+8ig=id_tribultz_mac (Mac — passphrase perdida, morta)"
 API="https://api.tribultz.com.br"
 FRONTEND="https://tribultz.com.br"
 
@@ -29,7 +30,7 @@ code() { curl -s -o /dev/null -w '%{http_code}' -m 15 "$@"; }
 echo
 echo "=== 1. SSH → VM de produção ==============================="
 if [ ! -f "$SSH_KEY" ]; then
-  bad "chave $SSH_KEY não existe" "copie a chave privada da máquina antiga (ela NÃO está no git)"
+  bad "chave $SSH_KEY não existe" "gere uma (ssh-keygen -t ed25519 -f $SSH_KEY) e autorize a pública via workflow ops-authorize-ssh-key.yml"
 else
   # macOS/Linux recusam chave com permissão frouxa; Git Bash no Windows usa ACL e ignora
   case "$(uname -s)" in
