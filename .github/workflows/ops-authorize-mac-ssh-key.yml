@@ -1,10 +1,11 @@
 name: Ops — Autorizar chave SSH do Mac (VM)
 
 # One-shot de RECUPERAÇÃO DE ACESSO. Anexa a chave PÚBLICA do Mac
-# (id_tribultz_mac, infra@tribultz.com.br) ao ~/.ssh/authorized_keys do usuário de
-# deploy na VM, usando o acesso SSH já autorizado do CI (secrets MAGALU_SSH_*).
-# Necessário porque o Windows — única máquina com a chave autorizada (tribultz-infra)
-# — foi descartado antes de autorizar o Mac, deixando o Mac sem SSH à VM.
+# (id_tribultz, tribultz-vm@mac) ao ~/.ssh/authorized_keys do usuário de deploy na
+# VM, usando o acesso SSH já autorizado do CI (secrets MAGALU_SSH_*). Necessário
+# porque o Windows — única máquina com a chave autorizada (tribultz-infra) — foi
+# descartado, e a chave anterior do Mac (id_tribultz_mac) ficou inacessível
+# (passphrase perdida). Esta chave nova (id_tribultz) é sem passphrase.
 #
 # A chave é PÚBLICA (não é segredo). Idempotente. Roda automaticamente no push
 # desta branch descartável — APAGUE a branch depois de confirmar o acesso.
@@ -39,7 +40,7 @@ jobs:
         env:
           SSH_HOST: ${{ secrets.MAGALU_SSH_HOST }}
           SSH_USER: ${{ secrets.MAGALU_SSH_USER }}
-          MAC_PUBKEY: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIATNECJtda/LcRRrhb27cRUdYA1EvOQc8CuF5NlhI+cZ infra@tribultz.com.br (mac)"
+          MAC_PUBKEY: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL3HHCzIdL4dsyZ1Ivl8EDZyd3TwN9ATnnZo8SFKS9SN tribultz-vm@mac-20260731"
         run: |
           ssh -o StrictHostKeyChecking=yes -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" "bash -s" <<REMOTE
           set -e
