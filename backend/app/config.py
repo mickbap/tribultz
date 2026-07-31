@@ -32,10 +32,21 @@ class Settings(BaseSettings):
     S3_ACCESS_KEY: str
     S3_SECRET_KEY: str
 
-    # ── HubSpot ───────────────────────────────────────────────
+    # ── HubSpot (pós-venda: dunning/win-back via crm_engagement_crew) ───────
     HUBSPOT_ENABLED: bool = False
     HUBSPOT_PRIVATE_APP_TOKEN: str = ""
     HUBSPOT_API_BASE_URL: str = "https://api.hubapi.com"
+
+    # ── Attio (CRM comercial — prospecção→fechamento, PO-2026-07-CRM-001) ───
+    # Domínio separado do HubSpot acima: Attio cobre a esteira comercial
+    # (lead→fechado), HubSpot fica isolado no ciclo de vida pós-venda.
+    # Sem API key → integração é no-op (mesmo padrão do HubSpot).
+    ATTIO_ENABLED: bool = False
+    ATTIO_API_KEY: str = ""
+    ATTIO_WORKSPACE: str = ""
+    ATTIO_DEFAULT_PIPELINE: str = ""
+    ATTIO_DEFAULT_STAGE: str = ""
+    ATTIO_WEBHOOK_SECRET: str = ""
     # ── Security ────────────────────────────────────────────
     ALLOWED_ORIGINS: str = "http://localhost:3000,https://tribultz.com.br,https://*.vercel.app"
     ENVIRONMENT: str = "development"  # development | staging | production
