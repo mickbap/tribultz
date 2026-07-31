@@ -63,12 +63,15 @@ frontend/          Next.js app (app router)
   src/components/  UI: AppShell, Sidebar, EvidenceList, JsonViewer, Toast
 
 backend/           FastAPI
-  app/routers/     28 routers (auditado 16/07/2026) — admin, audit, auth, billing, calculadora,
-                   classtrib, compliance, credits, documents, exceptions, feedback,
-                   founding_partners, health, jobs, lgpd, ncm_suggest, news, public, public_api,
-                   reports, simulator, sped, split_payment, support, tasks, validate,
-                   validate_xml, validation. Chat foi descontinuado como produto (mai/2026) e o
-                   código remanescente removido (ADR-0012, ver `knowledge/decisions/` no Brain).
+  app/routers/     29 routers (auditado 16/07/2026, +attio em 31/07/2026) — admin, attio, audit,
+                   auth, billing, calculadora, classtrib, compliance, credits, documents,
+                   exceptions, feedback, founding_partners, health, jobs, lgpd, ncm_suggest, news,
+                   public, public_api, reports, simulator, sped, split_payment, support, tasks,
+                   validate, validate_xml, validation. Chat foi descontinuado como produto
+                   (mai/2026) e o código remanescente removido (ADR-0012, ver
+                   `knowledge/decisions/` no Brain). attio expõe só o webhook inbound
+                   (POST /api/v1/webhooks/attio) — o resto da integração comercial com o Attio CRM
+                   (PO-2026-07-CRM-001) vive em `app/integrations/attio/`, fora dos routers.
   app/crews/       CrewAI crews — crm_engagement_crew (Produção), security_crew (Produção
                    Interna), nfe_validation_crew (Dormante). Classificação oficial e políticas em
                    `knowledge/engineering/crews.md` no Brain.
