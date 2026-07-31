@@ -1,0 +1,58 @@
+name: Ops — Autorizar chave SSH do Mac (VM)
+
+# One-shot de RECUPERAÇÃO DE ACESSO. Anexa a chave PÚBLICA do Mac
+# (id_tribultz_mac, infra@tribultz.com.br) ao ~/.ssh/authorized_keys do usuário de
+# deploy na VM, usando o acesso SSH já autorizado do CI (secrets MAGALU_SSH_*).
+# Necessário porque o Windows — única máquina com a chave autorizada (tribultz-infra)
+# — foi descartado antes de autorizar o Mac, deixando o Mac sem SSH à VM.
+#
+# A chave é PÚBLICA (não é segredo). Idempotente. Roda automaticamente no push
+# desta branch descartável — APAGUE a branch depois de confirmar o acesso.
+
+on:
+  push:
+    branches: [ops/authorize-mac-ssh-key]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ops-authorize-mac-ssh-key
+
+jobs:
+  authorize:
+    name: Anexar pública do Mac ao authorized_keys da VM
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Configurar chave SSH (acesso autorizado do CI)
+        env:
+          SSH_KEY: ${{ secrets.MAGALU_SSH_KEY }}
+          SSH_HOST: ${{ secrets.MAGALU_SSH_HOST }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Anexar pública do Mac (idempotente, com backup)
+        env:
+          SSH_HOST: ${{ secrets.MAGALU_SSH_HOST }}
+          SSH_USER: ${{ secrets.MAGALU_SSH_USER }}
+          MAC_PUBKEY: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIATNECJtda/LcRRrhb27cRUdYA1EvOQc8CuF5NlhI+cZ infra@tribultz.com.br (mac)"
+        run: |
+          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" "bash -s" <<REMOTE
+          set -e
+          umask 077
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          AK="\$HOME/.ssh/authorized_keys"
+          touch "\$AK" && chmod 600 "\$AK"
+          KEY='${MAC_PUBKEY}'
+          cp "\$AK" "\${AK}.bak.\$(date +%s)"
+          if grep -qxF "\$KEY" "\$AK"; then echo "resultado: chave JA estava autorizada (no-op)"; else printf '%s\n' "\$KEY" >> "\$AK"; echo "resultado: chave ADICIONADA"; fi
+          echo "usuario alvo: \$(id -un)   linhas em authorized_keys: \$(grep -c . "\$AK")"
+          REMOTE
+
+      - name: Limpar chave SSH
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
