@@ -78,13 +78,17 @@ class TestActivePlanDistribution:
 
 class TestChurnRateMonth:
     def test_churn_rate_counts_cancellations_this_month(self, db_session):
-        now = datetime.now(timezone.utc)
-        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        # Âncora fixa em vez de datetime.now(): "ontem" só está garantido
+        # dentro do mês corrente se o mês não tiver acabado de virar. Com
+        # datetime.now(), esse teste flaka no primeiro dia de todo mês (em
+        # UTC) — visto quebrando em produção às 2026-08-01T00:47Z, quando
+        # "ontem" (31/07) caía antes do month_start calculado (01/08).
+        month_start = datetime(2026, 6, 1, tzinfo=timezone.utc)
 
         # 1 cancelado este mês, 1 cancelado no mês passado (não deve contar)
         _make_subscription(
             db_session, plan_slug="starter", status="cancelled",
-            cancelled_at=now - timedelta(days=1),
+            cancelled_at=month_start + timedelta(days=1),
         )
         _make_subscription(
             db_session, plan_slug="starter", status="cancelled",

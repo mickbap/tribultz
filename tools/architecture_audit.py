@@ -32,13 +32,36 @@ from __future__ import annotations
 
 import os
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BACKEND = REPO_ROOT / "backend"
-BRAIN_ROOT = REPO_ROOT.parent / "tribultz-brain"
+
+
+def _main_repo_root() -> Path:
+    """Resolve the main repository root even when running from a git worktree.
+
+    REPO_ROOT.parent is wrong inside a worktree — it resolves to the
+    worktree's parent (e.g. .claude/worktrees/) instead of the actual
+    sibling of tribultz/, which silently no-ops the Brain-sync check below.
+    `git rev-parse --git-common-dir` always points at the main repo's .git,
+    worktree or not. Falls back to REPO_ROOT if git is unavailable (e.g. a
+    tarball checkout) — same soft-skip behavior as before this fix.
+    """
+    try:
+        common_dir = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "rev-parse", "--git-common-dir"],
+            capture_output=True, text=True, check=True, timeout=5,
+        ).stdout.strip()
+        return (REPO_ROOT / common_dir).resolve().parent
+    except Exception:
+        return REPO_ROOT
+
+
+BRAIN_ROOT = _main_repo_root().parent / "tribultz-brain"
 
 SEVERITY_CRITICO = "Crítico"
 SEVERITY_ALTO = "Alto"
@@ -184,7 +207,13 @@ def check_routers_vs_claude_md() -> list[Finding]:
     }
 
     claude_text = _read(claude_md)
-    doc_match = re.search(r"app/routers/\s+\d+ routers[^\n]*—\s*([^\n]+(?:\n\s+[^\n]+)*?)\.\s*Chat", claude_text)
+    # [\s\S]*? em vez de [^\n]+(?:\n\s+[^\n]+)*?: o quantificador aninhado
+    # original tinha backtracking catastrófico — \s+ e [^\n]+ competiam pelos
+    # mesmos espaços em runs de \n seguido de espaços, explodindo
+    # exponencialmente (trava a auditoria inteira, mascarado no CI por
+    # continue-on-error + timeout). [\s\S]*? não tem essa ambiguidade: casa
+    # qualquer caractere sem precisar decidir entre dois grupos concorrentes.
+    doc_match = re.search(r"app/routers/\s+\d+ routers[^\n]*—\s*([\s\S]*?)\.\s*Chat", claude_text)
     if not doc_match:
         findings.append(
             Finding(
