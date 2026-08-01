@@ -53,4 +53,10 @@ jobs:
             - Preencher `legalRefs`, `tags` e ajustar `category`.
             - Confirmar que o `frontend-build` passou (valida o MDX).
 
+            ⚠️ **Checks obrigatórios não disparam sozinhos:** este PR foi aberto com o
+            `GITHUB_TOKEN` padrão, que por design do GitHub não aciona outros workflows
+            (`pull_request`) — proteção contra loop infinito de Action disparando Action.
+            `backend-gates`/`frontend-build` só rodam depois de um commit novo (ex.: preencher
+            `legalRefs`/`tags` na revisão) ou de fechar e reabrir o PR.
+
             Nada vai ao ar até o merge. Gerado por `.github/workflows/soro-blog-sync.yml`.
