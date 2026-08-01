@@ -150,6 +150,7 @@ jobs:
       - name: Architecture Audit (informativo)
         working-directory: backend
         continue-on-error: true
+        timeout-minutes: 5
         run: |
           python ../tools/architecture_audit.py
 
