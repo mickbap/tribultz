@@ -188,10 +188,10 @@ jobs:
             package-lock.json
             frontend/package-lock.json
 
-      - name: Install + build
+      - name: Install + test + build
         run: |
-          if [ -f package-lock.json ]; then npm ci && npm run build; exit 0; fi
-          if [ -f frontend/package-lock.json ]; then cd frontend && npm ci && npm run build; exit 0; fi
+          if [ -f package-lock.json ]; then npm ci && npm test --silent && npm run build; exit 0; fi
+          if [ -f frontend/package-lock.json ]; then cd frontend && npm ci && npm test --silent && npm run build; exit 0; fi
           echo "No frontend detected (package-lock.json not found). Skipping build." && exit 0
 
       - name: Install Playwright browser
