@@ -94,3 +94,34 @@ test("guard: NT sem versão vigente registrada (ex. NT 007/2026) → sem finding
   const f = lintBlogFiscal("conforme a NT 999.999 v1.00", valid);
   assert.equal(f.filter((x) => x.rule === "NT_VERSAO_DESATUALIZADA").length, 0);
 });
+
+test("guard #580: marcador REVISAR do Soro presente → erro REVISAR_PENDENTE", () => {
+  const f = lintBlogFiscal(
+    "{/* Gerado pelo Soro — REVISAR antes do merge: precisão fiscal, legalRefs, tags, category. */}\n<p>texto</p>",
+    valid,
+  );
+  assert.ok(f.some((x) => x.rule === "REVISAR_PENDENTE"));
+});
+
+test("guard #580: sem marcador REVISAR → sem finding REVISAR_PENDENTE", () => {
+  const f = lintBlogFiscal("<p>texto revisado</p>", valid);
+  assert.equal(f.filter((x) => x.rule === "REVISAR_PENDENTE").length, 0);
+});
+
+test("guard #580: legalRefs vazio → erro LEGALREFS_VAZIO", () => {
+  const f = lintBlogFiscal('---\nlegalRefs: []\n---\n<p>texto</p>', valid);
+  assert.ok(f.some((x) => x.rule === "LEGALREFS_VAZIO"));
+});
+
+test("guard #580: tags vazio → erro TAGS_VAZIO", () => {
+  const f = lintBlogFiscal('---\ntags: []\n---\n<p>texto</p>', valid);
+  assert.ok(f.some((x) => x.rule === "TAGS_VAZIO"));
+});
+
+test("guard #580: tags/legalRefs preenchidos → sem finding", () => {
+  const f = lintBlogFiscal(
+    '---\ntags:\n  - "x"\nlegalRefs:\n  - instrumento: "LC 214/2025"\n---\n<p>texto</p>',
+    valid,
+  );
+  assert.equal(f.filter((x) => x.rule === "TAGS_VAZIO" || x.rule === "LEGALREFS_VAZIO").length, 0);
+});
