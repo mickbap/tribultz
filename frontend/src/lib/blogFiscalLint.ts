@@ -15,6 +15,15 @@
  * citando "NT 2025.002 V1.36" quando a vigente já é v1.40 (2026-07-26). Esse é o
  * mecanismo de detecção da estratégia de atualização de posts do blog.
  *
+ * Regras G/H (#580): o gate de revisão humana do Soro (marcador REVISAR +
+ * frontmatter obrigatório) é hoje só convenção — nada barra o merge se for
+ * pulado. O #580 mergeou com tags/legalRefs vazios e o marcador ainda no
+ * corpo porque o PR foi aberto via GITHUB_TOKEN (não dispara checks
+ * `pull_request`) e ninguém rodou build localmente antes de aprovar. Como
+ * `contentLint.ts` não é escaneado contra `content/blog/*.mdx` em nenhum
+ * teste (só `blogFiscalLint.test.ts` faz isso), essas regras vivem aqui —
+ * é o único lugar onde "error" realmente derruba o `frontend-build`.
+ *
  * Filosofia: somos uma empresa de validação determinística — dogfood no nosso conteúdo.
  */
 
@@ -94,6 +103,35 @@ export function lintBlogFiscal(mdx: string, valid: ClassTribValid): FiscalFindin
         message: `Cita NT ${ntId} v${m[2]}.${m[3]} — a versão vigente é v${current}. Revisar conteúdo e atualizar legalRefs + updatedAt.`,
       });
     }
+  }
+
+  // G) Marcador de revisão do Soro ainda presente no corpo — post nunca foi
+  //    auditado por um humano antes do merge (achado real: #580).
+  if (/Gerado pelo Soro — REVISAR antes do merge/.test(mdx)) {
+    out.push({
+      rule: "REVISAR_PENDENTE",
+      severity: "error",
+      message:
+        "Marcador de revisão do Soro ainda presente — remover após auditar precisão fiscal, legalRefs, tags e category.",
+    });
+  }
+
+  // H) Frontmatter incompleto (tags/legalRefs vazios) em post já mergeado —
+  //    `contentLint.ts` já sinaliza isso como WARN, mas nenhum teste escaneia
+  //    posts reais contra ele; aqui vira ERROR e realmente bloqueia o build.
+  if (/legalRefs:\s*\[\s*\]/.test(mdx)) {
+    out.push({
+      rule: "LEGALREFS_VAZIO",
+      severity: "error",
+      message: "legalRefs vazio — adicionar base legal antes de publicar.",
+    });
+  }
+  if (/tags:\s*\[\s*\]/.test(mdx)) {
+    out.push({
+      rule: "TAGS_VAZIO",
+      severity: "error",
+      message: "tags vazias — adicionar tags antes de publicar.",
+    });
   }
 
   return out;
