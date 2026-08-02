@@ -17,11 +17,21 @@ bash tools/metrics/run_extract.sh
 Conecta via SSH na VM de produção (nunca expõe a porta do banco
 localmente), roda as 5 queries lá e traz o CSV de volta pra
 `reports/metrics/<ano-mes>/` — **gitignored**, dado de produção nunca
-entra no git. Os arquivos `.sql` deste diretório são a única coisa
-versionada.
+entra no git. Os arquivos `.sql`/`.py`/`.sh` deste diretório são a única
+coisa versionada.
 
 Pré-requisito: chave SSH autorizada na VM (ver
 `docs/infra/secrets_inventory.md`).
+
+### Consolidar em .xlsx (pra abrir num add-in do Excel)
+
+```bash
+python3 tools/metrics/csv_to_xlsx.py reports/metrics/<ano-mes>
+```
+
+Junta os 5 CSVs num único `cockpit_unit_economics.xlsx` (uma aba por
+query) no mesmo diretório — mais prático que importar 5 arquivos soltos.
+Requer `openpyxl` (`backend/requirements.txt`).
 
 ## Queries
 
