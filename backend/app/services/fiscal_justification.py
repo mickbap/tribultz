@@ -2,7 +2,7 @@
 Mapa estático de justificativas técnicas por rule_id.
 
 Cada entrada contém:
-  base_legal  — artigo(s) da LC 214/2025, LC 227/2024 ou NT 2025.002-RTC aplicáveis
+  base_legal  — artigo(s) da LC 214/2025, LC 227/2026 ou NT 2025.002-RTC aplicáveis
   explicacao  — por que a regra existe e o que ela verifica
   correcao    — ação recomendada para sanar a não-conformidade
 

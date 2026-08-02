@@ -86,8 +86,9 @@ export default function SettingsPage() {
             <p className="mt-1 text-sm text-slate-500">
               Quando ativo, irregularidades em <strong>obrigações acessórias</strong> CBS/IBS
               (formato CST, cClassTrib, layout XML) são sinalizadas como{" "}
-              <strong>Aviso</strong> em vez de bloqueio — conforme a{" "}
-              <strong>LC 227/2026 art. 348 §§ 3º e 4º</strong>: 60 dias para sanar sem multa.
+              <strong>Aviso</strong> em vez de bloqueio — conforme o{" "}
+              <strong>art. 348, §§ 3º e 4º, da LC 214/2025</strong> (incluídos pela LC 227/2026): 60 dias
+              contados da notificação para regularizar, extinguindo a penalidade.
             </p>
             <p className="mt-2 text-xs text-blue-700 font-medium">
               ⚖️ Válido durante o período pedagógico de 2026. Recomendado manter ativo.
