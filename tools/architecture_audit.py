@@ -141,20 +141,39 @@ def check_celery_autodiscover() -> list[Finding]:
 
     registered = set(re.findall(r'"([\w.]+)"', match.group(1)))
     registered_modules = {m.rsplit(".", 1)[-1] for m in registered}
+    documented = _brain_documented_tasks()
 
     for path in sorted(tasks_dir.glob("task_*.py")):
         module_name = path.stem
-        if module_name not in registered_modules:
-            findings.append(
-                Finding(
-                    "task-nao-registrada",
-                    f"backend/app/tasks/{path.name} define uma task mas o módulo não está em "
-                    f"autodiscover_tasks (celery_app.py). Se for intencional (ex.: pendente de "
-                    f"decisão de frequência), documentar em knowledge/engineering/crews.md ou "
-                    f"architecture-inventory.md — não deixar implícito.",
-                )
+        if module_name in registered_modules or module_name in documented:
+            continue
+        findings.append(
+            Finding(
+                "task-nao-registrada",
+                f"backend/app/tasks/{path.name} define uma task mas o módulo não está em "
+                f"autodiscover_tasks (celery_app.py). Se for intencional (ex.: pendente de "
+                f"decisão de frequência), documentar em knowledge/engineering/crews.md ou "
+                f"architecture-inventory.md — não deixar implícito.",
             )
+        )
     return findings
+
+
+def _brain_documented_tasks() -> set[str]:
+    """Tasks Celery já documentadas no Brain como intencionalmente fora do
+    autodiscover_tasks (decisão registrada, não esquecimento) — mesmo
+    padrão de check_brain_crews_sync() para Crews, aplicado ao inventário
+    de tasks. Sem Brain disponível, retorna vazio: comportamento antigo
+    (tudo não registrado vira achado), nunca falso-negativo por ausência
+    do Brain."""
+    inventory_md = BRAIN_ROOT / "knowledge" / "engineering" / "architecture-inventory.md"
+    if not inventory_md.exists():
+        return set()
+    return {
+        match.group(1)
+        for line in _read(inventory_md).splitlines()
+        if (match := re.search(r"`(task_\w+)`", line))
+    }
 
 
 # ── 3. Ferramentas órfãs em app/crews/tools/ ────────────────────────────────
