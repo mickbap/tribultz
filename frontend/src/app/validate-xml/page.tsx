@@ -18,7 +18,7 @@ function severityClasses(severity: Finding["severity"]): string {
 
 function severityLabel(severity: Finding["severity"]): string {
   if (severity === "FATAL") return "FATAL (bloqueante)";
-  if (severity === "WARNING") return "Período Pedagógico LC 227";
+  if (severity === "WARNING") return "Período Pedagógico LC 214, art. 348";
   return "ALERT";
 }
 
@@ -406,7 +406,7 @@ export default function ValidateXmlPage() {
                         <p className="text-xs font-semibold uppercase tracking-wide">{severityLabel(finding.severity)}</p>
                         {finding.severity === "WARNING" && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-blue-300 bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800">
-                            ⚖️ LC 227 art. 348 — 60 dias para sanar
+                            ⚖️ LC 214 art. 348 — 60 dias para sanar
                           </span>
                         )}
                       </div>

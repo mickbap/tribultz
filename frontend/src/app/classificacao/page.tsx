@@ -18,7 +18,7 @@ const FAQ = [
   },
   {
     q: "Quando começam as penalidades por cClassTrib incorreto?",
-    a: "As penalidades efetivas por erros de CBS/IBS em NF-e começam em agosto/2026, encerrando o período pedagógico previsto pela LC 227/2026 (art. 348 §§ 3º e 4º). Até lá, autuações exclusivamente por obrigação acessória dão 60 dias para sanar sem multa. Após agosto/2026 essa leniência cessa.",
+    a: "Desde 01/08/2026 a multa por obrigação acessória de IBS/CBS é aplicável (Ato Conjunto RFB/CGIBS nº 1/2025, art. 3º). Se autuado exclusivamente por essa obrigação, o contribuinte é notificado e tem 60 dias contados da notificação para regularizar, extinguindo a penalidade (art. 348, §§ 3º e 4º, da LC 214/2025, incluídos pela LC 227/2026).",
   },
   {
     q: "Como funciona a classificação automática NCM → cClassTrib?",
@@ -46,9 +46,9 @@ const LEGAL_REFS = [
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm",
   },
   {
-    instrumento: "LC 227/2026",
-    artigo: "art. 348 §§ 3º e 4º",
-    descricao: "Período pedagógico 2026 — 60 dias para sanar obrigação acessória sem multa.",
+    instrumento: "LC 214/2025",
+    artigo: "art. 348, §§ 3º e 4º (incluídos pela LC 227/2026)",
+    descricao: "Período Pedagógico — autuado exclusivamente por obrigação acessória de IBS/CBS tem 60 dias contados da notificação para regularizar, extinguindo a penalidade.",
   },
   {
     instrumento: "NT 2025.002-RTC v1.36",

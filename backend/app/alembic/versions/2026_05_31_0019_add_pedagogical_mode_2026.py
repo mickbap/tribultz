@@ -3,10 +3,10 @@
 Adiciona flag pedagogical_mode_2026 à tabela tenants.
 
 Quando True (padrão): findings de obrigação acessória CBS/IBS são
-downgraded de FATAL para WARNING, com badge "Período Pedagógico LC 227
+downgraded de FATAL para WARNING, com badge "Período Pedagógico LC 214
 art. 348" e nota de 60 dias para sanar sem multa.
 
-Referência legal: LC 227/2026 art. 348 §§ 3º e 4º.
+Referência legal: art. 348, §§ 3º e 4º, da LC 214/2025 (incluídos pela LC 227/2026).
 
 Revision ID: 2026_05_31_0019
 Revises: 2026_05_31_0018

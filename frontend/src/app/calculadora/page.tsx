@@ -43,9 +43,9 @@ const LEGAL_REFS = [
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm",
   },
   {
-    instrumento: "LC 227/2026",
-    artigo: "art. 348",
-    descricao: "Regulamentação operacional 2026, período pedagógico, transição 2026-2033.",
+    instrumento: "LC 214/2025",
+    artigo: "art. 348, §§ 3º e 4º (incluídos pela LC 227/2026)",
+    descricao: "Período Pedagógico — autuado exclusivamente por obrigação acessória de IBS/CBS tem 60 dias contados da notificação para regularizar, extinguindo a penalidade.",
   },
   {
     instrumento: "Regulamento IBS",
@@ -163,8 +163,11 @@ export default function CalculadoraPage() {
             </div>
             <p className="mt-3 text-sm text-slate-600">
               Em 2026 não há recolhimento efetivo do CBS/IBS (LC 214 art. 348 — período de aprendizado).
-              Após agosto/2026 termina a leniência da LC 227 sobre obrigações acessórias e a partir
-              de 2027 o CBS começa a ser cobrado efetivamente.
+              Desde 01/08/2026 a multa por obrigação acessória de IBS/CBS é aplicável (Ato Conjunto
+              RFB/CGIBS nº 1/2025, art. 3º); se autuado exclusivamente por essa obrigação, o contribuinte
+              tem 60 dias contados da notificação para regularizar, extinguindo a penalidade (art. 348,
+              §§ 3º e 4º, da LC 214/2025, incluídos pela LC 227/2026). A partir de 2027 o CBS começa a
+              ser cobrado efetivamente.
             </p>
           </div>
 
