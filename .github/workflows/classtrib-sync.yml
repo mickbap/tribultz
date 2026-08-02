@@ -53,6 +53,12 @@ jobs:
             - Se o **total de códigos mudou**, atualizar `CLASSTRIB_COUNT` em `frontend/src/lib/validation/rulesMeta.ts` (stat do site).
             - (Follow-up) re-seed do DB `cclass_trib_items` (endpoint público `/classtrib`) — exige migration própria.
 
+            ⚠️ **Checks obrigatórios não disparam sozinhos:** este PR foi aberto com o
+            `GITHUB_TOKEN` padrão, que por design do GitHub não aciona outros workflows
+            (`pull_request`) — proteção contra loop infinito de Action disparando Action.
+            `backend-gates`/`frontend-build` só rodam depois de um commit novo (ex.: qualquer
+            ajuste seu na revisão) ou de fechar e reabrir o PR.
+
             Gerado por `.github/workflows/classtrib-sync.yml`.
 
       # #446 — sem isto, uma falha (SVRS fora do ar, guard de diff abortando)
