@@ -21,7 +21,7 @@ export type ValidationInput = {
   tenantId: string;
   documentType: XmlDocumentType;
   xml: string;
-  /** LC 227/2026 art. 348: downgrade obrigações acessórias de FATAL → WARNING. Default: false */
+  /** LC 214/2025 art. 348 (incluído pela LC 227/2026): downgrade obrigações acessórias de FATAL → WARNING. Default: false */
   pedagogicalMode?: boolean;
 };
 
@@ -38,9 +38,9 @@ const PEDAGOGICAL_ACCESSORY_RULES = new Set([
 ]);
 
 const LC227_NOTE =
-  " — Período Pedagógico LC 227/2026 (art. 348 §§ 3º e 4º): " +
-  "se autuado exclusivamente por esta obrigação acessória, " +
-  "há 60 dias para regularizar sem aplicação de multa.";
+  " — Período Pedagógico art. 348, §§ 3º e 4º, da LC 214/2025 (incluídos pela LC 227/2026): " +
+  "se autuado exclusivamente por esta obrigação acessória, é notificado a regularizar em " +
+  "60 dias contados da notificação; o cumprimento extingue a penalidade.";
 
 // ── NT 2025.002 v1.40 — códigos de rejeição SEFAZ (#311) ─────────────────────
 // Anota o código oficial de rejeição nas detecções que o antecipam (NF-e/NFC-e),
@@ -1686,7 +1686,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
 
   // ── Downgrade de obrigações acessórias FATAL → WARNING ────────────────────
   // Duas bases legais independentes e combináveis:
-  //  - pedagogicalMode (LC 227/2026 art. 348): flag manual, 60 dias p/ regularizar;
+  //  - pedagogicalMode (LC 214/2025 art. 348, incluído pela LC 227/2026): flag manual, 60 dias p/ regularizar;
   //  - janela sem penalidades (Ato Conjunto RFB/CGIBS 1/25): automática por dhEmi,
   //    fatos geradores até 31/07/2026.
   const noPenaltyWindow = isWithinNoPenaltyWindow(emissionDate?.value);
