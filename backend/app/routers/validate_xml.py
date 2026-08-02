@@ -256,9 +256,9 @@ _PEDAGOGICAL_ACCESSORY_RULES = {
 _NO_TAX_CSTS = {"070", "200", "410", "800", "810", "811", "830"}
 
 _LC227_RECOMMENDATION = (
-    " — Período Pedagógico LC 227/2026 (art. 348 §§ 3º e 4º): "
-    "se autuado exclusivamente por esta obrigação acessória, "
-    "há 60 dias para regularizar sem aplicação de multa."
+    " — Período Pedagógico art. 348, §§ 3º e 4º, da LC 214/2025 (incluídos pela LC 227/2026): "
+    "se autuado exclusivamente por esta obrigação acessória, é notificado a regularizar em "
+    "60 dias contados da notificação; o cumprimento extingue a penalidade."
 )
 
 # ── NT 2025.002 v1.40 — códigos de rejeição SEFAZ (#311) ─────────────────────
@@ -303,7 +303,7 @@ def _pedagogical_severity(rule_id: str, pedagogical_mode: bool) -> str:
 # regulamentos (Decreto 12.955/2026 + Resolução CGIBS 6/2026, publicados em
 # 30/04/2026). Sem multa para fatos geradores até 31/07/2026; a partir de
 # 01/08/2026 a penalidade volta a ser aplicável → FATAL. Distinto e combinável
-# com o pedagogical_mode (LC 227/2026 art. 348), que é override manual.
+# com o pedagogical_mode (LC 214/2025 art. 348, incluído pela LC 227/2026), que é override manual.
 _NO_PENALTY_WINDOW_START = "2026-01-01"
 _NO_PENALTY_WINDOW_END = "2026-08-01"  # exclusivo: notas a partir desta data são penalizáveis
 
@@ -371,7 +371,7 @@ def validate_xml(
       classtrib_results: {code: True/False/None} from ClassTrib API batch lookup
       cnpj_result: (is_active: bool, status: str) from CNPJ API lookup
       pedagogical_mode: when True, accessory-rule FATALs become WARNINGs
-                        with LC 227/2026 art. 348 annotation
+                        with LC 214/2025 art. 348 (incluído pela LC 227/2026) annotation
     """
     xml = xml.strip()
     if not doc_type:
