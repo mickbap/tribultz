@@ -3,7 +3,7 @@
     "source": "SVRS Conformidade Fácil — consulta pública classTrib (sem credencial)",
     "source_url": "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria",
     "extraction_method": "JSON embutido na página /CFF/ClassificacaoTributaria",
-    "date": "2026-07-18",
+    "date": "2026-08-03",
     "total_codes": 164,
     "total_cst_groups": 18
   },
@@ -1364,7 +1364,6 @@
       "dfe_allowed": [
         "BPE",
         "BPETA",
-        "BPETM",
         "CTE",
         "CTEOS",
         "NF3E",
@@ -1410,7 +1409,6 @@
       "dfe_allowed": [
         "BPE",
         "BPETA",
-        "BPETM",
         "CTE",
         "CTEOS",
         "NF3E",
@@ -1420,8 +1418,7 @@
         "NFCOM",
         "NFE",
         "NFGAS",
-        "NFSE",
-        "NFSVIA"
+        "NFSE"
       ],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art6"
@@ -1840,7 +1837,6 @@
       "dfe_allowed": [
         "BPE",
         "BPETA",
-        "BPETM",
         "CTE",
         "CTEOS",
         "NF3E",
@@ -1850,8 +1846,7 @@
         "NFCOM",
         "NFE",
         "NFGAS",
-        "NFSE",
-        "NFSVIA"
+        "NFSE"
       ],
       "vigencia_ini": "2025-09-30",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art6\r\n"
@@ -1999,9 +1994,7 @@
       "mono_retencao": false,
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
-      "dfe_allowed": [
-        "NFSE"
-      ],
+      "dfe_allowed": [],
       "vigencia_ini": "2026-01-01",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art26"
     },
