@@ -86,6 +86,19 @@ Para comparar cópia local com a VM sem expor valores, compare o md5 de cada val
 
 Válidos: Magalu (API key, SSH, Object Storage), Cloudflare, Turnstile, Asaas produção, OpenRouter, HubSpot, GitHub.
 
+## Resolvido (2026-08-07): Resend (`SMTP_PASSWORD`)
+
+Chave revogada (401) desde antes de 15/07 — corrigido mediante **exceção pontual**
+à ordem de não-rotação, autorizada explicitamente pelo usuário (o caso já estava
+registrado como pendência abaixo desde 15/07; a ordem geral permanece em vigor
+para as demais credenciais). Nova chave gerada no dashboard do Resend, propagada
+via `sed` remoto direto em `/opt/tribultz/.env` (sem puxar o arquivo inteiro pra
+uma sessão) e no `.env.prod` local. `docker compose restart api worker beat`
+aplicado; `/health/deep` confirmou `"email":"ok"` pós-restart.
+**`secrets/credentials.md` não existe neste Mac** (provável arquivo só-Windows,
+condizente com a seção "Por que funciona no Windows e não no Mac" abaixo) —
+não atualizado; pendente confirmar/replicar na máquina onde o arquivo vive.
+
 ## Resolvido (2026-07-29): `CLOUDFLARE_ANALYTICS_TOKEN`
 
 Gerado e testado (E2E, local) para a seção de tráfego do site no painel admin
@@ -102,13 +115,11 @@ não é segredo — já tem default no `app/config.py`.
 
 **Pendências abertas** (registradas, sem ação — ver ordem acima)**:**
 
-1. **Resend revogado.** A chave é idêntica em `.env.prod`, `secrets/credentials.md` e na memória, e as três retornam **HTTP 401**. E-mail transacional está quebrado em produção com `EMAIL_VERIFICATION_ENABLED=true` — provavelmente ninguém consegue concluir cadastro. Ao rotacionar, a nova chave precisa entrar em **quatro** lugares: `/opt/tribultz/.env` (VM), `.env.prod` (local), `secrets/credentials.md` e a memória.
+1. **`GITHUB_TOKEN` de produção é um OAuth pessoal.** O valor em `/opt/tribultz/.env` é byte a byte o mesmo token `gho_` do `gh` CLI do `mickbap` (confirmado por hash). Consequências: `gh auth logout`, troca de máquina ou expiração do OAuth derrubam produção junto; e o escopo `repo` alcança todos os repositórios da conta, não só este. Deveria ser um fine-grained PAT restrito a `mickbap/tribultz` ou um GitHub App.
 
-2. **`GITHUB_TOKEN` de produção é um OAuth pessoal.** O valor em `/opt/tribultz/.env` é byte a byte o mesmo token `gho_` do `gh` CLI do `mickbap` (confirmado por hash). Consequências: `gh auth logout`, troca de máquina ou expiração do OAuth derrubam produção junto; e o escopo `repo` alcança todos os repositórios da conta, não só este. Deveria ser um fine-grained PAT restrito a `mickbap/tribultz` ou um GitHub App.
+2. **`gh` CLI sem escopo `workflow`.** Escopos atuais: `gist`, `read:org`, `repo`. Alterar `.github/workflows/**` via API/CLI falha; só via push.
 
-3. **`gh` CLI sem escopo `workflow`.** Escopos atuais: `gist`, `read:org`, `repo`. Alterar `.github/workflows/**` via API/CLI falha; só via push.
-
-4. **`refresh_token` do mgc exposto em transcript** (Mac, 2026-07-15). Um `mgc auth tenant set` imprimiu `access_token` e `refresh_token` completos em texto puro numa sessão de agente. O `refresh_token` continua cunhando access tokens até um `mgc auth logout` — que, por ordem vigente, **não será executado**. Prevenção: sempre redirecionar a saída desse comando (`> /dev/null 2>&1`).
+3. **`refresh_token` do mgc exposto em transcript** (Mac, 2026-07-15). Um `mgc auth tenant set` imprimiu `access_token` e `refresh_token` completos em texto puro numa sessão de agente. O `refresh_token` continua cunhando access tokens até um `mgc auth logout` — que, por ordem vigente, **não será executado**. Prevenção: sempre redirecionar a saída desse comando (`> /dev/null 2>&1`).
 
 ## Por que "funciona no Windows" e não no Mac
 
