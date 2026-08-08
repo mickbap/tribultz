@@ -102,7 +102,7 @@ def client_fixture(session):
 @pytestmark_db
 def test_fluxo_completo_grant(client, session):
     email = f"fp-{uuid.uuid4().hex[:8]}@empresa.com"
-    hoje = date(2026, 7, 8)
+    hoje = date.today()
     # 1. Admite empresa já com Grant (Plano Contador, vigência).
     r = client.post("/api/v1/admin/founding-partners", json={
         "empresa": "Contabilidade Duquesa", "email": email, "origem": "indicacao",
