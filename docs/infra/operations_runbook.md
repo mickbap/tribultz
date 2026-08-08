@@ -133,6 +133,27 @@ Magalu (multi-provedor).
 - Se uma mudança emergencial precisar ser feita direto na VM (ex.: indisponibilidade), ela **deve** ser trazida ao repo via PR na sequência imediata — nunca deixada solta no working tree.
 - `tools/check_access.sh` e este runbook devem ser consultados antes de qualquer deploy manual.
 
+**Exemplo aplicado (08/08/2026, ENG-014):** `/etc/systemd/timesyncd.conf` da VM foi
+editado direto via SSH (config de NTP, não faz parte de nenhum compose/serviço —
+não existia trilha de repo pra essa mudança até então) para apontar a Hora Legal
+Brasileira (`a-d.st1.ntp.br`) em vez do default `ntp.ubuntu.com` — motivo:
+Governança Temporal ([RFC-0030](https://github.com/mickbap/tribultz-brain/blob/main/knowledge/rfcs/RFC-0030-governanca-temporal.md))
+exige que T2 (verdade em UTC dos carimbos) rastreie a fonte regulada, não um
+pool de terceiro. Trazido ao repo na sequência imediata: `infra/scripts/magalu-init.sh`
+(seção "1b. NTP") agora aplica essa config em qualquer bootstrap futuro — sem
+isso, uma VM nova recriada do zero voltaria silenciosamente ao default Ubuntu.
+
+## Configuração de tempo (NTP)
+
+VM sincronizada à **Hora Legal Brasileira** (Observatório Nacional/NIC.br, pool
+`ntp.br`) via `systemd-timesyncd` — configurado em `/etc/systemd/timesyncd.conf`
+(`NTP=a.st1.ntp.br b.st1.ntp.br c.st1.ntp.br d.st1.ntp.br`,
+`FallbackNTP=pool.ntp.br`) e replicado no bootstrap (`infra/scripts/magalu-init.sh`,
+seção "1b"). Verificar com `timedatectl show-timesync --property=ServerName --value`
+— deve retornar um host `*.st1.ntp.br`, nunca `ntp.ubuntu.com`. Contexto: Governança
+Temporal ([RFC-0030](https://github.com/mickbap/tribultz-brain/blob/main/knowledge/rfcs/RFC-0030-governanca-temporal.md)) —
+T2 (verdade dos carimbos) deve rastrear a fonte regulada.
+
 ## Recuperação de ambiente (bootstrap de máquina nova)
 
 Runbook completo de onboarding (SSH, `mgc`, `gh`, Vercel, `.env.prod`) em `docs/infra/secrets_inventory.md` (seção "Onboarding em máquina nova"). Resumo:
