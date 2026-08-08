@@ -19,13 +19,18 @@ test("NFSe com erros gera findings FATAL esperados", () => {
 
   const fatalIds = result.findings.filter((f) => f.severity === "FATAL").map((f) => f.rule_id);
   // Regulamento 30/abr/2026: CEST_MISSING downgraded to ALERT (apenas ST) — issue #275
-  // Original 3 format rules + IBSCBS_MISSING + LAYOUT_PORTAL
+  // NT 2025.002 v1.51 (04/08/2026): IBSCBS_MISSING (Rejeição 1115/UB12-10) deixou de
+  // ser FATAL — implementação em produção da rejeição está suspensa, sem data.
+  // Original 3 format rules + LAYOUT_PORTAL
   assert.ok(fatalIds.includes("CST_3_DIGITS"), "expected CST_3_DIGITS");
   assert.ok(fatalIds.includes("CCLASSTRIB_6_DIGITS"), "expected CCLASSTRIB_6_DIGITS");
   assert.ok(fatalIds.includes("SERVICE_CODE_6_DIGITS"), "expected SERVICE_CODE_6_DIGITS");
-  assert.ok(fatalIds.includes("IBSCBS_MISSING"), "expected IBSCBS_MISSING");
+  assert.ok(!fatalIds.includes("IBSCBS_MISSING"), "IBSCBS_MISSING não deve mais ser FATAL (v1.51)");
   assert.ok(fatalIds.includes("LAYOUT_PORTAL"), "expected LAYOUT_PORTAL");
-  assert.equal(fatalIds.length, 5);
+  assert.equal(fatalIds.length, 4);
+
+  const ibscbsFinding = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
+  assert.equal(ibscbsFinding?.severity, "WARNING");
 });
 
 test("NFSe ok não gera FATAL", () => {
@@ -73,7 +78,7 @@ test("determinismo: mesmo XML + tipo gera mesmos finding ids e ordem", () => {
 
 // ── New rules (S7) — IBSCBS_MISSING ─────────────────────────────────────────
 
-test("IBSCBS_MISSING: nota sem tags IBS/CBS gera FATAL", () => {
+test("IBSCBS_MISSING: nota sem tags IBS/CBS gera WARNING (v1.51 — produção suspensa)", () => {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <NFS-e><infNfse>
   <PrestadorServico><RazaoSocial>X</RazaoSocial></PrestadorServico>
@@ -90,7 +95,7 @@ test("IBSCBS_MISSING: nota sem tags IBS/CBS gera FATAL", () => {
   const result = validateXmlWithRules({ tenantId: "t", documentType: "NFSE", xml });
   const f = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
   assert.ok(f, "IBSCBS_MISSING finding expected");
-  assert.equal(f!.severity, "FATAL");
+  assert.equal(f!.severity, "WARNING");
 });
 
 // ── New rules (S7) — IBSCBS_CALC ────────────────────────────────────────────
@@ -355,11 +360,11 @@ test("IBSCBS_MISSING: CRT 4 (MEI) sem IBS/CBS → WARNING (#311)", () => {
   assert.equal(f?.severity, "WARNING");
 });
 
-test("IBSCBS_MISSING: CRT 3 (Regime Normal) sem IBS/CBS → FATAL (#311)", () => {
+test("IBSCBS_MISSING: CRT 3 (Regime Normal) sem IBS/CBS → WARNING (v1.51 — produção suspensa, #311)", () => {
   const result = validateXmlWithRules({ tenantId: "t", documentType: "NFE", xml: nfeSemIbscbs("3") });
   const f = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
   assert.ok(f, "IBSCBS_MISSING esperado");
-  assert.equal(f!.severity, "FATAL");
+  assert.equal(f!.severity, "WARNING");
 });
 
 // ── S11: NFC-e ok — no FATALs ──────────────────────────────────────────────
@@ -670,6 +675,15 @@ test("SPLIT_PAYMENT_INDPAG: indPag=0 (à vista) sem CBS/IBS não gera finding", 
 // 31/07/2026 (regulamentos publicados 30/04/2026). A partir de 01/08/2026 a
 // penalidade volta a ser aplicável → severidade FATAL. pedagogicalMode (LC 227)
 // permanece como override manual independente da data.
+//
+// Veículo: IBSCBSTOT_MISSING (Rejeição 1119/W34-20), não IBSCBS_MISSING — desde a
+// NT 2025.002 v1.51 (04/08/2026), IBSCBS_MISSING (Rejeição 1115/UB12-10) é WARNING
+// incondicional (implementação em produção da rejeição suspensa, sem data — ver
+// testes dedicados logo abaixo) e não participa mais deste mecanismo de janela/
+// pedagogicalMode. IBSCBSTOT_MISSING permanece com o comportamento antigo,
+// inalterado (mapa NT v1.51 §2/§6b), e por isso segue sendo o veículo certo pra
+// testar a janela sem penalidades em si. Usa o fixture `nfeW03` (definido mais
+// abaixo, #403) — item com IBSCBS preenchido, IBSCBSTot ausente.
 
 const nfeAcessoriaErr = (crt: string, dhEmi?: string) => `<?xml version="1.0" encoding="UTF-8"?>
 <nfeProc><NFe><infNFe>
@@ -682,46 +696,69 @@ const nfeAcessoriaErr = (crt: string, dhEmi?: string) => `<?xml version="1.0" en
   <total></total>
 </infNFe></NFe></nfeProc>`;
 
-test("janela: CRT 3 com dhEmi 2026-07-31 → IBSCBS_MISSING WARNING (sem penalidade)", () => {
+test("janela: CRT 3, item c/ IBSCBS sem IBSCBSTot, dhEmi 2026-07-31 → IBSCBSTOT_MISSING WARNING (sem penalidade)", () => {
   const result = validateXmlWithRules({
-    tenantId: "t", documentType: "NFE", xml: nfeAcessoriaErr("3", "2026-07-31T10:00:00-03:00"),
+    tenantId: "t", documentType: "NFE", xml: nfeW03({ crt: "3", dhEmi: "2026-07-31T10:00:00-03:00", tot: false }),
   });
-  const f = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
-  assert.ok(f, "IBSCBS_MISSING esperado");
+  const f = result.findings.find((f) => f.rule_id === "IBSCBSTOT_MISSING");
+  assert.ok(f, "IBSCBSTOT_MISSING esperado");
   assert.equal(f!.severity, "WARNING");
   assert.match(f!.recommendation ?? "", /Ato Conjunto RFB\/CGIBS/);
 });
 
-test("janela: CRT 3 com dhEmi 2026-08-01 → IBSCBS_MISSING FATAL (janela fechada)", () => {
+test("janela: CRT 3, dhEmi 2026-08-01 → IBSCBSTOT_MISSING FATAL (janela fechada)", () => {
   const result = validateXmlWithRules({
-    tenantId: "t", documentType: "NFE", xml: nfeAcessoriaErr("3", "2026-08-01T10:00:00-03:00"),
+    tenantId: "t", documentType: "NFE", xml: nfeW03({ crt: "3", dhEmi: "2026-08-01T10:00:00-03:00", tot: false }),
   });
-  const f = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
+  const f = result.findings.find((f) => f.rule_id === "IBSCBSTOT_MISSING");
   assert.equal(f?.severity, "FATAL");
 });
 
-test("janela: CRT 3 com dhEmi 2026-08-15 → IBSCBS_MISSING FATAL", () => {
+test("janela: CRT 3, dhEmi 2026-08-15 → IBSCBSTOT_MISSING FATAL", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t", documentType: "NFE", xml: nfeW03({ crt: "3", dhEmi: "2026-08-15T10:00:00-03:00", tot: false }),
+  });
+  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBSTOT_MISSING")?.severity, "FATAL");
+});
+
+test("janela: CRT 3, dhEmi vazio → IBSCBSTOT_MISSING FATAL (comportamento preservado)", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t", documentType: "NFE", xml: nfeW03({ crt: "3", dhEmi: "", tot: false }),
+  });
+  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBSTOT_MISSING")?.severity, "FATAL");
+});
+
+test("janela: fora da janela + pedagogicalMode → IBSCBSTOT_MISSING WARNING com nota LC 227", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t", documentType: "NFE", xml: nfeW03({ crt: "3", dhEmi: "2026-09-10T10:00:00-03:00", tot: false }),
+    pedagogicalMode: true,
+  });
+  const f = result.findings.find((f) => f.rule_id === "IBSCBSTOT_MISSING");
+  assert.equal(f?.severity, "WARNING");
+  assert.match(f!.recommendation ?? "", /LC 227\/2026/);
+});
+
+// ── NT 2025.002 v1.51 (04/08/2026): IBSCBS_MISSING sempre WARNING ────────────
+// Rejeição 1115/UB12-10 com implementação em produção suspensa (sem data) —
+// diferente de IBSCBSTOT_MISSING acima, não depende mais de CRT, janela do Ato
+// Conjunto 1/25 nem de pedagogicalMode.
+
+test("IBSCBS_MISSING v1.51: CRT 3, pós-01/08/2026, sem pedagogicalMode → ainda WARNING", () => {
   const result = validateXmlWithRules({
     tenantId: "t", documentType: "NFE", xml: nfeAcessoriaErr("3", "2026-08-15T10:00:00-03:00"),
   });
-  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBS_MISSING")?.severity, "FATAL");
+  const f = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
+  assert.ok(f, "IBSCBS_MISSING esperado");
+  assert.equal(f!.severity, "WARNING");
+  assert.match(f!.recommendation ?? "", /implementação em produção SUSPENSA/);
+  assert.match(f!.recommendation ?? "", /multa por obrigação acessória segue aplicável desde 01\/08\/2026/);
 });
 
-test("janela: CRT 3 sem dhEmi → IBSCBS_MISSING FATAL (comportamento preservado)", () => {
+test("IBSCBS_MISSING v1.51: CRT 3, sem dhEmi → ainda WARNING (não depende mais da janela)", () => {
   const result = validateXmlWithRules({
     tenantId: "t", documentType: "NFE", xml: nfeAcessoriaErr("3"),
   });
-  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBS_MISSING")?.severity, "FATAL");
-});
-
-test("janela: fora da janela + pedagogicalMode → WARNING com nota LC 227", () => {
-  const result = validateXmlWithRules({
-    tenantId: "t", documentType: "NFE", xml: nfeAcessoriaErr("3", "2026-09-10T10:00:00-03:00"),
-    pedagogicalMode: true,
-  });
-  const f = result.findings.find((f) => f.rule_id === "IBSCBS_MISSING");
-  assert.equal(f?.severity, "WARNING");
-  assert.match(f!.recommendation ?? "", /LC 227\/2026/);
+  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBS_MISSING")?.severity, "WARNING");
 });
 
 test("janela: regra de formato (CST_3_DIGITS) dentro da janela → WARNING", () => {

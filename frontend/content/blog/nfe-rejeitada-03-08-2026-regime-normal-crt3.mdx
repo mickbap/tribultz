@@ -8,8 +8,8 @@ author:
   jobTitle: "Conteúdo Fiscal"
   url: "https://tribultz.com.br/sobre"
 publishedAt: "2026-07-14T12:00:00.000Z"
-updatedAt: "2026-07-31"
-updateNote: "Ato Conjunto RFB/CGIBS nº 4/2026 (30/07/2026) confirma oficialmente o cronograma de emissão obrigatória com IBS/CBS — 03/08/2026 mantido para NF-e/NFC-e, com prazos individualizados por tipo de documento para os demais. Adicionado como referência legal."
+updatedAt: "2026-08-08"
+updateNote: "NT 2025.002 v1.51 (04/08/2026): a Rejeição 1115 (regra UB12-10 — item sem IBS/CBS) teve a implementação em produção alterada de \"03/08/2026\" para \"implementação futura, sem data\" — hoje só bloqueia em homologação, não em produção. A Rejeição 1119 (totais, regra W34-20) segue inalterada, bloqueando desde 03/08/2026. A obrigação legal e a multa por obrigação acessória (desde 01/08/2026) não mudaram — só a rejeição técnica da 1115 foi suspensa. Título e corpo mantidos por precisar de contexto histórico; ver atualização e trechos corrigidos abaixo."
 tags:
   - "Reforma Tributária"
   - NF-e
@@ -20,7 +20,9 @@ tags:
   - "CRT 3"
 legalRefs:
   - instrumento: "NT 2025.002-RTC v1.40"
-    descricao: "Regras UB12-10 (Rejeição 1115) e W34-20 (Rejeição 1119) — produção obrigatória a partir de 03/08/2026 para o Regime Normal (CRT 3) e 04/01/2027 para Simples Nacional/MEI."
+    descricao: "Regras UB12-10 (Rejeição 1115) e W34-20 (Rejeição 1119) — produção obrigatória a partir de 03/08/2026 para o Regime Normal (CRT 3) e 04/01/2027 para Simples Nacional/MEI (texto vigente até a v1.51)."
+  - instrumento: "NT 2025.002 v1.51"
+    descricao: "Publicada em 04/08/2026: implementação em produção da Rejeição 1115 (UB12-10) alterada para \"implementação futura, sem data\". A Rejeição 1119 (W34-20) não foi afetada."
   - instrumento: "Ato Conjunto RFB/CGIBS nº 4/2026"
     descricao: "Publicado em 30/07/2026, confirma oficialmente o cronograma de obrigatoriedade de emissão de Documentos Fiscais Eletrônicos com IBS/CBS: 03/08/2026 mantido para NF-e (modelo 55) e NFC-e (modelo 65); demais documentos (NFS-e, CT-e etc.) recebem prazos individualizados por tipo."
   - instrumento: "Ato Conjunto RFB/CGIBS nº 1/2025"
@@ -40,13 +42,15 @@ legalRefs:
 
 <p><strong>Atualização (31/07/2026):</strong> o cronograma deixou de ser só previsão da NT 2025.002-RTC. O Ato Conjunto RFB/CGIBS nº 4/2026, publicado em 30/07/2026, confirma oficialmente 03/08/2026 para NF-e e NFC-e — e individualiza prazos por tipo de documento para o restante (NFS-e, CT-e etc.). Para quem emite pelo Regime Normal, nada mudou na prática: a data já era essa, agora está formalizada.</p>
 
+<p><strong>Atualização (08/08/2026):</strong> a NT 2025.002 v1.51, publicada em 04/08/2026, alterou o status da <strong>Rejeição 1115</strong> (regra UB12-10 — item sem IBS/CBS): a implementação em produção passou de "03/08/2026" para "implementação futura, sem data". Ou seja, hoje a SEFAZ ainda <strong>não</strong> rejeita a emissão só por um item estar sem IBS/CBS — essa checagem segue ativa apenas em homologação. A <strong>Rejeição 1119</strong> (grupo de totais ausente ou inconsistente, regra W34-20) não foi afetada e continua bloqueando a emissão desde 03/08/2026, como descrito abaixo. A obrigação legal de preencher IBS/CBS (LC 214) e a multa por obrigação acessória (Ato Conjunto RFB/CGIBS nº 1/2025, desde 01/08/2026) também não mudaram — só a rejeição técnica da 1115 na autorização foi suspensa. O restante deste texto foi escrito antes desse achado; onde citar bloqueio pela Rejeição 1115 especificamente, vale este parágrafo, não o texto original.</p>
+
 <h2>O que muda em 03/08/2026</h2>
 <p>A partir dessa data entram em produção obrigatória, para quem emite no Regime Normal (CRT 3), duas regras da NT 2025.002-RTC v1.40 que hoje já existem no ambiente de homologação, mas que passam a valer de verdade no ambiente de produção da SEFAZ:</p>
 <ul>
-<li>Regra <strong>UB12-10</strong>, associada à <strong>Rejeição 1115</strong>: item da NF-e sem preenchimento de IBS/CBS.</li>
-<li>Regra <strong>W34-20</strong>, associada à <strong>Rejeição 1119</strong>: grupo de totais da nota (o total de IBS/CBS/IS, tecnicamente chamado de IBSCBSTot) ausente quando ao menos um item já informa IBS/CBS.</li>
+<li>Regra <strong>UB12-10</strong>, associada à <strong>Rejeição 1115</strong>: item da NF-e sem preenchimento de IBS/CBS. <strong>Atualização:</strong> a implementação em produção desta regra foi suspensa pela NT 2025.002 v1.51 (04/08/2026) — ver atualização no início do texto. Hoje só bloqueia em homologação.</li>
+<li>Regra <strong>W34-20</strong>, associada à <strong>Rejeição 1119</strong>: grupo de totais da nota (o total de IBS/CBS/IS, tecnicamente chamado de IBSCBSTot) ausente quando ao menos um item já informa IBS/CBS. Não afetada pela v1.51 — segue no cronograma abaixo.</li>
 </ul>
-<p>Na prática: se um item da nota tem os campos de IBS/CBS preenchidos mas o bloco de totais da NF-e não reflete essa soma, ou se algum item simplesmente não traz esses campos, o documento não é mais aceito. Antes dessa data, esse tipo de inconsistência tende a passar; depois, não passa.</p>
+<p>Na prática, hoje: se o bloco de totais da NF-e não reflete a soma dos campos de IBS/CBS já preenchidos nos itens (Rejeição 1119), o documento não é aceito. Se algum item simplesmente não traz esses campos (Rejeição 1115), a nota ainda passa em produção — a rejeição por esse motivo específico está suspensa, sem data prevista.</p>
 
 <h2>Quem é afetado primeiro: Regime Normal x Simples Nacional/MEI</h2>
 <p>Essa obrigatoriedade é faseada por CRT (Código de Regime Tributário), o campo que identifica o regime do emitente na própria NF-e:</p>
@@ -60,7 +64,7 @@ legalRefs:
 <p>Esse é o ponto onde a maioria das análises apressadas erra. Existem duas datas próximas, mas com significados distintos:</p>
 <ul>
 <li><strong>01/08/2026</strong> — fim do prazo de carência de <em>multa por obrigação acessória</em> de IBS/CBS (Ato Conjunto RFB/CGIBS nº 1/2025, art. 3º). Até 31/07/2026, o descumprimento dessa obrigação acessória não gera multa; a partir de 01/08/2026, gera.</li>
-<li><strong>03/08/2026</strong> — data em que a <em>rejeição na emissão</em> (Rejeições 1115 e 1119, Regime Normal) passa a valer em produção na SEFAZ. É o primeiro dia útil após 01/08/2026 (sábado) e 02/08/2026 (domingo).</li>
+<li><strong>03/08/2026</strong> — data em que a <em>rejeição na emissão</em> por totais ausentes/inconsistentes (Rejeição 1119, Regime Normal) passa a valer em produção na SEFAZ. É o primeiro dia útil após 01/08/2026 (sábado) e 02/08/2026 (domingo). A Rejeição 1115 (item sem IBS/CBS) tinha a mesma data prevista, mas está com produção suspensa desde a NT 2025.002 v1.51 (04/08/2026) — ver atualização no início do texto.</li>
 </ul>
 <p>Ou seja: a partir de 01/08 já existe risco de multa por obrigação acessória descumprida, e a partir de 03/08 o documento simplesmente para de ser aceito se o problema persistir. Uma coisa reforça a outra, mas não são o mesmo evento.</p>
 <p>Há ainda um detalhe pouco divulgado: se a autuação decorrer <em>exclusivamente</em> do descumprimento dessa obrigação acessória de IBS/CBS, a LC 214/2025 (art. 348, §§ 3º e 4º, incluídos pela LC 227/2026) prevê mais 60 dias de prazo para regularizar antes da aplicação efetiva da multa. Isso não reduz o risco, mas muda o cronograma de reação em caso de autuação — vale conhecer antes de entrar em pânico.</p>
