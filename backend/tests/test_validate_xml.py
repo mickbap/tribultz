@@ -117,7 +117,9 @@ class TestNfseValidation:
           </PrestacaoServico>
         </infNfse></NFS-e>"""
         result = validate_xml(xml)
-        rules = [f.rule_id for f in result.findings if f.severity == "FATAL"]
+        # NT 2025.002 v1.51 (04/08/2026): IBSCBS_MISSING (Rejeição 1115/UB12-10) deixou
+        # de ser FATAL — implementação em produção da rejeição está suspensa, sem data.
+        rules = [f.rule_id for f in result.findings if f.severity == "WARNING"]
         assert "IBSCBS_MISSING" in rules
 
 
@@ -368,13 +370,16 @@ class TestNfeValidation:
         assert missing and all(f.severity == "WARNING" for f in missing), \
             f"CRT 4 (MEI) deve ser WARNING: {[f.severity for f in missing]}"
 
-    def test_ibscbs_missing_regime_normal_crt3_is_fatal(self):
-        """Regime Normal (CRT 3) sem IBS/CBS → FATAL (obrigatório 03/08/2026)."""
+    def test_ibscbs_missing_regime_normal_crt3_is_warning(self):
+        """Regime Normal (CRT 3) sem IBS/CBS → WARNING (NT 2025.002 v1.51: rejeição
+        1115/UB12-10 com implementação em produção suspensa, sem data; a obrigação
+        legal desde 03/08/2026 e a multa por obrigação acessória desde 01/08/2026
+        seguem valendo, mas não bloqueiam mais a emissão)."""
         result = validate_xml(self._NFE_SEM_IBSCBS.format(crt="3"), "NFE")
         missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
         assert missing, "IBSCBS_MISSING esperado"
-        assert all(f.severity == "FATAL" for f in missing), \
-            f"CRT 3 (Regime Normal) deve ser FATAL: {[f.severity for f in missing]}"
+        assert all(f.severity == "WARNING" for f in missing), \
+            f"CRT 3 (Regime Normal) deve ser WARNING (v1.51): {[f.severity for f in missing]}"
 
 
 # ── NFC-e validation ─────────────────────────────────────────────────────────
@@ -417,7 +422,47 @@ class TestRouterRegistered:
 class TestNoPenaltyWindow:
     """Multas por obrigação acessória suspensas para fatos geradores até 31/07/2026.
     A partir de 01/08/2026 a penalidade volta a ser FATAL. pedagogical_mode (LC 227)
-    permanece como override manual independente da data."""
+    permanece como override manual independente da data.
+
+    Veículo: IBSCBSTOT_MISSING (Rejeição 1119/W34-20), não IBSCBS_MISSING — desde a
+    NT 2025.002 v1.51 (04/08/2026), IBSCBS_MISSING (Rejeição 1115/UB12-10) é WARNING
+    incondicional (implementação em produção da rejeição suspensa, sem data; ver
+    TestIbscbsMissingV151 abaixo) e não participa mais deste mecanismo de janela/
+    pedagogical_mode. IBSCBSTOT_MISSING permanece com o comportamento antigo,
+    inalterado (mapa NT v1.51 §2/§6b), por isso segue como veículo certo pra testar
+    a janela sem penalidades em si. Usa `_nfe_w03` (definido mais abaixo, #403)."""
+
+    def test_dentro_da_janela_downgrade_para_warning(self):
+        result = validate_xml(_nfe_w03(dh_emi="2026-07-31T10:00:00-03:00", tot=False), "NFE")
+        missing = [f for f in result.findings if f.rule_id == "IBSCBSTOT_MISSING"]
+        assert missing, "IBSCBSTOT_MISSING esperado"
+        assert all(f.severity == "WARNING" for f in missing)
+        assert any("Ato Conjunto RFB/CGIBS" in (f.recommendation or "") for f in missing)
+
+    def test_limite_01_08_2026_volta_a_fatal(self):
+        result = validate_xml(_nfe_w03(dh_emi="2026-08-01T10:00:00-03:00", tot=False), "NFE")
+        missing = [f for f in result.findings if f.rule_id == "IBSCBSTOT_MISSING"]
+        assert missing and all(f.severity == "FATAL" for f in missing)
+
+    def test_fora_da_janela_fatal(self):
+        result = validate_xml(_nfe_w03(dh_emi="2026-08-15T10:00:00-03:00", tot=False), "NFE")
+        missing = [f for f in result.findings if f.rule_id == "IBSCBSTOT_MISSING"]
+        assert missing and all(f.severity == "FATAL" for f in missing)
+
+    def test_pedagogical_mode_fora_da_janela_warning(self):
+        result = validate_xml(
+            _nfe_w03(dh_emi="2026-09-10T10:00:00-03:00", tot=False), "NFE", pedagogical_mode=True,
+        )
+        missing = [f for f in result.findings if f.rule_id == "IBSCBSTOT_MISSING"]
+        assert missing and all(f.severity == "WARNING" for f in missing)
+        assert any("LC 227/2026" in (f.recommendation or "") for f in missing)
+
+
+class TestIbscbsMissingV151:
+    """NT 2025.002 v1.51 (04/08/2026): IBSCBS_MISSING sempre WARNING. Rejeição
+    1115/UB12-10 com implementação em produção suspensa (sem data) — diferente de
+    IBSCBSTOT_MISSING (TestNoPenaltyWindow acima), não depende mais de CRT, janela
+    do Ato Conjunto 1/25 nem de pedagogical_mode."""
 
     _NFE = """<nfeProc><NFe><infNFe>
       <ide><mod>55</mod>{dh}</ide>
@@ -432,33 +477,21 @@ class TestNoPenaltyWindow:
     def _nfe(self, dh=None):
         return self._NFE.format(dh=f"<dhEmi>{dh}</dhEmi>" if dh else "")
 
-    def test_dentro_da_janela_downgrade_para_warning(self):
-        result = validate_xml(self._nfe("2026-07-31T10:00:00-03:00"), "NFE")
+    def test_pos_01_08_2026_sem_pedagogical_mode_ainda_warning(self):
+        result = validate_xml(self._nfe("2026-08-15T10:00:00-03:00"), "NFE")
         missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
         assert missing, "IBSCBS_MISSING esperado"
         assert all(f.severity == "WARNING" for f in missing)
-        assert any("Ato Conjunto RFB/CGIBS" in (f.recommendation or "") for f in missing)
+        assert any("implementação em produção SUSPENSA" in (f.recommendation or "") for f in missing)
+        assert any(
+            "multa por obrigação acessória segue aplicável desde 01/08/2026" in (f.recommendation or "")
+            for f in missing
+        )
 
-    def test_limite_01_08_2026_volta_a_fatal(self):
-        result = validate_xml(self._nfe("2026-08-01T10:00:00-03:00"), "NFE")
-        missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
-        assert missing and all(f.severity == "FATAL" for f in missing)
-
-    def test_fora_da_janela_fatal(self):
-        result = validate_xml(self._nfe("2026-08-15T10:00:00-03:00"), "NFE")
-        missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
-        assert missing and all(f.severity == "FATAL" for f in missing)
-
-    def test_sem_dhemi_preserva_fatal(self):
+    def test_sem_dhemi_ainda_warning(self):
         result = validate_xml(self._nfe(), "NFE")
         missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
-        assert missing and all(f.severity == "FATAL" for f in missing)
-
-    def test_pedagogical_mode_fora_da_janela_warning(self):
-        result = validate_xml(self._nfe("2026-09-10T10:00:00-03:00"), "NFE", pedagogical_mode=True)
-        missing = [f for f in result.findings if f.rule_id == "IBSCBS_MISSING"]
         assert missing and all(f.severity == "WARNING" for f in missing)
-        assert any("LC 227/2026" in (f.recommendation or "") for f in missing)
 
     def test_regra_nao_acessoria_permanece_fatal_na_janela(self):
         # IBSCBS_SPLIT é regra de cálculo, não obrigação acessória → não entra na janela.

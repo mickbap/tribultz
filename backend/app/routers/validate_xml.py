@@ -243,11 +243,14 @@ def _extract_regime_comparison(xml: str, has_ibscbs: bool) -> RegimeComparison |
 _PEDAGOGICAL_ACCESSORY_RULES = {
     "CST_3_DIGITS", "CCLASSTRIB_6_DIGITS", "SERVICE_CODE_6_DIGITS",
     "CST_VALID", "CST_GROUP_MATCH", "CST_SEMANTIC",
-    "IBSCBS_MISSING", "CEST_MISSING", "CEST_FORMAT",
+    "CEST_MISSING", "CEST_FORMAT",
     "LAYOUT_NFE", "LAYOUT_PORTAL", "IMPORT_IBSCBS_REQUIRED",
     "NCM_FORMAT", "NCM_VALID", "CLASSTRIB_VALID",
     "IBSCBSTOT_MISSING",
 }
+# IBSCBS_MISSING (Rejeição 1115/UB12-10) NÃO está mais aqui: desde a NT 2025.002
+# v1.51, sua severidade é WARNING incondicional (implementação em produção
+# suspensa pela própria NT, não pelo Período Pedagógico) — ver Rule 6.
 
 # CSTs que legitimamente não destacam IBS/CBS no estágio atual — imunidade/isenção
 # (070), suspensão (410), diferimento (200, tributo postergado p/ operação seguinte)
@@ -266,8 +269,10 @@ _LC227_RECOMMENDATION = (
 # para o usuário saber como a SEFAZ rejeitará. Precedente: Rejeição 1157.
 _REJECTION_CODES = {
     "IBSCBS_MISSING": (
-        " — SEFAZ: Rejeição 1115 (regra UB12-10): preenchimento de IBS/CBS obrigatório — "
-        "produção a partir de 03/08/2026 (Regime Normal/CRT 3) e 04/01/2027 (Simples/MEI), NT 2025.002 v1.40."
+        " — SEFAZ: Rejeição 1115 (regra UB12-10): preenchimento de IBS/CBS obrigatório pela "
+        "legislação desde 03/08/2026 (Regime Normal/CRT 3) e 04/01/2027 (Simples/MEI); a rejeição "
+        "técnica na autorização está com implementação em produção SUSPENSA — \"implementação futura\", "
+        "sem data (NT 2025.002 v1.51). Homologação segue ativa desde 01/07/2026."
     ),
     "CCLASSTRIB_6_DIGITS": (
         " — SEFAZ: Rejeição 1106 (regra LA01-30) / 960 (regra N12-110): cClassTrib obrigatório "
@@ -503,21 +508,37 @@ def validate_xml(
 
     # ── Rule 6: IBSCBS_MISSING ───────────────────────────────────────────────
 
-    # NT 2025.002 v1.40 (#311): obrigatoriedade de IBS/CBS é faseada por regime —
-    # Simples/MEI (CRT 1/2/4) só a partir de 04/01/2027. Não emitir FATAL por ausência
-    # nesses regimes; Regime Normal (CRT 3) segue o cronograma (03/08/2026).
+    # Rejeição 1115 (UB12-10, grupo IBSCBS ausente) — NT 2025.002 v1.51 (04/08/2026):
+    # implementação em produção passou de "≥ 03/08/2026" para "implementação futura,
+    # sem data". A obrigação legal (LC 214) e a multa por obrigação acessória (Ato
+    # Conjunto RFB/CGIBS nº 1/2025, desde 01/08/2026) não mudaram — só a rejeição
+    # técnica na autorização foi suspensa. WARNING incondicional: não depende mais de
+    # CRT nem de pedagogical_mode (a suspensão é da própria NT, não do Período
+    # Pedagógico art. 348 LC 214, que é um mecanismo distinto). IBSCBS_MISSING foi
+    # retirado de _PEDAGOGICAL_ACCESSORY_RULES por não ser mais governado por ele.
     _crt_val = crt["value"].strip() if crt else ""
     _is_simples_mei = _crt_val in ("1", "2", "4")
-    _ibscbs_sev = "WARNING" if _is_simples_mei else _pedagogical_severity("IBSCBS_MISSING", pedagogical_mode)
-    _simples_note = " Simples Nacional/MEI: obrigatório a partir de 04/01/2027 (NT 2025.002 v1.40)."
+    _ibscbs_sev = "WARNING"
+    # NT 2025.002 v1.51 retirou do texto vigente a data técnica específica
+    # (04/01/2027) pra Simples/MEI; cronograma futuro fica pra NT ainda não
+    # publicada — citar só o marco legal (art. 348, LC 214) até lá.
+    _simples_note = (
+        " Simples Nacional/MEI: obrigatório a partir de 2027 (art. 348, LC 214/2025) —"
+        " NT 2025.002 v1.51 retirou a data técnica específica do texto vigente; NT"
+        " futura deve fixá-la."
+    )
+    _ibscbs_presenca_suspensa_note = (
+        " Obrigatório pela legislação desde 03/08/2026 (Regime Normal/CRT 3); a rejeição"
+        " técnica na autorização (UB12-10/Rejeição 1115) está com implementação em produção"
+        ' SUSPENSA — "implementação futura", sem data (NT 2025.002 v1.51). A multa por'
+        " obrigação acessória segue aplicável desde 01/08/2026 (Ato Conjunto RFB/CGIBS nº 1/2025)."
+    )
     if has_ibscbs:
         if not ibscbs_block:
             ev_id = "E_XML_IBSCBS_MISSING"
-            _rec = "Informar grupo IBSCBS com CST, cClassTrib e campos de cálculo."
+            _rec = "Informar grupo IBSCBS com CST, cClassTrib e campos de cálculo." + _ibscbs_presenca_suspensa_note
             if _is_simples_mei:
                 _rec += _simples_note
-            elif _ibscbs_sev == "WARNING":
-                _rec += _LC227_RECOMMENDATION
             _add(
                 Finding(id="F_IBSCBS_MISSING", severity=_ibscbs_sev, rule_id="IBSCBS_MISSING", title="Grupo IBSCBS ausente — obrigatório conforme NT 2025.002", where=FindingWhere(field="IBSCBS", xpath=_xpath("imposto", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="IBSCBS — grupo ausente", xpath=_xpath("imposto", doc_type)),
@@ -526,11 +547,9 @@ def validate_xml(
         has_legacy = all([valor_cbs, valor_ibs, aliq_cbs, aliq_ibs])
         if not has_legacy:
             ev_id = "E_XML_IBSCBS_MISSING"
-            _rec = "Informar alíquota e valor de IBS e CBS conforme LC 214."
+            _rec = "Informar alíquota e valor de IBS e CBS conforme LC 214." + _ibscbs_presenca_suspensa_note
             if _is_simples_mei:
                 _rec += _simples_note
-            elif _ibscbs_sev == "WARNING":
-                _rec += _LC227_RECOMMENDATION
             _add(
                 Finding(id="F_IBSCBS_MISSING", severity=_ibscbs_sev, rule_id="IBSCBS_MISSING", title="IBS/CBS ausentes na nota", where=FindingWhere(field="IBS/CBS", xpath=_xpath("Valores", doc_type)), recommendation=_rec, evidence_ids=[ev_id]),
                 Evidence(id=ev_id, type="xml", label="IBS/CBS — campos ausentes", xpath=_xpath("Valores", doc_type)),

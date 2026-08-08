@@ -47,8 +47,10 @@ const LC227_NOTE =
 // para o usuário saber exatamente como a SEFAZ rejeitará. Precedente: Rejeição 1157.
 const REJECTION_CODES: Record<string, string> = {
   IBSCBS_MISSING:
-    " — SEFAZ: Rejeição 1115 (regra UB12-10): preenchimento de IBS/CBS obrigatório — " +
-    "produção a partir de 03/08/2026 (Regime Normal/CRT 3) e 04/01/2027 (Simples/MEI), NT 2025.002 v1.40.",
+    " — SEFAZ: Rejeição 1115 (regra UB12-10): preenchimento de IBS/CBS obrigatório pela " +
+    "legislação desde 03/08/2026 (Regime Normal/CRT 3) e 04/01/2027 (Simples/MEI); a rejeição " +
+    "técnica na autorização está com implementação em produção SUSPENSA — \"implementação futura\", " +
+    "sem data (NT 2025.002 v1.51). Homologação segue ativa desde 01/07/2026.",
   CCLASSTRIB_6_DIGITS:
     " — SEFAZ: Rejeição 1106 (regra LA01-30) / 960 (regra N12-110): cClassTrib obrigatório " +
     "e com classificação tributária adequada (NT 2025.002 v1.40).",
@@ -350,8 +352,25 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
   // o downgrade por pedagogicalMode (LC 227) e pela janela sem penalidades (Ato
   // Conjunto 1/25) é centralizado no passe final, como nas outras regras acessórias.
   const ibsCbsMissingSev: FindingSeverity = isSimplesOrMei ? "WARNING" : "FATAL";
+  // NT 2025.002 v1.51 retirou do texto vigente a data técnica específica (04/01/2027)
+  // pra Simples/MEI; cronograma futuro fica pra NT ainda não publicada — citar só o
+  // marco legal (art. 348, LC 214) até lá, sem inventar data técnica que a NT não tem.
   const SIMPLES_MEI_NOTE =
-    " Simples Nacional/MEI: obrigatório a partir de 04/01/2027 (NT 2025.002 v1.40).";
+    " Simples Nacional/MEI: obrigatório a partir de 2027 (art. 348, LC 214/2025) —" +
+    " NT 2025.002 v1.51 retirou a data técnica específica do texto vigente; NT futura" +
+    " deve fixá-la.";
+  // Rejeição 1115 (UB12-10, grupo IBSCBS ausente) — NT 2025.002 v1.51 (04/08/2026):
+  // implementação em produção passou de "≥ 03/08/2026" para "implementação futura,
+  // sem data". A obrigação legal de preenchimento (LC 214) e a multa por obrigação
+  // acessória (Ato Conjunto RFB/CGIBS nº 1/2025, desde 01/08/2026) NÃO mudaram — só a
+  // rejeição técnica na autorização foi suspensa. WARNING para todo CRT (não mais
+  // faseado por Regime Normal × Simples/MEI, que já era WARNING antes por outro motivo).
+  const ibscbsGroupPresenceSev: FindingSeverity = "WARNING";
+  const IBSCBS_PRESENCA_SUSPENSA_NOTE =
+    " Obrigatório pela legislação desde 03/08/2026 (Regime Normal/CRT 3); a rejeição" +
+    " técnica na autorização (UB12-10/Rejeição 1115) está com implementação em produção" +
+    " SUSPENSA — \"implementação futura\", sem data (NT 2025.002 v1.51). A multa por" +
+    " obrigação acessória segue aplicável desde 01/08/2026 (Ato Conjunto RFB/CGIBS nº 1/2025).";
 
   // NF-e totals
   const ibscbsTot = firstTag(xml, ["IBSCBSTot"]);
@@ -524,7 +543,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
       pushFindingAndEvidence(findings, evidences, evidenceById,
         makeFinding({
           id: "F_IBSCBS_MISSING",
-          severity: ibsCbsMissingSev,
+          severity: ibscbsGroupPresenceSev,
           ruleId: "IBSCBS_MISSING",
           title: "Grupo IBSCBS ausente — obrigatório conforme NT 2025.002",
           field: "IBSCBS",
@@ -533,6 +552,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
           evidenceId: evId,
           recommendation:
             "Informar grupo IBSCBS com CST, cClassTrib e campos de cálculo conforme NT 2025.002." +
+            IBSCBS_PRESENCA_SUSPENSA_NOTE +
             (isSimplesOrMei ? SIMPLES_MEI_NOTE : ""),
         }),
         makeEvidence({ id: evId, type: "xml", label: "IBSCBS — grupo ausente", xpath: inferXpath("imposto", docType), snippet: "<!-- Grupo <IBSCBS> não encontrado -->" }),
@@ -546,7 +566,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
       pushFindingAndEvidence(findings, evidences, evidenceById,
         makeFinding({
           id: "F_IBSCBS_MISSING",
-          severity: ibsCbsMissingSev,
+          severity: ibscbsGroupPresenceSev,
           ruleId: "IBSCBS_MISSING",
           title: "IBS/CBS ausentes na nota — obrigatório informar percentual e valor",
           field: "IBS/CBS",
@@ -555,6 +575,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
           evidenceId: evId,
           recommendation:
             "Informar alíquota e valor de IBS (0,90%) e CBS (0,10%) conforme LC 214." +
+            IBSCBS_PRESENCA_SUSPENSA_NOTE +
             (isSimplesOrMei ? SIMPLES_MEI_NOTE : ""),
         }),
         makeEvidence({ id: evId, type: "xml", label: "IBS/CBS — campos ausentes", xpath: inferXpath("Valores", docType), snippet: "<!-- Tags ValorCBS, ValorIBS, AliquotaCBS, AliquotaIBS não encontradas -->" }),

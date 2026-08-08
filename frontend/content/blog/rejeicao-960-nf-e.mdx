@@ -8,8 +8,8 @@ author:
   jobTitle: "Conteúdo Fiscal"
   url: "https://tribultz.com.br/sobre"
 publishedAt: "2026-07-24T06:15:58.000Z"
-updatedAt: "2026-08-02"
-updateNote: "Post reescrito após revisão fiscal: a versão anterior descrevia a Rejeição 960 como divergência entre ICMS desonerado e redução de base de cálculo — definição incorreta, sem correspondência na regra oficial. A 960 pertence à família de validações do cClassTrib (regra N12-110, NT 2025.002-RTC v1.40)."
+updatedAt: "2026-08-08"
+updateNote: "Post reescrito após revisão fiscal: a versão anterior descrevia a Rejeição 960 como divergência entre ICMS desonerado e redução de base de cálculo — definição incorreta, sem correspondência na regra oficial. A 960 pertence à família de validações do cClassTrib (regra N12-110, NT 2025.002-RTC v1.40). Atualização (08/08/2026): a NT 2025.002 v1.51 (04/08/2026) alterou apenas a Rejeição 1115 (grupo IBS/CBS ausente do item, regra UB12-10) — implementação em produção suspensa, sem data. A Rejeição 960, tratada neste post, e a 1106 (regra LA01-30) não foram afetadas: seguem bloqueando a emissão desde 03/08/2026 quando o grupo IBS/CBS já está presente no item, mas o cClassTrib dentro dele está ausente ou malformado. Parágrafo sobre 03/08/2026 esclarecido abaixo para não confundir as duas regras."
 tags:
   - cClassTrib
   - "Rejeição 960"
@@ -21,6 +21,8 @@ coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/f
 legalRefs:
   - instrumento: "NT 2025.002-RTC v1.40"
     descricao: "Cataloga as regras do cClassTrib — Rejeições 960 (N12-110) e 1106 (LA01-30); produção a partir de 03/08/2026 para o Regime Normal (CRT 3)."
+  - instrumento: "NT 2025.002 v1.51"
+    descricao: "Publicada em 04/08/2026: altera apenas a Rejeição 1115 (grupo IBS/CBS ausente, UB12-10), com implementação em produção suspensa. Não afeta a Rejeição 960 (N12-110) nem a 1106 (LA01-30), tema deste post."
   - instrumento: "LC 214/2025"
     descricao: "Institui CBS e IBS; base das classificações tributárias da tabela cClassTrib (ex.: arts. 11 e 311 citados em códigos da família do CST 000)."
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
@@ -47,7 +49,7 @@ soroGuid: "d8049955-7d7b-4aa1-9c92-e9ec045bf007"
 <ul><li><strong>CST 000</strong> (tributação integral): só 5 códigos — `000001` (situações tributadas integralmente), `000002` (exploração de via, art. 11 da LC 214/2025), `000003` (regime automotivo, art. 311 da LC 214/2025), entre outros.</li><li><strong>CST 200</strong> (alíquota reduzida): 54 códigos — a maior família da tabela.</li><li><strong>CST 410</strong> (imunidade/não incidência): 38 códigos.</li><li><strong>CST 550</strong> (suspensão): 25 códigos.</li><li><strong>CST 620</strong> (monofásica): 7 códigos.</li><li><strong>CST 820</strong> (split payment): 9 códigos.</li></ul>
 <p>Um cClassTrib da família 200 usado num item com CST 000, ou um código da família 000 usado num item CST 620, não passa na verificação de compatibilidade — mas essa é a <strong>1024</strong>, não a 960. Se a nota rejeitada citar 1024, o problema não é ausência ou formato: é a combinação entre os dois campos, e vale revisar o post específico sobre ela.</p>
 <h2>Por que isso ganha urgência a partir de 03/08/2026</h2>
-<p>A obrigatoriedade do grupo IBS/CBS — e, portanto, do cClassTrib dentro dele — segue o cronograma faseado da NT 2025.002 v1.40: produção a partir de <strong>03/08/2026</strong> para o Regime Normal (CRT 3) e <strong>04/01/2027</strong> para Simples Nacional/MEI. A partir dessa data, um item do Regime Normal sem cClassTrib válido deixa de ser um alerta e passa a travar a emissão.</p>
+<p>A obrigatoriedade do cClassTrib <strong>dentro de um item que já preenche o grupo IBS/CBS</strong> segue o cronograma faseado da NT 2025.002 v1.40: produção a partir de <strong>03/08/2026</strong> para o Regime Normal (CRT 3) e <strong>04/01/2027</strong> para Simples Nacional/MEI. A partir dessa data, um item do Regime Normal com o grupo IBS/CBS presente mas cClassTrib ausente ou malformado deixa de ser um alerta e passa a travar a emissão (Rejeição 960/1106). <strong>Atenção para não confundir com outra rejeição:</strong> se o item não tiver o grupo IBS/CBS de jeito nenhum, isso é a Rejeição 1115 (regra UB12-10) — e essa, diferente da 960, está com a implementação em produção suspensa pela NT 2025.002 v1.51 (04/08/2026), sem data prevista.</p>
 <p>Há também uma janela de penalidade que já se encerrou: o Ato Conjunto RFB/CGIBS nº 1/2025 (art. 3º) isentou de multa as obrigações acessórias de IBS/CBS para fatos geradores até 31/07/2026 — a partir de 01/08/2026, a penalidade voltou a ser aplicável. O art. 348, §§ 3º e 4º, da LC 214/2025 (incluídos pela LC 227/2026) ainda garante um Período Pedagógico: quem for autuado exclusivamente por essa obrigação acessória é notificado a regularizar em 60 dias contados da notificação (§ 3º); o cumprimento extingue a penalidade (§ 4º).</p>
 <h2>Como diagnosticar e corrigir a rejeição 960 NF-e</h2>
 <p>A correção deve seguir uma sequência que preserve rastreabilidade:</p>
