@@ -133,6 +133,20 @@ Magalu (multi-provedor).
 - Se uma mudança emergencial precisar ser feita direto na VM (ex.: indisponibilidade), ela **deve** ser trazida ao repo via PR na sequência imediata — nunca deixada solta no working tree.
 - `tools/check_access.sh` e este runbook devem ser consultados antes de qualquer deploy manual.
 
+**Variante legítima — configuração de SO sem trilha de deploy própria** (ex.: NTP,
+timezone, kernel params: não fazem parte de compose/nginx/firewall, então não há
+"PR primeiro" possível — a config só existe na VM). Legítima **sob duas condições**,
+ambas obrigatórias:
+1. **Backfill na mesma sessão** — o PR trazendo a mudança ao repo (script de
+   bootstrap, documentação) nasce antes de a sessão de trabalho terminar, não
+   "depois, quando der".
+2. **PR declara o estado real** — o texto do PR diz explicitamente que a
+   produção já contém a mudança (não é um PR comum "vai ser aplicado no
+   deploy"); quem revisa precisa saber que está documentando o passado, não
+   aprovando o futuro.
+
+Sem as duas condições, é a mesma violação de sempre com um nome mais bonito.
+
 **Exemplo aplicado (08/08/2026, ENG-014):** `/etc/systemd/timesyncd.conf` da VM foi
 editado direto via SSH (config de NTP, não faz parte de nenhum compose/serviço —
 não existia trilha de repo pra essa mudança até então) para apontar a Hora Legal
