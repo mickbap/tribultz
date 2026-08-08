@@ -29,6 +29,21 @@ apt-get install -y --no-install-recommends \
     ca-certificates curl gnupg git ufw nginx certbot python3-certbot-nginx \
     postgresql-client fail2ban
 
+# ── 1b. NTP — Hora Legal Brasileira (ON/NIC.br) ───────────
+# Default do systemd-timesyncd é ntp.ubuntu.com (Canonical) — funciona, mas
+# não é a fonte regulada. Governança Temporal (RFC-0030/ENG-014, 08/08/2026):
+# T2 (verdade em UTC, carimbo de evidência) deve rastrear a Hora Legal
+# Brasileira, não um pool de terceiro. NTP corrige o relógio continuamente
+# (desvio de milissegundos); todo carimbo T2 do banco herda a fonte regulada
+# automaticamente a partir daqui — sem custo/API extra pra essa camada.
+log "==> Configuring NTP to Hora Legal Brasileira (ntp.br)"
+sed -i \
+    -e 's/^#\?NTP=.*/NTP=a.st1.ntp.br b.st1.ntp.br c.st1.ntp.br d.st1.ntp.br/' \
+    -e 's/^#\?FallbackNTP=.*/FallbackNTP=pool.ntp.br/' \
+    /etc/systemd/timesyncd.conf
+systemctl restart systemd-timesyncd
+log "    $(timedatectl show-timesync --property=ServerName --value 2>/dev/null || echo 'unable to verify server')"
+
 # ── 2. Docker Engine ──────────────────────────────────────
 if ! command -v docker &>/dev/null; then
     log "==> Installing Docker Engine"
