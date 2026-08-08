@@ -45,3 +45,20 @@ export const NT_CURRENT_VERSION: Record<string, string> = {
   "NT 2025.002": "1.40",
   "NT 2026.002": "1.00",
 };
+
+/**
+ * NT 2025.002 v1.51 (04/08/2026) e NT 2026.002 v1.10 (04/08/2026) foram publicadas
+ * mas NÃO disparam bump aqui — decisão deliberada, não esquecimento:
+ * - v1.51 é um patch pontual sobre UMA regra (UB12-10/Rejeição 1115 — implementação
+ *   em produção passou a "futura, sem data"); todo o resto de v1.40 permanece
+ *   ativo/inalterado (CST, cClassTrib, CEST, totais W03 etc.) — um bump aqui
+ *   marcaria ~13 posts hoje corretos como desatualizados (falso positivo em massa).
+ * - v1.10 é um lote de regras novas/alteradas (homologação 01/09, produção 05/10)
+ *   que o motor ainda não implementa; nosso core coberto (tpImp=6, 706/707/708/715,
+ *   I08-150/725) é do lote v1.00 e continua correto citando v1.00.
+ * O achado de v1.51 sobre a 1115 foi absorvido nos textos do motor (ver
+ * `ibscbsGroupPresenceSev`/`IBSCBS_PRESENCA_SUSPENSA_NOTE` em xmlRules.ts, que já
+ * citam v1.51 nesse ponto específico) e no updateNote dos posts afetados — não
+ * por este bump global. Reavaliar se uma NT futura alterar mais do que uma regra
+ * pontual, ou se o motor vier a implementar rules do lote v1.10.
+ */
