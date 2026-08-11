@@ -584,7 +584,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
           snippet: "<!-- Tags ValorCBS, ValorIBS, AliquotaCBS, AliquotaIBS não encontradas -->",
           evidenceId: evId,
           recommendation:
-            "Informar alíquota e valor de IBS (0,90%) e CBS (0,10%) conforme LC 214." +
+            "Informar alíquota e valor de CBS (0,90%) e IBS (0,10%) conforme LC 214." +
             IBSCBS_PRESENCA_SUSPENSA_NOTE +
             (isSimplesOrMei ? SIMPLES_MEI_NOTE : ""),
         }),
