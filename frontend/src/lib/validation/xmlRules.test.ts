@@ -986,14 +986,26 @@ function devFindings(xml: string, pedagogicalMode = false) {
     .findings.filter((f) => f.rule_id === "DEVOLUCAO_DFEREF");
 }
 
-test("#312 devolução sem DFeReferenciado após 01/09 → FATAL", () => {
-  const f = devFindings(devNfe("4", "2026-09-15", 1, 0));
+test("#312 devolução sem DFeReferenciado após 05/10 (produção) → FATAL", () => {
+  const f = devFindings(devNfe("4", "2026-10-15", 1, 0));
   assert.ok(f.some((x) => x.id === "F_DEVOLUCAO_DFEREF" && x.severity === "FATAL"));
 });
 
 test("#312 devolução sem DFeReferenciado antes da vigência → WARNING", () => {
   const f = devFindings(devNfe("4", "2026-08-15", 1, 0));
   assert.ok(f.length > 0 && f.every((x) => x.severity === "WARNING"));
+});
+
+// Guarda de regressão da janela 01/09–04/10/2026: a v1.40 punha produção em 01/09 e a
+// v1.51 adiou para 05/10. Neste intervalo a regra vale em homologação, mas a SEFAZ ainda
+// autoriza em produção — escalar para FATAL aqui é falso positivo. Se alguém restaurar a
+// data antiga, este teste quebra.
+test("#312 devolução sem DFeReferenciado na janela 01/09–04/10 (só homologação) → WARNING", () => {
+  for (const d of ["2026-09-01", "2026-09-15", "2026-10-04"]) {
+    const f = devFindings(devNfe("4", d, 1, 0));
+    assert.ok(f.length > 0, `esperava finding em ${d}`);
+    assert.ok(f.every((x) => x.severity === "WARNING"), `esperava WARNING em ${d}`);
+  }
 });
 
 test("#312 devolução com DFeReferenciado por item → sem finding", () => {
