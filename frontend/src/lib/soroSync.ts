@@ -85,10 +85,15 @@ export function parseFeedToPosts(xml: string): SoroPost[] {
   });
 }
 
+// `url` alimenta o `author.url` e o `@id` (`${url}#person`) do JSON-LD do post
+// (ver `articleSchema` em components/seo/schemas.ts). Precisa resolver 200: até
+// 10/08/2026 apontava para `/sobre`, rota que nunca existiu, e 19 posts saíram
+// com autoria em 404. Aponta para a home, que é a URL canônica da Organization
+// — o autor editorial é a própria equipe, não uma pessoa com página própria.
 const EDITORIAL_AUTHOR = {
   name: "Equipe Tribultz",
   jobTitle: "Conteúdo Fiscal",
-  url: "https://tribultz.com.br/sobre",
+  url: "https://tribultz.com.br",
 };
 
 const yamlStr = (s: string) => `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
