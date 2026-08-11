@@ -104,9 +104,15 @@ function isWithinNoPenaltyWindow(emissionDate: string | undefined): boolean {
 // editar sem checar se um ato mais recente adiou de novo.
 const PF_CNPJ_REQUIRED_DATE = "2027-01-01";
 
-// NF-e de devolução (finNFe=4): a partir de 01/09/2026 referencia a nota original por item,
-// exclusivamente via grupo DFeReferenciado (v1.40, Rejeição 321 — VC02-14/VC03-20).
-const DEVOLUCAO_DFEREF_DATE = "2026-09-01";
+// NF-e de devolução (finNFe=4): referencia a nota original por item, exclusivamente via
+// grupo DFeReferenciado (Rejeição 321 — VC02-14/VC03-20). Data é de PRODUÇÃO, porque é
+// quando a SEFAZ passa a recusar de fato — homologação (até 01/09/2026) não deve escalar
+// severidade de nota real.
+// A v1.40 marcava produção em 01/09/2026; a v1.51 adiou para 05/10/2026 — o texto da NT
+// traz "a partir de 01/09/2026 05/10/2026", com a data antiga tachada (Observação 2 da
+// VC02-14). Manter 01/09 marcaria como FATAL, por 5 semanas, nota que ainda é autorizada.
+// VC03-20 não foi alterada pela v1.51; só VC02-14 e VC02-30 constam do histórico.
+const DEVOLUCAO_DFEREF_DATE = "2026-10-05";
 
 // DANFE Simplificado Tipo 2 (tpImp=6, NT 2026.002 v1.00): a partir de 03/08/2026 (produção,
 // fase 2), a NF-e (modelo 55) restringe-se a saída/interna/sem NFref/finalidade Normal (#405).
@@ -1054,7 +1060,9 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             evidenceId: evId,
             recommendation:
               "NF-e de devolução (finNFe=4) deve referenciar a nota original POR ITEM, " +
-              "exclusivamente via grupo DFeReferenciado (NT 2025.002-RTC v1.40, vigência 01/09/2026). " +
+              "exclusivamente via grupo DFeReferenciado — é proibido referenciar em refNFe na devolução. " +
+              "Produção a partir de 05/10/2026 (NT 2025.002-RTC v1.51, que adiou a data da v1.40, " +
+              "01/09/2026); homologação desde 01/09/2026. " +
               "Inclua um DFeReferenciado para cada item devolvido. SEFAZ: Rejeição 321 (regras VC02-14 / VC03-20).",
           }),
           makeEvidence({ id: evId, type: "xml", label: "Devolução sem DFeReferenciado por item", xpath: inferXpath("DFeReferenciado", docType), snippet: fin.snippet }),

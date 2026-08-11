@@ -49,10 +49,16 @@ export const NT_CURRENT_VERSION: Record<string, string> = {
 /**
  * NT 2025.002 v1.51 (04/08/2026) e NT 2026.002 v1.10 (04/08/2026) foram publicadas
  * mas NÃO disparam bump aqui — decisão deliberada, não esquecimento:
- * - v1.51 é um patch pontual sobre UMA regra (UB12-10/Rejeição 1115 — implementação
- *   em produção passou a "futura, sem data"); todo o resto de v1.40 permanece
- *   ativo/inalterado (CST, cClassTrib, CEST, totais W03 etc.) — um bump aqui
- *   marcaria ~13 posts hoje corretos como desatualizados (falso positivo em massa).
+ * - v1.51 tem DUAS frentes (corrigido em 11/08/2026 — a redação anterior dizia que era
+ *   "um patch pontual sobre UMA regra", o que é falso e fez o diff ser dispensado):
+ *     (a) UB12-10/Rejeição 1115 — implementação em produção passou a "futura, sem data";
+ *     (b) ~22 regras alteradas (B25-80, I08-140, I08-144, família UB13–UB131, VC02-14,
+ *         VC02-30), homologação até 01/09/2026 e produção a partir de 05/10/2026.
+ *   Do grupo (b) o motor implementa só VC02-14, já ajustada (ver DEVOLUCAO_DFEREF_DATE
+ *   em xmlRules.ts). As demais não são cobertas — lacuna de cobertura, não regressão.
+ *   O núcleo que os posts citam (CST, cClassTrib, CEST, totais W03) segue inalterado,
+ *   e é por isso que o bump global continua indevido: marcaria ~13 posts hoje corretos
+ *   como desatualizados (falso positivo em massa).
  * - v1.10 é um lote de regras novas/alteradas (homologação 01/09, produção 05/10)
  *   que o motor ainda não implementa; nosso core coberto (tpImp=6, 706/707/708/715,
  *   I08-150/725) é do lote v1.00 e continua correto citando v1.00.
