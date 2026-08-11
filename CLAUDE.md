@@ -47,9 +47,9 @@ execução dele.
 | Backend | FastAPI, SQLAlchemy, Alembic, Python 3.12 |
 | AI/Agents | CrewAI 1.10 (CRM Engagement em produção; Security Crew interna; NFe Validation dormante — ver `knowledge/engineering/crews.md` no Brain), LiteLLM |
 | Workers | Celery 5.6 + Redis 7 (task queue / beat scheduler) |
-| Database | PostgreSQL 16 (multi-tenant, UUID PKs, tenant_id FK em todas as tabelas) |
-| Storage | MinIO (S3-compatible) |
-| Infra | Docker Compose (db, redis, minio, api, worker, beat) |
+| Database | PostgreSQL 16 (multi-tenant, UUID PKs, tenant_id FK em todas as tabelas). **Produção usa instância gerenciada** (host privado na Magalu), não container — o serviço `db` do compose existe só para dev local |
+| Storage | S3-compatible. **Produção: Magalu Object Storage** (`br-se1.magaluobjects.com`); dev local: MinIO (serviço `minio` do compose) |
+| Infra | Docker Compose. Dev local (`infra/docker-compose.yml`): db, redis, minio, migrate, api, worker, beat. **Produção (`infra/docker-compose.prod.yml`): redis, api, worker, beat** — sem `db` nem `minio`, que são serviços gerenciados |
 | CI/Automação | GitHub Actions — backend-gates, frontend-build, deploy-prod, monitor (uptime → alerta Resend), classtrib-sync (re-sync diário cClassTrib SVRS → PR revisado), soro-blog-sync (RSS Soro → PR revisado) |
 
 ## Estrutura do projeto
