@@ -111,7 +111,11 @@ const PF_CNPJ_REQUIRED_DATE = "2027-01-01";
 // A v1.40 marcava produção em 01/09/2026; a v1.51 adiou para 05/10/2026 — o texto da NT
 // traz "a partir de 01/09/2026 05/10/2026", com a data antiga tachada (Observação 2 da
 // VC02-14). Manter 01/09 marcaria como FATAL, por 5 semanas, nota que ainda é autorizada.
-// VC03-20 não foi alterada pela v1.51; só VC02-14 e VC02-30 constam do histórico.
+// Não citar VC03-20 aqui: ela é Rejeição 1048 ("nItem do DFeReferenciado não informado"),
+// gatilho distinto — nItem ausente DENTRO de um DFeReferenciado presente. Esta regra conta
+// ocorrências do grupo e não inspeciona nItem, então VC03-20 não está coberta. Até 11/08/2026
+// a recomendação citava "Rejeição 321 (regras VC02-14 / VC03-20)", atribuindo à VC03-20 um
+// código que não é dela. VC03-20 e VC02-30 também não foram alteradas pela v1.51.
 const DEVOLUCAO_DFEREF_DATE = "2026-10-05";
 
 // DANFE Simplificado Tipo 2 (tpImp=6, NT 2026.002 v1.00): a partir de 03/08/2026 (produção,
@@ -1063,7 +1067,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
               "exclusivamente via grupo DFeReferenciado — é proibido referenciar em refNFe na devolução. " +
               "Produção a partir de 05/10/2026 (NT 2025.002-RTC v1.51, que adiou a data da v1.40, " +
               "01/09/2026); homologação desde 01/09/2026. " +
-              "Inclua um DFeReferenciado para cada item devolvido. SEFAZ: Rejeição 321 (regras VC02-14 / VC03-20).",
+              "Inclua um DFeReferenciado para cada item devolvido. SEFAZ: Rejeição 321 (regra VC02-14).",
           }),
           makeEvidence({ id: evId, type: "xml", label: "Devolução sem DFeReferenciado por item", xpath: inferXpath("DFeReferenciado", docType), snippet: fin.snippet }),
         );
