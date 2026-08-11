@@ -10,12 +10,19 @@
 
 VM_HOST="201.54.20.18"
 VM_USER="ubuntu"
+# Prefere a chave dedicada de infra (sem passphrase) e cai para a pessoal se não
+# existir. Antes o default era `id_ed25519` fixo — no MacBook a chave que a VM
+# aceita é `id_tribultz`, então o script só rodava com SSH_KEY sobrescrito à mão.
+if [ -z "${SSH_KEY:-}" ] && [ -f "$HOME/.ssh/id_tribultz" ]; then
+  SSH_KEY="$HOME/.ssh/id_tribultz"
+fi
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
 # Fingerprints das chaves autorizadas na VM (públicos — não são segredo).
 # Ao adicionar uma máquina, autorize a chave em ~/.ssh/authorized_keys na VM e liste aqui.
 KEY_FPS="SHA256:ydI3GwtHcGHjUvcCzFQgOp7zypbiVwqqiicGlhun7gg=tribultz-infra (Windows)
 SHA256:6DqZCh26dT2Ce0KPD8ZwMXPtZ9++3siBctZKD1E+8ig=tribultz-infra (Mac)
-SHA256:9JtQfvh8yIebGMewdoenxW92w0XtRXJ/A8Ru9CYy9D0=tribultz-infra (MacBook Mickel)"
+SHA256:9JtQfvh8yIebGMewdoenxW92w0XtRXJ/A8Ru9CYy9D0=tribultz-infra (MacBook Mickel, id_ed25519 — pessoal, com passphrase)
+SHA256:wmgdpFALqdZQVqtkfrIjgjBNRK2lqr8mQJ/ClUcgLps=tribultz-infra (MacBook Mickel, id_tribultz — dedicada, sem passphrase)"
 API="https://api.tribultz.com.br"
 FRONTEND="https://tribultz.com.br"
 
