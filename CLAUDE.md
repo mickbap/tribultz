@@ -63,21 +63,25 @@ frontend/          Next.js app (app router)
   src/components/  UI: AppShell, Sidebar, EvidenceList, JsonViewer, Toast
 
 backend/           FastAPI
-  app/routers/     29 routers (auditado 16/07/2026, +attio em 31/07/2026) — admin, attio, audit,
-                   auth, billing, calculadora, classtrib, compliance, credits, documents,
-                   exceptions, feedback, founding_partners, health, jobs, lgpd, ncm_suggest, news,
-                   public, public_api, reports, simulator, sped, split_payment, support, tasks,
-                   validate, validate_xml, validation. Chat foi descontinuado como produto
+  app/routers/     30 routers (auditado 16/07/2026, +attio em 31/07/2026, +rumy em 12/08/2026) —
+                   admin, attio, audit, auth, billing, calculadora, classtrib, compliance, credits,
+                   documents, exceptions, feedback, founding_partners, health, jobs, lgpd,
+                   ncm_suggest, news, public, public_api, reports, rumy, simulator, sped,
+                   split_payment, support, tasks, validate, validate_xml, validation. Chat foi
+                   descontinuado como produto
                    (mai/2026) e o código remanescente removido (ADR-0012, ver
                    `knowledge/decisions/` no Brain). attio expõe só o webhook inbound
                    (POST /api/v1/webhooks/attio) — o resto da integração comercial com o Attio CRM
-                   (PO-2026-07-CRM-001) vive em `app/integrations/attio/`, fora dos routers.
+                   (PO-2026-07-CRM-001) vive em `app/integrations/attio/`, fora dos routers. rumy
+                   expõe o receptor do webhook de handoff (POST /api/v1/webhooks/rumy, F2 da
+                   PO-2026-07-CRM-001; 404 com RUMY_WEBHOOK_ENABLED=false, o default — worker em
+                   shadow mode sem HANDOFF_APPLY_ENABLED).
   app/crews/       CrewAI crews — crm_engagement_crew (Produção), security_crew (Produção
                    Interna), nfe_validation_crew (Dormante). Classificação oficial e políticas em
                    `knowledge/engineering/crews.md` no Brain.
-  app/tasks/       10 tasks Celery (validate, report, simulation, reconciliation, hubspot,
+  app/tasks/       11 tasks Celery (validate, report, simulation, reconciliation, hubspot,
                    security_audit — órfã, sem beat/autodiscover, ver runbook —, billing, sped,
-                   compliance, crm)
+                   compliance, crm, rumy — worker do inbox de handoff, F2)
   app/tools/       ERP connector, HubSpot, Postgres, S3, validation
   tests/           pytest
 
