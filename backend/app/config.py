@@ -48,16 +48,22 @@ class Settings(BaseSettings):
     ATTIO_DEFAULT_STAGE: str = ""
     ATTIO_WEBHOOK_SECRET: str = ""
 
-    # ── Rumy (AI SDR — handoff comercial, Round 4 da PO-2026-07-CRM-001) ────
-    # Fundações locais apenas (F1/F3): flags OFF por padrão e nenhum efeito
-    # externo. Endpoint do webhook, supressão real no Rumy e handoff automático
-    # aguardam Rounds futuros (F2/F5). Regra fail-safe transversal: desligar
-    # qualquer flag NUNCA re-permite outbound — a permissão é conjuntiva e a
-    # proteção de pessoa (DEC-5) persiste independente de flag.
+    # ── Rumy (AI SDR — handoff comercial, Rounds 4–5 da PO-2026-07-CRM-001) ─
+    # Flags OFF por padrão e nenhum efeito externo: com RUMY_WEBHOOK_ENABLED
+    # off o endpoint /api/v1/webhooks/rumy responde 404; com
+    # HANDOFF_APPLY_ENABLED off o worker opera em shadow mode (ledger sem
+    # aplicar). Supressão real no Rumy (F5) e handoff automático seguem
+    # bloqueados. Regra fail-safe transversal: desligar qualquer flag NUNCA
+    # re-permite outbound — a permissão é conjuntiva e a proteção de pessoa
+    # (DEC-5) persiste independente de flag.
     RUMY_WEBHOOK_ENABLED: bool = False
     HANDOFF_APPLY_ENABLED: bool = False
     RUMY_SUPPRESSION_ENABLED: bool = False
     RUMY_WEBHOOK_SECRET: str = ""
+    # UUID do tenant operacional interno que recebe os handoffs (Round 4 §11:
+    # tenant é resolvido no ingest, nunca confiado ao produtor). Vazio ⇒ o
+    # endpoint responde 503 (fail-closed).
+    HANDOFF_TENANT_ID: str = ""
 
     # ── Security ────────────────────────────────────────────
     ALLOWED_ORIGINS: str = "http://localhost:3000,https://tribultz.com.br,https://*.vercel.app"

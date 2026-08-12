@@ -44,3 +44,34 @@ class RumyAdapter(abc.ABC):
         - IDs preservados byte a byte em provider_ids;
         - evento não reconhecido ⇒ UnmappedEvent (auditar, zero efeito).
         """
+
+
+class InternalEnvelopeAdapter(RumyAdapter):
+    """Adapter provisório do Round 5 — aceita SOMENTE o envelope interno v1.1.
+
+    NÃO é o adapter do Rumy: nenhuma suposição sobre o payload real do
+    fornecedor foi codificada aqui (Round 5 §5: payload hipotético não vira
+    contrato). Ele valida dicts já no formato do HandoffEvent v1.1, o que
+    permite exercitar o pipeline completo (endpoint→ledger→worker→domínio)
+    com fixtures sintéticas. Quando o payload real chegar, o RumyAdapter
+    definitivo substitui este na seleção de get_adapter().
+    """
+
+    version = "internal-envelope-0.1"
+
+    def to_handoff_event(self, raw: dict[str, Any]) -> HandoffEvent | UnmappedEvent:
+        if not isinstance(raw, dict):
+            raise ValueError("payload não é um objeto JSON")
+        event_type = raw.get("event_type")
+        if event_type != "handoff.requested":
+            return UnmappedEvent(
+                event_type_raw=str(event_type),
+                raw=raw,
+                note="envelope interno: tipo não mapeado (zero efeito, só auditoria)",
+            )
+        return HandoffEvent(**raw)
+
+
+def get_adapter() -> RumyAdapter:
+    """Seleção do adapter vigente. Hoje: envelope interno (F2 definitivo bloqueado)."""
+    return InternalEnvelopeAdapter()
