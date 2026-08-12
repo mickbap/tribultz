@@ -68,28 +68,28 @@ def test_cenario_1_mesma_pessoa_mesmo_dado_resolve_uma_vez(session, tenant_id):
     r1 = resolve_person(session, tenant_id, EMAIL, None)
     r2 = resolve_person(session, tenant_id, EMAIL, None)
     assert r1.created is True and r2.created is False
-    assert r1.identity.id == r2.identity.id
+    assert r1.identity.id == r2.identity.id  # type: ignore[misc]
 
 
 def test_cenario_4_mesmo_linkedin_email_diferente_nao_sobrescreve(session, tenant_id):
     r1 = resolve_person(session, tenant_id, EMAIL, LINKEDIN)
     r2 = resolve_person(session, tenant_id, "outro.email@example.test", LINKEDIN)
-    assert r2.identity.id == r1.identity.id  # LinkedIn exato identifica a pessoa
-    assert r2.identity.email_normalized == EMAIL  # chave existente jamais sobrescrita
+    assert r2.identity.id == r1.identity.id  # LinkedIn exato identifica a pessoa  # type: ignore[misc]
+    assert r2.identity.email_normalized == EMAIL  # chave existente jamais sobrescrita  # type: ignore[misc]
 
 
 def test_cenario_5_mesmo_email_linkedin_ausente(session, tenant_id):
     r1 = resolve_person(session, tenant_id, EMAIL, LINKEDIN)
     r2 = resolve_person(session, tenant_id, EMAIL, None)
-    assert r2.identity.id == r1.identity.id
+    assert r2.identity.id == r1.identity.id  # type: ignore[misc]
 
 
 def test_enriquecimento_deterministico_preenche_chave_vazia(session, tenant_id):
     r1 = resolve_person(session, tenant_id, EMAIL, None)
-    assert r1.identity.linkedin_normalized is None
+    assert r1.identity.linkedin_normalized is None  # type: ignore[misc]
     r2 = resolve_person(session, tenant_id, EMAIL, LINKEDIN)
-    assert r2.identity.id == r1.identity.id
-    assert r2.identity.linkedin_normalized == "in/pessoa-sintetica-qa"
+    assert r2.identity.id == r1.identity.id  # type: ignore[misc]
+    assert r2.identity.linkedin_normalized == "in/pessoa-sintetica-qa"  # type: ignore[misc]
 
 
 def test_cenario_7_identidade_parcial_nao_resolve(session, tenant_id):
@@ -103,13 +103,13 @@ def test_cenario_8_identidade_conflitante_sem_merge(session, tenant_id):
 
     r = resolve_person(session, tenant_id, "pessoa.a@example.test", "in/pessoa-b-qa")
     assert r.conflict is True and r.identity is None
-    assert {m.id for m in r.matched} == {a.id, b.id}
+    assert {m.id for m in r.matched} == {a.id, b.id}  # type: ignore[misc]
     # nada foi mesclado nem alterado
     session.refresh(a), session.refresh(b)
-    assert a.email_normalized == "pessoa.a@example.test"
-    assert a.linkedin_normalized == "in/pessoa-a-qa"
-    assert b.email_normalized == "pessoa.b@example.test"
-    assert b.linkedin_normalized == "in/pessoa-b-qa"
+    assert a.email_normalized == "pessoa.a@example.test"  # type: ignore[misc]
+    assert a.linkedin_normalized == "in/pessoa-a-qa"  # type: ignore[misc]
+    assert b.email_normalized == "pessoa.b@example.test"  # type: ignore[misc]
+    assert b.linkedin_normalized == "in/pessoa-b-qa"  # type: ignore[misc]
 
 
 def test_cenario_9_dado_compartilhado_colapsa_por_desenho(session, tenant_id):
@@ -121,13 +121,13 @@ def test_cenario_9_dado_compartilhado_colapsa_por_desenho(session, tenant_id):
                         display_name="Pessoa Um [QA]")
     r2 = resolve_person(session, tenant_id, "caixa.compartilhada@example.test", None,
                         display_name="Pessoa Dois [QA]")
-    assert r2.identity.id == r1.identity.id
+    assert r2.identity.id == r1.identity.id  # type: ignore[misc]
     assert r2.created is False
 
 
 def test_protecao_por_pessoa_sem_vinculos_e_falsa(session, tenant_id):
     r = resolve_person(session, tenant_id, EMAIL, None)
-    assert person_protected(session, tenant_id, [r.identity.id]) is False
+    assert person_protected(session, tenant_id, [r.identity.id]) is False  # type: ignore[arg-type, misc]
 
 
 def test_isolamento_entre_tenants(session, tenant_id):
@@ -136,5 +136,5 @@ def test_isolamento_entre_tenants(session, tenant_id):
     session.add(other)
     session.flush()
     r1 = resolve_person(session, tenant_id, EMAIL, None)
-    r2 = resolve_person(session, other.id, EMAIL, None)
-    assert r1.identity.id != r2.identity.id
+    r2 = resolve_person(session, other.id, EMAIL, None)  # type: ignore[arg-type]
+    assert r1.identity.id != r2.identity.id  # type: ignore[misc]

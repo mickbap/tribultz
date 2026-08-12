@@ -110,7 +110,7 @@ def resolve_person(
         else None
     )
 
-    if by_email is not None and by_linkedin is not None and by_email.id != by_linkedin.id:
+    if by_email is not None and by_linkedin is not None and by_email.id != by_linkedin.id:  # type: ignore[misc]
         # Chaves apontam para pessoas diferentes: conflito. Sem merge silencioso.
         return PersonResolution(identity=None, conflict=True, matched=[by_email, by_linkedin])
 
@@ -118,11 +118,11 @@ def resolve_person(
     if found is not None:
         # Enriquecimento determinístico: só preenche chave vazia; nunca sobrescreve.
         if email and found.email_normalized is None and by_email is None:
-            found.email_normalized = email
+            found.email_normalized = email  # type: ignore[assignment]
         if linkedin and found.linkedin_normalized is None and by_linkedin is None:
-            found.linkedin_normalized = linkedin
+            found.linkedin_normalized = linkedin  # type: ignore[assignment]
         if display_name and found.display_name is None:
-            found.display_name = display_name
+            found.display_name = display_name  # type: ignore[assignment]
         return PersonResolution(identity=found, matched=[found])
 
     identity = CrmPersonIdentity(

@@ -60,7 +60,7 @@ def tenant_fixture(session):
 def _link(session, tenant_id, *, email=None, external_id=None) -> CrmLeadLink:
     person_id = None
     if email:
-        person_id = resolve_person(session, tenant_id, email, None).identity.id
+        person_id = resolve_person(session, tenant_id, email, None).identity.id  # type: ignore[misc]
     link = CrmLeadLink(
         tenant_id=tenant_id,
         source_system="rumy",
@@ -83,8 +83,8 @@ def test_handoff_requested_trava_local_e_espelha_dec5(session, tenant_id):
     link = _link(session, tenant_id, email="pessoa.sintetica@example.test")
     transition_ownership(session, link, OwnershipState.HANDOFF_REQUESTED, ActorType.PROVIDER_EVENT)
 
-    assert link.ownership_state == "HANDOFF_REQUESTED"
-    assert link.automation_state == "SUPPRESSION_REQUESTED"  # DEC-1: trava imediata
+    assert link.ownership_state == "HANDOFF_REQUESTED"  # type: ignore[misc]
+    assert link.automation_state == "SUPPRESSION_REQUESTED"  # DEC-1: trava imediata  # type: ignore[misc]
     assert link.handoff_requested_at is not None
     assert link.suppression_requested_at is not None
     assert outbound_allowed(session, link) == (False, "ownership=HANDOFF_REQUESTED")
@@ -135,7 +135,7 @@ def test_aceite_humano_estampa_owner_e_aceite(session, tenant_id):
         session, link, OwnershipState.HUMAN_OWNED, ActorType.HUMAN, actor_ref="ana.qa@6tech.test"
     )
     assert link.handoff_accepted_at is not None
-    assert link.owner_ref == "ana.qa@6tech.test"
+    assert link.owner_ref == "ana.qa@6tech.test"  # type: ignore[misc]
 
 
 def test_released_sem_lift_nao_religa_outbound(session, tenant_id):
@@ -157,8 +157,8 @@ def test_released_sem_lift_nao_religa_outbound(session, tenant_id):
         session, link, OwnershipState.AUTOMATED, ActorType.HUMAN,
         reason="re-arme sem lift [QA]", suppression_lift_confirmed=False,
     )
-    assert link.ownership_state == "AUTOMATED"
-    assert link.automation_state == "SUPPRESSION_REQUESTED"
+    assert link.ownership_state == "AUTOMATED"  # type: ignore[misc]
+    assert link.automation_state == "SUPPRESSION_REQUESTED"  # type: ignore[misc]
     allowed, why = outbound_allowed(session, link)
     assert allowed is False and why == "automation=SUPPRESSION_REQUESTED"
     # a linha DEC-5 na lista de supressão da prospecção permanece
@@ -174,7 +174,7 @@ def test_rearm_com_lift_confirmado_religa_e_limpa_dec5(session, tenant_id):
     link = _link(session, tenant_id, email="rearme.completo@example.test")
     transition_ownership(session, link, OwnershipState.HANDOFF_REQUESTED, ActorType.PROVIDER_EVENT)
     confirm_suppression(session, link)
-    assert link.automation_state == AutomationState.SUPPRESSION_CONFIRMED.value
+    assert link.automation_state == AutomationState.SUPPRESSION_CONFIRMED.value  # type: ignore[misc]
     transition_ownership(session, link, OwnershipState.HUMAN_OWNED, ActorType.HUMAN, actor_ref="ana")
     transition_ownership(
         session, link, OwnershipState.RELEASED, ActorType.HUMAN, reason="devolvido [QA]"
@@ -183,7 +183,7 @@ def test_rearm_com_lift_confirmado_religa_e_limpa_dec5(session, tenant_id):
         session, link, OwnershipState.AUTOMATED, ActorType.HUMAN,
         reason="re-arme autorizado [QA]", suppression_lift_confirmed=True,
     )
-    assert link.automation_state == "ACTIVE"
+    assert link.automation_state == "ACTIVE"  # type: ignore[misc]
     assert outbound_allowed(session, link) == (True, "ok")
     assert (
         session.query(ProspectSuppression)
@@ -203,14 +203,14 @@ def test_dec5_novo_lead_da_mesma_pessoa_herda_protecao(session, tenant_id):
     novo_lead = _link(
         session, tenant_id, email="pessoa.protegida@example.test", external_id="lead-novo-999"
     )
-    assert novo_lead.ownership_state == "AUTOMATED"  # o lead em si está livre…
+    assert novo_lead.ownership_state == "AUTOMATED"  # o lead em si está livre…  # type: ignore[misc]
     allowed, why = outbound_allowed(session, novo_lead)
     assert allowed is False and why == "person_protected"  # …mas a PESSOA não
 
 
 def test_conflito_de_identidade_bloqueia_outbound(session, tenant_id):
     link = _link(session, tenant_id)
-    link.identity_conflict = True
+    link.identity_conflict = True  # type: ignore[assignment]
     assert outbound_allowed(session, link) == (False, "identity_conflict")
 
 
