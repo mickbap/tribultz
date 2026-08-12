@@ -124,8 +124,8 @@ def ingest_handoff_event(
     # Quarentena: mínimo de identidade ausente ⇒ fila de exceção humana,
     # nada fabricado, nada escrito além do ledger (Round 2 D-2, Round 4 §3).
     if not event.has_identity_minimum:
-        ledger.status = "quarantined"
-        ledger.processing_result = {"detail": "identity_minimum_missing"}
+        ledger.status = "quarantined"  # type: ignore[assignment]
+        ledger.processing_result = {"detail": "identity_minimum_missing"}  # type: ignore[assignment]
         return IngestResult(status="quarantined", ledger=ledger, detail="identity_minimum_missing")
 
     resolution = resolve_person(
@@ -159,14 +159,14 @@ def ingest_handoff_event(
 
     if resolution.conflict:
         # Fail-safe DEC-5: sem merge; conflito bloqueia outbound até curadoria.
-        link.identity_conflict = True
+        link.identity_conflict = True  # type: ignore[assignment]
     elif resolution.identity is not None and link.person_identity_id is None:
         link.person_identity_id = resolution.identity.id
 
     # Fora de ordem (Round 3 A7): evento mais velho nunca regride estado.
-    if link.last_occurred_at is not None and event.occurred_at <= link.last_occurred_at:
-        ledger.status = "superseded"
-        ledger.processing_result = {
+    if link.last_occurred_at is not None and event.occurred_at <= link.last_occurred_at:  # type: ignore[misc]
+        ledger.status = "superseded"  # type: ignore[assignment]
+        ledger.processing_result = {  # type: ignore[assignment]
             "detail": "out_of_order",
             "last_occurred_at": link.last_occurred_at.isoformat(),
         }
@@ -181,7 +181,7 @@ def ingest_handoff_event(
             ActorType.PROVIDER_EVENT,
             actor_ref=event.producer,
             reason=f"handoff.requested ({event.reason})",
-            event_id=ledger.id,
+            event_id=ledger.id,  # type: ignore[arg-type]
             now=ts,
         )
         detail = "transitioned"
@@ -209,10 +209,10 @@ def ingest_handoff_event(
         detail = "closed_requires_human"
 
     link.last_applied_event_id = ledger.id
-    link.last_occurred_at = event.occurred_at
-    ledger.status = "applied"
-    ledger.applied_at = ts
-    ledger.processing_result = {
+    link.last_occurred_at = event.occurred_at  # type: ignore[assignment]
+    ledger.status = "applied"  # type: ignore[assignment]
+    ledger.applied_at = ts  # type: ignore[assignment]
+    ledger.processing_result = {  # type: ignore[assignment]
         "detail": detail,
         "ownership_state": link.ownership_state,
         "automation_state": link.automation_state,
@@ -226,13 +226,13 @@ def ingest_handoff_event(
 def _register_duplicate(
     session: Session, existing: CrmLeadEvent, incoming_hash: str
 ) -> IngestResult:
-    existing.attempts = (existing.attempts or 1) + 1
-    if existing.payload_hash != incoming_hash:
+    existing.attempts = (existing.attempts or 1) + 1  # type: ignore[assignment]
+    if existing.payload_hash != incoming_hash:  # type: ignore[misc]
         # Mesmo event_id, payload diferente: nunca reprocessa em silêncio.
-        result = dict(existing.processing_result or {})
-        result["divergent_payload_hashes"] = sorted(
-            set(result.get("divergent_payload_hashes", []) + [incoming_hash])
+        result = dict(existing.processing_result or {})  # type: ignore[arg-type, misc]
+        result["divergent_payload_hashes"] = sorted(  # type: ignore[arg-type]
+            set(result.get("divergent_payload_hashes", []) + [incoming_hash])  # type: ignore[arg-type, misc]
         )
-        existing.processing_result = result
+        existing.processing_result = result  # type: ignore[assignment]
         return IngestResult(status="duplicate", ledger=existing, detail="duplicate_divergent")
     return IngestResult(status="duplicate", ledger=existing, detail="duplicate")

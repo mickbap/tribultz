@@ -63,7 +63,7 @@ def persist_raw_event(
         session.query(CrmLeadEvent).filter(CrmLeadEvent.idempotency_key == key).one_or_none()
     )
     if existing is not None:
-        existing.attempts = (existing.attempts or 1) + 1
+        existing.attempts = (existing.attempts or 1) + 1  # type: ignore[assignment]
         return existing, False
 
     row = CrmLeadEvent(
@@ -106,57 +106,57 @@ def process_raw_event(
 
     if not settings.HANDOFF_APPLY_ENABLED:
         # Shadow mode: evento persiste, nada é aplicado. Flag OFF nunca aplica.
-        row.processing_result = {"detail": "shadow_mode"}
+        row.processing_result = {"detail": "shadow_mode"}  # type: ignore[assignment]
         session.flush()
         return {"detail": "shadow_mode", "status": row.status}
 
     adapter = adapter or get_adapter()
-    row.adapter_version = adapter.version
+    row.adapter_version = adapter.version  # type: ignore[assignment]
     ts = now or datetime.now(timezone.utc)
 
     try:
-        outcome = adapter.to_handoff_event(row.payload_raw or {})
+        outcome = adapter.to_handoff_event(row.payload_raw or {})  # type: ignore[arg-type]
     except (ValidationError, ValueError, TypeError) as exc:
         # Payload sem campos obrigatórios / malformado: quarentena (fila humana).
-        row.status = "quarantined"
-        row.error = str(exc)[:2000]
-        row.processing_result = {"detail": "adapter_contract_error"}
+        row.status = "quarantined"  # type: ignore[assignment]
+        row.error = str(exc)[:2000]  # type: ignore[assignment]
+        row.processing_result = {"detail": "adapter_contract_error"}  # type: ignore[assignment]
         session.flush()
         return {"detail": "adapter_contract_error", "status": "quarantined"}
     except Exception as exc:  # noqa: BLE001 — fronteira do worker: marcar e re-tentar
-        row.status = "failed"
-        row.error = str(exc)[:2000]
+        row.status = "failed"  # type: ignore[assignment]
+        row.error = str(exc)[:2000]  # type: ignore[assignment]
         session.flush()
         raise ProcessingError(f"adapter falhou: {exc}") from exc
 
     if isinstance(outcome, UnmappedEvent):
-        row.status = "unmapped"
-        row.event_type_raw = outcome.event_type_raw[:128]
-        row.processing_result = {"detail": "unmapped", "note": outcome.note}
+        row.status = "unmapped"  # type: ignore[assignment]
+        row.event_type_raw = outcome.event_type_raw[:128]  # type: ignore[assignment]
+        row.processing_result = {"detail": "unmapped", "note": outcome.note}  # type: ignore[assignment]
         session.flush()
         return {"detail": "unmapped", "status": "unmapped"}
 
     event = outcome
     result = ingest_handoff_event(
         session,
-        row.tenant_id,
+        row.tenant_id,  # type: ignore[arg-type]
         event,
-        payload_raw=row.payload_raw,
+        payload_raw=row.payload_raw,  # type: ignore[arg-type]
         provider_event_id=event.event_id,
         adapter_version=adapter.version,
         now=ts,
     )
 
     # A linha bruta espelha o desfecho de negócio e aponta para a linha canônica.
-    row.external_lead_id = event.external_lead_id
-    row.event_type = event.event_type
-    row.event_type_raw = RAW_EVENT_TYPE
-    row.occurred_at = event.occurred_at
-    row.occurred_at_source = "provider"
-    row.status = result.status
+    row.external_lead_id = event.external_lead_id  # type: ignore[assignment]
+    row.event_type = event.event_type  # type: ignore[assignment]
+    row.event_type_raw = RAW_EVENT_TYPE  # type: ignore[assignment]
+    row.occurred_at = event.occurred_at  # type: ignore[assignment]
+    row.occurred_at_source = "provider"  # type: ignore[assignment]
+    row.status = result.status  # type: ignore[assignment]
     if result.status == "applied":
-        row.applied_at = ts
-    row.processing_result = {
+        row.applied_at = ts  # type: ignore[assignment]
+    row.processing_result = {  # type: ignore[assignment]
         "detail": result.detail,
         "business_ledger_id": str(result.ledger.id),
     }

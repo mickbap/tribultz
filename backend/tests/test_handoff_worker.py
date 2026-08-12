@@ -89,18 +89,18 @@ def test_shadow_mode_persiste_sem_aplicar(session, tenant_id):
     """HANDOFF_APPLY_ENABLED=False (default): ledger sim, domínio não."""
     assert settings.HANDOFF_APPLY_ENABLED is False
     row = _persist(session, tenant_id, _envelope(0))
-    out = process_raw_event(session, row.id)
+    out = process_raw_event(session, row.id)  # type: ignore[arg-type]
     assert out["detail"] == "shadow_mode"
-    assert row.status == "received"
+    assert row.status == "received"  # type: ignore[misc]
     assert session.query(CrmLeadLink).count() == 0  # nada aplicado
 
 
 def test_pipeline_completo_sintetico(session, tenant_id, apply_on):
     row = _persist(session, tenant_id, _envelope(1))
-    out = process_raw_event(session, row.id)
+    out = process_raw_event(session, row.id)  # type: ignore[arg-type]
     assert out["status"] == "applied" and out["detail"] == "transitioned"
-    assert row.status == "applied"
-    assert row.external_lead_id == "lead-sintetico-001"  # sentinela substituída
+    assert row.status == "applied"  # type: ignore[misc]
+    assert row.external_lead_id == "lead-sintetico-001"  # sentinela substituída  # type: ignore[misc]
     link = session.query(CrmLeadLink).one()
     assert link.ownership_state == "HANDOFF_REQUESTED"
     # linha de negócio canônica existe e é apontada
@@ -110,8 +110,8 @@ def test_pipeline_completo_sintetico(session, tenant_id, apply_on):
 
 def test_reprocesso_e_noop(session, tenant_id, apply_on):
     row = _persist(session, tenant_id, _envelope(2))
-    process_raw_event(session, row.id)
-    again = process_raw_event(session, row.id)
+    process_raw_event(session, row.id)  # type: ignore[arg-type]
+    again = process_raw_event(session, row.id)  # type: ignore[arg-type]
     assert again["detail"] == "already_processed"
 
 
@@ -119,14 +119,14 @@ def test_mesmo_evento_bytes_diferentes_morre_na_chave_de_negocio(session, tenant
     """Reentrega com whitespace diferente passa pelo transporte, morre no negócio."""
     payload = _envelope(3)
     row1 = _persist(session, tenant_id, payload)
-    process_raw_event(session, row1.id)
+    process_raw_event(session, row1.id)  # type: ignore[arg-type]
 
     body2 = json.dumps(payload, indent=2).encode()  # bytes diferentes, evento igual
     row2, created = persist_raw_event(session, tenant_id, body2, payload)
     assert created  # transporte não pega (hash difere)
-    out = process_raw_event(session, row2.id)
+    out = process_raw_event(session, row2.id)  # type: ignore[arg-type]
     assert out["status"] == "duplicate"  # negócio pega (prov:rumy:<event_id>)
-    assert row2.status == "duplicate"
+    assert row2.status == "duplicate"  # type: ignore[misc]
     assert session.query(CrmLeadLink).count() == 1  # um único handoff lógico
 
 
@@ -134,9 +134,9 @@ def test_payload_sem_obrigatorios_quarentena(session, tenant_id, apply_on):
     payload = _envelope(4)
     del payload["person"]  # sem pessoa: contrato rejeita
     row = _persist(session, tenant_id, payload)
-    out = process_raw_event(session, row.id)
+    out = process_raw_event(session, row.id)  # type: ignore[arg-type]
     assert out["status"] == "quarantined"
-    assert row.status == "quarantined"
+    assert row.status == "quarantined"  # type: ignore[misc]
     assert "person" in (row.error or "")
     assert session.query(CrmLeadLink).count() == 0
 
@@ -144,9 +144,9 @@ def test_payload_sem_obrigatorios_quarentena(session, tenant_id, apply_on):
 def test_evento_nao_mapeado_audita_sem_efeito(session, tenant_id, apply_on):
     """'Rumy = Qualificado' (ou qualquer tipo não mapeado) só audita — zero efeito."""
     row = _persist(session, tenant_id, {"event_type": "rumy.qualificado", "lead": "x"})
-    out = process_raw_event(session, row.id)
+    out = process_raw_event(session, row.id)  # type: ignore[arg-type]
     assert out["status"] == "unmapped"
-    assert row.event_type_raw == "rumy.qualificado"
+    assert row.event_type_raw == "rumy.qualificado"  # type: ignore[misc]
     assert session.query(CrmLeadLink).count() == 0
 
 
@@ -161,12 +161,12 @@ def test_adapter_com_excecao_marca_failed_e_retenta(session, tenant_id, apply_on
 
     row = _persist(session, tenant_id, _envelope(5))
     with pytest.raises(ProcessingError):
-        process_raw_event(session, row.id, adapter=ExplodingAdapter())
-    assert row.status == "failed"
+        process_raw_event(session, row.id, adapter=ExplodingAdapter())  # type: ignore[arg-type]
+    assert row.status == "failed"  # type: ignore[misc]
     assert "falha transitória sintética" in row.error
 
     # retry (agora com o adapter são) reprocessa a partir de 'failed'
-    out = process_raw_event(session, row.id)
+    out = process_raw_event(session, row.id)  # type: ignore[arg-type]
     assert out["status"] == "applied"
 
 
@@ -174,29 +174,29 @@ def test_mesmo_timestamp_nao_reaplica(session, tenant_id, apply_on):
     """Dois eventos distintos com o MESMO occurred_at: o segundo é superseded
     (regra 'só aplica se estritamente mais novo' — empate não regride nem duplica)."""
     r1 = _persist(session, tenant_id, _envelope(6))
-    process_raw_event(session, r1.id)
+    process_raw_event(session, r1.id)  # type: ignore[arg-type]
     r2 = _persist(session, tenant_id, _envelope(7))  # event_id difere, occurred igual
-    out = process_raw_event(session, r2.id)
+    out = process_raw_event(session, r2.id)  # type: ignore[arg-type]
     assert out["status"] == "superseded"
 
 
 def test_evento_atrasado_superseded(session, tenant_id, apply_on):
     r1 = _persist(session, tenant_id, _envelope(8))
-    process_raw_event(session, r1.id)
+    process_raw_event(session, r1.id)  # type: ignore[arg-type]
     atrasado = _envelope(
         9, occurred=(datetime(2026, 8, 12, 10, 0, tzinfo=timezone.utc)).isoformat()
     )
     r2 = _persist(session, tenant_id, atrasado)
-    out = process_raw_event(session, r2.id)
+    out = process_raw_event(session, r2.id)  # type: ignore[arg-type]
     assert out["status"] == "superseded"
 
 
 def test_mesma_pessoa_novo_external_lead_id(session, tenant_id, apply_on):
     r1 = _persist(session, tenant_id, _envelope(10, lead="lead-A"))
-    process_raw_event(session, r1.id)
+    process_raw_event(session, r1.id)  # type: ignore[arg-type]
     depois = (datetime(2026, 8, 12, 12, 5, tzinfo=timezone.utc)).isoformat()
     r2 = _persist(session, tenant_id, _envelope(11, lead="lead-B", occurred=depois))
-    process_raw_event(session, r2.id)
+    process_raw_event(session, r2.id)  # type: ignore[arg-type]
     links = session.query(CrmLeadLink).all()
     assert len(links) == 2
     assert len({link.person_identity_id for link in links}) == 1
@@ -209,9 +209,9 @@ def test_mesmo_external_lead_id_entre_tenants_isola(session, tenant_id, apply_on
     session.add(other)
     session.flush()
     r1 = _persist(session, tenant_id, _envelope(12))
-    process_raw_event(session, r1.id)
+    process_raw_event(session, r1.id)  # type: ignore[arg-type]
     r2 = _persist(session, other.id, _envelope(13))
-    process_raw_event(session, r2.id)
+    process_raw_event(session, r2.id)  # type: ignore[arg-type]
     links = session.query(CrmLeadLink).all()
     assert len(links) == 2
     assert len({link.tenant_id for link in links}) == 2

@@ -32,7 +32,7 @@ def _event(**overrides):
         reason="positive_reply",
     )
     base.update(overrides)
-    return HandoffEvent(**base)
+    return HandoffEvent(**base)  # type: ignore[arg-type]
 
 
 def test_known_exige_valor_nao_vazio():
