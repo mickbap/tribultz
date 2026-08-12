@@ -66,4 +66,5 @@ celery.autodiscover_tasks([
     "app.tasks.task_i_compliance",
     "app.tasks.task_j_retention",
     "app.tasks.task_crm",
+    "app.tasks.task_k_rumy",
 ])
