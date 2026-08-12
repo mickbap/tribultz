@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -34,6 +35,8 @@ from app.services.handoff.ownership import (
     OwnershipState,
     transition_ownership,
 )
+
+logger = logging.getLogger(__name__)
 
 PROTECTED = {OwnershipState.HANDOFF_REQUESTED.value, OwnershipState.HUMAN_OWNED.value}
 
@@ -182,6 +185,20 @@ def ingest_handoff_event(
             now=ts,
         )
         detail = "transitioned"
+        # Caminho C (Round 7 §7): alerta operacional de pausa — best-effort e
+        # idempotente por ciclo; falha de alerta jamais derruba o ingest.
+        try:
+            from app.services.handoff.alerts import raise_pause_alert
+
+            alert = raise_pause_alert(
+                session, link,
+                person_display=event.person.full_name,
+                campaign=event.campaign_id or "",
+                now=ts,
+            )
+        except Exception:  # noqa: BLE001
+            logger.exception("handoff_alert_failed link=%s", link.id)
+            alert = {"raised": False, "detail": "alert_error"}
     elif current in PROTECTED:
         # Pessoa/lead já sob atenção: evento é real e fica registrado; estado
         # não muda (idempotência lógica do handoff).
@@ -201,6 +218,8 @@ def ingest_handoff_event(
         "automation_state": link.automation_state,
         "identity_conflict": link.identity_conflict,
     }
+    if detail == "transitioned":
+        ledger.processing_result["alert"] = alert
     return IngestResult(status="applied", ledger=ledger, link=link, detail=detail)
 
 

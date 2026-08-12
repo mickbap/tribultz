@@ -42,3 +42,25 @@ def process_rumy_event(self, ledger_id: str):
         raise
     finally:
         session.close()
+
+
+@celery.task(name="handoff.escalate_overdue")
+def escalate_overdue_task():
+    """Varredura de escalonamento do Caminho C (Round 7 §7).
+
+    Registrada mas DELIBERADAMENTE fora do beat schedule — a ativação do
+    agendamento é decisão do round de piloto. Rodar manualmente ou via beat
+    quando autorizado.
+    """
+    from app.services.handoff.alerts import escalate_overdue
+
+    session = SessionLocal()
+    try:
+        result = escalate_overdue(session)
+        session.commit()
+        return result
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()

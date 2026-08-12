@@ -219,15 +219,29 @@ def test_mesmo_external_lead_id_entre_tenants_isola(session, tenant_id, apply_on
 
 
 def test_pipeline_nao_conhece_attio_por_construcao():
-    """'Backend persiste + Attio indisponível': o pipeline F2/F3 não referencia
-    integrations/attio — indisponibilidade do Attio é estruturalmente irrelevante."""
+    """'Backend persiste + Attio indisponível': o NÚCLEO do pipeline (trava,
+    ownership, identidade, ingest, transporte) não referencia integrations/attio
+    — indisponibilidade do Attio é estruturalmente irrelevante para a proteção.
+
+    Exceção SANCIONADA (Round 7 §7): alerts.py cria a task operacional no Attio
+    como parte do alerta do Caminho C — best-effort, import LAZY (dentro da
+    função, atrás de try/except e de ATTIO_ENABLED). Attio fora do ar degrada o
+    alerta, nunca a trava."""
     import pathlib
 
     base = pathlib.Path(__file__).resolve().parents[1] / "app"
-    files = [
-        *(base / "services" / "handoff").glob("*.py"),
-        base / "routers" / "rumy.py",
-        base / "tasks" / "task_k_rumy.py",
-    ]
-    for f in files:
+    core = [
+        p for p in (base / "services" / "handoff").glob("*.py")
+        if p.name != "alerts.py"
+    ] + [base / "routers" / "rumy.py", base / "tasks" / "task_k_rumy.py"]
+    for f in core:
         assert "integrations.attio" not in f.read_text(), f"{f} referencia attio"
+    # a borda sancionada: import de attio em alerts.py existe mas NUNCA no
+    # nível de módulo (lazy = Attio indisponível não impede nem importar)
+    alerts_src = (base / "services" / "handoff" / "alerts.py").read_text()
+    toplevel_imports = [
+        line for line in alerts_src.splitlines()
+        if line.startswith(("import ", "from ")) and "attio" in line
+    ]
+    assert toplevel_imports == [], f"import de attio no topo de alerts.py: {toplevel_imports}"
+    assert "from app.integrations.attio.tasks import" in alerts_src  # lazy, na função

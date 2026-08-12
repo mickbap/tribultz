@@ -422,3 +422,35 @@ def _send_email(
     except Exception:
         logger.exception("email_send_failed subject=%r to=%r", subject, to_email)
         return False
+
+
+def send_handoff_pause_alert_email(
+    to_email: str,
+    lead_ref: str,
+    person_display: str,
+    campaign: str,
+    requested_at_iso: str,
+    pause_sla_minutes: int,
+) -> bool:
+    """Alerta crítico do Caminho C (Round 7 §7): pausar automação no Rumy."""
+    html_body = _render(
+        "handoff_pause_alert.html",
+        lead_ref=lead_ref,
+        person_display=person_display,
+        campaign=campaign,
+        requested_at_iso=requested_at_iso,
+        pause_sla_minutes=pause_sla_minutes,
+    )
+    text_body = (
+        "PAUSAR AUTOMACAO NO RUMY - prioridade critica\n\n"
+        f"Lead: {lead_ref}\nPessoa: {person_display}\nCampanha: {campaign}\n"
+        f"Handoff em: {requested_at_iso}\nSLA de pausa: {pause_sla_minutes} min uteis\n\n"
+        "Pause o contato no painel do Rumy e registre a evidencia no sistema."
+    )
+    return _send_email(
+        to_email=to_email,
+        subject=f"[CRÍTICO] Pausar Rumy — lead {lead_ref}",
+        html_body=html_body,
+        text_body=text_body,
+        log_url="",
+    )
