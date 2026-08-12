@@ -32,12 +32,12 @@ def local_snapshot(session: Session, tenant_id: Optional[uuid.UUID] = None) -> d
 
     ownership_counts: dict[str, int] = {}
     for link in links:
-        ownership_counts[link.ownership_state] = ownership_counts.get(link.ownership_state, 0) + 1
+        ownership_counts[link.ownership_state] = ownership_counts.get(link.ownership_state, 0) + 1  # type: ignore[arg-type, misc]
 
     handoff_without_owner = sum(
         1
         for link in links
-        if link.ownership_state == OwnershipState.HANDOFF_REQUESTED.value
+        if link.ownership_state == OwnershipState.HANDOFF_REQUESTED.value  # type: ignore[misc]
         and link.owner_ref is None
     )
     sla_breaches = sum(1 for link in links if accept_sla_breached(link))
@@ -49,7 +49,7 @@ def local_snapshot(session: Session, tenant_id: Optional[uuid.UUID] = None) -> d
             and link.ownership_state in PROTECTED_OWNERSHIP_STATES
         }
     )
-    identity_conflicts = sum(1 for link in links if link.identity_conflict)
+    identity_conflicts = sum(1 for link in links if link.identity_conflict)  # type: ignore[misc]
 
     return {
         "events_by_status": events_by_status,
