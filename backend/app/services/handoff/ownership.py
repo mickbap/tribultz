@@ -21,6 +21,7 @@ persiste com flags OFF (desligar flag nunca re-permite outbound).
 from __future__ import annotations
 
 import enum
+import json
 import logging
 import uuid
 from datetime import datetime, time, timedelta, timezone
@@ -29,6 +30,8 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
+from app.config import settings
+from app.models.admin_audit import AdminAuditLog
 from app.models.crm_handoff import CrmLeadLink, CrmStateTransition
 from app.models.prospect_suppression import ProspectSuppression
 from app.services.handoff.identity import person_protected
@@ -47,9 +50,20 @@ class OwnershipState(str, enum.Enum):
 
 
 class AutomationState(str, enum.Enum):
+    """Eixo de permissão de outbound.
+
+    DEC-8 (Round 7): SUPPRESSION_CONFIRMED = confirmação TÉCNICA observável
+    (leitura/ack do provedor — inalcançável no Caminho C, onde não lemos o
+    Rumy); MANUALLY_CONFIRMED = confirmação PROCEDIMENTAL humana (operador
+    declarou e registrou evidência da pausa no sistema externo). Painéis,
+    métricas e auditoria preservam a diferença — confundi-los seria maquiar
+    garantia procedimental como técnica.
+    """
+
     ACTIVE = "ACTIVE"
     SUPPRESSION_REQUESTED = "SUPPRESSION_REQUESTED"
     SUPPRESSION_CONFIRMED = "SUPPRESSION_CONFIRMED"
+    MANUALLY_CONFIRMED = "MANUALLY_CONFIRMED"
 
 
 class ActorType(str, enum.Enum):
@@ -330,7 +344,31 @@ def outbound_allowed(session: Session, link: CrmLeadLink) -> tuple[bool, str]:
 _BUSINESS_TZ = ZoneInfo("America/Sao_Paulo")
 _BUSINESS_START = time(9, 0)
 _BUSINESS_END = time(18, 0)
-ACCEPT_SLA = timedelta(hours=4)  # HANDOFF_REQUESTED → HUMAN_OWNED ≤ 4h úteis
+# Round 7 §3: expediente aprovado provisoriamente (seg–sex 09–18 SP).
+# Feriados NÃO tratados por decisão explícita — sem biblioteca de calendário
+# escondida; se o piloto exigir, abre-se decisão específica.
+BUSINESS_CALENDAR_VERSION = "weekday_only_v1"
+HOLIDAYS_SUPPORTED = False
+
+
+def pause_sla() -> timedelta:
+    """DEC-6 (Round 7): pausa manual no Rumy ≤ 5 min úteis — relógio próprio.
+
+    É o relógio de CONTENÇÃO: mede a janela de exposição do Caminho C. Mais
+    apertado que o de assunção por definição — esse número é a exposição que
+    Produto aceita.
+    """
+    return timedelta(minutes=settings.HANDOFF_PAUSE_SLA_MINUTES)
+
+
+def accept_sla() -> timedelta:
+    """SLA provisório de aceite (Round 6 §8): 15 min úteis, configurável."""
+    return timedelta(minutes=settings.HANDOFF_ACCEPT_SLA_MINUTES)
+
+
+def first_action_sla() -> timedelta:
+    """SLA provisório da 1ª ação substantiva (Round 6 §8): 30 min úteis."""
+    return timedelta(minutes=settings.HANDOFF_FIRST_ACTION_SLA_MINUTES)
 
 
 def business_hours_between(start: datetime, end: datetime) -> timedelta:
@@ -371,6 +409,141 @@ def time_to_human_action(link: CrmLeadLink, now: Optional[datetime] = None) -> O
     return business_hours_between(link.handoff_accepted_at, end)  # type: ignore[arg-type]
 
 
+_PAUSE_DONE_STATES = frozenset(
+    {AutomationState.SUPPRESSION_CONFIRMED.value, AutomationState.MANUALLY_CONFIRMED.value}
+)
+
+
+def pause_pending(link: CrmLeadLink) -> bool:
+    """Pausa remota ainda não registrada (trava local aplicada, Rumy presumido falando)."""
+    return (  # type: ignore[misc]
+        link.handoff_requested_at is not None
+        and link.automation_state == AutomationState.SUPPRESSION_REQUESTED.value
+    )
+
+
+def time_to_manual_pause(link: CrmLeadLink, now: Optional[datetime] = None) -> Optional[timedelta]:
+    if link.handoff_requested_at is None:
+        return None
+    end = (
+        link.suppression_confirmed_at
+        if link.automation_state in _PAUSE_DONE_STATES and link.suppression_confirmed_at  # type: ignore[misc]
+        else _now(now)
+    )
+    return business_hours_between(link.handoff_requested_at, end)  # type: ignore[arg-type]
+
+
+def pause_sla_breached(link: CrmLeadLink, now: Optional[datetime] = None) -> bool:
+    """Relógio de contenção estourado — independe do ownership: HUMAN_OWNED
+    NÃO mascara ausência de pausa (Round 7 §13)."""
+    if not pause_pending(link):
+        return False
+    elapsed = time_to_manual_pause(link, now=now)
+    return elapsed is not None and elapsed > pause_sla()
+
+
+def uncontained_exposure(link: CrmLeadLink, now: Optional[datetime] = None) -> bool:
+    """2× o SLA de pausa sem confirmação: exposição não contida — incidente."""
+    if not pause_pending(link):
+        return False
+    elapsed = time_to_manual_pause(link, now=now)
+    return elapsed is not None and elapsed > 2 * pause_sla()
+
+
+def pause_confirmation_missing(link: CrmLeadLink) -> bool:
+    """Situação crítica do §13: lead sob atenção (ou já assumido) sem pausa
+    registrada — HUMAN_OWNED + SUPPRESSION_REQUESTED é alarme, não sucesso."""
+    return (  # type: ignore[misc]
+        link.ownership_state
+        in (OwnershipState.HANDOFF_REQUESTED.value, OwnershipState.HUMAN_OWNED.value)
+        and link.automation_state == AutomationState.SUPPRESSION_REQUESTED.value
+    )
+
+
+def _admin_audit(session: Session, actor: str, action: str, link: CrmLeadLink, detail: dict) -> None:
+    session.add(
+        AdminAuditLog(
+            actor_email=actor,
+            action=action,
+            target_type="crm_lead_link",
+            target_id=str(link.id),
+            detail=detail,
+        )
+    )
+
+
+def register_manual_pause(
+    session: Session,
+    link: CrmLeadLink,
+    actor_ref: str,
+    evidence: str,
+    now: Optional[datetime] = None,
+) -> CrmLeadLink:
+    """Registra a pausa MANUAL feita pelo operador no Rumy (Caminho C, DEC-8).
+
+    Exige ator identificado e evidência não-vazia (descrição da ação + instante
+    — Round 7 §8; screenshot é complementar, não obrigatório). Sem ator ou sem
+    evidência, a pausa NÃO é registrável. Resultado: MANUALLY_CONFIRMED —
+    afirmação de pessoa, grau probatório menor que SUPPRESSION_CONFIRMED, e o
+    dado carrega a diferença.
+    """
+    if not actor_ref or not actor_ref.strip():
+        raise InvalidTransition("pausa manual exige ator identificado (§8)")
+    if not evidence or not evidence.strip():
+        raise InvalidTransition("pausa manual exige evidência não-vazia (§8)")
+    if link.automation_state != AutomationState.SUPPRESSION_REQUESTED.value:  # type: ignore[misc]
+        raise InvalidTransition(
+            f"pausa manual exige SUPPRESSION_REQUESTED (atual: {link.automation_state})"
+        )
+    ts = _now(now)
+    link.automation_state = AutomationState.MANUALLY_CONFIRMED.value  # type: ignore[assignment]
+    link.suppression_confirmed_at = ts  # type: ignore[assignment]
+    payload = {"action": evidence.strip(), "origem": "rumy", "registered_at": ts.isoformat()}
+    _audit(
+        session, link, "automation", AutomationState.SUPPRESSION_REQUESTED.value,
+        AutomationState.MANUALLY_CONFIRMED.value, ActorType.HUMAN, actor_ref,
+        json.dumps(payload, ensure_ascii=False), None,
+    )
+    _admin_audit(session, actor_ref, "handoff.manual_pause", link, payload)
+    session.flush()
+    return link
+
+
+def register_manual_reactivation(
+    session: Session,
+    link: CrmLeadLink,
+    actor_ref: str,
+    evidence: str,
+    now: Optional[datetime] = None,
+) -> CrmLeadLink:
+    """Reativação manual (Round 7 §9): RELEASED → AUTOMATED, sempre por humano.
+
+    No Caminho C a retomada também é manual: exige evidência de que o Rumy foi
+    reativado — sem ela, o contato não pode ser representado como seguramente
+    automatizado. Nunca automática (a matriz já proíbe; aqui exige-se também a
+    evidência).
+    """
+    if not actor_ref or not actor_ref.strip():
+        raise InvalidTransition("reativação exige ator identificado (§9)")
+    if not evidence or not evidence.strip():
+        raise InvalidTransition("reativação exige evidência de retomada no Rumy (§9)")
+    if link.ownership_state != OwnershipState.RELEASED.value:  # type: ignore[misc]
+        raise InvalidTransition(
+            f"reativação exige RELEASED (atual: {link.ownership_state})"
+        )
+    ts = _now(now)
+    transition_ownership(
+        session, link, OwnershipState.AUTOMATED, ActorType.HUMAN, actor_ref=actor_ref,
+        reason=evidence.strip(), now=ts, suppression_lift_confirmed=True,
+    )
+    _admin_audit(
+        session, actor_ref, "handoff.manual_reactivation", link,
+        {"evidence": evidence.strip(), "at": ts.isoformat()},
+    )
+    session.flush()
+    return link
+
+
 def accept_sla_breached(link: CrmLeadLink, now: Optional[datetime] = None) -> bool:
     """True se o pedido de handoff estourou o SLA de aceite sem HUMAN_OWNED.
 
@@ -379,4 +552,18 @@ def accept_sla_breached(link: CrmLeadLink, now: Optional[datetime] = None) -> bo
     if link.ownership_state != OwnershipState.HANDOFF_REQUESTED.value:  # type: ignore[misc]
         return False
     elapsed = time_to_accept(link, now=now)
-    return elapsed is not None and elapsed > ACCEPT_SLA
+    return elapsed is not None and elapsed > accept_sla()
+
+
+def first_action_sla_breached(link: CrmLeadLink, now: Optional[datetime] = None) -> bool:
+    """True se HUMAN_OWNED sem 1ª ação substantiva dentro do SLA (relógio 2).
+
+    Independente do relógio de aceite: assumir rápido não satisfaz este SLA
+    (Round 6 §8 — "'assumir' não satisfaz o segundo").
+    """
+    if link.ownership_state != OwnershipState.HUMAN_OWNED.value:  # type: ignore[misc]
+        return False
+    if link.first_human_action_at is not None:
+        return False
+    elapsed = time_to_human_action(link, now=now)
+    return elapsed is not None and elapsed > first_action_sla()

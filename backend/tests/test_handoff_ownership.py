@@ -247,3 +247,32 @@ def test_sla_de_aceite_estoura_e_escala_nunca_devolve(session, tenant_id):
         transition_ownership(
             session, link, OwnershipState.AUTOMATED, ActorType.SYSTEM, reason="timeout"
         )
+
+
+def test_sla_provisorio_15min_e_relogio_2_independente(session, tenant_id):
+    """Round 6 §8: aceite ≤15min úteis; 1ª ação ≤30min úteis; relógios independentes
+    — assumir rápido NÃO satisfaz o segundo SLA."""
+    from app.services.handoff.ownership import first_action_sla_breached
+
+    link = _link(session, tenant_id)
+    t0 = datetime(2026, 8, 12, 10, 0, tzinfo=SP)
+    transition_ownership(
+        session, link, OwnershipState.HANDOFF_REQUESTED, ActorType.PROVIDER_EVENT, now=t0
+    )
+    # 10 min: dentro do SLA de aceite
+    assert accept_sla_breached(link, now=t0 + timedelta(minutes=10)) is False
+    # 20 min sem aceite: estourou o relógio 1
+    assert accept_sla_breached(link, now=t0 + timedelta(minutes=20)) is True
+
+    # aceite RÁPIDO (5 min) — relógio 1 satisfeito…
+    transition_ownership(
+        session, link, OwnershipState.HUMAN_OWNED, ActorType.HUMAN,
+        actor_ref="ana", now=t0 + timedelta(minutes=5),
+    )
+    assert accept_sla_breached(link) is False
+    # …mas 40 min úteis sem ação substantiva estoura o relógio 2
+    assert first_action_sla_breached(link, now=t0 + timedelta(minutes=25)) is False
+    assert first_action_sla_breached(link, now=t0 + timedelta(minutes=45)) is True
+    # 'assumir' não parou o relógio 2; uma mensagem humana para
+    register_human_action(session, link, "message", "ana", now=t0 + timedelta(minutes=50))
+    assert first_action_sla_breached(link, now=t0 + timedelta(hours=2)) is False
