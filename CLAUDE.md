@@ -79,9 +79,10 @@ backend/           FastAPI
   app/crews/       CrewAI crews — crm_engagement_crew (Produção), security_crew (Produção
                    Interna), nfe_validation_crew (Dormante). Classificação oficial e políticas em
                    `knowledge/engineering/crews.md` no Brain.
-  app/tasks/       11 tasks Celery (validate, report, simulation, reconciliation, hubspot,
+  app/tasks/       12 tasks Celery (validate, report, simulation, reconciliation, hubspot,
                    security_audit — órfã, sem beat/autodiscover, ver runbook —, billing, sped,
-                   compliance, crm, rumy — worker do inbox de handoff, F2)
+                   compliance, crm, rumy — inbox + escalonamento do handoff, F2/Caminho C;
+                   escalonamento registrado mas fora do beat até o round de piloto)
   app/tools/       ERP connector, HubSpot, Postgres, S3, validation
   tests/           pytest
 

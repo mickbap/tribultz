@@ -220,4 +220,6 @@ def test_metrics_nao_declara_zero_sem_instrumento(session, tenant_id):
     snap = local_snapshot(session, tenant_id)
     assert snap["links_by_ownership"] == {"HANDOFF_REQUESTED": 1}
     assert snap["protected_persons"] == 1
-    assert "UNOBSERVABLE" in snap["rumy_send_after_block"]
+    # Round 7 §10: métrica sem instrumento é objeto estrutural, jamais número
+    assert "UNOBSERVABLE" in str(snap["rumy_send_after_block"])
+    assert snap["rumy_send_after_block"].display() == "NÃO OBSERVÁVEL"
