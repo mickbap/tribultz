@@ -73,6 +73,29 @@ def _oncall_emails() -> list[str]:
     return [e.strip() for e in settings.HANDOFF_ALERT_EMAILS.split(",") if e.strip()]
 
 
+class CaminhoCNotActivatable(Exception):
+    """Round 8 §7: sem plantão configurado, o Caminho C não é ativável."""
+
+
+def caminho_c_ready() -> tuple[bool, list[str]]:
+    """Gate de ativação do Caminho C — fail-closed explícito (Round 8 §7).
+
+    A PROTEÇÃO local (DEC-1/DEC-5) nunca depende disto — ela se aplica sempre.
+    O que este gate bloqueia é a OPERAÇÃO assistida (alerta/escalonamento/
+    piloto): alerta sem destinatário é decoração de sistema.
+    """
+    missing = []
+    if not _oncall_emails():
+        missing.append("HANDOFF_ALERT_EMAILS vazio — plantão não configurado (Produto define)")
+    return (not missing, missing)
+
+
+def assert_caminho_c_activatable() -> None:
+    ok, missing = caminho_c_ready()
+    if not ok:
+        raise CaminhoCNotActivatable("; ".join(missing))
+
+
 def raise_pause_alert(
     session: Session,
     link: CrmLeadLink,
@@ -103,6 +126,15 @@ def raise_pause_alert(
 
     email_sent = False
     recipients = _oncall_emails()
+    if not recipients:
+        # §7: sem plantão o alerta é INENTREGÁVEL — registrado como crítico,
+        # jamais como caminho normal. A trava local já foi aplicada antes.
+        _audit_alert(
+            session, link, "pause_alert_undeliverable",
+            "plantão não configurado (HANDOFF_ALERT_EMAILS vazio) — alerta sem "
+            "destinatário é decoração; Caminho C não ativável (Round 8 §7)",
+        )
+        logger.error("handoff_alert_undeliverable link=%s — plantão não configurado", link.id)
     if recipients:
         try:
             from app.services.email_service import send_handoff_pause_alert_email
@@ -155,6 +187,7 @@ def escalate_overdue(session: Session, now: Optional[datetime] = None) -> dict[s
     EXPOSIÇÃO NÃO CONTIDA (entra na contagem de incidentes). Nunca devolve
     lead à automação — a alavanca final é falhar alto.
     """
+    assert_caminho_c_activatable()  # §7: sem plantão, escalonar é teatro
     ts = _now(now)
     escalated = uncontained = 0
     pending = (

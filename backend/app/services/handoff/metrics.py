@@ -115,10 +115,15 @@ def local_snapshot(session: Session, tenant_id: Optional[uuid.UUID] = None) -> d
     tr = session.query(CrmStateTransition).filter(
         CrmStateTransition.axis == "alert", CrmStateTransition.to_state == "uncontained_exposure"
     )
+    undeliv = session.query(CrmStateTransition).filter(
+        CrmStateTransition.axis == "alert",
+        CrmStateTransition.to_state == "pause_alert_undeliverable",
+    )
     if tenant_id is not None:
         ev = ev.filter(CrmLeadEvent.tenant_id == tenant_id)
         lk = lk.filter(CrmLeadLink.tenant_id == tenant_id)
         tr = tr.filter(CrmStateTransition.tenant_id == tenant_id)
+        undeliv = undeliv.filter(CrmStateTransition.tenant_id == tenant_id)
 
     events_by_status = {status: count for status, count in ev.all()}
     links = lk.all()
@@ -191,6 +196,7 @@ def local_snapshot(session: Session, tenant_id: Optional[uuid.UUID] = None) -> d
         "handoffs_without_pause_confirmation": without_pause_confirmation,
         "pause_confirmation_missing_critical": without_pause_confirmation > 0,
         "handoffs_without_owner": handoff_without_owner,
+        "pause_alerts_undeliverable": undeliv.count(),
         "protected_persons": len(
             {
                 link.person_identity_id

@@ -229,7 +229,10 @@ def test_ownership_3min_pausa_8min_estoura_pausa(session, tenant_id):
     assert snap["pause_confirmation_missing_critical"] is True
 
 
-def test_ninguem_pausa_escalona_e_marca_nao_contida(session, tenant_id):
+def test_ninguem_pausa_escalona_e_marca_nao_contida(session, tenant_id, monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "HANDOFF_ALERT_EMAILS", "plantao.qa@example.com")
     link = _link(session, tenant_id)
     # 6 min úteis: estoura SLA → escalona (nível 1)
     r1 = escalate_overdue(session, now=T0 + timedelta(minutes=6))
@@ -342,3 +345,64 @@ def test_dashboard_nao_transforma_unobservable_em_zero(session, tenant_id):
     assert snap["rumy_suppression_capability"] == "UNKNOWN_CAPABILITY"
     assert snap["business_calendar_version"] == "weekday_only_v1"
     assert snap["holidays_supported"] is False
+
+
+
+# ── Round 8: plantão fail-closed (§7) e gates extras do UNOBSERVABLE (§2.1) ──
+
+def test_sem_plantao_caminho_c_nao_ativavel(session, tenant_id, monkeypatch):
+    """Round 8 §7: sem plantão → Caminho C não ativável; alerta sem
+    destinatário é registrado como INENTREGÁVEL, nunca 'segue normalmente'."""
+    from app.config import settings
+    from app.services.handoff.alerts import (
+        CaminhoCNotActivatable,
+        assert_caminho_c_activatable,
+        caminho_c_ready,
+    )
+
+    monkeypatch.setattr(settings, "HANDOFF_ALERT_EMAILS", "")
+    ok, missing = caminho_c_ready()
+    assert ok is False and "plantão" in missing[0]
+    with pytest.raises(CaminhoCNotActivatable):
+        assert_caminho_c_activatable()
+    with pytest.raises(CaminhoCNotActivatable):
+        escalate_overdue(session, now=T0 + timedelta(minutes=6))
+
+    # alerta disparado sem plantão: trava local JÁ aplicada + inentregável auditado
+    link = _link(session, tenant_id)
+    result = raise_pause_alert(session, link)
+    assert result["raised"] is True and result["email_sent"] is False
+    undeliv = (
+        session.query(CrmStateTransition)
+        .filter_by(axis="alert", to_state="pause_alert_undeliverable")
+        .count()
+    )
+    assert undeliv == 1
+    assert outbound_allowed(session, link)[0] is False  # proteção nunca depende do alerta
+    snap = local_snapshot(session, tenant_id)
+    assert snap["pause_alerts_undeliverable"] == 1
+
+    # com plantão configurado, fica ativável
+    monkeypatch.setattr(settings, "HANDOFF_ALERT_EMAILS", "plantao.qa@example.com")
+    assert caminho_c_ready() == (True, [])
+
+
+def test_pausa_e_o_relogio_mais_apertado():
+    """Portado da linha descartada (DEC-9): o SLA de pausa DEVE ser mais
+    apertado que o de assunção — é a exposição que Produto aceita."""
+    from app.services.handoff.ownership import accept_sla, first_action_sla, pause_sla
+
+    assert pause_sla() < accept_sla() < first_action_sla()
+
+
+def test_unobservable_nao_e_null_nem_string_conversivel(session, tenant_id):
+    """Round 8 §2.1: ausência ≠ 0 ≠ null-interpretável ≠ string convertível."""
+    import json as _json
+
+    metric = rumy_send_after_block()
+    assert metric is not None  # não é null interpretável como zero
+    with pytest.raises(TypeError):
+        _json.dumps({"rumy_send_after_block": metric})  # painel não serializa por descuido
+    with pytest.raises(ValueError):
+        int(str(metric).split("(")[0])  # nem a representação textual vira número
+    assert not str(metric).isdigit()
