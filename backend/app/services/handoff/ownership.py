@@ -398,7 +398,7 @@ def first_action_sla_breached(link: CrmLeadLink, now: Optional[datetime] = None)
     Independente do relógio de aceite: assumir rápido não satisfaz este SLA
     (Round 6 §8 — "'assumir' não satisfaz o segundo").
     """
-    if link.ownership_state != OwnershipState.HUMAN_OWNED.value:
+    if link.ownership_state != OwnershipState.HUMAN_OWNED.value:  # type: ignore[misc]
         return False
     if link.first_human_action_at is not None:
         return False
