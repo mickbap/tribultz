@@ -29,6 +29,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.crm_handoff import CrmLeadLink, CrmStateTransition
 from app.models.prospect_suppression import ProspectSuppression
 from app.services.handoff.identity import person_protected
@@ -330,7 +331,16 @@ def outbound_allowed(session: Session, link: CrmLeadLink) -> tuple[bool, str]:
 _BUSINESS_TZ = ZoneInfo("America/Sao_Paulo")
 _BUSINESS_START = time(9, 0)
 _BUSINESS_END = time(18, 0)
-ACCEPT_SLA = timedelta(hours=4)  # HANDOFF_REQUESTED → HUMAN_OWNED ≤ 4h úteis
+
+
+def accept_sla() -> timedelta:
+    """SLA provisório de aceite (Round 6 §8): 15 min úteis, configurável."""
+    return timedelta(minutes=settings.HANDOFF_ACCEPT_SLA_MINUTES)
+
+
+def first_action_sla() -> timedelta:
+    """SLA provisório da 1ª ação substantiva (Round 6 §8): 30 min úteis."""
+    return timedelta(minutes=settings.HANDOFF_FIRST_ACTION_SLA_MINUTES)
 
 
 def business_hours_between(start: datetime, end: datetime) -> timedelta:
@@ -379,4 +389,18 @@ def accept_sla_breached(link: CrmLeadLink, now: Optional[datetime] = None) -> bo
     if link.ownership_state != OwnershipState.HANDOFF_REQUESTED.value:
         return False
     elapsed = time_to_accept(link, now=now)
-    return elapsed is not None and elapsed > ACCEPT_SLA
+    return elapsed is not None and elapsed > accept_sla()
+
+
+def first_action_sla_breached(link: CrmLeadLink, now: Optional[datetime] = None) -> bool:
+    """True se HUMAN_OWNED sem 1ª ação substantiva dentro do SLA (relógio 2).
+
+    Independente do relógio de aceite: assumir rápido não satisfaz este SLA
+    (Round 6 §8 — "'assumir' não satisfaz o segundo").
+    """
+    if link.ownership_state != OwnershipState.HUMAN_OWNED.value:
+        return False
+    if link.first_human_action_at is not None:
+        return False
+    elapsed = time_to_human_action(link, now=now)
+    return elapsed is not None and elapsed > first_action_sla()

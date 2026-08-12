@@ -129,3 +129,24 @@ def test_optional_fields_omitted_when_absent():
 
     result = upsert_person(email="ana@exemplo.com.br", client=_client(handler))
     assert result == {"data": {"id": {"record_id": "person-5"}}}
+
+
+def test_links_company_by_record_id_sem_dominio():
+    """Round 6 §2: vínculo por record_id — funciona p/ empresa SEM domínio e
+    tem precedência sobre o shorthand de domínio."""
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/records/query"):
+            return httpx.Response(200, json={"records": []})
+        payload = _json.loads(request.read())
+        assert payload["data"]["values"]["company"] == [
+            {"target_object": "companies", "target_record_id": "company-sem-dominio-1"}
+        ]
+        return httpx.Response(200, json={"data": {"id": {"record_id": "person-9"}}})
+
+    result = upsert_person(
+        email="sintetica.qa@example.test",
+        company_domain="ignorado.example",  # record_id vence
+        company_record_id="company-sem-dominio-1",
+        client=_client(handler),
+    )
+    assert result == {"data": {"id": {"record_id": "person-9"}}}

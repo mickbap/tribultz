@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     # tenant é resolvido no ingest, nunca confiado ao produtor). Vazio ⇒ o
     # endpoint responde 503 (fail-closed).
     HANDOFF_TENANT_ID: str = ""
+    # SLAs provisórios do piloto (Round 6 §8 — hipótese de teste, horas úteis):
+    # HANDOFF_REQUESTED→HUMAN_OWNED ≤ 15 min; HUMAN_OWNED→1ª ação substantiva
+    # ≤ 30 min. Dois relógios independentes — "assumir" não satisfaz o segundo.
+    HANDOFF_ACCEPT_SLA_MINUTES: int = 15
+    HANDOFF_FIRST_ACTION_SLA_MINUTES: int = 30
 
     # ── Security ────────────────────────────────────────────
     ALLOWED_ORIGINS: str = "http://localhost:3000,https://tribultz.com.br,https://*.vercel.app"

@@ -16,7 +16,11 @@ from sqlalchemy.orm import Session
 
 from app.models.crm_handoff import CrmLeadEvent, CrmLeadLink
 from app.services.handoff.identity import PROTECTED_OWNERSHIP_STATES
-from app.services.handoff.ownership import OwnershipState, accept_sla_breached
+from app.services.handoff.ownership import (
+    OwnershipState,
+    accept_sla_breached,
+    first_action_sla_breached,
+)
 
 
 def local_snapshot(session: Session, tenant_id: Optional[uuid.UUID] = None) -> dict[str, Any]:
@@ -41,6 +45,7 @@ def local_snapshot(session: Session, tenant_id: Optional[uuid.UUID] = None) -> d
         and link.owner_ref is None
     )
     sla_breaches = sum(1 for link in links if accept_sla_breached(link))
+    first_action_breaches = sum(1 for link in links if first_action_sla_breached(link))
     protected_persons = len(
         {
             link.person_identity_id
@@ -59,6 +64,7 @@ def local_snapshot(session: Session, tenant_id: Optional[uuid.UUID] = None) -> d
         "links_by_ownership": ownership_counts,
         "handoff_without_owner": handoff_without_owner,
         "accept_sla_breaches": sla_breaches,
+        "first_action_sla_breaches": first_action_breaches,
         "protected_persons": protected_persons,
         "identity_conflicts": identity_conflicts,
         # Round 4 §5: sem instrumento (log de envios do Rumy) esta métrica é

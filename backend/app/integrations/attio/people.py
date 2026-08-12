@@ -52,11 +52,20 @@ def _values_payload(
     linkedin: Optional[str],
     phone: Optional[str],
     company_domain: Optional[str],
+    company_record_id: Optional[str] = None,
 ) -> dict[str, Any]:
     values: dict[str, Any] = {"email_addresses": [email]}
     if first_name or last_name:
         values["name"] = {"first_name": first_name or "", "last_name": last_name or ""}
-    if company_domain:
+    # Round 6 §2 — correção Person↔Company sem depender de domínio: referência
+    # por record_id tem precedência sobre o shorthand de domínio (que falha
+    # para empresa sem domains e quebra após merge manual). O chamador obtém o
+    # record_id do upsert_company()/vínculo local (crm_lead_links).
+    if company_record_id:
+        values["company"] = [
+            {"target_object": "companies", "target_record_id": company_record_id}
+        ]
+    elif company_domain:
         values["company"] = [company_domain]
     optional_fields = {"job_title": job_title, "linkedin": linkedin, "phone": phone}
     for field, value in optional_fields.items():
@@ -73,6 +82,7 @@ def upsert_person(
     linkedin: Optional[str] = None,
     phone: Optional[str] = None,
     company_domain: Optional[str] = None,
+    company_record_id: Optional[str] = None,
     attio_person_id: Optional[str] = None,
     client: Optional[AttioClient] = None,
 ) -> dict[str, Any]:
@@ -80,14 +90,18 @@ def upsert_person(
 
     Search order: attio_person_id (caller already knows it — skips search) →
     email. Falls back to creating a new record matched on email when nothing
-    is found. Pass company_domain to link the person to an existing company
-    (see module docstring — the company must already exist).
+    is found. Prefer company_record_id to link the person to a company (works
+    without domain, survives merges); company_domain remains as legacy
+    shorthand. The company must already exist either way.
     """
     if not is_enabled():
         return noop("person")
 
     client = client or AttioClient()
-    values = _values_payload(email, first_name, last_name, job_title, linkedin, phone, company_domain)
+    values = _values_payload(
+        email, first_name, last_name, job_title, linkedin, phone, company_domain,
+        company_record_id,
+    )
 
     record_id = attio_person_id or _find_record_id(client, "email_addresses", email)
 
