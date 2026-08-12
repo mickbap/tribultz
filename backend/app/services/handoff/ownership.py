@@ -194,18 +194,18 @@ def transition_ownership(
             f"transição para {to_state.value} exige reason auditável (Round 4 §11)"
         )
 
-    link.ownership_state = to_state.value
+    link.ownership_state = to_state.value  # type: ignore[assignment]
     _audit(
         session, link, "ownership", frm.value, to_state.value, actor_type, actor_ref, reason,
         event_id,
     )
 
     if to_state == OwnershipState.HANDOFF_REQUESTED:
-        link.handoff_requested_at = ts
+        link.handoff_requested_at = ts  # type: ignore[assignment]
         # DEC-1: supressão começa AQUI, localmente, antes de qualquer remoto.
-        if link.automation_state == AutomationState.ACTIVE.value:
-            link.automation_state = AutomationState.SUPPRESSION_REQUESTED.value
-            link.suppression_requested_at = ts
+        if link.automation_state == AutomationState.ACTIVE.value:  # type: ignore[misc]
+            link.automation_state = AutomationState.SUPPRESSION_REQUESTED.value  # type: ignore[assignment]
+            link.suppression_requested_at = ts  # type: ignore[assignment]
             _audit(
                 session, link, "automation", AutomationState.ACTIVE.value,
                 AutomationState.SUPPRESSION_REQUESTED.value, ActorType.SYSTEM, None,
@@ -213,9 +213,9 @@ def transition_ownership(
             )
         _sync_dec5_suppression(session, link)
     elif to_state == OwnershipState.HUMAN_OWNED:
-        link.handoff_accepted_at = ts
+        link.handoff_accepted_at = ts  # type: ignore[assignment]
         if actor_ref:
-            link.owner_ref = actor_ref
+            link.owner_ref = actor_ref  # type: ignore[assignment]
         _sync_dec5_suppression(session, link)
     elif to_state == OwnershipState.AUTOMATED:
         # Dupla trava: religar automação exige confirmação de que a supressão
@@ -223,9 +223,9 @@ def transition_ownership(
         # permanece bloqueado (automation_state intacto).
         if suppression_lift_confirmed:
             prev = link.automation_state
-            link.automation_state = AutomationState.ACTIVE.value
+            link.automation_state = AutomationState.ACTIVE.value  # type: ignore[assignment]
             _audit(
-                session, link, "automation", prev, AutomationState.ACTIVE.value, actor_type,
+                session, link, "automation", prev, AutomationState.ACTIVE.value, actor_type,  # type: ignore[arg-type]
                 actor_ref, "re-arme explícito com supressão desfeita comprovada", event_id,
             )
             _lift_dec5_suppression(session, link)
@@ -254,12 +254,12 @@ def confirm_suppression(
     (F5) não está autorizado; quando existir, a confirmação vem da resposta/
     consulta do provedor.
     """
-    if link.automation_state != AutomationState.SUPPRESSION_REQUESTED.value:
+    if link.automation_state != AutomationState.SUPPRESSION_REQUESTED.value:  # type: ignore[misc]
         raise InvalidTransition(
             f"confirmação exige SUPPRESSION_REQUESTED (atual: {link.automation_state})"
         )
-    link.automation_state = AutomationState.SUPPRESSION_CONFIRMED.value
-    link.suppression_confirmed_at = _now(now)
+    link.automation_state = AutomationState.SUPPRESSION_CONFIRMED.value  # type: ignore[assignment]
+    link.suppression_confirmed_at = _now(now)  # type: ignore[assignment]
     _audit(
         session, link, "automation", AutomationState.SUPPRESSION_REQUESTED.value,
         AutomationState.SUPPRESSION_CONFIRMED.value, actor_type, actor_ref, None, None,
@@ -296,7 +296,7 @@ def register_human_action(
         return False
     counted = False
     if link.first_human_action_at is None:
-        link.first_human_action_at = _now(now)
+        link.first_human_action_at = _now(now)  # type: ignore[assignment]
         counted = True
     _audit(
         session, link, "activity", None, f"human_action:{kind}", ActorType.HUMAN, actor_ref,
@@ -313,14 +313,14 @@ def outbound_allowed(session: Session, link: CrmLeadLink) -> tuple[bool, str]:
     podem bloquear a montante (nunca re-permitir), e a proteção de pessoa
     (DEC-5) vale mesmo com o sistema inteiro desligado.
     """
-    if link.identity_conflict:
+    if link.identity_conflict:  # type: ignore[misc]
         return False, "identity_conflict"
-    if link.ownership_state != OwnershipState.AUTOMATED.value:
+    if link.ownership_state != OwnershipState.AUTOMATED.value:  # type: ignore[misc]
         return False, f"ownership={link.ownership_state}"
-    if link.automation_state != AutomationState.ACTIVE.value:
+    if link.automation_state != AutomationState.ACTIVE.value:  # type: ignore[misc]
         return False, f"automation={link.automation_state}"
-    ids = [link.person_identity_id] if link.person_identity_id else []
-    if ids and person_protected(session, link.tenant_id, ids):
+    ids = [link.person_identity_id] if link.person_identity_id else []  # type: ignore[misc]
+    if ids and person_protected(session, link.tenant_id, ids):  # type: ignore[arg-type]
         return False, "person_protected"  # DEC-5: outro lead da MESMA pessoa protege este
     return True, "ok"
 
@@ -361,14 +361,14 @@ def time_to_accept(link: CrmLeadLink, now: Optional[datetime] = None) -> Optiona
     if link.handoff_requested_at is None:
         return None
     end = link.handoff_accepted_at or _now(now)
-    return business_hours_between(link.handoff_requested_at, end)
+    return business_hours_between(link.handoff_requested_at, end)  # type: ignore[arg-type]
 
 
 def time_to_human_action(link: CrmLeadLink, now: Optional[datetime] = None) -> Optional[timedelta]:
     if link.handoff_accepted_at is None:
         return None
     end = link.first_human_action_at or _now(now)
-    return business_hours_between(link.handoff_accepted_at, end)
+    return business_hours_between(link.handoff_accepted_at, end)  # type: ignore[arg-type]
 
 
 def accept_sla_breached(link: CrmLeadLink, now: Optional[datetime] = None) -> bool:
@@ -376,7 +376,7 @@ def accept_sla_breached(link: CrmLeadLink, now: Optional[datetime] = None) -> bo
 
     Estouro ESCALA para humano — jamais devolve o lead à automação (matriz).
     """
-    if link.ownership_state != OwnershipState.HANDOFF_REQUESTED.value:
+    if link.ownership_state != OwnershipState.HANDOFF_REQUESTED.value:  # type: ignore[misc]
         return False
     elapsed = time_to_accept(link, now=now)
     return elapsed is not None and elapsed > ACCEPT_SLA
