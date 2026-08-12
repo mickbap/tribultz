@@ -47,6 +47,18 @@ class Settings(BaseSettings):
     ATTIO_DEFAULT_PIPELINE: str = ""
     ATTIO_DEFAULT_STAGE: str = ""
     ATTIO_WEBHOOK_SECRET: str = ""
+
+    # ── Rumy (AI SDR — handoff comercial, Round 4 da PO-2026-07-CRM-001) ────
+    # Fundações locais apenas (F1/F3): flags OFF por padrão e nenhum efeito
+    # externo. Endpoint do webhook, supressão real no Rumy e handoff automático
+    # aguardam Rounds futuros (F2/F5). Regra fail-safe transversal: desligar
+    # qualquer flag NUNCA re-permite outbound — a permissão é conjuntiva e a
+    # proteção de pessoa (DEC-5) persiste independente de flag.
+    RUMY_WEBHOOK_ENABLED: bool = False
+    HANDOFF_APPLY_ENABLED: bool = False
+    RUMY_SUPPRESSION_ENABLED: bool = False
+    RUMY_WEBHOOK_SECRET: str = ""
+
     # ── Security ────────────────────────────────────────────
     ALLOWED_ORIGINS: str = "http://localhost:3000,https://tribultz.com.br,https://*.vercel.app"
     ENVIRONMENT: str = "development"  # development | staging | production
