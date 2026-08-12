@@ -416,7 +416,7 @@ _PAUSE_DONE_STATES = frozenset(
 
 def pause_pending(link: CrmLeadLink) -> bool:
     """Pausa remota ainda não registrada (trava local aplicada, Rumy presumido falando)."""
-    return (
+    return (  # type: ignore[misc]
         link.handoff_requested_at is not None
         and link.automation_state == AutomationState.SUPPRESSION_REQUESTED.value
     )
@@ -427,10 +427,10 @@ def time_to_manual_pause(link: CrmLeadLink, now: Optional[datetime] = None) -> O
         return None
     end = (
         link.suppression_confirmed_at
-        if link.automation_state in _PAUSE_DONE_STATES and link.suppression_confirmed_at
+        if link.automation_state in _PAUSE_DONE_STATES and link.suppression_confirmed_at  # type: ignore[misc]
         else _now(now)
     )
-    return business_hours_between(link.handoff_requested_at, end)
+    return business_hours_between(link.handoff_requested_at, end)  # type: ignore[arg-type]
 
 
 def pause_sla_breached(link: CrmLeadLink, now: Optional[datetime] = None) -> bool:
@@ -453,7 +453,7 @@ def uncontained_exposure(link: CrmLeadLink, now: Optional[datetime] = None) -> b
 def pause_confirmation_missing(link: CrmLeadLink) -> bool:
     """Situação crítica do §13: lead sob atenção (ou já assumido) sem pausa
     registrada — HUMAN_OWNED + SUPPRESSION_REQUESTED é alarme, não sucesso."""
-    return (
+    return (  # type: ignore[misc]
         link.ownership_state
         in (OwnershipState.HANDOFF_REQUESTED.value, OwnershipState.HUMAN_OWNED.value)
         and link.automation_state == AutomationState.SUPPRESSION_REQUESTED.value
@@ -491,13 +491,13 @@ def register_manual_pause(
         raise InvalidTransition("pausa manual exige ator identificado (§8)")
     if not evidence or not evidence.strip():
         raise InvalidTransition("pausa manual exige evidência não-vazia (§8)")
-    if link.automation_state != AutomationState.SUPPRESSION_REQUESTED.value:
+    if link.automation_state != AutomationState.SUPPRESSION_REQUESTED.value:  # type: ignore[misc]
         raise InvalidTransition(
             f"pausa manual exige SUPPRESSION_REQUESTED (atual: {link.automation_state})"
         )
     ts = _now(now)
-    link.automation_state = AutomationState.MANUALLY_CONFIRMED.value
-    link.suppression_confirmed_at = ts
+    link.automation_state = AutomationState.MANUALLY_CONFIRMED.value  # type: ignore[assignment]
+    link.suppression_confirmed_at = ts  # type: ignore[assignment]
     payload = {"action": evidence.strip(), "origem": "rumy", "registered_at": ts.isoformat()}
     _audit(
         session, link, "automation", AutomationState.SUPPRESSION_REQUESTED.value,
@@ -527,7 +527,7 @@ def register_manual_reactivation(
         raise InvalidTransition("reativação exige ator identificado (§9)")
     if not evidence or not evidence.strip():
         raise InvalidTransition("reativação exige evidência de retomada no Rumy (§9)")
-    if link.ownership_state != OwnershipState.RELEASED.value:
+    if link.ownership_state != OwnershipState.RELEASED.value:  # type: ignore[misc]
         raise InvalidTransition(
             f"reativação exige RELEASED (atual: {link.ownership_state})"
         )

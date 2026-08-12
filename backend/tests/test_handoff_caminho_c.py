@@ -81,7 +81,7 @@ def tenant_fixture(session):
 
 def _link(session, tenant_id, *, email="pessoa.sintetica@example.com", external_id=None,
           requested_at=T0) -> CrmLeadLink:
-    person_id = resolve_person(session, tenant_id, email, None).identity.id if email else None
+    person_id = resolve_person(session, tenant_id, email, None).identity.id if email else None  # type: ignore[misc]
     link = CrmLeadLink(
         tenant_id=tenant_id,
         source_system="rumy",
@@ -119,7 +119,7 @@ def test_alerta_duplicado_por_retry_e_deduplicado(session, tenant_id, monkeypatc
     monkeypatch.setattr(settings, "HANDOFF_APPLY_ENABLED", True)
     payload = _envelope(0, "lead-alerta")
     row, _ = persist_raw_event(session, tenant_id, json.dumps(payload).encode(), payload)
-    out = process_raw_event(session, row.id)
+    out = process_raw_event(session, row.id)  # type: ignore[arg-type]
     assert out["status"] == "applied"
     # alerta primário registrado uma vez
     alerts = (
@@ -132,7 +132,7 @@ def test_alerta_duplicado_por_retry_e_deduplicado(session, tenant_id, monkeypatc
     row2, _ = persist_raw_event(
         session, tenant_id, json.dumps(payload, indent=2).encode(), payload
     )
-    process_raw_event(session, row2.id)
+    process_raw_event(session, row2.id)  # type: ignore[arg-type]
     assert (
         session.query(CrmStateTransition)
         .filter_by(axis="alert", to_state="pause_alert_raised")
@@ -157,7 +157,7 @@ def test_novo_lead_mesma_pessoa_com_pausa_pendente(session, tenant_id):
         tenant_id=tenant_id, source_system="rumy", external_lead_id="lead-pend-B",
         person_identity_id=resolve_person(
             session, tenant_id, "pessoa.sintetica@example.com", None
-        ).identity.id,
+        ).identity.id,  # type: ignore[misc]
     )
     session.add(novo)
     session.flush()
@@ -172,7 +172,7 @@ def test_pausa_sem_ator_e_sem_evidencia_recusadas(session, tenant_id):
         register_manual_pause(session, link, "", "pausei no painel")
     with pytest.raises(InvalidTransition, match="evidência"):
         register_manual_pause(session, link, "ana.qa", "   ")
-    assert link.automation_state == "SUPPRESSION_REQUESTED"  # nada mudou
+    assert link.automation_state == "SUPPRESSION_REQUESTED"  # nada mudou  # type: ignore[misc]
 
 
 def test_manually_confirmed_distinto_de_confirmed(session, tenant_id):
@@ -181,8 +181,8 @@ def test_manually_confirmed_distinto_de_confirmed(session, tenant_id):
         session, link, "ana.qa", "pausei a cadência do contato no painel do Rumy às 10:03",
         now=T0 + timedelta(minutes=3),
     )
-    assert link.automation_state == "MANUALLY_CONFIRMED"
-    assert link.automation_state != "SUPPRESSION_CONFIRMED"
+    assert link.automation_state == "MANUALLY_CONFIRMED"  # type: ignore[misc]
+    assert link.automation_state != "SUPPRESSION_CONFIRMED"  # type: ignore[misc]
     # confirmação técnica não é alcançável a partir de MANUALLY_CONFIRMED
     with pytest.raises(InvalidTransition):
         confirm_suppression(session, link)
@@ -244,7 +244,7 @@ def test_ninguem_pausa_escalona_e_marca_nao_contida(session, tenant_id, monkeypa
     assert r3["uncontained"] == 0  # já marcado, não duplica
     assert uncontained_exposure(link, now=T0 + timedelta(minutes=12)) is True
     # e o lead JAMAIS volta à automação por timeout
-    assert link.ownership_state == "HANDOFF_REQUESTED"
+    assert link.ownership_state == "HANDOFF_REQUESTED"  # type: ignore[misc]
     assert outbound_allowed(session, link)[0] is False
     snap = local_snapshot(session, tenant_id)
     assert snap["uncontained_exposure_count"] >= 1
@@ -257,7 +257,7 @@ def test_ninguem_assume_permanece_protegido(session, tenant_id):
     from app.services.handoff.ownership import accept_sla_breached
 
     assert accept_sla_breached(link, now=T0 + timedelta(hours=2)) is True
-    assert link.ownership_state == "HANDOFF_REQUESTED"
+    assert link.ownership_state == "HANDOFF_REQUESTED"  # type: ignore[misc]
     assert outbound_allowed(session, link)[0] is False
 
 
@@ -271,7 +271,7 @@ def test_reativacao_sem_evidencia_recusada(session, tenant_id):
                          reason="devolvido [QA]")
     with pytest.raises(InvalidTransition, match="evidência"):
         register_manual_reactivation(session, link, "ana.qa", "")
-    assert link.ownership_state == "RELEASED"
+    assert link.ownership_state == "RELEASED"  # type: ignore[misc]
     assert outbound_allowed(session, link)[0] is False
 
 
@@ -284,8 +284,8 @@ def test_reativacao_com_evidencia_religa(session, tenant_id):
     register_manual_reactivation(
         session, link, "ana.qa", "reativei a cadência no painel do Rumy às 14:22 [QA]"
     )
-    assert link.ownership_state == "AUTOMATED"
-    assert link.automation_state == "ACTIVE"
+    assert link.ownership_state == "AUTOMATED"  # type: ignore[misc]
+    assert link.automation_state == "ACTIVE"  # type: ignore[misc]
     assert outbound_allowed(session, link) == (True, "ok")
     assert session.query(AdminAuditLog).filter_by(action="handoff.manual_reactivation").count() == 1
 
@@ -307,10 +307,10 @@ def test_evento_antigo_nao_remove_protecao(session, tenant_id, monkeypatch):
     monkeypatch.setattr(settings, "HANDOFF_APPLY_ENABLED", True)
     novo = _envelope(1, "lead-antigo", occurred=datetime(2026, 8, 12, 13, 0, tzinfo=SP))
     row, _ = persist_raw_event(session, tenant_id, json.dumps(novo).encode(), novo)
-    process_raw_event(session, row.id)
+    process_raw_event(session, row.id)  # type: ignore[arg-type]
     antigo = _envelope(2, "lead-antigo", occurred=datetime(2026, 8, 12, 9, 0, tzinfo=SP))
     row2, _ = persist_raw_event(session, tenant_id, json.dumps(antigo).encode(), antigo)
-    out = process_raw_event(session, row2.id)
+    out = process_raw_event(session, row2.id)  # type: ignore[arg-type]
     assert out["status"] == "superseded"
     link = session.query(CrmLeadLink).filter_by(external_lead_id="lead-antigo").one()
     assert link.ownership_state == "HANDOFF_REQUESTED"  # proteção intacta

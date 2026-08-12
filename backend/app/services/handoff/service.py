@@ -219,7 +219,7 @@ def ingest_handoff_event(
         "identity_conflict": link.identity_conflict,
     }
     if detail == "transitioned":
-        ledger.processing_result["alert"] = alert
+        ledger.processing_result["alert"] = alert  # type: ignore[misc]
     return IngestResult(status="applied", ledger=ledger, link=link, detail=detail)
 
 

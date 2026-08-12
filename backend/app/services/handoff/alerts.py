@@ -118,7 +118,7 @@ def raise_pause_alert(
         f"PAUSAR AUTOMAÇÃO NO RUMY — lead {link.external_lead_id}"
         f"{f' · {person_display}' if person_display else ''}"
         f"{f' · campanha {campaign}' if campaign else ''}"
-        f" · handoff {link.handoff_requested_at.isoformat() if link.handoff_requested_at else '?'}"
+        f" · handoff {link.handoff_requested_at.isoformat() if link.handoff_requested_at else '?'}"  # type: ignore[misc]
         f" · SLA de pausa: {settings.HANDOFF_PAUSE_SLA_MINUTES} min úteis"
         f" · prioridade CRÍTICA"
     )
@@ -142,12 +142,12 @@ def raise_pause_alert(
             for to in recipients:
                 email_sent = send_handoff_pause_alert_email(
                     to_email=to,
-                    lead_ref=link.external_lead_id,
+                    lead_ref=link.external_lead_id,  # type: ignore[arg-type]
                     person_display=person_display or "(pessoa não identificada)",
                     campaign=campaign or "(sem campanha)",
                     requested_at_iso=(
                         link.handoff_requested_at.isoformat()
-                        if link.handoff_requested_at
+                        if link.handoff_requested_at  # type: ignore[misc]
                         else ts.isoformat()
                     ),
                     pause_sla_minutes=settings.HANDOFF_PAUSE_SLA_MINUTES,
@@ -160,7 +160,7 @@ def raise_pause_alert(
         from app.integrations.attio.tasks import create_pause_task
 
         linked = []
-        if link.attio_person_id:
+        if link.attio_person_id:  # type: ignore[misc]
             linked.append({"target_object": "people", "target_record_id": link.attio_person_id})
         result = create_pause_task(summary, deadline.isoformat(), linked_records=linked)
         task_created = bool(result) and result.get("noop") is None
@@ -199,7 +199,7 @@ def escalate_overdue(session: Session, now: Optional[datetime] = None) -> dict[s
         if not pause_pending(link):
             continue
         if uncontained_exposure(link, now=ts) and not _has_alert(session, link, ALERT_UNCONTAINED):
-            elapsed = business_hours_between(link.handoff_requested_at, ts)
+            elapsed = business_hours_between(link.handoff_requested_at, ts)  # type: ignore[arg-type]
             _audit_alert(
                 session, link, ALERT_UNCONTAINED,
                 f"exposição não contida: {elapsed} úteis sem confirmação de pausa "
