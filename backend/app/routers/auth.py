@@ -325,6 +325,34 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
     # Auto-create tenant from CNPJ
     if data.cnpj:
         tenant = _get_or_create_tenant_for_cnpj(db, data.cnpj, company_name)
+        # ── Contenção de isolamento (Round 10, SEC-INV-1/2) ──────────────────
+        # Saber um CNPJ público NÃO concede ingresso automático num tenant que já
+        # possui usuários. Reprodução dinâmica (tests/security/test_tenant_
+        # isolation_r10.py) provou que, sem esta trava, register com CNPJ
+        # preexistente nascia dentro do tenant da vítima com role=admin (leitura,
+        # escrita e operação privilegiada cross-tenant). Shell vazio (pré-
+        # provisionado por diagnóstico/founding partner) permanece reivindicável
+        # pelo 1º usuário; o ingresso de um 2º usuário exige fluxo autorizado
+        # explícito (a projetar — não é este ato). Fail-closed.
+        existing_users = (
+            db.execute(
+                select(func.count(User.id)).where(User.tenant_id == tenant.id)
+            ).scalar()
+            or 0
+        )
+        if existing_users > 0:
+            logger.warning(
+                "register_blocked_existing_tenant",
+                extra={"cnpj": data.cnpj, "tenant_slug": cast(str, tenant.slug)},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "Este CNPJ já possui uma conta ativa. O ingresso de um novo "
+                    "usuário requer autorização do titular — em breve por convite. "
+                    "Se você é o responsável, use 'Esqueci minha senha' ou fale com o suporte."
+                ),
+            )
         # Proveniência comercial (RFC-0025): captura não-bloqueante do Partner.
         _attach_partner_from_code(db, tenant, data.partner_code)
         # Atribuição de diagnóstico gratuito (Escopo A): captura não-bloqueante.
