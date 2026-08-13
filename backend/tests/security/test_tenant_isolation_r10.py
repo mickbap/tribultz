@@ -139,8 +139,14 @@ def _user(email):
 # ATAQUE B (§5, prioritário) — register com CNPJ preexistente
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_ataque_B_register_cnpj_existente_agora_CONTIDO(client):
+@pytest.mark.parametrize("account_type", ["empresa", "contador"])
+def test_ataque_B_register_cnpj_existente_agora_CONTIDO(client, account_type):
     """PROVA DINÂMICA + CONTENÇÃO do Ataque B (§5, prioritário).
+
+    Parametrizado nos dois `account_type` (Round 11, A1): o Round 10 provou que
+    `empresa` e `contador` reproduziam o ataque por inteiro, e que `role` não era
+    o vetor — `tenant_id` era. A regressão precisa cobrir os dois, senão fecha
+    metade da porta.
 
     ANTES da contenção (comprovado verde nesta sessão, pré-fix): register com
     CNPJ preexistente + account_type=empresa retornava 201, nascia com
@@ -152,8 +158,8 @@ def test_ataque_B_register_cnpj_existente_agora_CONTIDO(client):
     povoado): o atacante recebe 409 e NENHUM usuário/vínculo cross-tenant é
     criado. SEC-INV-1/2 restauradas.
     """
-    email_a = f"r10-vitima-{RUN}@example.com"
-    email_x = f"r10-atacante-{RUN}@example.com"
+    email_a = f"r10-vitima-{account_type}-{RUN}@example.com"
+    email_x = f"r10-atacante-{account_type}-{RUN}@example.com"
 
     # Vítima A cria TENANT_A e um artefato scoped
     assert _register(client, email_a, CNPJ_A, "empresa").status_code == 201
@@ -164,15 +170,21 @@ def test_ataque_B_register_cnpj_existente_agora_CONTIDO(client):
     tenant_a = _user(email_a).tenant_id
 
     # ATACANTE tenta o mesmo CNPJ → CONTIDO (409), sem cross-tenant
-    r = _register(client, email_x, CNPJ_A, "empresa")
+    r = _register(client, email_x, CNPJ_A, account_type)
     assert r.status_code == 409, f"contenção falhou — vuln reaberta: {r.status_code} {r.text}"
     assert "autorização" in r.text.lower() or "conta" in r.text.lower()
 
-    # nenhum usuário atacante nasceu, e o tenant da vítima segue com 1 usuário
+    # A1 (Round 11): não basta o 409 — conferir o ESTADO PERSISTIDO.
+    # Nenhum usuário atacante nasceu; nenhum membership cross-tenant existe; e o
+    # tenant da vítima continua exatamente como estava.
     with SessionLocal() as s:
         assert s.execute(select(User).where(User.email == email_x)).scalar_one_or_none() is None
         n = s.execute(select(User).where(User.tenant_id == tenant_a)).all()
         assert len(n) == 1, "tenant da vítima ganhou membro indevido"
+        vinculos = s.execute(
+            select(UserTenant).where(UserTenant.tenant_id == tenant_a)
+        ).all()
+        assert len(vinculos) == 1, "tenant da vítima ganhou vínculo indevido"
 
 
 def test_registro_legitimo_cnpj_novo_ainda_funciona(client):
