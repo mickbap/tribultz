@@ -344,3 +344,73 @@ def test_divergencia_resolvida_por_execucao(client):
     """Sumário executável da divergência: A cosmético, B concede acesso real."""
     # (asserções já provadas nos dois testes acima; este fixa o veredito)
     assert True
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# #626 — bypass da contenção via shell RESERVADO por /add-cnpj (Investigação)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_bypass_da_contencao_via_shell_reservado_por_add_cnpj(client, monkeypatch):
+    """#626 CONFIRMADO — a corrida de reivindicação de shell É alcançável.
+
+    A contenção do #625 conta USUÁRIOS DONOS (`User.tenant_id == tenant.id`).
+    Mas `/add-cnpj` (fluxo pago NORMAL do contador) cria o tenant `cnpj-<CNPJ>`
+    com APENAS um `UserTenant` (membership) e ZERO donos. Logo a trava
+    `existing_users > 0` NÃO dispara e um estranho reivindica um CNPJ que um
+    contador já reservou.
+
+    Verdade estática (sweep de sites de criação de Tenant): o ÚNICO path que gera
+    tenant `cnpj-*` com 0 donos é `add-cnpj` — `register` e o provisionamento de
+    founding_partner criam um dono. Portanto a corrida NÃO depende de
+    pré-provisionamento exótico; nasce do fluxo comercial normal do contador.
+
+    Prova executada:
+      (a) BYPASS — o register do estranho retorna 201 (a trava não vê "donos").
+      (b) SEQUESTRO DE RESERVA + TRANCAMENTO — o titular legítimo, cadastrando
+          depois, agora leva 409 e fica trancado fora da própria organização,
+          com o impostor como admin.
+    """
+    import types
+
+    import app.api.plan_gate as plan_gate
+
+    email_c = f"r10-contadorReserva-{RUN}@example.com"
+    email_s = f"r10-estranho-{RUN}@example.com"
+    email_l = f"r10-titularLegit-{RUN}@example.com"
+
+    # Contador C reserva o CNPJ_A do cliente (que ainda NÃO se cadastrou)
+    assert _register(client, email_c, CNPJ_B, "contador").status_code == 201
+    tok_c = _verify_and_login(client, email_c)
+    # o plano Contador (max_cnpj=50) é a persona-alvo — simulo o limite (controle externo)
+    monkeypatch.setattr(plan_gate, "get_effective_plan",
+                        lambda db, user: types.SimpleNamespace(max_cnpj=50))
+    r = client.post("/api/v1/auth/add-cnpj", json={"cnpj": CNPJ_A}, headers=_bearer(tok_c))
+    assert r.status_code == 200, r.text
+
+    # pré-condição do shell reservado: tenant_A existe, 0 DONOS, 1 membership
+    with SessionLocal() as s:
+        tenant_a = s.execute(select(Tenant).where(Tenant.slug == f"cnpj-{CNPJ_A}")).scalar_one()
+        donos = s.execute(select(User).where(User.tenant_id == tenant_a.id)).all()
+        vinc = s.execute(select(UserTenant).where(UserTenant.tenant_id == tenant_a.id)).all()
+        assert len(donos) == 0 and len(vinc) == 1, "pré-condição do shell reservado falhou"
+        tenant_a_id = tenant_a.id
+
+    # (a) BYPASS: estranho reivindica o CNPJ reservado → 201 (a contenção não dispara)
+    r = _register(client, email_s, CNPJ_A, "empresa")
+    assert r.status_code == 201, f"esperava bypass 201; a contenção mudou? {r.status_code} {r.text}"
+    assert str(_user(email_s).tenant_id) == str(tenant_a_id)
+    assert str(_user(email_s).role) == "admin"  # o estranho vira ADMIN do tenant reservado
+
+    # (b) SEQUESTRO + TRANCAMENTO: o titular legítimo agora é barrado pelo impostor
+    r = _register(client, email_l, CNPJ_A, "empresa")
+    assert r.status_code == 409, "o titular legítimo deveria ser barrado — impostor detém o tenant"
+
+    # co-habitação resultante: 1 dono (impostor) + 2 memberships no mesmo tenant —
+    # o contador (de add-cnpj) E o impostor (register cria auto-membership do dono).
+    # Impostor e contador passam a co-habitar o tenant reservado.
+    with SessionLocal() as s:
+        assert len(s.execute(select(User).where(User.tenant_id == tenant_a_id)).all()) == 1
+        memberships = s.execute(
+            select(UserTenant).where(UserTenant.tenant_id == tenant_a_id)
+        ).all()
+        assert len(memberships) == 2  # contador + impostor co-habitam o tenant reservado
