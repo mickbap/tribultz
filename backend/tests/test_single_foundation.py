@@ -49,7 +49,7 @@ def test_um_unico_head_alembic():
     cfg = Config(str(BACKEND / "alembic.ini"))
     script = ScriptDirectory.from_config(cfg)
     heads = script.get_heads()
-    assert heads == ["2026_08_12_0037"], f"heads inesperados: {heads}"
+    assert heads == ["2026_08_16_0038"], f"heads inesperados: {heads}"
 
 
 def test_zero_referencias_as_tabelas_descartadas():
