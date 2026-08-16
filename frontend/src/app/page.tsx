@@ -4,6 +4,11 @@ import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { WhatsAppLink } from "@/components/public/WhatsAppLink";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { RULES_COUNT, CLASSTRIB_COUNT } from "@/lib/validation/rulesMeta";
+import {
+  CLASSTRIB_TRIBUTACAO_INTEGRAL,
+  CLASSTRIB_REDUZIDO_60,
+  CLASSTRIB_CESTA_BASICA,
+} from "@/lib/validation/classtribExamples";
 import { getAllPosts } from "@/lib/blog";
 
 export const metadata: Metadata = {
@@ -144,7 +149,7 @@ function HeroVisual() {
         {[
           { label: "CBS", value: "alíquota 8,80%", warn: false },
           { label: "IBS", value: "alíquota 17,70%", warn: false },
-          { label: "cClassTrib", value: "0010100", warn: true },
+          { label: "cClassTrib", value: CLASSTRIB_TRIBUTACAO_INTEGRAL, warn: true },
           { label: "CST", value: "000 · Tributação integral", warn: false },
         ].map((row) => (
           <div
@@ -345,9 +350,9 @@ export default function HomePage() {
                 {
                   badge: "cClassTrib · LC 214",
                   preview: [
-                    { l: "0010100 · Padrão", r: "8,80%", ok: true },
-                    { l: "0020010 · Reduzido 60%", r: "3,52%", ok: true },
-                    { l: "0030005 · Cesta básica", r: "0%", ok: true },
+                    { l: `${CLASSTRIB_TRIBUTACAO_INTEGRAL} · Padrão`, r: "8,80%", ok: true },
+                    { l: `${CLASSTRIB_REDUZIDO_60} · Reduzido 60%`, r: "3,52%", ok: true },
+                    { l: `${CLASSTRIB_CESTA_BASICA} · Cesta básica`, r: "0%", ok: true },
                   ],
                   title: "cClassTrib LC 214",
                   body: "Valide a nova classificação tributária da Reforma. Alíquotas CBS/IBS conforme a tabela oficial SVRS.",
