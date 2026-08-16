@@ -144,6 +144,16 @@ celerybeat.pid
 .env.*.bak*
 .env.prod.bak*
 *.env.bak*
+# `.env.save` escapava dos padrões acima e aparecia como untracked no clone da
+# VM de produção (auditoria de 16/08) — um `git add -A` ali stagearia segredo
+# vivo. Coberto explicitamente; a ordem permanente é não rotacionar, então a
+# mitigação é reduzir superfície, não trocar chave.
+.env.save
+.env.save.*
+
+# Dumps operacionais gerados na VM (ex.: pg_dump da tabela `news` antes de
+# expurgo/dedupe). Ficam na árvore do repo em /opt/tribultz e não devem entrar.
+backups/
 
 # Secrets locais — NUNCA commitar
 secrets/
