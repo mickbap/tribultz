@@ -8,6 +8,7 @@
  */
 
 import { Classifier } from "./Classifier";
+import { CLASSTRIB_CESTA_BASICA } from "@/lib/validation/classtribExamples";
 import { FundamentacaoLegal } from "@/components/seo/FundamentacaoLegal";
 import { RULES_COUNT } from "@/lib/validation/rulesMeta";
 
@@ -146,24 +147,20 @@ export default function ClassificacaoPage() {
                   <tr className="border-t border-slate-100">
                     <td className="px-4 py-2 font-mono">1-3</td>
                     <td className="px-4 py-2">Espelha o CST do item (vínculo obrigatório)</td>
-                    <td className="px-4 py-2 font-mono">000, 001, 002, 070, 200, 410, 510, 620…</td>
+                    <td className="px-4 py-2 font-mono">000, 011, 200, 400, 410, 510, 620…</td>
                   </tr>
                   <tr className="border-t border-slate-100">
-                    <td className="px-4 py-2 font-mono">4-5</td>
-                    <td className="px-4 py-2">Anexo da LC 214 que rege o item</td>
-                    <td className="px-4 py-2 font-mono">10 (cesta básica), 20 (reduzido), 34 (saúde)…</td>
-                  </tr>
-                  <tr className="border-t border-slate-100">
-                    <td className="px-4 py-2 font-mono">6-7</td>
-                    <td className="px-4 py-2">Subclassificação dentro do anexo</td>
-                    <td className="px-4 py-2 font-mono">01, 02, 99…</td>
+                    <td className="px-4 py-2 font-mono">4-6</td>
+                    <td className="px-4 py-2">Sequencial da situação tributária dentro daquele CST</td>
+                    <td className="px-4 py-2 font-mono">001, 002, 003…</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p className="mt-3 text-sm text-slate-600">
-              Exemplo: <code className="rounded bg-slate-100 px-1 font-mono">2000340</code> indica
-              CST 200 (diferimento) + Anexo 03 (saúde) + subclassificação 40.
+              Exemplo: <code className="rounded bg-slate-100 px-1 font-mono">{CLASSTRIB_CESTA_BASICA}</code> indica
+              CST 200 (alíquota reduzida) + sequencial 003 — na tabela oficial SVRS, vendas de
+              produtos destinados à alimentação humana relacionados no Anexo I da LC 214/2025.
               Se o CST do item for diferente de 200, a nota é rejeitada (1024).
             </p>
           </div>
