@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/cookies" },
   title: "Cookies",
   description: "Política de cookies da plataforma Tribultz.",
 };

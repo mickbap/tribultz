@@ -5,6 +5,7 @@ import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { NewsFeed } from "@/components/public/NewsFeed";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/changelog" },
   title: "Changelog",
   description: "Novidades e atualizações da plataforma Tribultz de conformidade fiscal.",
 };

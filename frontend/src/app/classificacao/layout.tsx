@@ -6,6 +6,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { CLASSIFICACAO_SCHEMA } from "@/components/seo/schemas";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/classificacao" },
   title: "Classificar NCM → cClassTrib CBS/IBS — Evite a Rejeição 1024",
   description:
     "Classifique o NCM e entenda o cClassTrib aplicável na Reforma Tributária (sugestão a validar). " +

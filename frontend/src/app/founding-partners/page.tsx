@@ -6,6 +6,7 @@ import { PublicFooter } from "@/components/public/PublicFooter";
 const FORM_URL = "https://forms.office.com/r/Cf6yK6kqsA";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/founding-partners" },
   title: "Programa Founding Partners — construa a Tribultz conosco",
   description:
     "A Tribultz está formando um grupo seleto de empresas para construir a plataforma durante a Reforma Tributária. Não é um teste de software — é construção conjunta. Veja como participar.",

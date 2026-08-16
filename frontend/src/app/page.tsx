@@ -12,6 +12,7 @@ import {
 import { getAllPosts } from "@/lib/blog";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/" },
   // title.template do layout raiz ("%s | Tribultz") não se aplica quando este
   // page.tsx do mesmo segmento define seu próprio title (#503) — sufixo manual.
   title: "IBS e CBS sem Rejeição de NF-e — Compliance LC 214 | Tribultz",
