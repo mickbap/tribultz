@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/refund-policy" },
   title: "Política de Reembolso",
   description: "Direito de arrependimento de 7 dias e regras de cancelamento das assinaturas Tribultz.",
 };

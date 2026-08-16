@@ -3,6 +3,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { PRICING_SCHEMA } from "@/components/seo/schemas";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/pricing" },
   title: "Planos e Preços — Compliance CBS/IBS a partir de R$ 49,90",
   description:
     "Planos para autônomos, PMEs, contadores e empresas com filiais. " +

@@ -63,9 +63,12 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  alternates: {
-    canonical: SITE_URL,
-  },
+  // Sem canonical global (#634): fixá-lo aqui fazia TODA rota que não
+  // sobrescrevesse herdar o canonical da home — sinal errado para indexação, e
+  // silencioso, porque a página renderiza normalmente. Cada rota pública
+  // declara o seu, relativo ao `metadataBase` acima. Rotas da área logada
+  // ficam sem canonical de propósito: nenhum é melhor que um apontando para a
+  // home. O guard `canonicalMetadata.test.ts` cobre a superfície pública.
 };
 
 export default function RootLayout({
