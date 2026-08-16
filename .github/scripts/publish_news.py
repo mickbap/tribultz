@@ -3,14 +3,21 @@
 
 Disparado pelo workflow `.github/workflows/publish-news.yml` em todo push para main.
 
+Regime OPT-IN ESTRITO (16/08/2026, contenção do incidente de exposição — Lote 0
+da ordem QA→Techlead). Antes, a ausência da seção `## Changelog público` no PR
+fazia o script publicar o primeiro parágrafo do body INTERNO do PR — todo merge
+feat/fix/security em `main` virava entrada pública com conteúdo de processo.
+Agora **só publica com a seção declarada explicitamente**; não há fallback.
+
 Lógica:
 1. Lê o commit em $COMMIT_SHA via `git show`
 2. Se for revert / merge sem mensagem útil → ignora
 3. Identifica o tipo (feat/fix/security) — só esses três viram news
 4. Tenta extrair o número do PR (#N) e busca o body do PR via `gh`
 5. Se o PR tem label `no-changelog` → pula
-6. Se o PR body tem seção `## Changelog público` → usa como description (override)
-7. Caso contrário, monta description automaticamente
+6. Se (e somente se) o PR body tem seção `## Changelog público` → publica essa
+   seção como description. Sem a seção (ou sem PR/sem body) → `[skip]`, exit 0
+7. Denylist de termos internos sobre título+descrição → aborta (exit 1) se casar
 8. POST `/api/v1/news` com Bearer token
 
 Variáveis de ambiente:
@@ -45,6 +52,37 @@ TYPE_TO_CATEGORY = {
     "fix": "Fix",
     "security": "Security",
 }
+
+# Rede de segurança ATRÁS do opt-in (L0.2): mesmo com a seção `## Changelog
+# público` declarada, vocabulário de processo interno não sai daqui. Casar
+# qualquer padrão aborta a publicação com exit 1 — falhar o workflow é o lado
+# seguro: o autor reescreve a seção em linguagem de cliente e re-dispara.
+INTERNAL_TERM_PATTERNS: list[str] = [
+    r"\bdeploys?\b",
+    r"\bbranch(?:es)?\b",
+    r"\bmigrations?\b",
+    r"\balembic\b",
+    r"\bssh\b",
+    r"\bredis\b",
+    r"\bcelery\b",
+    r"\bworkers?\b",
+    r"\bbeat\b",
+    r"\brounds?\s*\d+\b",
+    r"\bgates?\b",
+    r"\bPR\s*#?\s*\d+\b",
+    r"\bmain\b",
+    r"\bmagalu\b",
+    r"\btribultz-(?:api|vm|db)\b",
+    r"\bdocker\b",
+    r"\bcompose\b",
+    r"\bpytest\b",
+    r"\bruff\b",
+    r"\bstaging\b",
+    r"\brollbacks?\b",
+    r"\bhotfix\b",
+    r"\bworktree\b",
+]
+INTERNAL_TERM_RE = [re.compile(p, re.IGNORECASE) for p in INTERNAL_TERM_PATTERNS]
 
 
 def run(cmd: list[str], **kwargs) -> str:
@@ -127,33 +165,32 @@ def build_title(parsed: dict, scope_label: Optional[str]) -> str:
     return subject
 
 
-def build_description(parsed: dict, pr_body: str) -> str:
-    """Constrói descrição a partir do override do PR ou do body."""
+def build_description(pr_body: str) -> Optional[str]:
+    """Descrição pública = a seção `## Changelog público` do PR, ou nada.
+
+    Opt-in estrito: sem a seção não há publicação. Não existe fallback para o
+    body interno do PR nem para texto genérico — era exatamente esse caminho
+    que vazava conteúdo de processo para o feed público.
+    """
     override = extract_public_changelog(pr_body)
-    if override:
-        # Limpa markdown básico (mantém legível)
-        override = re.sub(r"^[-*]\s*", "• ", override, flags=re.MULTILINE)
-        return override[:2000]
+    if not override:
+        return None
+    # Limpa markdown básico (mantém legível)
+    override = re.sub(r"^[-*]\s*", "• ", override, flags=re.MULTILINE)
+    return override[:2000]
 
-    # Fallback: pega o primeiro parágrafo significativo do PR body
-    if pr_body:
-        # Remove headers, pega o primeiro parágrafo real
-        for chunk in pr_body.split("\n\n"):
-            chunk = chunk.strip()
-            if not chunk:
-                continue
-            if chunk.startswith("##") or chunk.startswith("Closes") or chunk.startswith("Fixes"):
-                continue
-            # Limpa marcações markdown comuns
-            chunk = re.sub(r"^#+\s*", "", chunk)
-            chunk = re.sub(r"`([^`]+)`", r"\1", chunk)
-            chunk = re.sub(r"\*\*([^*]+)\*\*", r"\1", chunk)
-            chunk = re.sub(r"^[-*]\s*", "• ", chunk, flags=re.MULTILINE)
-            return chunk[:2000]
 
-    # Último recurso: descrição genérica
-    type_label = {"feat": "Nova funcionalidade", "fix": "Correção", "security": "Atualização de segurança"}
-    return type_label.get(parsed["type"], "Atualização") + " disponível na plataforma."
+def find_internal_terms(*texts: str) -> list[str]:
+    """Retorna os termos internos encontrados no payload (vazio = limpo)."""
+    hits: list[str] = []
+    for text in texts:
+        if not text:
+            continue
+        for pattern in INTERNAL_TERM_RE:
+            m = pattern.search(text)
+            if m and m.group(0) not in hits:
+                hits.append(m.group(0))
+    return hits
 
 
 def main() -> int:
@@ -180,7 +217,7 @@ def main() -> int:
 
     parsed = parse_subject(subject)
     if not parsed:
-        print(f"[skip] subject não segue Conventional Commits — ignorando")
+        print("[skip] subject não segue Conventional Commits — ignorando")
         return 0
 
     if parsed["type"] not in PUBLISHABLE_TYPES:
@@ -200,9 +237,25 @@ def main() -> int:
             print(f"[skip] PR #{pr_number} tem label 'no-changelog'")
             return 0
 
+    # Opt-in estrito: sem seção `## Changelog público` declarada no PR, nada sai.
+    description = build_description(pr_data.get("body", "") or "")
+    if not description:
+        print("[skip] PR sem seção '## Changelog público' — nada a publicar")
+        return 0
+
     title = build_title(parsed, parsed.get("scope"))
-    description = build_description(parsed, pr_data.get("body", "") or "")
     category = TYPE_TO_CATEGORY[parsed["type"]]
+
+    # Rede de segurança: vocabulário interno nunca chega ao feed público.
+    internal_hits = find_internal_terms(title, description)
+    if internal_hits:
+        print(
+            "[err] payload contém termos internos "
+            f"{internal_hits!r} — publicação abortada. Reescreva a seção "
+            "'## Changelog público' (e o título do commit) em linguagem de cliente.",
+            file=sys.stderr,
+        )
+        return 1
 
     print(f"[info] vai publicar: category={category} title={title!r}")
     print(f"[info] description (primeiros 200 chars): {description[:200]!r}")
