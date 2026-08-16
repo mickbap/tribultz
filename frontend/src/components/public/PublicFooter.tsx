@@ -67,7 +67,10 @@ export function PublicFooter() {
                 </li>
               ))}
               <li>
-                <Link href="/support" className="transition-colors hover:text-white">
+                {/* #636: aponta para a página PÚBLICA de atendimento. `/support`
+                    é área logada — o visitante deslogado caía numa tela cujas
+                    chamadas autenticadas falhavam. */}
+                <Link href="/contato" className="transition-colors hover:text-white">
                   Suporte
                 </Link>
               </li>
