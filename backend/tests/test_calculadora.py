@@ -293,4 +293,6 @@ class TestCalculadoraPeriodo:
     def test_xml_snippet_reflete_periodo_2026(self):
         """O XML snippet de 2026 traz a alíquota reduzida (não a plena)."""
         data = self._post().json()
-        assert "0.0090" in data["xml_snippet"] or "0.009" in data["xml_snippet"]
+        # #617: no XML a alíquota vai em pontos percentuais (0,9% → 0.9000), não
+        # em fração — o campo `pCBS` da resposta segue fração (contrato da API).
+        assert "<pCBS>0.9000</pCBS>" in data["xml_snippet"]

@@ -49,11 +49,11 @@ VALID_NFE_XML = """<?xml version="1.0"?>
             <cClassTrib>100001</cClassTrib>
             <gIBSCBS>
               <vBC>1000.00</vBC>
-              <pCBS>0.0010</pCBS>
+              <pCBS>0.1000</pCBS>
               <vCBS>1.00</vCBS>
-              <pIBSUF>0.0050</pIBSUF>
+              <pIBSUF>0.5000</pIBSUF>
               <vIBSUF>5.00</vIBSUF>
-              <pIBSMun>0.0040</pIBSMun>
+              <pIBSMun>0.4000</pIBSMun>
               <vIBSMun>4.00</vIBSMun>
               <vIBS>9.00</vIBS>
             </gIBSCBS>
