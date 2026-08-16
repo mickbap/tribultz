@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPosts } from "@/lib/blog";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { formatPostDate } from "@/lib/formatPostDate";
 
 const SITE_URL = "https://tribultz.com.br";
 
@@ -61,11 +62,7 @@ export default function BlogListPage() {
                   <p className="mt-2 text-slate-600">{post.description}</p>
                   <div className="mt-3 flex items-center gap-4 text-sm text-slate-500">
                     <time dateTime={post.publishedAt}>
-                      {new Date(post.publishedAt + "T00:00:00").toLocaleDateString("pt-BR", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                      })}
+                      {formatPostDate(post.publishedAt)}
                     </time>
                     <span>·</span>
                     <span>{post.author.name}</span>
