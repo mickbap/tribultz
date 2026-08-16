@@ -250,6 +250,14 @@ def generate_xml_snippet(
     """Generate an <IBSCBS> XML fragment for NF-e insertion.
 
     Returns well-formed XML ready to be pasted into <imposto> section.
+
+    Unidades (#617): as alíquotas chegam aqui como FRAÇÃO (0.0090), que é o
+    contrato da API e o que o frontend formata para exibição. O XML da NF-e,
+    porém, declara pCBS/pIBSUF/pIBSMun em PONTOS PERCENTUAIS (leiaute 3v2-4 da
+    NT 2025.002-RTC): 0,9% se escreve `0.9000`. A conversão acontece aqui, na
+    fronteira do documento fiscal — antes, o snippet saía com `0.0090` e o
+    cliente que o colasse no emissor produzia nota com alíquota 100× menor que
+    o vCBS declarado.
     """
     if not generates_tax(cst):
         return (
@@ -258,16 +266,21 @@ def generate_xml_snippet(
             f"</IBSCBS>"
         )
 
+    _cem = Decimal("100")
+    pCBS_pct = (pCBS * _cem).quantize(_Q_RATE, ROUND_HALF_UP)
+    pIBSUF_pct = (pIBSUF * _cem).quantize(_Q_RATE, ROUND_HALF_UP)
+    pIBSMun_pct = (pIBSMun * _cem).quantize(_Q_RATE, ROUND_HALF_UP)
+
     return (
         f"<IBSCBS>\n"
         f"  <CST>{cst}</CST>\n"
         f"  <gIBSCBS>\n"
         f"    <vBC>{vBC}</vBC>\n"
-        f"    <pCBS>{pCBS}</pCBS>\n"
+        f"    <pCBS>{pCBS_pct}</pCBS>\n"
         f"    <vCBS>{vCBS}</vCBS>\n"
-        f"    <pIBSUF>{pIBSUF}</pIBSUF>\n"
+        f"    <pIBSUF>{pIBSUF_pct}</pIBSUF>\n"
         f"    <vIBSUF>{vIBSUF}</vIBSUF>\n"
-        f"    <pIBSMun>{pIBSMun}</pIBSMun>\n"
+        f"    <pIBSMun>{pIBSMun_pct}</pIBSMun>\n"
         f"    <vIBSMun>{vIBSMun}</vIBSMun>\n"
         f"    <vIBS>{vIBS}</vIBS>\n"
         f"  </gIBSCBS>\n"

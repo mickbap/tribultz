@@ -266,6 +266,22 @@ function pushFindingAndEvidence(
 }
 
 /** Detect whether XML is NF-e/NFC-e (has IBSCBS group) vs NFS-e legacy. */
+/** Valor do tributo a partir de alíquota declarada EM PONTOS PERCENTUAIS.
+ *
+ * No grupo IBSCBS da NF-e/NFC-e, pCBS/pIBSUF/pIBSMun são percentuais — leiaute
+ * 3v2-4 da NT 2025.002-RTC, cuja parte inteira de 3 dígitos só faz sentido para
+ * percentual (fração nunca passa de 1). Na fase de teste 2026, pCBS=0.9000 é
+ * 0,9% e pIBSUF=0.1000 é 0,1%; para vBC=1000,00 o vCBS correto é 9,00.
+ *
+ * #617: as três sub-regras de cálculo tratavam o campo como fração e cobravam
+ * `base × alíquota` (900,00 no exemplo acima), reprovando com FATAL toda nota
+ * corretamente preenchida. O divisor mora aqui para que a unidade fique
+ * declarada num lugar só — a ausência dessa declaração foi a causa-raiz.
+ */
+function tributoDeAliquotaPercentual(base: number, aliquotaPercentual: number): number {
+  return (base * aliquotaPercentual) / 100;
+}
+
 function isNfeLayout(xml: string): boolean {
   return /<IBSCBS[\s>]/i.test(xml) || /<nfeProc[\s>]/i.test(xml) || /<infNFe[\s>]/i.test(xml);
 }
@@ -601,7 +617,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
     const rate = parseFloat(pCBS.value);
     const declared = parseFloat(vCBS.value);
     if (!isNaN(base) && !isNaN(rate) && !isNaN(declared)) {
-      const expected = base * rate;
+      const expected = tributoDeAliquotaPercentual(base, rate);
       if (Math.abs(declared - expected) > 0.01) {
         const evId = makeEvidenceId("IBSCBS_CALC_CBS");
         pushFindingAndEvidence(findings, evidences, evidenceById,
@@ -614,7 +630,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             xpath: inferXpath("vCBS", docType),
             snippet: vCBS.snippet,
             evidenceId: evId,
-            recommendation: `vCBS deve ser vBC (${base.toFixed(2)}) × pCBS (${rate}) = R$ ${expected.toFixed(2)}.`,
+            recommendation: `vCBS deve ser vBC (${base.toFixed(2)}) × pCBS (${rate}%) ÷ 100 = R$ ${expected.toFixed(2)}. A alíquota do grupo IBSCBS é declarada em pontos percentuais (NT 2025.002-RTC).`,
           }),
           makeEvidence({ id: evId, type: "xml", label: "CBS — cálculo divergente", xpath: inferXpath("vCBS", docType), snippet: vCBS.snippet }),
         );
@@ -682,7 +698,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
     const rate = parseFloat(pIBSUF.value);
     const declared = parseFloat(vIBSUF.value);
     if (!isNaN(base) && !isNaN(rate) && !isNaN(declared)) {
-      const expected = base * rate;
+      const expected = tributoDeAliquotaPercentual(base, rate);
       if (Math.abs(declared - expected) > 0.01) {
         const evId = makeEvidenceId("IBSCBS_UF_CALC");
         pushFindingAndEvidence(findings, evidences, evidenceById,
@@ -695,7 +711,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             xpath: inferXpath("vIBSUF", docType),
             snippet: vIBSUF.snippet,
             evidenceId: evId,
-            recommendation: `vIBSUF deve ser vBC (${base.toFixed(2)}) × pIBSUF (${rate}) = R$ ${expected.toFixed(2)}.`,
+            recommendation: `vIBSUF deve ser vBC (${base.toFixed(2)}) × pIBSUF (${rate}%) ÷ 100 = R$ ${expected.toFixed(2)}. A alíquota do grupo IBSCBS é declarada em pontos percentuais (NT 2025.002-RTC).`,
           }),
           makeEvidence({ id: evId, type: "xml", label: "IBS UF — cálculo divergente", xpath: inferXpath("vIBSUF", docType), snippet: vIBSUF.snippet }),
         );
@@ -710,7 +726,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
     const rate = parseFloat(pIBSMun.value);
     const declared = parseFloat(vIBSMun.value);
     if (!isNaN(base) && !isNaN(rate) && !isNaN(declared)) {
-      const expected = base * rate;
+      const expected = tributoDeAliquotaPercentual(base, rate);
       if (Math.abs(declared - expected) > 0.01) {
         const evId = makeEvidenceId("IBSCBS_MUN_CALC");
         pushFindingAndEvidence(findings, evidences, evidenceById,
@@ -723,7 +739,7 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             xpath: inferXpath("vIBSMun", docType),
             snippet: vIBSMun.snippet,
             evidenceId: evId,
-            recommendation: `vIBSMun deve ser vBC (${base.toFixed(2)}) × pIBSMun (${rate}) = R$ ${expected.toFixed(2)}.`,
+            recommendation: `vIBSMun deve ser vBC (${base.toFixed(2)}) × pIBSMun (${rate}%) ÷ 100 = R$ ${expected.toFixed(2)}. A alíquota do grupo IBSCBS é declarada em pontos percentuais (NT 2025.002-RTC).`,
           }),
           makeEvidence({ id: evId, type: "xml", label: "IBS Municipal — cálculo divergente", xpath: inferXpath("vIBSMun", docType), snippet: vIBSMun.snippet }),
         );

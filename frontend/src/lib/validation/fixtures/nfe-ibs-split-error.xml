@@ -18,11 +18,11 @@
             <cClassTrib>654321</cClassTrib>
             <gIBSCBS>
               <vBC>1000.00</vBC>
-              <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-              <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+              <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
               <!-- ERRO: vIBS deveria ser 1.00 (0.50+0.50), mas está 1.50 -->
               <vIBS>1.50</vIBS>
-              <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+              <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
             </gIBSCBS>
           </IBSCBS>
         </imposto>

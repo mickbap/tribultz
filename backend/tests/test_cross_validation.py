@@ -22,10 +22,10 @@ NFE_TEMPLATE = """<?xml version="1.0"?>
         <cClassTrib>{classtrib}</cClassTrib>
         <gIBSCBS>
           <vBC>1000.00</vBC>
-          <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-          <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+          <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+          <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
           <vIBS>1.00</vIBS>
-          <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+          <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
         </gIBSCBS>
       </IBSCBS>
     </imposto>
@@ -45,10 +45,10 @@ NFE_WITH_NF_NUM = """<?xml version="1.0"?>
         <cClassTrib>100001</cClassTrib>
         <gIBSCBS>
           <vBC>1000.00</vBC>
-          <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-          <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+          <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+          <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
           <vIBS>1.00</vIBS>
-          <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+          <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
         </gIBSCBS>
       </IBSCBS>
     </imposto>
