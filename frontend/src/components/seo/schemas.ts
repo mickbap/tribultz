@@ -174,7 +174,7 @@ export const DIAGNOSTICO_SCHEMA: SchemaObject[] = [
       a:
         "Não. O XML enviado pelo formulário público é processado em memória e " +
         "descartado imediatamente. Nenhum CNPJ, valor ou item é persistido. " +
-        "Veja a política completa em /api/v1/public/data-policy.",
+        `Veja a política completa em ${SITE_URL}/data-policy.`,
     },
     {
       q: "O diagnóstico vale como evidência para autuação?",
