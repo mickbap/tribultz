@@ -396,7 +396,7 @@ export default function DiagnosticoPage() {
             </p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-extrabold text-tribultz-600">18</p>
+            <p className="text-3xl font-extrabold text-tribultz-600">{RULES_COUNT}</p>
             <p className="mt-1 text-sm text-slate-600">
               regras fiscais verificadas conforme NT 2025.002-RTC
             </p>
