@@ -557,7 +557,22 @@ def validate_xml(
 
     # ── Rule 7: IBSCBS_CALC — CBS ───────────────────────────────────────────
 
-    def _calc_check(tag_base: Any, tag_rate: Any, tag_val: Any, label: str, fid: str) -> None:
+    def _calc_check(
+        tag_base: Any, tag_rate: Any, tag_val: Any, label: str, fid: str,
+        *, rate_is_percent: bool = False,
+    ) -> None:
+        """Confere valor declarado contra base × alíquota.
+
+        `rate_is_percent=True` para o grupo IBSCBS da NF-e/NFC-e, onde
+        pCBS/pIBSUF/pIBSMun são declarados em PONTOS PERCENTUAIS (leiaute 3v2-4
+        da NT 2025.002-RTC): pCBS=0.9000 é 0,9%, logo vBC=1000,00 → vCBS=9,00.
+        #617: sem a divisão, o esperado saía 100× maior e reprovava com FATAL
+        toda nota corretamente preenchida.
+
+        O caminho legado de NFS-e (AliquotaCBS/AliquotaIBS, NT 007/2026) usa
+        outras tags e permanece com `rate_is_percent=False` — a convenção
+        daquele leiaute não foi verificada neste trabalho.
+        """
         if not (tag_base and tag_rate and tag_val):
             return
         try:
@@ -566,7 +581,7 @@ def validate_xml(
             declared = float(tag_val["value"])
         except (ValueError, TypeError):
             return
-        expected = base * rate
+        expected = (base * rate / 100) if rate_is_percent else (base * rate)
         if abs(declared - expected) > 0.01:
             ev_id = f"E_XML_{fid}"
             _add(
@@ -575,7 +590,7 @@ def validate_xml(
             )
 
     if has_ibscbs:
-        _calc_check(vbc, p_cbs, v_cbs, "CBS", "IBSCBS_CALC_CBS")
+        _calc_check(vbc, p_cbs, v_cbs, "CBS", "IBSCBS_CALC_CBS", rate_is_percent=True)
     else:
         _calc_check(base_calculo, aliq_cbs, valor_cbs, "CBS", "IBSCBS_CALC_CBS")
         _calc_check(base_calculo, aliq_ibs, valor_ibs, "IBS", "IBSCBS_CALC_IBS")
@@ -684,8 +699,8 @@ def validate_xml(
     # ── Rules 11-13: IBS split (NF-e only) ──────────────────────────────────
 
     if has_ibscbs:
-        _calc_check(vbc, p_ibs_uf, v_ibs_uf, "IBS UF", "IBSCBS_UF_CALC")
-        _calc_check(vbc, p_ibs_mun, v_ibs_mun, "IBS Municipal", "IBSCBS_MUN_CALC")
+        _calc_check(vbc, p_ibs_uf, v_ibs_uf, "IBS UF", "IBSCBS_UF_CALC", rate_is_percent=True)
+        _calc_check(vbc, p_ibs_mun, v_ibs_mun, "IBS Municipal", "IBSCBS_MUN_CALC", rate_is_percent=True)
 
         # Split check: vIBS == vIBSUF + vIBSMun
         if v_ibs and v_ibs_uf and v_ibs_mun:
@@ -1100,7 +1115,8 @@ def validate_xml(
             _expa = classtrib_expected_aliquota_2026(c_class_trib["value"])
             if _expa is not None:
                 _exp_cbs, _exp_ibs = _expa
-                _TOL2 = 0.0001  # ±0,01 ponto percentual
+                # Esperado e declarado estão ambos em PONTOS PERCENTUAIS (#617).
+                _TOL2 = 0.01  # ±0,01 ponto percentual
                 _pcbs2 = _to_float(p_cbs["value"]) if p_cbs else None
                 _pibs2 = (
                     (_to_float(p_ibs_uf["value"]) if p_ibs_uf else 0.0)
@@ -1115,7 +1131,7 @@ def validate_xml(
                             where=FindingWhere(field="pCBS", xpath=_xpath("pCBS", doc_type), snippet=p_cbs["snippet"] if p_cbs else None),
                             recommendation=(
                                 f'Para o cClassTrib {c_class_trib["value"]}, a CBS esperada em 2026 é '
-                                f'{round(_exp_cbs * 100, 4)}% (0,9% × (1 − redução oficial SVRS)). Verifique a alíquota '
+                                f'{round(_exp_cbs, 4)}% (0,9% × (1 − redução oficial SVRS)). Verifique a alíquota '
                                 "declarada — exceto em regime monofásico/específico, onde a derivação não se aplica."
                             ),
                             evidence_ids=[ev_id],
@@ -1131,7 +1147,7 @@ def validate_xml(
                             where=FindingWhere(field="pIBS", xpath=_xpath("pIBSUF", doc_type), snippet=p_ibs_uf["snippet"] if p_ibs_uf else None),
                             recommendation=(
                                 f'Para o cClassTrib {c_class_trib["value"]}, o IBS total esperado em 2026 é '
-                                f'{round(_exp_ibs * 100, 4)}% (0,1% × (1 − redução oficial SVRS)). Verifique a alíquota '
+                                f'{round(_exp_ibs, 4)}% (0,1% × (1 − redução oficial SVRS)). Verifique a alíquota '
                                 "declarada — exceto em regime monofásico/específico, onde a derivação não se aplica."
                             ),
                             evidence_ids=[ev_id],

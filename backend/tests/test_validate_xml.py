@@ -35,10 +35,10 @@ NFE_OK = """<?xml version="1.0" encoding="UTF-8"?>
         <cClassTrib>654321</cClassTrib>
         <gIBSCBS>
           <vBC>1000.00</vBC>
-          <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-          <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+          <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+          <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
           <vIBS>1.00</vIBS>
-          <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+          <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
         </gIBSCBS>
       </IBSCBS>
     </imposto>
@@ -58,10 +58,10 @@ NFCE_OK = """<?xml version="1.0" encoding="UTF-8"?>
         <cClassTrib>030010</cClassTrib>
         <gIBSCBS>
           <vBC>100.00</vBC>
-          <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.05</vIBSUF></gIBSUF>
-          <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.05</vIBSMun></gIBSMun>
+          <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.05</vIBSUF></gIBSUF>
+          <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.05</vIBSMun></gIBSMun>
           <vIBS>0.10</vIBS>
-          <gCBS><pCBS>0.0090</pCBS><vCBS>0.90</vCBS></gCBS>
+          <gCBS><pCBS>0.9000</pCBS><vCBS>0.90</vCBS></gCBS>
         </gIBSCBS>
       </IBSCBS>
     </imposto>
@@ -696,7 +696,7 @@ class TestAliquotaClasstrib:
         return [f for f in validate_xml(xml, "NFE").findings if f.rule_id == "ALIQUOTA_CLASSTRIB"]
 
     def test_isento_400_com_cbs_declarado_fatal(self):
-        f = self._find(self._nfe("400001", pcbs="0.009"))
+        f = self._find(self._nfe("400001", pcbs="0.9"))
         assert any(x.id == "F_ALIQUOTA_CLASSTRIB_CBS" for x in f)
         assert all(x.severity == "FATAL" for x in f)
 
@@ -704,18 +704,18 @@ class TestAliquotaClasstrib:
         assert self._find(self._nfe("400001")) == []
 
     def test_tributado_000_com_cbs_sem_finding(self):
-        assert self._find(self._nfe("000001", pcbs="0.009")) == []
+        assert self._find(self._nfe("000001", pcbs="0.9")) == []
 
     def test_imune_410_com_ibs_declarado_fatal(self):
-        f = self._find(self._nfe("410001", pibsuf="0.0005"))
+        f = self._find(self._nfe("410001", pibsuf="0.05"))
         assert any(x.id == "F_ALIQUOTA_CLASSTRIB_IBS" for x in f)
 
     def test_reducao_100_com_cbs_fatal(self):
-        f = self._find(self._nfe("200001", pcbs="0.009"))
+        f = self._find(self._nfe("200001", pcbs="0.9"))
         assert any(x.id == "F_ALIQUOTA_CLASSTRIB_CBS" for x in f)
 
     def test_codigo_desconhecido_sem_finding(self):
-        assert self._find(self._nfe("999999", pcbs="0.009")) == []
+        assert self._find(self._nfe("999999", pcbs="0.9")) == []
 
 
 class TestAliquotaAbsoluta:
@@ -743,32 +743,78 @@ class TestAliquotaAbsoluta:
 
     def test_aliquotas_corretas_sem_alerta(self):
         # 000001 (sem redução): CBS 0,9% / IBS total 0,1%
-        assert self._abs(self._nfe("000001", pcbs="0.009", pibsuf="0.0005", pibsmun="0.0005")) == []
+        assert self._abs(self._nfe("000001", pcbs="0.9", pibsuf="0.05", pibsmun="0.05")) == []
 
     def test_cbs_divergente_alerta(self):
         # exemplo da issue: padrão 0,9% declarado como 0,1%
-        f = self._abs(self._nfe("000001", pcbs="0.001", pibsuf="0.0005", pibsmun="0.0005"))
+        f = self._abs(self._nfe("000001", pcbs="0.1", pibsuf="0.05", pibsmun="0.05"))
         assert any(x.id == "F_ALIQUOTA_CLASSTRIB_ABS_CBS" and x.severity == "ALERT" for x in f)
 
     def test_ibs_divergente_alerta(self):
-        f = self._abs(self._nfe("000001", pcbs="0.009", pibsuf="0", pibsmun="0"))
+        f = self._abs(self._nfe("000001", pcbs="0.9", pibsuf="0", pibsmun="0"))
         assert any(x.id == "F_ALIQUOTA_CLASSTRIB_ABS_IBS" and x.severity == "ALERT" for x in f)
 
     def test_reducao_60_correta_sem_alerta(self):
         # 011001 (redução 60%): CBS 0,36% / IBS total 0,04%
-        assert self._abs(self._nfe("011001", pcbs="0.0036", pibsuf="0.0002", pibsmun="0.0002")) == []
+        assert self._abs(self._nfe("011001", pcbs="0.36", pibsuf="0.02", pibsmun="0.02")) == []
 
     def test_reducao_60_ignorada_alerta(self):
         # declarou a alíquota cheia ignorando a redução → diverge
-        f = self._abs(self._nfe("011001", pcbs="0.009", pibsuf="0.0002", pibsmun="0.0002"))
+        f = self._abs(self._nfe("011001", pcbs="0.9", pibsuf="0.02", pibsmun="0.02"))
         assert any(x.id == "F_ALIQUOTA_CLASSTRIB_ABS_CBS" for x in f)
 
     def test_fora_de_2026_nao_dispara(self):
-        assert self._abs(self._nfe("000001", pcbs="0.001", pibsuf="0", pibsmun="0", dhemi="2027-01-15")) == []
+        assert self._abs(self._nfe("000001", pcbs="0.1", pibsuf="0", pibsmun="0", dhemi="2027-01-15")) == []
 
     def test_zero_rate_nao_emite_absoluto(self):
         # 400001 (isento) é tratado pela fase 1 (zero), não pela comparação absoluta
-        assert self._abs(self._nfe("400001", pcbs="0.009", pibsuf="0.0005", pibsmun="0.0005")) == []
+        assert self._abs(self._nfe("400001", pcbs="0.9", pibsuf="0.05", pibsmun="0.05")) == []
+
+
+class TestAliquotaUnidadePercentual:
+    """#617 — pCBS/pIBSUF/pIBSMun são PONTOS PERCENTUAIS, não fração.
+
+    Leiaute 3v2-4 da NT 2025.002-RTC: `pCBS=0.9000` é 0,9%, logo vBC=1000,00 →
+    vCBS=9,00. O motor cobrava `base × alíquota` e reprovava com FATAL toda nota
+    corretamente preenchida — "esperado R$ 900,00" para um vCBS legítimo de
+    R$ 9,00. Estes casos falham se a divisão por 100 for removida.
+    """
+
+    def _nfe(self, pcbs="0.9000", vcbs="9.00", pibsuf="0.1000", vibsuf="1.00"):
+        return (
+            '<nfeProc><NFe><infNFe><ide><mod>55</mod>'
+            '<dhEmi>2026-06-15T10:00:00-03:00</dhEmi></ide>'
+            '<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT></emit>'
+            '<det nItem="1"><prod><NCM>84713012</NCM><CEST>2104900</CEST>'
+            '<vProd>1000.00</vProd></prod>'
+            '<imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib>'
+            '<gIBSCBS><vBC>1000.00</vBC>'
+            f'<gIBSUF><pIBSUF>{pibsuf}</pIBSUF><vIBSUF>{vibsuf}</vIBSUF></gIBSUF>'
+            '<gIBSMun><pIBSMun>0.0000</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun>'
+            f'<vIBS>{vibsuf}</vIBS><gCBS><pCBS>{pcbs}</pCBS><vCBS>{vcbs}</vCBS></gCBS>'
+            '</gIBSCBS></IBSCBS></imposto></det>'
+            f'<total><IBSCBSTot><vIBS>{vibsuf}</vIBS><vCBS>{vcbs}</vCBS></IBSCBSTot></total>'
+            '</infNFe></NFe></nfeProc>'
+        )
+
+    def _calc(self, xml):
+        return [f for f in validate_xml(xml, "NFE").findings
+                if f.rule_id in ("IBSCBS_CALC", "IBSCBS_UF_CALC", "IBSCBS_MUN_CALC")]
+
+    def test_nota_da_nt_nao_gera_finding(self):
+        # Exemplo de referência do leiaute: 1000,00 a 0,9% → 9,00; a 0,1% → 1,00.
+        assert self._calc(self._nfe()) == []
+
+    def test_aliquota_como_fracao_e_reprovada(self):
+        # Convenção antiga (0.0090 = 0,009%) com vCBS de 0,9% → incoerente.
+        f = self._calc(self._nfe(pcbs="0.0090", pibsuf="0.0010"))
+        assert any(x.id == "F_IBSCBS_CALC_CBS" and x.severity == "FATAL" for x in f)
+
+    def test_valor_calculado_pela_formula_antiga_e_reprovado(self):
+        # vCBS=900,00 era o "esperado" do motor antigo para vBC=1000,00 a 0,9%.
+        f = self._calc(self._nfe(vcbs="900.00"))
+        assert any(x.id == "F_IBSCBS_CALC_CBS" for x in f)
+        assert any("9.00" in x.title for x in f)
 
 
 class TestCredPres:
@@ -1279,10 +1325,10 @@ _W03_ITEM = """<det nItem="1">
         <cClassTrib>654321</cClassTrib>
         <gIBSCBS>
           <vBC>1000.00</vBC>
-          <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-          <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+          <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+          <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
           <vIBS>1.00</vIBS>
-          <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+          <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
         </gIBSCBS>
       </IBSCBS>
     </imposto>
