@@ -28,6 +28,7 @@
  */
 
 import { NT_CURRENT_VERSION } from "./validation/rulesMeta";
+import { parsePostDate } from "./formatPostDate";
 
 export type FiscalFinding = { rule: string; severity: "error"; message: string };
 
@@ -131,6 +132,34 @@ export function lintBlogFiscal(mdx: string, valid: ClassTribValid): FiscalFindin
       rule: "TAGS_VAZIO",
       severity: "error",
       message: "tags vazias — adicionar tags antes de publicar.",
+    });
+  }
+
+  // I) `publishedAt` precisa ser parseável (#633). O blog exibia "Invalid Date"
+  //    em 15 dos 19 posts porque o render concatenava "T00:00:00" numa data que
+  //    já era ISO completo. O render foi corrigido, mas o gate existe para o
+  //    outro lado do problema: um post cuja data não seja interpretável de forma
+  //    alguma não pode entrar — a UI agora renderiza vazio, o que é silencioso.
+  //    Só se aplica a documento COM frontmatter: as demais regras são checadas
+  //    também contra fragmentos de prosa nos testes unitários, e exigir
+  //    `publishedAt` de um fragmento seria escopo errado — a regra é sobre o
+  //    frontmatter, então pressupõe que exista um.
+  const temFrontmatter = /^---\s*$/m.test(mdx.split("\n").slice(0, 2).join("\n"));
+  const pub = /^publishedAt:\s*["']?([^"'\n]+?)["']?\s*$/m.exec(mdx);
+  if (!temFrontmatter) {
+    // fragmento sem frontmatter — regra I não se aplica
+  } else if (!pub) {
+    out.push({
+      rule: "PUBLISHEDAT_AUSENTE",
+      severity: "error",
+      message: "publishedAt ausente no frontmatter — sem data não há como datar o post.",
+    });
+  } else if (parsePostDate(pub[1]) === null) {
+    out.push({
+      rule: "PUBLISHEDAT_INVALIDO",
+      severity: "error",
+      message:
+        `publishedAt \`${pub[1]}\` não é parseável — use YYYY-MM-DD ou ISO 8601 completo.`,
     });
   }
 

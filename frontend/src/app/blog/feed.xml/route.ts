@@ -1,4 +1,5 @@
 import { getAllPosts } from "@/lib/blog";
+import { formatPostDateRfc822 } from "@/lib/formatPostDate";
 
 const SITE_URL = "https://tribultz.com.br";
 
@@ -17,7 +18,7 @@ export function GET() {
       <link>${url}</link>
       <guid isPermaLink="true">${url}</guid>
       <description><![CDATA[${post.description}]]></description>
-      <pubDate>${new Date(post.publishedAt + "T00:00:00").toUTCString()}</pubDate>
+      <pubDate>${formatPostDateRfc822(post.publishedAt)}</pubDate>
       <author>${post.author.name}</author>
       ${post.tags.map((t) => `<category>${t}</category>`).join("\n      ")}
     </item>`.trim();
