@@ -48,6 +48,7 @@ PUBLIC_CHANGELOG_RE = re.compile(
     r"##\s*Changelog\s+p[úu]blico\s*\n+(.+?)(?=\n##|\Z)",
     re.IGNORECASE | re.DOTALL,
 )
+PUBLIC_TITLE_RE = re.compile(r"^\s*T[íi]tulo:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 PUBLISHABLE_TYPES = {"feat", "fix", "security"}
 TYPE_TO_CATEGORY = {
     "feat": "Feature",
@@ -176,6 +177,28 @@ def detect_pr_number(subject: str, body: str) -> Optional[str]:
     return todos[-1] if todos else None
 
 
+def extract_public_title(pr_body: str) -> Optional[str]:
+    """Título público declarado na seção, na forma `Título: …`.
+
+    Sem isso o título vem do assunto do commit, que é interno por convenção
+    (Conventional Commits, escopo técnico, nome de arquivo). O opt-in do Lote 0
+    curava só a DESCRIÇÃO — e a primeira publicação do regime novo saiu com a
+    descrição em linguagem de cliente e o título dizendo "Publicador do
+    changelog lia o número da ISSUE, não o do PR".
+
+    A denylist não pegava: o título era internamente irrelevante sem usar
+    nenhuma palavra proibida. Vocabulário é filtrável; propósito não.
+    """
+    secao = PUBLIC_CHANGELOG_RE.search(pr_body or "")
+    if not secao:
+        return None
+    m = PUBLIC_TITLE_RE.search(secao.group(1))
+    if not m:
+        return None
+    titulo = m.group(1).strip()
+    return titulo[:200] or None
+
+
 def build_title(parsed: dict, scope_label: Optional[str]) -> str:
     """Monta título amigável a partir do commit parseado."""
     subject = parsed["subject_clean"]
@@ -202,6 +225,10 @@ def build_description(pr_body: str) -> Optional[str]:
     que vazava conteúdo de processo para o feed público.
     """
     override = extract_public_changelog(pr_body)
+    if not override:
+        return None
+    # A linha `Título: …` governa o título, não entra no corpo.
+    override = PUBLIC_TITLE_RE.sub("", override).strip()
     if not override:
         return None
     # Limpa markdown básico (mantém legível)
@@ -270,7 +297,9 @@ def main() -> int:
         print("[skip] PR sem seção '## Changelog público' — nada a publicar")
         return 0
 
-    title = build_title(parsed, parsed.get("scope"))
+    title = extract_public_title(pr_data.get("body", "") or "") or build_title(
+        parsed, parsed.get("scope")
+    )
     category = TYPE_TO_CATEGORY[parsed["type"]]
 
     # Rede de segurança: vocabulário interno nunca chega ao feed público.
