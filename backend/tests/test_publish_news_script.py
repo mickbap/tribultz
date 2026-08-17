@@ -265,3 +265,68 @@ def test_sem_titulo_declarado_mantem_o_do_commit(run_main, capture_post):
     """Compatível com as seções já escritas, que não declaram título."""
     assert run_main(subject="feat(reports): resumo por nota fiscal", pr_body=PUBLIC_SECTION_BODY) == 0
     assert capture_post[0]["payload"]["title"] == "Resumo por nota fiscal"
+
+
+# --- exemplo em bloco de código não é declaração (regressão de 17/08) --------
+
+EXEMPLO_EM_FENCE = """\
+Este PR cria o recurso. A sintaxe fica assim:
+
+```markdown
+## Changelog público
+
+Título: Exemplo que NÃO deve ser publicado
+
+Corpo de demonstração.
+```
+
+Sem essa linha, o comportamento é o de hoje.
+
+## Changelog público
+
+Título: Título verdadeiro do autor
+
+Descrição verdadeira para o cliente.
+"""
+
+SO_EXEMPLO = """\
+PR que apenas documenta a sintaxe:
+
+```markdown
+## Changelog público
+
+Título: Só um exemplo
+
+Corpo de demonstração.
+```
+
+Nada é declarado de verdade aqui.
+"""
+
+
+def test_exemplo_em_bloco_de_codigo_nao_vira_publicacao(run_main, capture_post):
+    """Foi o defeito do #649: o corpo trazia o exemplo do recurso recém-criado
+    e o publicador tomou a demonstração por declaração."""
+    assert run_main(subject="fix(ci): documenta a seção", pr_body=EXEMPLO_EM_FENCE) == 0
+    assert len(capture_post) == 1
+    payload = capture_post[0]["payload"]
+    assert payload["title"] == "Título verdadeiro do autor"
+    assert "NÃO deve ser publicado" not in payload["description"]
+    assert "```" not in payload["description"]
+
+
+def test_pr_que_so_mostra_exemplo_nao_publica(run_main, capture_post):
+    """Sem declaração real, nada sai — mesmo com a seção aparecendo no texto.
+
+    Tipo publicável de propósito (`fix`): com `docs` o script pararia antes de
+    olhar o corpo, e o teste passaria sem exercitar nada.
+    """
+    assert run_main(subject="fix(ci): explica a seção", pr_body=SO_EXEMPLO) == 0
+    assert capture_post == []
+
+
+def test_strip_code_fences_preserva_o_resto(pn):
+    texto = "antes\n```\ndentro\n```\ndepois"
+    limpo = pn.strip_code_fences(texto)
+    assert "dentro" not in limpo
+    assert "antes" in limpo and "depois" in limpo
