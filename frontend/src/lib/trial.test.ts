@@ -25,6 +25,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  TRIAL_FEATURES,
   TRIAL_DURATION_DAYS,
   TRIAL_DURATION_LABEL,
   TRIAL_QUOTA_LABEL,
@@ -93,4 +94,43 @@ test("a franquia do Trial nunca é apresentada como mensal", () => {
 test("os rótulos derivam mesmo das constantes", () => {
   assert.ok(TRIAL_DURATION_LABEL.includes(String(TRIAL_DURATION_DAYS)));
   assert.ok(TRIAL_QUOTA_LABEL.includes(String(TRIAL_VALIDATION_QUOTA)));
+});
+
+
+// --- Round 13: API não é benefício do Trial ---------------------------------
+
+test("nenhuma superfície apresenta API ou créditos como benefício do Trial", () => {
+  // Ordem de Produto de 17/08: `trial.api = false` é definitivo, e nenhuma
+  // ocorrência residual pode apresentar API/créditos como parte do Trial.
+  //
+  // O que existia: a FAQ em JSON-LD do /pricing afirmava "O plano Trial é
+  // gratuito e dá acesso a 100 créditos de API e à validação completa de até
+  // 20 NF-e" — errado nos DOIS números, e em texto que o Google pode exibir.
+  const suspeitos = [
+    /Trial[^.]{0,120}cr[ée]ditos?\s+de\s+API/i,
+    /Trial[^.]{0,120}acesso\s+[àa]\s+API/i,
+    /\d+\s+cr[ée]ditos?\s+API\s+gr[áa]tis/i,
+    /cr[ée]ditos?\s+API\s+gr[áa]tis/i,
+  ];
+  const infratores: string[] = [];
+  for (const arquivo of [...walk(APP), join(here, "..", "components", "seo", "schemas.ts")]) {
+    const raw = readFileSync(arquivo, "utf-8");
+    const rel = arquivo.slice(arquivo.indexOf("src/"));
+    for (const rx of suspeitos) {
+      const m = rx.exec(raw);
+      if (m) infratores.push(`${rel}: "${m[0].slice(0, 70)}"`);
+    }
+  }
+  assert.deepEqual(
+    infratores,
+    [],
+    "API/créditos apresentados como benefício do Trial:\n" +
+      infratores.map((i) => `  • ${i}`).join("\n"),
+  );
+});
+
+test("a política declara API fora do Trial", () => {
+  assert.equal(TRIAL_FEATURES.api, false);
+  assert.equal(TRIAL_FEATURES.pdf, false);
+  assert.equal(TRIAL_FEATURES.dashboard, false);
 });

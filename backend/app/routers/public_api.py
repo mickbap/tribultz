@@ -238,7 +238,7 @@ def list_api_keys(
     "/api/v1/api-keys",
     response_model=ApiKeyCreateResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Criar nova API Key (100 créditos grátis)",
+    summary="Criar nova API Key (requer plano com acesso à API)",
 )
 def create_api_key(
     payload: ApiKeyCreateRequest,
