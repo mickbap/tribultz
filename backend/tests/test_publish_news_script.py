@@ -350,3 +350,72 @@ def test_strip_code_fences_preserva_o_resto(pn):
     limpo = pn.strip_code_fences(texto)
     assert "dentro" not in limpo
     assert "antes" in limpo and "depois" in limpo
+
+
+# --- fronteira da seção e porta de sanidade (redesenho de 17/08) -------------
+
+COM_RODAPE_DE_BOT = """\
+Contexto interno.
+
+## Changelog público
+
+Título: Links do rodapé levam a páginas abertas
+
+Os atalhos agora levam a páginas abertas.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+"""
+
+COM_HEADING_MENOR = """\
+## Changelog público
+
+Título: Resumo por nota fiscal
+
+O relatório traz o resumo por nota.
+
+### Detalhes internos
+Não deve entrar.
+"""
+
+COM_REGRA_HORIZONTAL = """\
+## Changelog público
+
+Título: Resumo por nota fiscal
+
+O relatório traz o resumo por nota.
+
+---
+
+Rodapé interno qualquer.
+"""
+
+
+def test_rodape_de_ferramenta_nao_entra_na_descricao(run_main, capture_post):
+    """Foi o 4º defeito: a seção parava só em `\n##`, e o rodapé do bot vem
+    depois sem heading nenhum — então ia junto para o feed do cliente."""
+    assert run_main(subject="fix(site): rodapé", pr_body=COM_RODAPE_DE_BOT) == 0
+    d = capture_post[0]["payload"]["description"]
+    assert "Generated with" not in d and "claude.com" not in d
+    assert "Os atalhos agora levam" in d
+
+
+def test_secao_para_em_heading_de_qualquer_nivel(run_main, capture_post):
+    assert run_main(subject="feat(reports): resumo", pr_body=COM_HEADING_MENOR) == 0
+    d = capture_post[0]["payload"]["description"]
+    assert "Detalhes internos" not in d and "Não deve entrar" not in d
+
+
+def test_secao_para_em_regra_horizontal(run_main, capture_post):
+    assert run_main(subject="feat(reports): resumo", pr_body=COM_REGRA_HORIZONTAL) == 0
+    d = capture_post[0]["payload"]["description"]
+    assert "Rodapé interno" not in d
+
+
+def test_porta_de_sanidade_aborta_com_artefato_de_markdown(run_main, capture_post, pn, monkeypatch):
+    """Última linha de defesa: se a extração deu errado de um jeito novo, a saída
+    não vai parecer prosa — e aí aborta em vez de publicar."""
+    # Força uma descrição contaminada, simulando extração errada ainda não prevista.
+    monkeypatch.setattr(pn, "build_description", lambda body: "Texto bom.\n```\ncodigo\n```")
+    monkeypatch.setattr(pn, "extract_public_title", lambda body: "Título qualquer")
+    assert run_main(subject="fix(site): x", pr_body=PUBLIC_SECTION_BODY) == 1
+    assert capture_post == []
