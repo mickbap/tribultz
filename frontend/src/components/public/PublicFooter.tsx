@@ -22,12 +22,20 @@ export function PublicFooter() {
             <h5 className="mb-4 text-xs font-bold uppercase tracking-widest text-white">Produto</h5>
             <ul className="space-y-2.5 text-sm">
               {[
-                { href: "/validate-xml", label: "Validador XML" },
-                { href: "/validate-sped", label: "SPED Fiscal" },
+                // #645: estes três apontavam para /validate-xml, /validate-sped e
+                // /compliance — todas páginas da ÁREA LOGADA. O visitante deslogado
+                // carregava 200 e via as chamadas autenticadas falharem. Destinos
+                // públicos definidos pelo Mickel em 17/08: os dois validadores levam
+                // ao diagnóstico (valida de graça, sem cadastro) e o Compliance Score
+                // ao pricing, que é onde o recurso é explicado e contratado.
+                { href: "/diagnostico", label: "Validador XML" },
+                { href: "/diagnostico", label: "SPED Fiscal" },
                 { href: "/calculadora", label: "cClassTrib" },
-                { href: "/compliance", label: "Compliance Score" },
+                { href: "/pricing", label: "Compliance Score" },
+                // Chave é o rótulo, não o href: "Validador XML" e "SPED Fiscal"
+                // passaram a compartilhar o mesmo destino (#645).
               ].map((l) => (
-                <li key={l.href}>
+                <li key={l.label}>
                   <Link href={l.href} className="transition-colors hover:text-white">
                     {l.label}
                   </Link>
