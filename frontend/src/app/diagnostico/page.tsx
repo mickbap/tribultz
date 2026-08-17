@@ -169,13 +169,16 @@ export default function DiagnosticoPage() {
               <label className="mt-3 inline-block cursor-pointer rounded-lg bg-tribultz-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-tribultz-700">
                 Selecionar arquivo
                 <input
+                  id="diagnostico-xml"
+                  name="xml"
                   type="file"
                   accept=".xml"
+                  aria-describedby="diagnostico-xml-ajuda"
                   className="hidden"
                   onChange={onFileSelect}
                 />
               </label>
-              <p className="mt-3 text-xs text-slate-400">
+              <p id="diagnostico-xml-ajuda" className="mt-3 text-xs text-slate-400">
                 NF-e, NFC-e ou NFS-e — até 2MB
               </p>
             </>
