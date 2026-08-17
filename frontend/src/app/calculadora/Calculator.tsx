@@ -6,6 +6,7 @@ import Link from "next/link";
 import { API_BASE, createTransactionId, fetchWithRetry } from "@/lib/api";
 import { UF_LIST } from "@/lib/data/ufList";
 import { CST_LIST } from "@/lib/data/cstList";
+import { temErro, validarCalculadora, type ErrosCalculadora } from "@/lib/calculadora/validacao";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,8 +63,21 @@ function CalculadoraInner() {
   const [suggestDesc, setSuggestDesc] = useState("");
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [suggestResult, setSuggestResult] = useState<SuggestResult | null>(null);
+  // #657: erros por campo, para nenhuma requisição inválida sair do cliente.
+  const [erros, setErros] = useState<ErrosCalculadora>({});
 
   const handleCalculate = useCallback(async () => {
+    // Valida antes de sair do cliente. As regras espelham `calculadora.py`; o
+    // servidor continua validando (é ele quem manda), isto só evita a ida.
+    const problemas = validarCalculadora({ baseValue, quantity, ncm });
+    setErros(problemas);
+    if (temErro(problemas)) {
+      setState("idle");
+      setError("");
+      setResult(null);
+      return;
+    }
+
     setState("loading");
     setError("");
     setResult(null);
@@ -223,26 +237,42 @@ function CalculadoraInner() {
 
             {/* Base Value */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label htmlFor="calc-base" className="mb-1 block text-sm font-medium text-slate-700">
                 Valor Base (R$) *
               </label>
               <input
+                id="calc-base"
+                name="base_value"
                 type="number"
                 step="0.01"
                 min="0.01"
+                required
+                aria-required="true"
+                aria-invalid={!!erros.baseValue}
+                aria-describedby={erros.baseValue ? "calc-base-erro" : undefined}
                 value={baseValue}
                 onChange={(e) => setBaseValue(e.target.value)}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-tribultz-500 focus:outline-none focus:ring-1 focus:ring-tribultz-500"
                 placeholder="1000.00"
               />
+              {erros.baseValue && (
+                <p id="calc-base-erro" role="alert" className="mt-1 text-xs text-red-600">
+                  {erros.baseValue}
+                </p>
+              )}
             </div>
 
             {/* NCM */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label htmlFor="calc-ncm" className="mb-1 block text-sm font-medium text-slate-700">
                 NCM <span className="text-slate-400">(opcional)</span>
               </label>
               <input
+                id="calc-ncm"
+                name="ncm_code"
+                inputMode="numeric"
+                aria-invalid={!!erros.ncm}
+                aria-describedby={erros.ncm ? "calc-ncm-erro" : "calc-ncm-ajuda"}
                 type="text"
                 maxLength={8}
                 value={ncm}
@@ -250,7 +280,10 @@ function CalculadoraInner() {
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-tribultz-500 focus:outline-none focus:ring-1 focus:ring-tribultz-500"
                 placeholder="84713012"
               />
-              <p className="mt-0.5 text-xs text-slate-400">8 dígitos — alíquota reduzida para alimentos, pharma, educação</p>
+              <p id="calc-ncm-ajuda" className="mt-0.5 text-xs text-slate-400">8 dígitos — alíquota reduzida para alimentos, pharma, educação</p>
+              {erros.ncm && (
+                <p id="calc-ncm-erro" role="alert" className="mt-1 text-xs text-red-600">{erros.ncm}</p>
+              )}
             </div>
 
             {/* NCM suggest */}
@@ -351,10 +384,16 @@ function CalculadoraInner() {
 
             {/* Quantity */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label htmlFor="calc-qtd" className="mb-1 block text-sm font-medium text-slate-700">
                 Quantidade
               </label>
               <input
+                id="calc-qtd"
+                name="quantity"
+                required
+                aria-required="true"
+                aria-invalid={!!erros.quantity}
+                aria-describedby={erros.quantity ? "calc-qtd-erro" : undefined}
                 type="number"
                 step="1"
                 min="1"
@@ -363,6 +402,9 @@ function CalculadoraInner() {
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-tribultz-500 focus:outline-none focus:ring-1 focus:ring-tribultz-500"
                 placeholder="1"
               />
+              {erros.quantity && (
+                <p id="calc-qtd-erro" role="alert" className="mt-1 text-xs text-red-600">{erros.quantity}</p>
+              )}
             </div>
           </div>
 
