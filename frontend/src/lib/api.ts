@@ -27,18 +27,29 @@ export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhos
  * caller via a normal (non-ok) Response. Guards public tools (calculadora,
  * classificacao) against brief gaps during a backend deploy/restart.
  */
+/** Teto de espera por tentativa. Sem isso, uma conexão que abre e nunca responde
+ *  deixa a UI em "Calculando..." indefinidamente — o sintoma que o diagnóstico
+ *  externo relatou e que não se reproduzia no código, porque só acontece quando
+ *  a rede pendura em vez de falhar (#657). */
+export const FETCH_TIMEOUT_MS = 15_000;
+
 export async function fetchWithRetry(
   url: string,
   options: RequestInit,
   retries = 2,
   delayMs = 600,
+  timeoutMs = FETCH_TIMEOUT_MS,
 ): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, options);
+    return await fetch(url, { ...options, signal: options.signal ?? controller.signal });
   } catch (err) {
     if (retries <= 0) throw err;
     await new Promise((resolve) => setTimeout(resolve, delayMs));
-    return fetchWithRetry(url, options, retries - 1, delayMs * 2);
+    return fetchWithRetry(url, options, retries - 1, delayMs * 2, timeoutMs);
+  } finally {
+    clearTimeout(timer);
   }
 }
 
