@@ -106,6 +106,10 @@ docs/infra/operations_runbook.md   Arquitetura, fluxo de deploy/rollback, recupe
 
 - **Commits**: Conventional Commits — `feat(s8):`, `fix(s8):`, `docs(s8):`
 - **Branch**: uma branch por issue, PR único por issue
+- **Fechar issue pelo PR**: usar palavra-chave em **inglês** (`Closes #123`, `Fixes #123`,
+  `Resolves #123`). O GitHub não reconhece "Fecha #123" — em 17/08/2026 nove issues
+  concluídas ficaram abertas por isso, inflando a contagem de P1 e distorcendo a
+  priorização até serem fechadas à mão.
 - **Testes frontend**: `cd frontend && npm test --silent`
 - **Testes backend**: `cd backend && source .venv/bin/activate && python -m pytest tests/ -q`
 - **Lint backend**: `ruff check app/ tests/`
