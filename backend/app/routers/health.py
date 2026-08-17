@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import smtplib
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Literal
 
 import boto3
@@ -136,7 +137,11 @@ def _probe_email() -> ServiceStatus:
     if not settings.EMAIL_VERIFICATION_ENABLED or not settings.SMTP_HOST:
         return "unconfigured"
     try:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=3.0) as server:
+        # 6s, não 3s: com os probes em paralelo o timeout não custa mais latência
+        # total (ela é a do probe mais lento), e o handshake a frio — DNS + TCP até
+        # us-east-1 + banner do relay — passava de 3s logo após o deploy. Quente,
+        # mede 0,62s de dentro do container.
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=6.0) as server:
             server.ehlo()
         return "ok"
     except Exception as exc:
@@ -227,13 +232,43 @@ def readiness() -> DeepHealthResponse:
     """
     t0 = time.monotonic()
 
-    db_status      = _probe_db()
-    redis_status   = _probe_redis()
-    asaas_status   = _probe_asaas()
-    ai_status      = _probe_ai_engine()
-    hubspot_status = _probe_hubspot()
-    email_status   = _probe_email()
-    storage_status = _probe_s3()
+    # Probes em paralelo (#L2.5). Antes rodavam em série: sete chamadas de rede,
+    # cada uma com timeout próprio, somando 2–5s de latência. No cold start —
+    # logo após o deploy, com a aplicação ainda aquecendo — a soma estourava o
+    # timeout de 3s do probe SMTP e o endpoint devolvia `degraded` com
+    # `email=unreachable`, mesmo com o relay perfeitamente acessível (medido:
+    # 0,62s de dentro do container, já quente). Ou seja, TODO deploy produzia uma
+    # janela de degradação falsa.
+    #
+    # São todas I/O bloqueante, então threads resolvem: a latência passa a ser a
+    # do probe mais lento, não a soma, e nenhum probe compete com os outros pelo
+    # próprio orçamento de tempo.
+    _probes = {
+        "db": _probe_db,
+        "redis": _probe_redis,
+        "asaas": _probe_asaas,
+        "ai": _probe_ai_engine,
+        "hubspot": _probe_hubspot,
+        "email": _probe_email,
+        "storage": _probe_s3,
+    }
+    with ThreadPoolExecutor(max_workers=len(_probes)) as _pool:
+        _futuros = {nome: _pool.submit(fn) for nome, fn in _probes.items()}
+        _r = {}
+        for nome, fut in _futuros.items():
+            try:
+                _r[nome] = fut.result(timeout=10)
+            except Exception as exc:  # noqa: BLE001 — probe nunca derruba o endpoint
+                logger.warning("Health: probe %s falhou — %s", nome, exc)
+                _r[nome] = "unreachable"
+
+    db_status      = _r["db"]
+    redis_status   = _r["redis"]
+    asaas_status   = _r["asaas"]
+    ai_status      = _r["ai"]
+    hubspot_status = _r["hubspot"]
+    email_status   = _r["email"]
+    storage_status = _r["storage"]
 
     latency_ms = int((time.monotonic() - t0) * 1000)
 
