@@ -16,10 +16,11 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import cast
 
 import pytest
 from fastapi import HTTPException
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, update
 from sqlalchemy.orm import sessionmaker
 
 from app.api.plan_gate import _periodo_de_uso, _trial_expirado, check_usage_limit, increment_usage
@@ -93,7 +94,7 @@ def _usados(uid) -> int:
                 UsageTracking.user_id == uid, UsageTracking.period == TRIAL_USAGE_PERIOD
             )
         ).scalar_one_or_none()
-        return int(linha.validations_used) if linha else 0
+        return int(cast(int, linha.validations_used)) if linha else 0
 
 
 # ── Item 9 — fonte única verificável ────────────────────────────────────────
@@ -195,8 +196,11 @@ def test_item7_consumo_concorrente_nao_ultrapassa_a_franquia(usuario_trial):
 def test_item3_apos_d3_recusa_mesmo_com_saldo(usuario_trial):
     uid, _ = usuario_trial
     with Session() as db:
-        sub = db.execute(select(Subscription).where(Subscription.user_id == uid)).scalar_one()
-        sub.trial_ends_at = datetime.now(timezone.utc) - timedelta(hours=1)
+        db.execute(
+            update(Subscription)
+            .where(Subscription.user_id == uid)
+            .values(trial_ends_at=datetime.now(timezone.utc) - timedelta(hours=1))
+        )
         db.commit()
 
     with Session() as db:
@@ -207,7 +211,7 @@ def test_item3_apos_d3_recusa_mesmo_com_saldo(usuario_trial):
         with pytest.raises(HTTPException) as exc:
             check_usage_limit("validations")(current_user=user, db=db)
         assert exc.value.status_code == 403
-        assert exc.value.headers.get("X-Trial-Expired") == "true"
+        assert (exc.value.headers or {}).get("X-Trial-Expired") == "true"
 
     assert _usados(uid) == 0, "expirou com saldo intacto — a recusa é por data, não por franquia"
 
