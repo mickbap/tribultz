@@ -88,6 +88,21 @@ INTERNAL_TERM_PATTERNS: list[str] = [
 INTERNAL_TERM_RE = [re.compile(p, re.IGNORECASE) for p in INTERNAL_TERM_PATTERNS]
 
 
+CODE_FENCE_RE = re.compile(r"^[ \t]*(```|~~~).*?^[ \t]*\1[ \t]*$", re.MULTILINE | re.DOTALL)
+
+
+def strip_code_fences(text: str) -> str:
+    """Remove blocos de código cercados antes de procurar a seção pública.
+
+    Um PR que DOCUMENTA a sintaxe da seção — mostrando `## Changelog público`
+    dentro de um bloco de exemplo — não está declarando nada; está explicando.
+    Sem esta limpeza, o exemplo virava a publicação: foi o que aconteceu no
+    #649, cujo corpo trazia o exemplo do recurso recém-criado e acabou
+    publicando o texto de demonstração no feed do cliente.
+    """
+    return CODE_FENCE_RE.sub("", text or "")
+
+
 def run(cmd: list[str], **kwargs) -> str:
     """Roda comando e retorna stdout. Nunca levanta — retorna '' em erro."""
     try:
@@ -143,10 +158,14 @@ def extract_public_changelog(pr_body: str) -> Optional[str]:
     """Se o PR body tem seção '## Changelog público', retorna o conteúdo."""
     if not pr_body:
         return None
-    m = PUBLIC_CHANGELOG_RE.search(pr_body)
-    if not m:
+    limpo = strip_code_fences(pr_body)
+    # Última seção, não a primeira: se ainda restar mais de uma, a declaração
+    # real do autor tende a vir depois da explicação. Mesma classe de defeito da
+    # detecção do número do PR, que pegava o primeiro `#N` (a issue).
+    achados = list(PUBLIC_CHANGELOG_RE.finditer(limpo))
+    if not achados:
         return None
-    text = m.group(1).strip()
+    text = achados[-1].group(1).strip()
     return text or None
 
 
@@ -189,10 +208,10 @@ def extract_public_title(pr_body: str) -> Optional[str]:
     A denylist não pegava: o título era internamente irrelevante sem usar
     nenhuma palavra proibida. Vocabulário é filtrável; propósito não.
     """
-    secao = PUBLIC_CHANGELOG_RE.search(pr_body or "")
-    if not secao:
+    achados = list(PUBLIC_CHANGELOG_RE.finditer(strip_code_fences(pr_body)))
+    if not achados:
         return None
-    m = PUBLIC_TITLE_RE.search(secao.group(1))
+    m = PUBLIC_TITLE_RE.search(achados[-1].group(1))
     if not m:
         return None
     titulo = m.group(1).strip()
