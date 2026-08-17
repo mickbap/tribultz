@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { API_BASE, fetchWithRetry } from "@/lib/api";
+import { faixaDeConfianca } from "@/lib/validation/confianca";
 
 const WA_NUMBER = "5551991881026";
 const WA_REJEICAO = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
@@ -19,11 +20,14 @@ type SuggestResult = {
 
 function ConfidenceBadge({ value }: { value: number }) {
   const pct = Math.round(value * 100);
-  const cls = value >= 0.85
-    ? "bg-emerald-100 text-emerald-700"
-    : value >= 0.70
-    ? "bg-blue-100 text-blue-700"
-    : "bg-amber-100 text-amber-700";
+  // #660: faixas vêm da fonte única, não de literais no componente.
+  const faixa = faixaDeConfianca(value);
+  const cls =
+    faixa === "alta"
+      ? "bg-emerald-100 text-emerald-700"
+      : faixa === "media"
+      ? "bg-blue-100 text-blue-700"
+      : "bg-amber-100 text-amber-700";
   return (
     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}>
       {pct}% confiança
