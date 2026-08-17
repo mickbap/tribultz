@@ -4,6 +4,7 @@ import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { WhatsAppLink } from "@/components/public/WhatsAppLink";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { RULES_COUNT, CLASSTRIB_COUNT } from "@/lib/validation/rulesMeta";
+import { TRIAL_DURATION_LABEL, TRIAL_QUOTA_LABEL } from "@/lib/trial";
 import {
   CLASSTRIB_TRIBUTACAO_INTEGRAL,
   CLASSTRIB_REDUZIDO_60,
@@ -245,7 +246,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-7 flex flex-wrap gap-5 text-sm text-[#6C757D]">
-                  {["Sem cartão de crédito", "5 validações grátis", "100 créditos API grátis"].map((t) => (
+                  {["Sem cartão de crédito", TRIAL_QUOTA_LABEL, TRIAL_DURATION_LABEL].map((t) => (
                     <span key={t} className="flex items-center gap-1.5"><Check />{t}</span>
                   ))}
                 </div>
@@ -527,7 +528,7 @@ export default function HomePage() {
                   Reforma chega em 2026.
                 </h2>
                 <p className="mb-8 text-lg leading-relaxed" style={{ color: "rgba(255,255,255,0.8)" }}>
-                  5 validações de cortesia, {RULES_COUNT} regras CBS/IBS, diagnóstico imediato. Sem cartão de crédito.
+                  {TRIAL_QUOTA_LABEL}, {RULES_COUNT} regras CBS/IBS, diagnóstico imediato. Sem cartão de crédito.
                 </p>
                 <div className="flex flex-wrap items-center gap-4">
                   <Link

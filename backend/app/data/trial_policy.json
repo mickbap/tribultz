@@ -1,0 +1,11 @@
+{
+  "_comment": "Verdade contratual do Trial — decisão de Produto (Ermes) de 16/08/2026, anexa à ordem QA→Techlead. Fonte ÚNICA: backend (plan_gate, auth) e todas as superfícies públicas derivam daqui. Não editar sem decisão de Produto.",
+  "duration_days": 3,
+  "validation_quota": 5,
+  "quota_period": "trial_lifetime",
+  "txt": true,
+  "pdf": false,
+  "api": false,
+  "dashboard": false,
+  "technical_support": false
+}

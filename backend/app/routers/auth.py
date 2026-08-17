@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.data.trial_policy import TRIAL_DURATION_DAYS
 from app.database import get_db
 from app.models.auth import Tenant, User, UserTenant
 from app.models.founding_partner import resolve_effective_license
@@ -415,7 +416,9 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         user_id=user.id,
         plan_id=plan.id,
         status="trial" if is_trial else "pending",
-        trial_ends_at=now + timedelta(days=3) if is_trial else None,
+        # #635: prazo vem da política canônica, não de literal. Antes, mudar a
+        # duração do Trial exigia lembrar deste ponto além da copy e do plano.
+        trial_ends_at=now + timedelta(days=TRIAL_DURATION_DAYS) if is_trial else None,
         current_period_start=now,
         current_period_end=now + timedelta(days=30),
     )
