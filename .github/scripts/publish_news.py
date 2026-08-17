@@ -311,14 +311,26 @@ def main() -> int:
             return 0
 
     # Opt-in estrito: sem seção `## Changelog público` declarada no PR, nada sai.
-    description = build_description(pr_data.get("body", "") or "")
+    _pr_body = pr_data.get("body", "") or ""
+    description = build_description(_pr_body)
     if not description:
         print("[skip] PR sem seção '## Changelog público' — nada a publicar")
         return 0
 
-    title = extract_public_title(pr_data.get("body", "") or "") or build_title(
-        parsed, parsed.get("scope")
-    )
+    # Título público é OBRIGATÓRIO quando há seção declarada (decisão de 17/08).
+    # O fallback para o assunto do commit foi removido: assunto segue Conventional
+    # Commits e é interno por convenção — foi ele que publicou "[Fix] Publicador do
+    # changelog lia o número da ISSUE, não o do PR" no feed do cliente. Quem declarou
+    # a seção quis publicar; então escreve o título que o cliente vai ler.
+    title = extract_public_title(_pr_body)
+    if not title:
+        print(
+            "[err] seção '## Changelog público' declarada sem a linha 'Título: ...'. "
+            "O título do commit é interno por convenção e não vai para o feed. "
+            "Acrescente uma linha `Título: <manchete para o cliente>` dentro da seção.",
+            file=sys.stderr,
+        )
+        return 1
     category = TYPE_TO_CATEGORY[parsed["type"]]
 
     # Rede de segurança: vocabulário interno nunca chega ao feed público.
