@@ -42,6 +42,8 @@ CONVENTIONAL_PREFIX_RE = re.compile(
     r"(?:\((?P<scope>[^)]+)\))?:\s*(?P<subject>.+)$"
 )
 PR_NUMBER_RE = re.compile(r"#(\d+)")
+# Squash merge do GitHub acrescenta " (#N)" ao FIM do assunto.
+SQUASH_PR_RE = re.compile(r"\(#(\d+)\)\s*$")
 PUBLIC_CHANGELOG_RE = re.compile(
     r"##\s*Changelog\s+p[úu]blico\s*\n+(.+?)(?=\n##|\Z)",
     re.IGNORECASE | re.DOTALL,
@@ -147,6 +149,33 @@ def extract_public_changelog(pr_body: str) -> Optional[str]:
     return text or None
 
 
+def detect_pr_number(subject: str, body: str) -> Optional[str]:
+    """Número do PR do merge — o do FIM do assunto, não o primeiro que aparecer.
+
+    Nossos títulos já citam a issue que o PR fecha, e o squash merge acrescenta
+    o número do PR ao fim. O assunto final tem dois números:
+
+        feat(billing): Trial com fonte única … (#635) (#647)
+                                                 ↑issue   ↑PR
+
+    A busca antiga pegava o PRIMEIRO — a issue. `gh pr view <issue>` falha
+    ("Could not resolve to a PullRequest"), o script seguia sem body e pulava
+    reportando "PR sem seção '## Changelog público'", mascarando a causa real.
+    Efeito: entre 16 e 17/08 nenhum merge publicou, inclusive cinco que traziam
+    a seção corretamente declarada.
+
+    Consequência secundária, também corrigida: a checagem da label
+    `no-changelog` consultava o PR errado.
+    """
+    m = SQUASH_PR_RE.search(subject.strip())
+    if m:
+        return m.group(1)
+    # Sem o sufixo de squash (merge commit comum), fica o último #N citado —
+    # ainda melhor que o primeiro, que tende a ser a issue.
+    todos = PR_NUMBER_RE.findall(f"{subject}\n{body}")
+    return todos[-1] if todos else None
+
+
 def build_title(parsed: dict, scope_label: Optional[str]) -> str:
     """Monta título amigável a partir do commit parseado."""
     subject = parsed["subject_clean"]
@@ -226,11 +255,9 @@ def main() -> int:
 
     # Detecta PR via #N no subject ou body
     body = get_commit_body(sha)
-    full_text = f"{subject}\n{body}"
-    pr_match = PR_NUMBER_RE.search(full_text)
+    pr_number = detect_pr_number(subject, body)
     pr_data = {}
-    if pr_match:
-        pr_number = pr_match.group(1)
+    if pr_number:
         print(f"[info] PR detectado: #{pr_number}")
         pr_data = fetch_pr_data(pr_number)
         if has_no_changelog_label(pr_data):
