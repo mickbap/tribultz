@@ -115,12 +115,12 @@ def test_sem_secao_nao_publica(run_main, capture_post):
 
 def test_com_secao_publica_somente_a_secao(run_main, capture_post):
     """Publica a seção declarada — e nada do body interno ao redor dela."""
-    assert run_main(subject="feat(reports): resumo por nota fiscal", pr_body=PUBLIC_SECTION_BODY) == 0
+    assert run_main(subject="feat(reports): resumo por nota fiscal", pr_body=TITULADO_BODY) == 0
     assert len(capture_post) == 1
     description = capture_post[0]["payload"]["description"]
-    assert "resumo por nota fiscal" in description
+    assert "resumo por nota" in description
     assert "Contexto interno" not in description
-    assert "Detalhe interno" not in description
+    assert "Interno." not in description
 
 
 def test_body_vazio_nao_publica(run_main, capture_post):
@@ -164,22 +164,36 @@ def test_build_description_sem_fallback(pn):
 )
 def test_denylist_aborta_publicacao(run_main, capture_post, termo):
     """Termo interno na seção pública → exit 1 e nenhum POST."""
-    body = f"## Changelog público\n\nMelhoria entregue via {termo} nesta versão.\n"
+    body = f"## Changelog público\n\nTítulo: Melhoria entregue\n\nEntregue via {termo} nesta versão.\n"
     assert run_main(subject="feat(site): melhoria", pr_body=body) == 1
     assert capture_post == []
 
 
-def test_denylist_alcanca_o_titulo(run_main, capture_post):
-    """O título também é público — commit interno aborta mesmo com seção limpa."""
-    body = "## Changelog público\n\nRelatório agora traz o resumo por nota fiscal.\n"
-    assert run_main(subject="fix(crm): rollback da migration executado", pr_body=body) == 1
+def test_denylist_alcanca_o_titulo_declarado(run_main, capture_post):
+    """A denylist protege o título DECLARADO pelo autor.
+
+    Antes de o `Título:` ser obrigatório, esta checagem servia para barrar o
+    assunto do commit, que virava título por fallback. Com o fallback removido,
+    o assunto interno já não chega ao feed — mas o autor ainda pode escrever
+    vocabulário de processo na linha `Título:`, e é isso que a denylist pega.
+    """
+    body = "## Changelog público\n\nTítulo: Rollback da migration executado\n\nCorreção entregue.\n"
+    assert run_main(subject="fix(reports): resumo", pr_body=body) == 1
     assert capture_post == []
+
+
+def test_assunto_interno_do_commit_nao_impede_publicacao(run_main, capture_post):
+    """Efeito colateral desejado do título obrigatório: o assunto do commit deixa
+    de contaminar o feed, então commit interno com seção bem escrita publica."""
+    body = "## Changelog público\n\nTítulo: Resumo por nota fiscal\n\nRelatório agora traz o resumo por nota.\n"
+    assert run_main(subject="fix(crm): ajuste no worker do beat", pr_body=body) == 0
+    assert capture_post[0]["payload"]["title"] == "Resumo por nota fiscal"
 
 
 def test_copy_publica_legitima_passa(run_main, capture_post):
     """Rede de segurança não pode bloquear linguagem de cliente."""
     body = (
-        "## Changelog público\n\n"
+        "## Changelog público\n\nTítulo: Detalhamento por item na calculadora\n\n"
         "A calculadora CBS/IBS passou a aceitar NCM de 8 dígitos e mostra o "
         "detalhamento por item da nota fiscal.\n"
     )
@@ -222,7 +236,7 @@ def test_fluxo_completo_usa_o_pr_correto(run_main, capture_post, monkeypatch, pn
 
     def _fetch(n):
         vistos.append(n)
-        return {"body": PUBLIC_SECTION_BODY, "labels": []}
+        return {"body": TITULADO_BODY, "labels": []}
 
     monkeypatch.setattr(pn, "fetch_pr_data", _fetch)
     monkeypatch.setenv("COMMIT_SHA", "deadbeef")
@@ -261,10 +275,16 @@ def test_linha_de_titulo_nao_vaza_para_a_descricao(run_main, capture_post):
     assert "resumo por nota" in descricao
 
 
-def test_sem_titulo_declarado_mantem_o_do_commit(run_main, capture_post):
-    """Compatível com as seções já escritas, que não declaram título."""
-    assert run_main(subject="feat(reports): resumo por nota fiscal", pr_body=PUBLIC_SECTION_BODY) == 0
-    assert capture_post[0]["payload"]["title"] == "Resumo por nota fiscal"
+def test_secao_sem_titulo_aborta(run_main, capture_post):
+    """Título público é obrigatório (decisão de 17/08).
+
+    O fallback para o assunto do commit foi removido: assunto segue Conventional
+    Commits e é interno por convenção — foi ele que publicou "[Fix] Publicador do
+    changelog lia o número da ISSUE" no feed do cliente. Quem declara a seção
+    escreve o título que o cliente vai ler, ou nada sai.
+    """
+    assert run_main(subject="feat(reports): resumo por nota fiscal", pr_body=PUBLIC_SECTION_BODY) == 1
+    assert capture_post == []
 
 
 # --- exemplo em bloco de código não é declaração (regressão de 17/08) --------
