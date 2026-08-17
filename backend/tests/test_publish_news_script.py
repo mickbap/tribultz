@@ -178,3 +178,46 @@ def test_find_internal_terms_lista_os_achados(pn):
     hits = pn.find_internal_terms("Deploy concluído", "rodamos o worker no Redis")
     assert {h.lower() for h in hits} == {"deploy", "worker", "redis"}
     assert pn.find_internal_terms("Resumo por nota fiscal no relatório") == []
+
+
+# --- detecção do número do PR (regressão de 17/08) --------------------------
+
+
+def test_detecta_pr_do_fim_do_assunto_nao_a_issue(pn):
+    """Squash merge: `titulo (#issue) (#PR)` — vale o do fim.
+
+    Este é o defeito que fez o feed parar: a busca pegava o primeiro `#N`, que
+    é a issue citada no título. `gh pr view <issue>` falha, o body vinha vazio e
+    tudo era pulado com a mensagem de "sem seção", mascarando a causa.
+    """
+    assert pn.detect_pr_number("feat(billing): Trial com fonte única (#635) (#647)", "") == "647"
+    assert pn.detect_pr_number("fix(seo): canonical por rota (#634) (#641)", "") == "641"
+
+
+def test_detecta_pr_sem_sufixo_de_squash(pn):
+    """Merge commit comum: fica o último #N citado, não o primeiro."""
+    assert pn.detect_pr_number("fix: algo", "Fecha #100\nRef #204") == "204"
+
+
+def test_sem_numero_algum(pn):
+    assert pn.detect_pr_number("chore: sem referência", "") is None
+
+
+def test_fluxo_completo_usa_o_pr_correto(run_main, capture_post, monkeypatch, pn):
+    """O body consultado tem de ser o do PR, não o da issue."""
+    vistos: list[str] = []
+
+    def _fetch(n):
+        vistos.append(n)
+        return {"body": PUBLIC_SECTION_BODY, "labels": []}
+
+    monkeypatch.setattr(pn, "fetch_pr_data", _fetch)
+    monkeypatch.setenv("COMMIT_SHA", "deadbeef")
+    monkeypatch.setenv("BACKEND_URL", "https://api.example.test")
+    monkeypatch.setenv("NEWS_PUBLISH_TOKEN", "token-de-teste")
+    monkeypatch.setattr(pn, "get_commit_subject", lambda sha: "feat(reports): resumo por nota fiscal (#635) (#647)")
+    monkeypatch.setattr(pn, "get_commit_body", lambda sha: "")
+
+    assert pn.main() == 0
+    assert vistos == ["647"], f"consultou o PR errado: {vistos}"
+    assert len(capture_post) == 1
