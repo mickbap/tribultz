@@ -29,15 +29,16 @@ const FOOTER = join(SRC, "components", "public", "PublicFooter.tsx");
 const LEGAL = join(SRC, "lib", "legal.ts");
 
 /**
- * Dívida conhecida, com issue aberta: #645.
+ * Dívida zerada em 17/08 (#645).
  *
- * Estes três são páginas da área logada linkadas na coluna "Produto". Não
- * entraram no #636 porque o destino correto para um visitante deslogado é
- * decisão de produto (diagnóstico? pricing? landing por recurso?), não conserto
- * mecânico. Ficam listados para a dívida ser visível e o guard seguir barrando
- * ocorrências NOVAS.
+ * `/validate-xml`, `/validate-sped` e `/compliance` estavam aqui: páginas da
+ * área logada linkadas na coluna "Produto". O destino público era decisão de
+ * produto, tomada pelo Mickel — os dois validadores passam a levar ao
+ * `/diagnostico` (valida de graça, sem cadastro) e o Compliance Score ao
+ * `/pricing`. A allowlist fica vazia de propósito: qualquer entrada nova aqui
+ * significa dívida, e o teste de tamanho obriga a declará-la.
  */
-const PENDENTES_ISSUE_645 = new Set(["/validate-xml", "/validate-sped", "/compliance"]);
+const PENDENTES_ISSUE_645 = new Set<string>();
 
 function hrefsInternos(): string[] {
   const fontes = [readFileSync(FOOTER, "utf-8"), readFileSync(LEGAL, "utf-8")].join("\n");
@@ -85,10 +86,22 @@ test("/support saiu do rodapé público (é área logada)", () => {
   assert.match(footer, /href="\/contato"/);
 });
 
-test("a allowlist só contém o que a issue #645 cobre", () => {
-  // Se alguém acrescentar uma rota aqui sem tratar a dívida, o número de
-  // pendências cresce silenciosamente. Este teste congela o tamanho.
-  assert.equal(PENDENTES_ISSUE_645.size, 3);
+test("a allowlist de rotas privadas no rodapé está vazia", () => {
+  // Congelada em zero: acrescentar rota aqui é assumir dívida, e o teste
+  // obriga a mexer nele de propósito para isso.
+  assert.equal(PENDENTES_ISSUE_645.size, 0);
+});
+
+test("os destinos do rodapé de Produto são públicos e úteis ao deslogado", () => {
+  const footer = readFileSync(FOOTER, "utf-8");
+  for (const privado of ["/validate-xml", "/validate-sped", "/compliance"]) {
+    assert.ok(
+      !new RegExp(`href: "${privado}"`).test(footer),
+      `${privado} é área logada e não pode voltar ao rodapé público (#645)`,
+    );
+  }
+  assert.match(footer, /href: "\/diagnostico", label: "Validador XML"/);
+  assert.match(footer, /href: "\/pricing", label: "Compliance Score"/);
 });
 
 test("/contato declara canonical próprio e é público", async () => {
