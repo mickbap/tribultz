@@ -1728,7 +1728,7 @@ async def validate_xml_endpoint(
         },
     )
 
-    increment_usage(db, current_user.id, current_user.tenant_id, "validations")
+    increment_usage(db, current_user, "validations")
     db.commit()
 
 
@@ -1828,7 +1828,7 @@ async def correct_xml_endpoint(
         },
     )
     db.add(doc)
-    increment_usage(db, current_user.id, current_user.tenant_id, "validations")
+    increment_usage(db, current_user, "validations")
     db.commit()
     db.refresh(doc)
 

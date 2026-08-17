@@ -6,6 +6,7 @@ import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { apiFetch } from "@/lib/api";
 import { getToken } from "@/lib/storage";
 import { RULES_COUNT, RULES_LABEL } from "@/lib/validation/rulesMeta";
+import { TRIAL_QUOTA_LABEL } from "@/lib/trial";
 
 // ── Plan definitions ────────────────────────────────────────────
 
@@ -29,12 +30,12 @@ const PLANS: Plan[] = [
     badge: null,
     tagline: "Comece agora, sem cartão",
     features: [
-      "5 validações XML por mês",
+      TRIAL_QUOTA_LABEL,
       `${RULES_COUNT} regras CBS/IBS`,
       "Diagnóstico gratuito",
       "Calculadora CBS/IBS",
     ],
-    limits: "Sem dashboard • Sem PDF • Sem API",
+    limits: "Sem dashboard • Sem PDF • Sem API • Sem suporte técnico",
     cta: "Criar conta grátis",
     highlighted: false,
   },
