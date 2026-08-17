@@ -31,6 +31,19 @@ def pn():
     return module
 
 
+TITULADO_BODY = """\
+Contexto interno.
+
+## Changelog público
+
+Título: Relatório agora resume por nota fiscal
+
+O relatório de validação passou a trazer o resumo por nota.
+
+## Notas
+Interno.
+"""
+
 PUBLIC_SECTION_BODY = """\
 Contexto interno que jamais pode vazar: rodamos o deploy na VM depois do rollback.
 
@@ -221,3 +234,34 @@ def test_fluxo_completo_usa_o_pr_correto(run_main, capture_post, monkeypatch, pn
     assert pn.main() == 0
     assert vistos == ["647"], f"consultou o PR errado: {vistos}"
     assert len(capture_post) == 1
+
+
+# --- título público declarado na seção (regressão de 17/08) -----------------
+
+
+def test_titulo_publico_governa_o_titulo(run_main, capture_post):
+    """Sem isso o título vem do commit, que é interno por convenção.
+
+    A primeira publicação do regime novo saiu com descrição em linguagem de
+    cliente e título "Publicador do changelog lia o número da ISSUE, não o do
+    PR" — internamente irrelevante, e a denylist não podia pegar porque não há
+    palavra proibida ali.
+    """
+    assert run_main(subject="fix(ci): publicador lia o número errado", pr_body=TITULADO_BODY) == 0
+    assert len(capture_post) == 1
+    payload = capture_post[0]["payload"]
+    assert payload["title"] == "Relatório agora resume por nota fiscal"
+    assert "publicador" not in payload["title"].lower()
+
+
+def test_linha_de_titulo_nao_vaza_para_a_descricao(run_main, capture_post):
+    assert run_main(subject="fix(reports): resumo", pr_body=TITULADO_BODY) == 0
+    descricao = capture_post[0]["payload"]["description"]
+    assert "Título:" not in descricao
+    assert "resumo por nota" in descricao
+
+
+def test_sem_titulo_declarado_mantem_o_do_commit(run_main, capture_post):
+    """Compatível com as seções já escritas, que não declaram título."""
+    assert run_main(subject="feat(reports): resumo por nota fiscal", pr_body=PUBLIC_SECTION_BODY) == 0
+    assert capture_post[0]["payload"]["title"] == "Resumo por nota fiscal"
