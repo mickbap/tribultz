@@ -12,6 +12,8 @@
 import type { SchemaObject } from "./JsonLd";
 import { RULES_COUNT } from "@/lib/validation/rulesMeta";
 
+import { TRIAL_DURATION_DAYS, TRIAL_VALIDATION_QUOTA } from "@/lib/trial";
+
 const SITE_URL = "https://tribultz.com.br";
 const ORG_ID = `${SITE_URL}/#org`;
 
@@ -72,8 +74,9 @@ export const PRICING_SCHEMA: SchemaObject[] = [
     {
       q: "Posso testar a Tribultz antes de assinar?",
       a:
-        "Sim. O plano Trial é gratuito e dá acesso a 100 créditos de API e à validação " +
-        "completa de até 20 NF-e. Sem cartão de crédito.",
+        `Sim. O Trial é gratuito por ${TRIAL_DURATION_DAYS} dias e inclui ${TRIAL_VALIDATION_QUOTA} ` +
+        "validações no período, com download em TXT. Sem cartão de crédito. " +
+        "Relatório em PDF, dashboard e acesso à API não fazem parte do Trial.",
     },
     {
       q: "Como funciona a cobrança da API NCM → cClassTrib?",
