@@ -44,10 +44,33 @@ CONVENTIONAL_PREFIX_RE = re.compile(
 PR_NUMBER_RE = re.compile(r"#(\d+)")
 # Squash merge do GitHub acrescenta " (#N)" ao FIM do assunto.
 SQUASH_PR_RE = re.compile(r"\(#(\d+)\)\s*$")
+# Fronteira da seção: para no PRÓXIMO heading de qualquer nível, numa regra
+# horizontal, ou no fim do texto. Antes parava só em `\n##` — então o rodapé
+# do bot, que vem depois sem heading nenhum, entrava na descrição publicada.
 PUBLIC_CHANGELOG_RE = re.compile(
-    r"##\s*Changelog\s+p[úu]blico\s*\n+(.+?)(?=\n##|\Z)",
+    r"##\s*Changelog\s+p[úu]blico\s*\n+(.+?)(?=\n#{1,6}\s|\n\s*(?:---|\*\*\*|___)\s*\n|\Z)",
     re.IGNORECASE | re.DOTALL,
 )
+
+# Linhas de rodapé que ferramentas acrescentam ao corpo do PR e que não são
+# conteúdo do autor. Cortam a seção a partir delas.
+TRAILER_RE = re.compile(
+    r"^\s*(?:🤖\s*Generated with|Co-[Aa]uthored-[Bb]y:|Generated with \[Claude).*$",
+    re.MULTILINE,
+)
+
+# Marcas que denunciam extração errada: se sobraram, o que foi capturado não é
+# prosa para cliente. Em vez de continuar enumerando o que remover — que foi o
+# ciclo de quatro defeitos deste script —, a saída passa a ter de PARECER texto
+# de cliente, e o que não parecer aborta.
+ARTEFATOS_DE_MARKDOWN = [
+    ("```", "cerca de bloco de código"),
+    ("~~~", "cerca de bloco de código"),
+    ("<!--", "comentário HTML"),
+    ("claude.com/claude-code", "rodapé de ferramenta"),
+    ("| ---", "tabela markdown"),
+    ("|---", "tabela markdown"),
+]
 PUBLIC_TITLE_RE = re.compile(r"^\s*T[íi]tulo:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 PUBLISHABLE_TYPES = {"feat", "fix", "security"}
 TYPE_TO_CATEGORY = {
@@ -165,8 +188,12 @@ def extract_public_changelog(pr_body: str) -> Optional[str]:
     achados = list(PUBLIC_CHANGELOG_RE.finditer(limpo))
     if not achados:
         return None
-    text = achados[-1].group(1).strip()
-    return text or None
+    text = achados[-1].group(1)
+    # Corta a partir do primeiro rodapé de ferramenta encontrado.
+    corte = TRAILER_RE.search(text)
+    if corte:
+        text = text[: corte.start()]
+    return text.strip() or None
 
 
 def detect_pr_number(subject: str, body: str) -> Optional[str]:
@@ -332,6 +359,19 @@ def main() -> int:
         )
         return 1
     category = TYPE_TO_CATEGORY[parsed["type"]]
+
+    # Porta de sanidade estrutural: a descrição tem de PARECER prosa de cliente.
+    # Quatro defeitos deste script vieram de extração errada que passou porque só
+    # havia filtro de vocabulário. Aqui o critério é a forma do que saiu.
+    artefatos = [nome for marca, nome in ARTEFATOS_DE_MARKDOWN if marca in description]
+    if artefatos:
+        print(
+            f"[err] a descrição extraída contém {sorted(set(artefatos))} — sinal de que a seção "
+            "'## Changelog público' foi capturada errada (exemplo em bloco de código, tabela ou "
+            "rodapé de ferramenta). Publicação abortada; revise a seção.",
+            file=sys.stderr,
+        )
+        return 1
 
     # Rede de segurança: vocabulário interno nunca chega ao feed público.
     internal_hits = find_internal_terms(title, description)
