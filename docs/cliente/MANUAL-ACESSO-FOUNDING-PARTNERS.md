@@ -42,20 +42,17 @@ Seu e-mail já vem **verificado** — não há link de confirmação para clicar
 
 **3.** Você cai no **Painel**, já dentro da sua empresa.
 
-### Troque a senha inicial — e como fazer isso hoje
+### Troque a senha inicial
 
 A senha que você recebeu foi definida por outra pessoa, então troque no primeiro
-dia. **Atenção a um detalhe da versão atual:** ainda não existe "alterar senha"
-dentro da plataforma. O caminho é:
+dia:
 
-**1.** Saia da conta — botão **Sair**, no rodapé do menu à esquerda.
-**2.** Em **/login**, clique em **Esqueci minha senha**.
-**3.** Informe seu e-mail e siga o link que chegará na sua caixa.
-**4.** Defina a senha que só você conhece.
+**1.** No menu à esquerda, abra **Configurações**.
+**2.** Na seção **Senha**, informe a senha atual e a nova (mínimo 8 caracteres).
+**3.** Confirme. A nova senha vale a partir do próximo login.
 
-Sabemos que dar essa volta não é o ideal; a tela de alteração direta está no
-nosso plano de melhorias. Preferimos dizer isso a você agora do que deixar você
-procurar um botão que não existe.
+Se você preferir, ou se esquecer a senha atual, o caminho alternativo continua
+valendo: **/login** → **Esqueci minha senha** → link no seu e-mail.
 
 ---
 
@@ -222,6 +219,7 @@ suspensa, isso aparece em **https://tribultz.com.br/changelog**.
 | | |
 |---|---|
 | Entrar | https://tribultz.com.br/login |
+| Trocar a senha | https://tribultz.com.br/settings → seção "Senha" |
 | Recuperar senha | https://tribultz.com.br/login → "Esqueci minha senha" |
 | Contato aberto | https://tribultz.com.br/contato |
 | Novidades da plataforma | https://tribultz.com.br/changelog |
