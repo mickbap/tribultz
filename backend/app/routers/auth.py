@@ -879,6 +879,58 @@ class ResetPasswordRequest(BaseModel):
     new_password: str
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+def change_password(
+    data: ChangePasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Troca a senha do próprio usuário autenticado.
+
+    Existia um buraco no fluxo de onboarding: contas provisionadas pelo Command
+    Center (Founding Partners) nascem com senha DEFINIDA POR TERCEIRO — o Owner —
+    e não havia como o titular trocá-la de dentro da plataforma. A única saída era
+    sair, pedir "Esqueci minha senha" e recuperar por e-mail. Para uma consultoria
+    recebendo acesso, isso é a primeira coisa que se tenta fazer.
+
+    Exige a senha atual: sem isso, um token vazado permitiria trocar a senha e
+    tomar a conta em definitivo.
+    """
+    ip = _client_ip(request)
+    _login_limiter.check_or_raise(f"changepw:{ip}")
+
+    if len(data.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A nova senha deve ter no mínimo 8 caracteres.",
+        )
+
+    if not verify_password(data.current_password, cast(str, current_user.password_hash)):
+        logger.warning("change_password_wrong_current", extra={"user_id": str(current_user.id)})
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Senha atual incorreta.",
+        )
+
+    if verify_password(data.new_password, cast(str, current_user.password_hash)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A nova senha deve ser diferente da atual.",
+        )
+
+    current_user.password_hash = get_password_hash(data.new_password)  # type: ignore[assignment]
+    db.commit()
+
+    logger.info("password_changed", extra={"user_id": str(current_user.id)})
+    return {"status": "ok", "message": "Senha alterada."}
+
+
 @router.post("/reset-password")
 def reset_password(
     data: ResetPasswordRequest,

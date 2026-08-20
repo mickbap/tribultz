@@ -12,6 +12,53 @@ export default function SettingsPage() {
   const [toast, setToast] = useState<{ tone: "error" | "success" | "info"; msg: string } | null>(null);
   const [pedagogicalMode, setPedagogicalMode] = useState<boolean | null>(null);
   const [pedagogicalLoading, setPedagogicalLoading] = useState(false);
+  // Troca de senha do próprio usuário. Contas provisionadas pelo Command Center
+  // (Founding Partners) nascem com senha definida pelo Owner, e até agora o
+  // titular só conseguia trocá-la saindo e usando "Esqueci minha senha".
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [senhaNova, setSenhaNova] = useState("");
+  const [senhaConfirma, setSenhaConfirma] = useState("");
+  const [senhaLoading, setSenhaLoading] = useState(false);
+  const [senhaErro, setSenhaErro] = useState("");
+
+  async function trocarSenha(e: React.FormEvent) {
+    e.preventDefault();
+    setSenhaErro("");
+
+    if (senhaNova.length < 8) {
+      setSenhaErro("A nova senha deve ter no mínimo 8 caracteres.");
+      return;
+    }
+    if (senhaNova !== senhaConfirma) {
+      setSenhaErro("A confirmação não confere com a nova senha.");
+      return;
+    }
+
+    setSenhaLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/auth/change-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({ current_password: senhaAtual, new_password: senhaNova }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setSenhaErro(d.detail ?? "Não foi possível alterar a senha.");
+        return;
+      }
+      setSenhaAtual("");
+      setSenhaNova("");
+      setSenhaConfirma("");
+      setToast({ tone: "success", msg: "Senha alterada." });
+    } catch {
+      setSenhaErro("Falha de conexão. Tente novamente.");
+    } finally {
+      setSenhaLoading(false);
+    }
+  }
 
   useEffect(() => {
     setTenant(getTenantId());
@@ -115,6 +162,79 @@ export default function SettingsPage() {
             Status atual: <strong>{pedagogicalMode ? "Ativo — avisos pedagógicos habilitados" : "Inativo — todos os erros são bloqueantes"}</strong>
           </p>
         )}
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 className="text-lg font-semibold text-slate-900">Senha</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Se você recebeu uma senha inicial da Tribultz, troque-a por uma que só você conheça.
+        </p>
+        <form onSubmit={trocarSenha} className="mt-3 grid max-w-md gap-3">
+          <div>
+            <label htmlFor="senha-atual" className="mb-1 block text-sm font-medium text-slate-700">
+              Senha atual
+            </label>
+            <input
+              id="senha-atual"
+              name="current_password"
+              type="password"
+              required
+              autoComplete="current-password"
+              value={senhaAtual}
+              onChange={(e) => setSenhaAtual(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-tribultz-500 focus:outline-none focus:ring-1 focus:ring-tribultz-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="senha-nova" className="mb-1 block text-sm font-medium text-slate-700">
+              Nova senha
+            </label>
+            <input
+              id="senha-nova"
+              name="new_password"
+              type="password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              aria-describedby="senha-nova-ajuda"
+              value={senhaNova}
+              onChange={(e) => setSenhaNova(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-tribultz-500 focus:outline-none focus:ring-1 focus:ring-tribultz-500"
+            />
+            <p id="senha-nova-ajuda" className="mt-0.5 text-xs text-slate-400">
+              Mínimo de 8 caracteres.
+            </p>
+          </div>
+          <div>
+            <label htmlFor="senha-confirma" className="mb-1 block text-sm font-medium text-slate-700">
+              Confirmar nova senha
+            </label>
+            <input
+              id="senha-confirma"
+              name="confirm_password"
+              type="password"
+              required
+              autoComplete="new-password"
+              value={senhaConfirma}
+              onChange={(e) => setSenhaConfirma(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-tribultz-500 focus:outline-none focus:ring-1 focus:ring-tribultz-500"
+            />
+          </div>
+          {senhaErro && (
+            <p role="alert" className="text-xs text-red-600">
+              {senhaErro}
+            </p>
+          )}
+          <div>
+            <button
+              type="submit"
+              disabled={senhaLoading}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {senhaLoading ? "Alterando..." : "Alterar senha"}
+            </button>
+          </div>
+        </form>
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-4">
