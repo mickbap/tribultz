@@ -347,25 +347,29 @@ def test_divergencia_resolvida_por_execucao(client):
 
 
 
-def test_bypass_da_contencao_via_shell_reservado_por_add_cnpj(client, monkeypatch):
-    """#626 CONFIRMADO — a corrida de reivindicação de shell É alcançável.
+def test_shell_reservado_por_add_cnpj_esta_protegido(client, monkeypatch):
+    """#626 CORRIGIDO — a corrida de reivindicação de shell está fechada.
 
-    A contenção do #625 conta USUÁRIOS DONOS (`User.tenant_id == tenant.id`).
-    Mas `/add-cnpj` (fluxo pago NORMAL do contador) cria o tenant `cnpj-<CNPJ>`
-    com APENAS um `UserTenant` (membership) e ZERO donos. Logo a trava
-    `existing_users > 0` NÃO dispara e um estranho reivindica um CNPJ que um
-    contador já reservou.
+    HISTÓRICO. Este teste nasceu como CARACTERIZAÇÃO: era verde para o
+    comportamento errado. A contenção do #625 contava apenas DONOS
+    (`User.tenant_id == tenant.id`), e o `/add-cnpj` (fluxo pago NORMAL do
+    contador) cria o tenant `cnpj-<CNPJ>` com APENAS um `UserTenant` e ZERO
+    donos. A trava não disparava, e o resultado era pior que escalada de
+    privilégio: o estranho virava `admin` do tenant reservado E o titular
+    legítimo, cadastrando depois, era barrado pelo impostor — sequestro com
+    trancamento.
 
-    Verdade estática (sweep de sites de criação de Tenant): o ÚNICO path que gera
-    tenant `cnpj-*` com 0 donos é `add-cnpj` — `register` e o provisionamento de
-    founding_partner criam um dono. Portanto a corrida NÃO depende de
-    pré-provisionamento exótico; nasce do fluxo comercial normal do contador.
+    Verdade estática (sweep dos sites de criação de Tenant): o ÚNICO path que
+    gera tenant `cnpj-*` com 0 donos é `add-cnpj` — `register` e o provisionamento
+    de founding_partner criam um dono. A corrida nascia do fluxo comercial normal
+    do contador, não de pré-provisionamento exótico.
 
-    Prova executada:
-      (a) BYPASS — o register do estranho retorna 201 (a trava não vê "donos").
-      (b) SEQUESTRO DE RESERVA + TRANCAMENTO — o titular legítimo, cadastrando
-          depois, agora leva 409 e fica trancado fora da própria organização,
-          com o impostor como admin.
+    AGORA a contenção conta ocupação — dono OU vínculo — e este teste virou
+    PROTEÇÃO: o estranho é barrado com 409 e o tenant reservado permanece
+    intacto para o titular legítimo, que segue por fluxo autorizado.
+
+    Shell realmente vazio (0 donos e 0 vínculos) continua reivindicável — coberto
+    por `test_reivindicacao_de_shell_vazio_ainda_funciona`.
     """
     import types
 
@@ -392,22 +396,35 @@ def test_bypass_da_contencao_via_shell_reservado_por_add_cnpj(client, monkeypatc
         assert len(donos) == 0 and len(vinc) == 1, "pré-condição do shell reservado falhou"
         tenant_a_id = tenant_a.id
 
-    # (a) BYPASS: estranho reivindica o CNPJ reservado → 201 (a contenção não dispara)
+    # (a) PROTEGIDO: o estranho é barrado — a contenção vê o vínculo do contador.
     r = _register(client, email_s, CNPJ_A, "empresa")
-    assert r.status_code == 201, f"esperava bypass 201; a contenção mudou? {r.status_code} {r.text}"
-    assert str(_user(email_s).tenant_id) == str(tenant_a_id)
-    assert str(_user(email_s).role) == "admin"  # o estranho vira ADMIN do tenant reservado
-
-    # (b) SEQUESTRO + TRANCAMENTO: o titular legítimo agora é barrado pelo impostor
-    r = _register(client, email_l, CNPJ_A, "empresa")
-    assert r.status_code == 409, "o titular legítimo deveria ser barrado — impostor detém o tenant"
-
-    # co-habitação resultante: 1 dono (impostor) + 2 memberships no mesmo tenant —
-    # o contador (de add-cnpj) E o impostor (register cria auto-membership do dono).
-    # Impostor e contador passam a co-habitar o tenant reservado.
+    assert r.status_code == 409, (
+        f"o estranho deveria ser barrado; a contenção regrediu? {r.status_code} {r.text}"
+    )
     with SessionLocal() as s:
-        assert len(s.execute(select(User).where(User.tenant_id == tenant_a_id)).all()) == 1
+        # `_user` usa scalar_one() e lança quando não encontra — para asserir
+        # AUSÊNCIA, consulto direto em vez de alterar o helper, que outros testes usam.
+        assert s.execute(
+            select(User).where(User.email == email_s)
+        ).scalar_one_or_none() is None, "nenhuma conta pode ter sido criada para o estranho"
+
+    # (b) O tenant reservado segue intacto: nenhum dono, só o vínculo do contador.
+    with SessionLocal() as s:
+        assert len(s.execute(select(User).where(User.tenant_id == tenant_a_id)).all()) == 0, (
+            "o tenant reservado não pode ter ganhado dono"
+        )
         memberships = s.execute(
             select(UserTenant).where(UserTenant.tenant_id == tenant_a_id)
         ).all()
-        assert len(memberships) == 2  # contador + impostor co-habitam o tenant reservado
+        assert len(memberships) == 1, (
+            "só o vínculo do contador deve permanecer — nada de co-habitação com impostor"
+        )
+
+    # (c) O titular legítimo também não entra sozinho: o tenant está ocupado pelo
+    #     contador, e o ingresso exige fluxo autorizado (convite — a projetar).
+    #     Isto é fail-closed deliberado, não regressão: hoje o caminho do titular
+    #     é o suporte, que é o mesmo caminho do onboarding do Programa.
+    r = _register(client, email_l, CNPJ_A, "empresa")
+    assert r.status_code == 409, (
+        f"titular também passa por fluxo autorizado; recebeu {r.status_code}"
+    )

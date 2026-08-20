@@ -326,32 +326,57 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
     # Auto-create tenant from CNPJ
     if data.cnpj:
         tenant = _get_or_create_tenant_for_cnpj(db, data.cnpj, company_name)
-        # ── Contenção de isolamento (Round 10, SEC-INV-1/2) ──────────────────
+        # ── Contenção de isolamento (Round 10, SEC-INV-1/2/3) ────────────────
         # Saber um CNPJ público NÃO concede ingresso automático num tenant que já
-        # possui usuários. Reprodução dinâmica (tests/security/test_tenant_
+        # está OCUPADO. Reprodução dinâmica (tests/security/test_tenant_
         # isolation_r10.py) provou que, sem esta trava, register com CNPJ
         # preexistente nascia dentro do tenant da vítima com role=admin (leitura,
-        # escrita e operação privilegiada cross-tenant). Shell vazio (pré-
-        # provisionado por diagnóstico/founding partner) permanece reivindicável
-        # pelo 1º usuário; o ingresso de um 2º usuário exige fluxo autorizado
-        # explícito (a projetar — não é este ato). Fail-closed.
-        existing_users = (
+        # escrita e operação privilegiada cross-tenant).
+        #
+        # #626 — POR QUE CONTAR VÍNCULO, E NÃO SÓ DONO. A primeira versão desta
+        # trava contava apenas DONOS (`User.tenant_id == tenant.id`). O
+        # `/add-cnpj` cria o tenant `cnpj-<CNPJ>` com um UserTenant e ZERO donos,
+        # então a contagem dava 0 e a trava não disparava. O resultado era pior
+        # que escalada de privilégio: um estranho que soubesse o CNPJ virava
+        # `admin` do tenant reservado E o titular legítimo, ao se cadastrar
+        # depois, era barrado pelo impostor — sequestro com trancamento, pelo
+        # fluxo NORMAL do canal contador, que reserva o CNPJ do cliente antes de
+        # o cliente se cadastrar.
+        #
+        # Ocupação passa a ser "existe dono OU existe vínculo". Shell realmente
+        # vazio (0 e 0) permanece reivindicável pelo 1º usuário — é o caso do
+        # tenant criado e abandonado por transação parcial. O ingresso de um 2º
+        # usuário em tenant ocupado segue exigindo fluxo autorizado explícito
+        # (convite — a projetar). Fail-closed.
+        donos = (
             db.execute(
                 select(func.count(User.id)).where(User.tenant_id == tenant.id)
             ).scalar()
             or 0
         )
-        if existing_users > 0:
+        vinculos = (
+            db.execute(
+                select(func.count(UserTenant.id)).where(UserTenant.tenant_id == tenant.id)
+            ).scalar()
+            or 0
+        )
+        if donos > 0 or vinculos > 0:
             logger.warning(
                 "register_blocked_existing_tenant",
-                extra={"cnpj": data.cnpj, "tenant_slug": cast(str, tenant.slug)},
+                extra={
+                    "cnpj": data.cnpj,
+                    "tenant_slug": cast(str, tenant.slug),
+                    "donos": donos,
+                    "vinculos": vinculos,
+                },
             )
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
-                    "Este CNPJ já possui uma conta ativa. O ingresso de um novo "
-                    "usuário requer autorização do titular — em breve por convite. "
-                    "Se você é o responsável, use 'Esqueci minha senha' ou fale com o suporte."
+                    "Este CNPJ já está vinculado a uma conta. O ingresso de um novo "
+                    "usuário requer autorização do titular ou do contador responsável "
+                    "— em breve por convite. Se você é o responsável, use 'Esqueci "
+                    "minha senha' ou fale com o suporte."
                 ),
             )
         # Proveniência comercial (RFC-0025): captura não-bloqueante do Partner.
