@@ -162,6 +162,70 @@ test("IBSCBS_CALC: valores corretos não geram finding de cálculo", () => {
   assert.equal(result.findings.find((f) => f.rule_id === "IBSCBS_CALC"), undefined);
 });
 
+// ── #617: alíquota do grupo IBSCBS é PONTO PERCENTUAL, não fração ───────────
+//
+// Guard da correção do #617. Sob a fórmula antiga (`base × alíquota`, sem
+// dividir por 100), o primeiro caso abaixo era reprovado com FATAL — "esperado
+// R$ 900,00" para uma nota corretamente preenchida — e o terceiro passava.
+// Os números vêm do exemplo de referência do leiaute (NT 2025.002-RTC).
+
+const ntUnitXml = (pCBS: string, vCBS: string, pIBSUF: string, vIBSUF: string) => `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod></ide>
+  <emit><CNPJ>12345678000195</CNPJ></emit>
+  <det nItem="1">
+    <prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>1000.00</vProd></prod>
+    <imposto>
+      <IBSCBS>
+        <CST>000</CST>
+        <cClassTrib>000001</cClassTrib>
+        <gIBSCBS>
+          <vBC>1000.00</vBC>
+          <gIBSUF><pIBSUF>${pIBSUF}</pIBSUF><vIBSUF>${vIBSUF}</vIBSUF></gIBSUF>
+          <gIBSMun><pIBSMun>0.0000</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun>
+          <vIBS>${vIBSUF}</vIBS>
+          <gCBS><pCBS>${pCBS}</pCBS><vCBS>${vCBS}</vCBS></gCBS>
+        </gIBSCBS>
+      </IBSCBS>
+    </imposto>
+  </det>
+  <total><IBSCBSTot><vIBS>${vIBSUF}</vIBS><vCBS>${vCBS}</vCBS></IBSCBSTot></total>
+</infNFe></NFe></nfeProc>`;
+
+test("#617: nota da NT (vBC=1000, pCBS=0.9000 → vCBS=9.00) não gera finding de cálculo", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t",
+    documentType: "NFE",
+    xml: ntUnitXml("0.9000", "9.00", "0.1000", "1.00"),
+  });
+  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBS_CALC"), undefined,
+    "pCBS=0.9000 sobre vBC=1000,00 deve fechar em vCBS=9,00 (percentual, não fração)");
+  assert.equal(result.findings.find((f) => f.rule_id === "IBSCBS_UF_CALC"), undefined,
+    "pIBSUF=0.1000 sobre vBC=1000,00 deve fechar em vIBSUF=1,00");
+});
+
+test("#617: alíquota escrita como fração (pCBS=0.0090) agora é FATAL", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t",
+    documentType: "NFE",
+    xml: ntUnitXml("0.0090", "9.00", "0.0010", "1.00"),
+  });
+  const cbs = result.findings.find((f) => f.id === "F_IBSCBS_CALC_CBS");
+  assert.ok(cbs, "fração no lugar de percentual deve ser reprovada");
+  assert.equal(cbs!.severity, "FATAL");
+});
+
+test("#617: vCBS calculado sob a fórmula antiga (900,00) é reprovado", () => {
+  const result = validateXmlWithRules({
+    tenantId: "t",
+    documentType: "NFE",
+    xml: ntUnitXml("0.9000", "900.00", "0.1000", "1.00"),
+  });
+  const cbs = result.findings.find((f) => f.id === "F_IBSCBS_CALC_CBS");
+  assert.ok(cbs, "vCBS=900,00 para vBC=1000,00 a 0,9% deve ser reprovado");
+  assert.match(cbs!.title, /esperado R\$ 9,00|esperado R\$ 9\.00/);
+});
+
 // ── New rules (S7) — CEST_MISSING ───────────────────────────────────────────
 
 test("CEST_MISSING: NCM não-ST sem CEST gera ALERT (Conv. 142/2018, #275)", () => {
@@ -420,10 +484,10 @@ test("CST_VALID: NF-e com CST 999 gera FATAL (código desconhecido)", () => {
         <cClassTrib>654321</cClassTrib>
         <gIBSCBS>
           <vBC>1000.00</vBC>
-          <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-          <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+          <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+          <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
           <vIBS>1.00</vIBS>
-          <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+          <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
         </gIBSCBS>
       </IBSCBS>
     </imposto>
@@ -1193,10 +1257,10 @@ const w03Item = `<det nItem="1">
         <cClassTrib>000001</cClassTrib>
         <gIBSCBS>
           <vBC>1000.00</vBC>
-          <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-          <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+          <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+          <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
           <vIBS>1.00</vIBS>
-          <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+          <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
         </gIBSCBS>
       </IBSCBS>
     </imposto>

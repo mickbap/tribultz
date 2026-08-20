@@ -33,10 +33,10 @@ NFE_OK_XML = """\
             <cClassTrib>654321</cClassTrib>
             <gIBSCBS>
               <vBC>1000.00</vBC>
-              <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-              <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+              <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
               <vIBS>1.00</vIBS>
-              <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+              <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
             </gIBSCBS>
           </IBSCBS>
         </imposto>
@@ -66,10 +66,10 @@ NFCE_XML = """\
             <cClassTrib>123456</cClassTrib>
             <gIBSCBS>
               <vBC>50.00</vBC>
-              <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.03</vIBSUF></gIBSUF>
-              <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.03</vIBSMun></gIBSMun>
+              <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.03</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.03</vIBSMun></gIBSMun>
               <vIBS>0.05</vIBS>
-              <gCBS><pCBS>0.0090</pCBS><vCBS>0.45</vCBS></gCBS>
+              <gCBS><pCBS>0.9000</pCBS><vCBS>0.45</vCBS></gCBS>
             </gIBSCBS>
           </IBSCBS>
         </imposto>
@@ -96,10 +96,10 @@ NFE_SPLIT_ERROR_XML = """\
             <cClassTrib>654321</cClassTrib>
             <gIBSCBS>
               <vBC>1000.00</vBC>
-              <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-              <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+              <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
               <vIBS>1.50</vIBS>
-              <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+              <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
             </gIBSCBS>
           </IBSCBS>
         </imposto>
@@ -126,10 +126,10 @@ NFE_INVALID_CST_XML = """\
             <cClassTrib>654321</cClassTrib>
             <gIBSCBS>
               <vBC>1000.00</vBC>
-              <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-              <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+              <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
               <vIBS>1.00</vIBS>
-              <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+              <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
             </gIBSCBS>
           </IBSCBS>
         </imposto>
@@ -168,11 +168,11 @@ def test_parse_nfe_ok(mock_s3):
     assert result["fields"]["cst"] == "000"
     assert result["fields"]["cclasstrib"] == "654321"
     assert result["fields"]["vbc"] == "1000.00"
-    assert result["fields"]["pcbs"] == "0.0090"
+    assert result["fields"]["pcbs"] == "0.9000"  # #617: pontos percentuais
     assert result["fields"]["vcbs"] == "9.00"
-    assert result["fields"]["pibsuf"] == "0.0005"
+    assert result["fields"]["pibsuf"] == "0.0500"
     assert result["fields"]["vibsuf"] == "0.50"
-    assert result["fields"]["pibsmun"] == "0.0005"
+    assert result["fields"]["pibsmun"] == "0.0500"
     assert result["fields"]["vibsmun"] == "0.50"
     assert result["fields"]["vibs"] == "1.00"
     assert len(result["items"]) == 1
@@ -312,10 +312,10 @@ def test_validate_cst_semantic_070():
             <cClassTrib>654321</cClassTrib>
             <gIBSCBS>
               <vBC>1000.00</vBC>
-              <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-              <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+              <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
               <vIBS>1.00</vIBS>
-              <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+              <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
             </gIBSCBS>
           </IBSCBS>
         </imposto>
@@ -346,10 +346,10 @@ def test_validate_monofasico_zero_620():
             <cClassTrib>620001</cClassTrib>
             <gIBSCBS>
               <vBC>1000.00</vBC>
-              <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-              <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+              <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
               <vIBS>1.00</vIBS>
-              <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+              <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
             </gIBSCBS>
           </IBSCBS>
         </imposto>
@@ -412,10 +412,10 @@ def test_validate_cbs_calc_error():
             <cClassTrib>654321</cClassTrib>
             <gIBSCBS>
               <vBC>1000.00</vBC>
-              <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-              <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+              <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
               <vIBS>1.00</vIBS>
-              <gCBS><pCBS>0.0090</pCBS><vCBS>99.99</vCBS></gCBS>
+              <gCBS><pCBS>0.9000</pCBS><vCBS>99.99</vCBS></gCBS>
             </gIBSCBS>
           </IBSCBS>
         </imposto>
@@ -445,10 +445,10 @@ def test_validate_layout_nfe_missing_emit():
             <cClassTrib>654321</cClassTrib>
             <gIBSCBS>
               <vBC>1000.00</vBC>
-              <gIBSUF><pIBSUF>0.0005</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
-              <gIBSMun><pIBSMun>0.0005</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
+              <gIBSUF><pIBSUF>0.0500</pIBSUF><vIBSUF>0.50</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0500</pIBSMun><vIBSMun>0.50</vIBSMun></gIBSMun>
               <vIBS>1.00</vIBS>
-              <gCBS><pCBS>0.0090</pCBS><vCBS>9.00</vCBS></gCBS>
+              <gCBS><pCBS>0.9000</pCBS><vCBS>9.00</vCBS></gCBS>
             </gIBSCBS>
           </IBSCBS>
         </imposto>
@@ -479,9 +479,9 @@ def _nfe_with_indpag(ind_pag: str, vcbs: str, vibs: str, cst: str = "000") -> st
           <gIBSCBS>
             <CST>{cst}</CST><cClassTrib>100100</cClassTrib>
             <vBC>1000.00</vBC>
-            <pCBS>0.0010</pCBS><vCBS>{vcbs}</vCBS>
-            <pIBSUF>0.0040</pIBSUF><vIBSUF>{float(vibs) / 2:.2f}</vIBSUF>
-            <pIBSMun>0.0050</pIBSMun><vIBSMun>{float(vibs) / 2:.2f}</vIBSMun>
+            <pCBS>0.1000</pCBS><vCBS>{vcbs}</vCBS>
+            <pIBSUF>0.4000</pIBSUF><vIBSUF>{float(vibs) / 2:.2f}</vIBSUF>
+            <pIBSMun>0.5000</pIBSMun><vIBSMun>{float(vibs) / 2:.2f}</vIBSMun>
             <vIBS>{vibs}</vIBS>
           </gIBSCBS>
         </IBSCBS>

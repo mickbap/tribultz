@@ -207,7 +207,8 @@ class ValidateIBSCBSRulesTool(BaseTool):
             rate = _safe_float(pcbs)
             declared = _safe_float(vcbs)
             if base > 0 and rate >= 0:
-                expected = base * rate
+                # #617: pCBS/pIBSUF/pIBSMun vêm em pontos percentuais (NT 2025.002-RTC).
+                expected = base * rate / 100
                 if abs(declared - expected) > 0.01:
                     findings.append({
                         "rule_id": "IBSCBS_CALC",
@@ -216,7 +217,7 @@ class ValidateIBSCBSRulesTool(BaseTool):
                         "xpath": f"{xpath_base}//gCBS/vCBS",
                         "snippet": f"<vCBS>{vcbs}</vCBS>",
                         "recommendation": (
-                            f"vCBS deve ser vBC ({base:.2f}) x pCBS ({rate}) "
+                            f"vCBS deve ser vBC ({base:.2f}) x pCBS ({rate}%) / 100 "
                             f"= R$ {expected:.2f}. Informado: R$ {declared:.2f}."
                         ),
                     })
@@ -227,7 +228,8 @@ class ValidateIBSCBSRulesTool(BaseTool):
             rate = _safe_float(pibsuf)
             declared = _safe_float(vibsuf)
             if base > 0 and rate >= 0:
-                expected = base * rate
+                # #617: pCBS/pIBSUF/pIBSMun vêm em pontos percentuais (NT 2025.002-RTC).
+                expected = base * rate / 100
                 if abs(declared - expected) > 0.01:
                     findings.append({
                         "rule_id": "IBSCBS_UF_CALC",
@@ -236,7 +238,7 @@ class ValidateIBSCBSRulesTool(BaseTool):
                         "xpath": f"{xpath_base}//gIBSUF/vIBSUF",
                         "snippet": f"<vIBSUF>{vibsuf}</vIBSUF>",
                         "recommendation": (
-                            f"vIBSUF deve ser vBC ({base:.2f}) x pIBSUF ({rate}) "
+                            f"vIBSUF deve ser vBC ({base:.2f}) x pIBSUF ({rate}%) / 100 "
                             f"= R$ {expected:.2f}. Informado: R$ {declared:.2f}."
                         ),
                     })
@@ -247,7 +249,8 @@ class ValidateIBSCBSRulesTool(BaseTool):
             rate = _safe_float(pibsmun)
             declared = _safe_float(vibsmun)
             if base > 0 and rate >= 0:
-                expected = base * rate
+                # #617: pCBS/pIBSUF/pIBSMun vêm em pontos percentuais (NT 2025.002-RTC).
+                expected = base * rate / 100
                 if abs(declared - expected) > 0.01:
                     findings.append({
                         "rule_id": "IBSCBS_MUN_CALC",
@@ -256,7 +259,7 @@ class ValidateIBSCBSRulesTool(BaseTool):
                         "xpath": f"{xpath_base}//gIBSMun/vIBSMun",
                         "snippet": f"<vIBSMun>{vibsmun}</vIBSMun>",
                         "recommendation": (
-                            f"vIBSMun deve ser vBC ({base:.2f}) x pIBSMun ({rate}) "
+                            f"vIBSMun deve ser vBC ({base:.2f}) x pIBSMun ({rate}%) / 100 "
                             f"= R$ {expected:.2f}. Informado: R$ {declared:.2f}."
                         ),
                     })

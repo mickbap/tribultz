@@ -47,6 +47,35 @@ class Settings(BaseSettings):
     ATTIO_DEFAULT_PIPELINE: str = ""
     ATTIO_DEFAULT_STAGE: str = ""
     ATTIO_WEBHOOK_SECRET: str = ""
+
+    # ── Rumy (AI SDR — handoff comercial, Rounds 4–5 da PO-2026-07-CRM-001) ─
+    # Flags OFF por padrão e nenhum efeito externo: com RUMY_WEBHOOK_ENABLED
+    # off o endpoint /api/v1/webhooks/rumy responde 404; com
+    # HANDOFF_APPLY_ENABLED off o worker opera em shadow mode (ledger sem
+    # aplicar). Supressão real no Rumy (F5) e handoff automático seguem
+    # bloqueados. Regra fail-safe transversal: desligar qualquer flag NUNCA
+    # re-permite outbound — a permissão é conjuntiva e a proteção de pessoa
+    # (DEC-5) persiste independente de flag.
+    RUMY_WEBHOOK_ENABLED: bool = False
+    HANDOFF_APPLY_ENABLED: bool = False
+    RUMY_SUPPRESSION_ENABLED: bool = False
+    RUMY_WEBHOOK_SECRET: str = ""
+    # UUID do tenant operacional interno que recebe os handoffs (Round 4 §11:
+    # tenant é resolvido no ingest, nunca confiado ao produtor). Vazio ⇒ o
+    # endpoint responde 503 (fail-closed).
+    HANDOFF_TENANT_ID: str = ""
+    # SLAs provisórios do piloto (Rounds 6 §8 e 7 §2/DEC-6 — três relógios
+    # INDEPENDENTES, horas úteis): pausa manual no Rumy ≤ 5 min (contenção —
+    # a janela de exposição do Caminho C); HANDOFF_REQUESTED→HUMAN_OWNED ≤ 15
+    # min (ownership); HUMAN_OWNED→1ª ação substantiva ≤ 30 min (atendimento).
+    # "Assumir" não satisfaz nem o 1º nem o 3º.
+    HANDOFF_PAUSE_SLA_MINUTES: int = 5
+    HANDOFF_ACCEPT_SLA_MINUTES: int = 15
+    HANDOFF_FIRST_ACTION_SLA_MINUTES: int = 30
+    # Lista de plantão do alerta de pausa (CSV de e-mails; Round 7 §7). Nomes e
+    # canal são decisão de Produto; vazio ⇒ alerta fica só no audit/log.
+    HANDOFF_ALERT_EMAILS: str = ""
+
     # ── Security ────────────────────────────────────────────
     ALLOWED_ORIGINS: str = "http://localhost:3000,https://tribultz.com.br,https://*.vercel.app"
     ENVIRONMENT: str = "development"  # development | staging | production

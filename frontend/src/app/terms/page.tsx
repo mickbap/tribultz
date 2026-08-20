@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/terms" },
   title: "Termos de Uso",
   description: "Termos de uso da plataforma Tribultz de conformidade fiscal.",
 };

@@ -4,13 +4,20 @@ import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { WhatsAppLink } from "@/components/public/WhatsAppLink";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { RULES_COUNT, CLASSTRIB_COUNT } from "@/lib/validation/rulesMeta";
+import { TRIAL_DURATION_DAYS, TRIAL_DURATION_LABEL, TRIAL_QUOTA_LABEL, TRIAL_SUMMARY } from "@/lib/trial";
+import {
+  CLASSTRIB_TRIBUTACAO_INTEGRAL,
+  CLASSTRIB_REDUZIDO_60,
+  CLASSTRIB_CESTA_BASICA,
+} from "@/lib/validation/classtribExamples";
 import { getAllPosts } from "@/lib/blog";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/" },
   // title.template do layout raiz ("%s | Tribultz") não se aplica quando este
   // page.tsx do mesmo segmento define seu próprio title (#503) — sufixo manual.
   title: "IBS e CBS sem Rejeição de NF-e — Compliance LC 214 | Tribultz",
-  description: `Rejeição 1024 por cClassTrib errado? Penalidades CBS/IBS a partir de agosto/2026. Valide CST × cClassTrib e ${RULES_COUNT} regras de NF-e, NFC-e e NFS-e da Reforma (NT 2025.002-RTC v1.40 + NT 2026.002), calcule CBS/IBS e exporte para TOTVS/SAP/Omie/Linx. 100 créditos API grátis.`,
+  description: `Rejeição 1024 por cClassTrib errado? Penalidades CBS/IBS a partir de agosto/2026. Valide CST × cClassTrib e ${RULES_COUNT} regras de NF-e, NFC-e e NFS-e da Reforma (NT 2025.002-RTC v1.40 + NT 2026.002), calcule CBS/IBS e exporte para TOTVS/SAP/Omie/Linx.`,
   keywords: [
     "Rejeição 1024 NF-e", "cClassTrib CBS IBS", "NCM cClassTrib LC 214",
     "penalidades CBS IBS 2026", "validação NF-e reform tributária",
@@ -73,7 +80,7 @@ const JSON_LD = {
       "name": "Tribultz",
       "applicationCategory": "BusinessApplication",
       "operatingSystem": "Web",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL", "description": "100 créditos API grátis" },
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL", "description": TRIAL_SUMMARY },
       "description": "Plataforma de validação CBS/IBS e compliance para a Reforma Tributária brasileira (LC 214): cálculo CBS/IBS e validação de CST × cClassTrib.",
     },
     {
@@ -144,7 +151,7 @@ function HeroVisual() {
         {[
           { label: "CBS", value: "alíquota 8,80%", warn: false },
           { label: "IBS", value: "alíquota 17,70%", warn: false },
-          { label: "cClassTrib", value: "0010100", warn: true },
+          { label: "cClassTrib", value: CLASSTRIB_TRIBUTACAO_INTEGRAL, warn: true },
           { label: "CST", value: "000 · Tributação integral", warn: false },
         ].map((row) => (
           <div
@@ -239,7 +246,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-7 flex flex-wrap gap-5 text-sm text-[#6C757D]">
-                  {["Sem cartão de crédito", "5 validações grátis", "100 créditos API grátis"].map((t) => (
+                  {["Sem cartão de crédito", TRIAL_QUOTA_LABEL, TRIAL_DURATION_LABEL].map((t) => (
                     <span key={t} className="flex items-center gap-1.5"><Check />{t}</span>
                   ))}
                 </div>
@@ -345,9 +352,9 @@ export default function HomePage() {
                 {
                   badge: "cClassTrib · LC 214",
                   preview: [
-                    { l: "0010100 · Padrão", r: "8,80%", ok: true },
-                    { l: "0020010 · Reduzido 60%", r: "3,52%", ok: true },
-                    { l: "0030005 · Cesta básica", r: "0%", ok: true },
+                    { l: `${CLASSTRIB_TRIBUTACAO_INTEGRAL} · Padrão`, r: "8,80%", ok: true },
+                    { l: `${CLASSTRIB_REDUZIDO_60} · Reduzido 60%`, r: "3,52%", ok: true },
+                    { l: `${CLASSTRIB_CESTA_BASICA} · Cesta básica`, r: "0%", ok: true },
                   ],
                   title: "cClassTrib LC 214",
                   body: "Valide a nova classificação tributária da Reforma. Alíquotas CBS/IBS conforme a tabela oficial SVRS.",
@@ -369,10 +376,10 @@ export default function HomePage() {
                   preview: [
                     { l: "POST /classify", r: "CBS/IBS calculado", ok: true },
                     { l: "CBS 8,80% + IBS 17,70% (ref. plena)", r: "26,50%", ok: true },
-                    { l: "1 crédito / chamada", r: "100 grátis", ok: false },
+                    { l: "1 crédito / chamada", r: "planos com API", ok: false },
                   ],
                   title: "API Classify",
-                  body: "Calcule CBS/IBS direto no seu ERP via API. Classificação NCM→cClassTrib em ativação (sugestão a validar). 100 créditos grátis. Sem contrato — pague só o que usar.",
+                  body: "Calcule CBS/IBS direto no seu ERP via API. Classificação NCM→cClassTrib em ativação (sugestão a validar). Disponível nos planos com acesso à API; 100 créditos na criação da chave. Sem contrato — pague só o que usar.",
                   meta: "X-API-Key · REST · JSON",
                 },
               ].map((f) => (
@@ -521,7 +528,7 @@ export default function HomePage() {
                   Reforma chega em 2026.
                 </h2>
                 <p className="mb-8 text-lg leading-relaxed" style={{ color: "rgba(255,255,255,0.8)" }}>
-                  5 validações de cortesia, {RULES_COUNT} regras CBS/IBS, diagnóstico imediato. Sem cartão de crédito.
+                  {TRIAL_QUOTA_LABEL}, {RULES_COUNT} regras CBS/IBS, diagnóstico imediato. Sem cartão de crédito.
                 </p>
                 <div className="flex flex-wrap items-center gap-4">
                   <Link
@@ -542,7 +549,7 @@ export default function HomePage() {
                 {[
                   { n: String(RULES_COUNT), l: "Regras CBS/IBS validadas" },
                   { n: String(CLASSTRIB_COUNT), l: "Classificações cClassTrib mapeadas (SVRS)" },
-                  { n: "100", l: "Créditos API grátis" },
+                  { n: String(TRIAL_DURATION_DAYS), l: "Dias de teste, sem cartão" },
                   { n: "5 min", l: "Monitoramento contínuo" },
                 ].map((s) => (
                   <div

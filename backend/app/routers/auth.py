@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.data.trial_policy import TRIAL_DURATION_DAYS
 from app.database import get_db
 from app.models.auth import Tenant, User, UserTenant
 from app.models.founding_partner import resolve_effective_license
@@ -325,6 +326,34 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
     # Auto-create tenant from CNPJ
     if data.cnpj:
         tenant = _get_or_create_tenant_for_cnpj(db, data.cnpj, company_name)
+        # ── Contenção de isolamento (Round 10, SEC-INV-1/2) ──────────────────
+        # Saber um CNPJ público NÃO concede ingresso automático num tenant que já
+        # possui usuários. Reprodução dinâmica (tests/security/test_tenant_
+        # isolation_r10.py) provou que, sem esta trava, register com CNPJ
+        # preexistente nascia dentro do tenant da vítima com role=admin (leitura,
+        # escrita e operação privilegiada cross-tenant). Shell vazio (pré-
+        # provisionado por diagnóstico/founding partner) permanece reivindicável
+        # pelo 1º usuário; o ingresso de um 2º usuário exige fluxo autorizado
+        # explícito (a projetar — não é este ato). Fail-closed.
+        existing_users = (
+            db.execute(
+                select(func.count(User.id)).where(User.tenant_id == tenant.id)
+            ).scalar()
+            or 0
+        )
+        if existing_users > 0:
+            logger.warning(
+                "register_blocked_existing_tenant",
+                extra={"cnpj": data.cnpj, "tenant_slug": cast(str, tenant.slug)},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "Este CNPJ já possui uma conta ativa. O ingresso de um novo "
+                    "usuário requer autorização do titular — em breve por convite. "
+                    "Se você é o responsável, use 'Esqueci minha senha' ou fale com o suporte."
+                ),
+            )
         # Proveniência comercial (RFC-0025): captura não-bloqueante do Partner.
         _attach_partner_from_code(db, tenant, data.partner_code)
         # Atribuição de diagnóstico gratuito (Escopo A): captura não-bloqueante.
@@ -387,7 +416,9 @@ async def register(data: UserRegister, request: Request, db: Session = Depends(g
         user_id=user.id,
         plan_id=plan.id,
         status="trial" if is_trial else "pending",
-        trial_ends_at=now + timedelta(days=3) if is_trial else None,
+        # #635: prazo vem da política canônica, não de literal. Antes, mudar a
+        # duração do Trial exigia lembrar deste ponto além da copy e do plano.
+        trial_ends_at=now + timedelta(days=TRIAL_DURATION_DAYS) if is_trial else None,
         current_period_start=now,
         current_period_end=now + timedelta(days=30),
     )
@@ -846,6 +877,58 @@ def forgot_password(
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+def change_password(
+    data: ChangePasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Troca a senha do próprio usuário autenticado.
+
+    Existia um buraco no fluxo de onboarding: contas provisionadas pelo Command
+    Center (Founding Partners) nascem com senha DEFINIDA POR TERCEIRO — o Owner —
+    e não havia como o titular trocá-la de dentro da plataforma. A única saída era
+    sair, pedir "Esqueci minha senha" e recuperar por e-mail. Para uma consultoria
+    recebendo acesso, isso é a primeira coisa que se tenta fazer.
+
+    Exige a senha atual: sem isso, um token vazado permitiria trocar a senha e
+    tomar a conta em definitivo.
+    """
+    ip = _client_ip(request)
+    _login_limiter.check_or_raise(f"changepw:{ip}")
+
+    if len(data.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A nova senha deve ter no mínimo 8 caracteres.",
+        )
+
+    if not verify_password(data.current_password, cast(str, current_user.password_hash)):
+        logger.warning("change_password_wrong_current", extra={"user_id": str(current_user.id)})
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Senha atual incorreta.",
+        )
+
+    if verify_password(data.new_password, cast(str, current_user.password_hash)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A nova senha deve ser diferente da atual.",
+        )
+
+    current_user.password_hash = get_password_hash(data.new_password)  # type: ignore[assignment]
+    db.commit()
+
+    logger.info("password_changed", extra={"user_id": str(current_user.id)})
+    return {"status": "ok", "message": "Senha alterada."}
 
 
 @router.post("/reset-password")

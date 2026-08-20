@@ -7,6 +7,7 @@ import { DIAGNOSTICO_SCHEMA } from "@/components/seo/schemas";
 import { RULES_COUNT } from "@/lib/validation/rulesMeta";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/diagnostico" },
   title: "Diagnóstico Gratuito NF-e — Conformidade IBS/CBS 2026",
   description:
     `Valide sua NF-e, NFC-e ou NFS-e gratuitamente contra as ${RULES_COUNT} regras da NT 2025.002-RTC. ` +

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 // Dashboard autenticado (dados do tenant via /lib/api) — sem conteúdo para
 // visitante anônimo, não faz sentido indexar (#503).
 export const metadata: Metadata = {
+  alternates: { canonical: "/split-payment" },
   robots: { index: false, follow: false },
 };
 

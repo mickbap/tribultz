@@ -1,0 +1,14 @@
+<html><body style="font-family:sans-serif">
+<h2 style="color:#b91c1c">⚠ PAUSAR AUTOMAÇÃO NO RUMY — prioridade crítica</h2>
+<p>Um lead entrou em atenção humana e a cadência do Rumy precisa ser pausada <strong>manualmente</strong>.</p>
+<ul>
+  <li><strong>Lead:</strong> {{ lead_ref }}</li>
+  <li><strong>Pessoa:</strong> {{ person_display }}</li>
+  <li><strong>Campanha:</strong> {{ campaign }}</li>
+  <li><strong>Handoff em:</strong> {{ requested_at_iso }}</li>
+  <li><strong>SLA de pausa:</strong> {{ pause_sla_minutes }} minutos úteis</li>
+</ul>
+<p>Abra o painel do Rumy, pause o contato e registre a evidência no sistema
+(ação executada + instante). Sem registro, a pausa não conta.</p>
+<p style="color:#666">Supressão assistida (Caminho C) — este alerta não para o bot; quem para é você.</p>
+</body></html>

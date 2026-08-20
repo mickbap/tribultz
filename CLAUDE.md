@@ -63,21 +63,26 @@ frontend/          Next.js app (app router)
   src/components/  UI: AppShell, Sidebar, EvidenceList, JsonViewer, Toast
 
 backend/           FastAPI
-  app/routers/     29 routers (auditado 16/07/2026, +attio em 31/07/2026) — admin, attio, audit,
-                   auth, billing, calculadora, classtrib, compliance, credits, documents,
-                   exceptions, feedback, founding_partners, health, jobs, lgpd, ncm_suggest, news,
-                   public, public_api, reports, simulator, sped, split_payment, support, tasks,
-                   validate, validate_xml, validation. Chat foi descontinuado como produto
+  app/routers/     30 routers (auditado 16/07/2026, +attio em 31/07/2026, +rumy em 12/08/2026) —
+                   admin, attio, audit, auth, billing, calculadora, classtrib, compliance, credits,
+                   documents, exceptions, feedback, founding_partners, health, jobs, lgpd,
+                   ncm_suggest, news, public, public_api, reports, rumy, simulator, sped,
+                   split_payment, support, tasks, validate, validate_xml, validation. Chat foi
+                   descontinuado como produto
                    (mai/2026) e o código remanescente removido (ADR-0012, ver
                    `knowledge/decisions/` no Brain). attio expõe só o webhook inbound
                    (POST /api/v1/webhooks/attio) — o resto da integração comercial com o Attio CRM
-                   (PO-2026-07-CRM-001) vive em `app/integrations/attio/`, fora dos routers.
+                   (PO-2026-07-CRM-001) vive em `app/integrations/attio/`, fora dos routers. rumy
+                   expõe o receptor do webhook de handoff (POST /api/v1/webhooks/rumy, F2 da
+                   PO-2026-07-CRM-001; 404 com RUMY_WEBHOOK_ENABLED=false, o default — worker em
+                   shadow mode sem HANDOFF_APPLY_ENABLED).
   app/crews/       CrewAI crews — crm_engagement_crew (Produção), security_crew (Produção
                    Interna), nfe_validation_crew (Dormante). Classificação oficial e políticas em
                    `knowledge/engineering/crews.md` no Brain.
-  app/tasks/       10 tasks Celery (validate, report, simulation, reconciliation, hubspot,
+  app/tasks/       12 tasks Celery (validate, report, simulation, reconciliation, hubspot,
                    security_audit — órfã, sem beat/autodiscover, ver runbook —, billing, sped,
-                   compliance, crm)
+                   compliance, crm, rumy — inbox + escalonamento do handoff, F2/Caminho C;
+                   escalonamento registrado mas fora do beat até o round de piloto)
   app/tools/       ERP connector, HubSpot, Postgres, S3, validation
   tests/           pytest
 
@@ -101,6 +106,10 @@ docs/infra/operations_runbook.md   Arquitetura, fluxo de deploy/rollback, recupe
 
 - **Commits**: Conventional Commits — `feat(s8):`, `fix(s8):`, `docs(s8):`
 - **Branch**: uma branch por issue, PR único por issue
+- **Fechar issue pelo PR**: usar palavra-chave em **inglês** (`Closes #123`, `Fixes #123`,
+  `Resolves #123`). O GitHub não reconhece "Fecha #123" — em 17/08/2026 nove issues
+  concluídas ficaram abertas por isso, inflando a contagem de P1 e distorcendo a
+  priorização até serem fechadas à mão.
 - **Testes frontend**: `cd frontend && npm test --silent`
 - **Testes backend**: `cd backend && source .venv/bin/activate && python -m pytest tests/ -q`
 - **Lint backend**: `ruff check app/ tests/`
@@ -130,7 +139,7 @@ cd backend && source .venv/bin/activate && python -m pytest tests/ -q && ruff ch
 - **CBS**: Contribuição sobre Bens e Serviços (federal) — fase de teste 2026: **0,9%**; referência plena (regime cheio, ~2033): **8,8%**
 - **IBS**: Imposto sobre Bens e Serviços (estadual/municipal) — fase de teste 2026: **0,1%**; referência plena (regime cheio, ~2033): **17,7%** (UF + Município)
 - **Base legal**: LC 214 (reforma tributária) + LC 227 (regulamentação)
-- **35 regras determinísticas** no engine mock (`frontend/src/lib/validation/xmlRules.ts`, fonte canônica `RULES_COUNT`; 37 ruleIds − 2 placeholders), cobrindo NT 2025.002-RTC v1.40 + NT 2026.002 v1.00 (NF-e/NFC-e — DANFE Simplificado Tipo 2/tpImp=6, regra `DANFE_SIMPLIFICADO_RESTRICAO`, Rejeições 706/707/708/715, e `DANFE_SIMPLIFICADO_CFOP` — allowlist de CFOP, Rejeição 725/regra I08-150, #482 — diff estrutural em `docs/nt2026002_nt2026003_diff.md`, #405) **e** NT 007/2026 SE/CGNFS-e (NFS-e — `INDZFMALC_CBS_ZERO`, `PIS_COFINS_DEVIDO_NEGATIVO`, #406; `PIS_COFINS_DEVIDO_CALC` — vPis/vCofins = base × alíquota, fórmula oficial confirmada via grupo `piscofins` (vBCPisCofins/pAliqPis/pAliqCofins), #480) + **regras de enrichment backend-only** que dependem da tabela SVRS (cClassTrib × CST = **Rejeição 1024**, alíquota zero/absoluta, cClassTrib × modelo de DFe, cCredPres, subgrupos do regime monofásico de combustíveis — grupo UB84/gIBSCBSMono, NT 2025.002 v1.50, regra `MONOFASICO_GRUPO_UB` — cobertura parcial: checagem estrutural de presença, não valida os valores de ad rem, #404). Catálogo de rejeições da NT v1.40 coberto, citando códigos oficiais (1024, 1099, 1106, 1110, 1118, 1119, 1192, 1218, C22-20…). Evidência auditável no formato Findings/Evidence v1.1
+- **35 regras determinísticas** no engine mock (`frontend/src/lib/validation/xmlRules.ts`, fonte canônica `RULES_COUNT`; 37 ruleIds − 2 placeholders), cobrindo NT 2025.002-RTC v1.40 + NT 2026.002 v1.00 (NF-e/NFC-e — DANFE Simplificado Tipo 2/tpImp=6, regra `DANFE_SIMPLIFICADO_RESTRICAO`, Rejeições 706/707/708/715, e `DANFE_SIMPLIFICADO_CFOP` — allowlist de CFOP, Rejeição 725/regra I08-150, #482 — diff estrutural em `docs/nt2026002_nt2026003_diff.md`, #405) **e** NT 007/2026 SE/CGNFS-e (NFS-e — `INDZFMALC_CBS_ZERO`, `PIS_COFINS_DEVIDO_NEGATIVO`, #406; `PIS_COFINS_DEVIDO_CALC` — vPis/vCofins = base × alíquota, fórmula oficial confirmada via grupo `piscofins` (vBCPisCofins/pAliqPis/pAliqCofins), #480) + **regras de enrichment backend-only** que dependem da tabela SVRS (cClassTrib × CST = **Rejeição 1024**, alíquota zero/absoluta, cClassTrib × modelo de DFe, cCredPres, subgrupos do regime monofásico de combustíveis — grupo UB84/gIBSCBSMono, NT 2025.002 v1.50: `MONOFASICO_GRUPO_UB` (presença do subgrupo exigido pelo indicador do cClassTrib, #404) e `MONOFASICO_AD_REM` (valor = quantidade × alíquota ad rem, em R$/unidade — **sem** divisão por 100, #478). **Ainda fora**: qual indicador dispara o subgrupo padrão (`gMono`/`gMonoPadrao`) — sem confirmação em fonte verificável — e o diferimento `gMonoDif`, que usa percentual e não ad rem). Catálogo de rejeições da NT v1.40 coberto, citando códigos oficiais (1024, 1099, 1106, 1110, 1118, 1119, 1192, 1218, C22-20…). Evidência auditável no formato Findings/Evidence v1.1
 - **Tabela cClassTrib oficial** (`backend/app/data/classtrib.json`, fonte SVRS pública): 164 códigos, re-sincronizada diariamente via workflow `classtrib-sync` (cresce com frequência — sem re-sync, o motor decai). `CLASSTRIB_COUNT` em `rulesMeta.ts`.
 - **Vocabulário fiscal**: CEST, ClassTrib, IBS, CBS, Nota Nacional, ISS, ICMS, Split Payment, Cashback
 

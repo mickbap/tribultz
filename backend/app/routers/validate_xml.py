@@ -353,6 +353,35 @@ _DEVOLUCAO_DFEREF_DATE = "2026-09-01"
 # WARNING (#404).
 _MONOFASICO_GRUPO_UB_DATE = "2027-01-04"
 
+# Tolerância do confronto de valores ad rem, em reais. Mesma do restante do motor
+# (_calc_check, PIS/COFINS): a NT admite R$ 0,01 de diferença por arredondamento.
+_MONOFASICO_AD_REM_TOL = 0.01
+
+# Triplas (quantidade, alíquota ad rem, valor) conferidas em UB84 — #478.
+#
+# Ad rem é R$ POR UNIDADE, não percentual: `valor = quantidade × ad rem`, SEM
+# dividir por 100. É a armadilha inversa da do #617, onde pCBS/pIBSUF eram
+# percentuais e o motor tratava como fração. Quem for "uniformizar" os dois
+# cálculos depois vai querer acrescentar /100 aqui — não acrescente; o teste
+# `test_ad_rem_nao_divide_por_cem` existe para barrar isso.
+#
+# O subgrupo padrão aparece como `gMono` numa fonte e `gMonoPadrao` noutra, e a
+# numeração de leiaute diverge entre fontes (UB90 vs UB91 para gMonoReten). Por
+# isso a regra NÃO afirma qual subgrupo é obrigatório — isso é o gap ainda
+# bloqueado do #478 — e apenas confere a aritmética onde os campos existirem.
+# Assim ela é correta sob qualquer das leituras.
+_MONOFASICO_AD_REM_TRIPLAS: list[tuple[str, str, str, str]] = [
+    ("qBCMono", "adRemIBS", "vIBSMono", "IBS monofásico"),
+    ("qBCMono", "adRemCBS", "vCBSMono", "CBS monofásica"),
+    ("qBCMonoReten", "adRemIBSReten", "vIBSMonoReten", "IBS monofásico retido"),
+    ("qBCMonoReten", "adRemCBSReten", "vCBSMonoReten", "CBS monofásica retida"),
+    ("qBCMonoRet", "adRemIBSRet", "vIBSMonoRet", "IBS monofásico retido anteriormente"),
+    ("qBCMonoRet", "adRemCBSRet", "vCBSMonoRet", "CBS monofásica retida anteriormente"),
+]
+# gMonoDif fica FORA: o diferimento usa percentual (pDifIBS/pDifCBS) sobre valor,
+# não ad rem sobre quantidade — semântica diferente, e a base sobre a qual o
+# percentual incide não foi confirmada em fonte verificável.
+
 # ── DANFE Simplificado Tipo 2 (tpImp=6) — NT 2026.002 v1.00, fase 2 ────────────
 # A partir de 03/08/2026 (produção), a NF-e (modelo 55) emitida com tpImp=6 (Ajuste
 # SINIEF 13/2026) só é admitida em operações de saída, internas, sem referência a
@@ -557,7 +586,22 @@ def validate_xml(
 
     # ── Rule 7: IBSCBS_CALC — CBS ───────────────────────────────────────────
 
-    def _calc_check(tag_base: Any, tag_rate: Any, tag_val: Any, label: str, fid: str) -> None:
+    def _calc_check(
+        tag_base: Any, tag_rate: Any, tag_val: Any, label: str, fid: str,
+        *, rate_is_percent: bool = False,
+    ) -> None:
+        """Confere valor declarado contra base × alíquota.
+
+        `rate_is_percent=True` para o grupo IBSCBS da NF-e/NFC-e, onde
+        pCBS/pIBSUF/pIBSMun são declarados em PONTOS PERCENTUAIS (leiaute 3v2-4
+        da NT 2025.002-RTC): pCBS=0.9000 é 0,9%, logo vBC=1000,00 → vCBS=9,00.
+        #617: sem a divisão, o esperado saía 100× maior e reprovava com FATAL
+        toda nota corretamente preenchida.
+
+        O caminho legado de NFS-e (AliquotaCBS/AliquotaIBS, NT 007/2026) usa
+        outras tags e permanece com `rate_is_percent=False` — a convenção
+        daquele leiaute não foi verificada neste trabalho.
+        """
         if not (tag_base and tag_rate and tag_val):
             return
         try:
@@ -566,7 +610,7 @@ def validate_xml(
             declared = float(tag_val["value"])
         except (ValueError, TypeError):
             return
-        expected = base * rate
+        expected = (base * rate / 100) if rate_is_percent else (base * rate)
         if abs(declared - expected) > 0.01:
             ev_id = f"E_XML_{fid}"
             _add(
@@ -575,7 +619,7 @@ def validate_xml(
             )
 
     if has_ibscbs:
-        _calc_check(vbc, p_cbs, v_cbs, "CBS", "IBSCBS_CALC_CBS")
+        _calc_check(vbc, p_cbs, v_cbs, "CBS", "IBSCBS_CALC_CBS", rate_is_percent=True)
     else:
         _calc_check(base_calculo, aliq_cbs, valor_cbs, "CBS", "IBSCBS_CALC_CBS")
         _calc_check(base_calculo, aliq_ibs, valor_ibs, "IBS", "IBSCBS_CALC_IBS")
@@ -684,8 +728,8 @@ def validate_xml(
     # ── Rules 11-13: IBS split (NF-e only) ──────────────────────────────────
 
     if has_ibscbs:
-        _calc_check(vbc, p_ibs_uf, v_ibs_uf, "IBS UF", "IBSCBS_UF_CALC")
-        _calc_check(vbc, p_ibs_mun, v_ibs_mun, "IBS Municipal", "IBSCBS_MUN_CALC")
+        _calc_check(vbc, p_ibs_uf, v_ibs_uf, "IBS UF", "IBSCBS_UF_CALC", rate_is_percent=True)
+        _calc_check(vbc, p_ibs_mun, v_ibs_mun, "IBS Municipal", "IBSCBS_MUN_CALC", rate_is_percent=True)
 
         # Split check: vIBS == vIBSUF + vIBSMun
         if v_ibs and v_ibs_uf and v_ibs_mun:
@@ -1044,6 +1088,43 @@ def validate_xml(
                         Evidence(id=ev_id, type="xml", label=f"cClassTrib exige {_group} (regra {_validacao})", xpath=_xpath("IBSCBS", doc_type), snippet=c_class_trib["snippet"]),
                     )
 
+    # ── Rule: MONOFASICO_AD_REM — valor ad rem confere com quantidade × alíquota (#478) ──
+    # Complemento da MONOFASICO_GRUPO_UB, que só checava PRESENÇA do subgrupo. Aqui o
+    # conteúdo é conferido: onde a tripla (quantidade, ad rem, valor) existir, o produto
+    # tem de fechar. Independe de saber qual subgrupo é obrigatório — esse gap segue
+    # aberto por falta de fonte, e esta regra não depende dele.
+    if has_ibscbs and ibscbs_block:
+        _ad_em_date = emission_date["value"][:10] if emission_date else ""
+        _ad_vigente = bool(re.match(r"^\d{4}-\d{2}-\d{2}$", _ad_em_date)) and _ad_em_date >= _MONOFASICO_GRUPO_UB_DATE
+        _ad_sev = "FATAL" if (_ad_vigente and not pedagogical_mode) else "WARNING"
+        for _q_tag, _ad_tag, _v_tag, _rotulo in _MONOFASICO_AD_REM_TRIPLAS:
+            _q = _first_tag(ibscbs_block["snippet"], [_q_tag])
+            _ad = _first_tag(ibscbs_block["snippet"], [_ad_tag])
+            _v = _first_tag(ibscbs_block["snippet"], [_v_tag])
+            if not (_q and _ad and _v):
+                continue
+            _qv, _adv, _vv = _to_float(_q["value"]), _to_float(_ad["value"]), _to_float(_v["value"])
+            _esperado = _qv * _adv  # ad rem: R$/unidade — sem /100 (ver constante)
+            if abs(_vv - _esperado) <= _MONOFASICO_AD_REM_TOL:
+                continue
+            ev_id = f"E_XML_MONOFASICO_AD_REM_{_v_tag.upper()}"
+            _add(
+                Finding(
+                    id=f"F_MONOFASICO_AD_REM_{_v_tag.upper()}", severity=_ad_sev, rule_id="MONOFASICO_AD_REM",
+                    title=f"{_rotulo} incorreto — R$ {_vv:.2f} vs esperado R$ {_esperado:.2f}",
+                    where=FindingWhere(field=_v_tag, xpath=_xpath(_v_tag, doc_type), snippet=_v["snippet"]),
+                    recommendation=(
+                        f"No regime monofásico, {_v_tag} = {_q_tag} ({_qv:g}) × {_ad_tag} (R$ {_adv:g}) "
+                        f"= R$ {_esperado:.2f}. A alíquota ad rem é um valor em reais POR UNIDADE, "
+                        "não um percentual — não se divide por 100. Tolerância de R$ 0,01 "
+                        "(NT 2025.002 v1.50, regime monofásico de combustíveis). Implantação em "
+                        "produção a partir de 04/01/2027 (antes disso, antecipação)."
+                    ),
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml", label=f"{_rotulo} — cálculo ad rem divergente", xpath=_xpath(_v_tag, doc_type), snippet=_v["snippet"]),
+            )
+
     # ── Rule 19: ALIQUOTA_CLASSTRIB — alíquota-zero coerente com o cClassTrib (#278) ──
     # Slice de alíquota-zero (independente das alíquotas de referência 2026, que ainda
     # têm ambiguidade — #315): se o cClassTrib é isento/imune (CST 400/410) ou tem
@@ -1100,7 +1181,8 @@ def validate_xml(
             _expa = classtrib_expected_aliquota_2026(c_class_trib["value"])
             if _expa is not None:
                 _exp_cbs, _exp_ibs = _expa
-                _TOL2 = 0.0001  # ±0,01 ponto percentual
+                # Esperado e declarado estão ambos em PONTOS PERCENTUAIS (#617).
+                _TOL2 = 0.01  # ±0,01 ponto percentual
                 _pcbs2 = _to_float(p_cbs["value"]) if p_cbs else None
                 _pibs2 = (
                     (_to_float(p_ibs_uf["value"]) if p_ibs_uf else 0.0)
@@ -1115,7 +1197,7 @@ def validate_xml(
                             where=FindingWhere(field="pCBS", xpath=_xpath("pCBS", doc_type), snippet=p_cbs["snippet"] if p_cbs else None),
                             recommendation=(
                                 f'Para o cClassTrib {c_class_trib["value"]}, a CBS esperada em 2026 é '
-                                f'{round(_exp_cbs * 100, 4)}% (0,9% × (1 − redução oficial SVRS)). Verifique a alíquota '
+                                f'{round(_exp_cbs, 4)}% (0,9% × (1 − redução oficial SVRS)). Verifique a alíquota '
                                 "declarada — exceto em regime monofásico/específico, onde a derivação não se aplica."
                             ),
                             evidence_ids=[ev_id],
@@ -1131,7 +1213,7 @@ def validate_xml(
                             where=FindingWhere(field="pIBS", xpath=_xpath("pIBSUF", doc_type), snippet=p_ibs_uf["snippet"] if p_ibs_uf else None),
                             recommendation=(
                                 f'Para o cClassTrib {c_class_trib["value"]}, o IBS total esperado em 2026 é '
-                                f'{round(_exp_ibs * 100, 4)}% (0,1% × (1 − redução oficial SVRS)). Verifique a alíquota '
+                                f'{round(_exp_ibs, 4)}% (0,1% × (1 − redução oficial SVRS)). Verifique a alíquota '
                                 "declarada — exceto em regime monofásico/específico, onde a derivação não se aplica."
                             ),
                             evidence_ids=[ev_id],
@@ -1712,7 +1794,7 @@ async def validate_xml_endpoint(
         },
     )
 
-    increment_usage(db, current_user.id, current_user.tenant_id, "validations")
+    increment_usage(db, current_user, "validations")
     db.commit()
 
 
@@ -1812,7 +1894,7 @@ async def correct_xml_endpoint(
         },
     )
     db.add(doc)
-    increment_usage(db, current_user.id, current_user.tenant_id, "validations")
+    increment_usage(db, current_user, "validations")
     db.commit()
     db.refresh(doc)
 

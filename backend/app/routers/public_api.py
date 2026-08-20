@@ -22,6 +22,7 @@ from app.api.deps import get_current_user
 from app.data.ncm_codes import is_valid_ncm
 from app.data.ncm_cclasstrib_table import resolve_cclasstrib
 from app.data.uf_rates import VALID_UF_CODES
+from app.api.plan_gate import _get_effective_plan
 from app.database import get_db
 from app.models.api_key import ApiKey
 from app.models.auth import User
@@ -237,13 +238,26 @@ def list_api_keys(
     "/api/v1/api-keys",
     response_model=ApiKeyCreateResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Criar nova API Key (100 créditos grátis)",
+    summary="Criar nova API Key (requer plano com acesso à API)",
 )
 def create_api_key(
     payload: ApiKeyCreateRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiKeyCreateResponse:
+    # #635, item 4 da régua: "API indisponível no Trial". O plano `trial` já
+    # trazia has_api_access=FALSE desde o seed original, mas ESTE endpoint nunca
+    # consultou a flag — bastava estar autenticado para emitir chave e receber
+    # 100 créditos. A decisão de Produto de 16/08 é explícita (`trial.api =
+    # false`); o gate faltava.
+    _plan = _get_effective_plan(db, current_user)
+    if _plan is None or not bool(_plan.has_api_access):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso à API não está disponível no seu plano. Faça upgrade para continuar.",
+            headers={"X-Upgrade-Required": "true"},
+        )
+
     existing = db.execute(
         select(ApiKey).where(ApiKey.user_id == current_user.id, ApiKey.is_active.is_(True))
     ).scalars().all()

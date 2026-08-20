@@ -6,6 +6,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { CALCULADORA_SCHEMA } from "@/components/seo/schemas";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/calculadora" },
   title: "Calculadora CBS/IBS — Calcule NCM → cClassTrib + Alíquotas LC 214",
   description:
     "Calcule CBS e IBS por NCM e UF gratuitamente. Alíquotas LC 214 atualizadas, " +

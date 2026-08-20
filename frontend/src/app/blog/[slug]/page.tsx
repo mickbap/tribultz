@@ -7,6 +7,7 @@ import { getAllSlugs, getPostBySlug } from "@/lib/blog";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { FundamentacaoLegal } from "@/components/seo/FundamentacaoLegal";
 import { articleSchema, breadcrumbsSchema, personSchema } from "@/components/seo/schemas";
+import { formatPostDate } from "@/lib/formatPostDate";
 
 const SITE_URL = "https://tribultz.com.br";
 
@@ -108,11 +109,7 @@ export default async function BlogPostPage({
               </div>
               <span>·</span>
               <time dateTime={post.publishedAt}>
-                {new Date(post.publishedAt + "T00:00:00").toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                })}
+                {formatPostDate(post.publishedAt)}
               </time>
               <span>·</span>
               <span>{post.readingTime} min de leitura</span>

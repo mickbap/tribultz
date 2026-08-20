@@ -8,6 +8,8 @@
  */
 
 import { Classifier } from "./Classifier";
+import { CLASSTRIB_CESTA_BASICA } from "@/lib/validation/classtribExamples";
+import { CONFIANCA_ALTA_PCT, CONFIANCA_MINIMA_PCT, REGUA_CONFIANCA } from "@/lib/validation/confianca";
 import { FundamentacaoLegal } from "@/components/seo/FundamentacaoLegal";
 import { RULES_COUNT } from "@/lib/validation/rulesMeta";
 
@@ -22,11 +24,11 @@ const FAQ = [
   },
   {
     q: "Como funciona a classificação automática NCM → cClassTrib?",
-    a: "Nossa IA analisa a descrição do produto e sugere o NCM mais adequado conforme a TIPI (Decreto 11.158/2022). A partir do capítulo NCM, mapeamos o cClassTrib conforme a tabela oficial da SVRS (NT 2025.002-RTC v1.40). O resultado inclui um indicador de confiança — valores abaixo de 70% devem ser confirmados com o contador.",
+    a: `Nossa IA analisa a descrição do produto e sugere o NCM mais adequado conforme a TIPI (Decreto 11.158/2022). A partir do capítulo NCM, mapeamos o cClassTrib conforme a tabela oficial da SVRS (NT 2025.002-RTC v1.40). O resultado inclui um indicador de confiança — valores abaixo de ${CONFIANCA_MINIMA_PCT}% devem ser confirmados com o contador.`,
   },
   {
     q: "Posso usar o NCM sugerido diretamente na NF-e?",
-    a: `O NCM sugerido é referência baseada em IA para agilizar a classificação. Confiança acima de 85% indica alta probabilidade de acerto, mas recomendamos sempre validar com o contador responsável pelo SPED antes de usar em produção. A Tribultz oferece validação completa das ${RULES_COUNT} regras CBS/IBS para confirmação.`,
+    a: `O NCM sugerido é referência baseada em IA para agilizar a classificação. Confiança acima de ${CONFIANCA_ALTA_PCT}% indica alta probabilidade de acerto, mas recomendamos sempre validar com o contador responsável pelo SPED antes de usar em produção. A Tribultz oferece validação completa das ${RULES_COUNT} regras CBS/IBS para confirmação.`,
   },
   {
     q: "Qual a diferença entre NCM e cClassTrib?",
@@ -146,24 +148,20 @@ export default function ClassificacaoPage() {
                   <tr className="border-t border-slate-100">
                     <td className="px-4 py-2 font-mono">1-3</td>
                     <td className="px-4 py-2">Espelha o CST do item (vínculo obrigatório)</td>
-                    <td className="px-4 py-2 font-mono">000, 001, 002, 070, 200, 410, 510, 620…</td>
+                    <td className="px-4 py-2 font-mono">000, 011, 200, 400, 410, 510, 620…</td>
                   </tr>
                   <tr className="border-t border-slate-100">
-                    <td className="px-4 py-2 font-mono">4-5</td>
-                    <td className="px-4 py-2">Anexo da LC 214 que rege o item</td>
-                    <td className="px-4 py-2 font-mono">10 (cesta básica), 20 (reduzido), 34 (saúde)…</td>
-                  </tr>
-                  <tr className="border-t border-slate-100">
-                    <td className="px-4 py-2 font-mono">6-7</td>
-                    <td className="px-4 py-2">Subclassificação dentro do anexo</td>
-                    <td className="px-4 py-2 font-mono">01, 02, 99…</td>
+                    <td className="px-4 py-2 font-mono">4-6</td>
+                    <td className="px-4 py-2">Sequencial da situação tributária dentro daquele CST</td>
+                    <td className="px-4 py-2 font-mono">001, 002, 003…</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p className="mt-3 text-sm text-slate-600">
-              Exemplo: <code className="rounded bg-slate-100 px-1 font-mono">2000340</code> indica
-              CST 200 (diferimento) + Anexo 03 (saúde) + subclassificação 40.
+              Exemplo: <code className="rounded bg-slate-100 px-1 font-mono">{CLASSTRIB_CESTA_BASICA}</code> indica
+              CST 200 (alíquota reduzida) + sequencial 003 — na tabela oficial SVRS, vendas de
+              produtos destinados à alimentação humana relacionados no Anexo I da LC 214/2025.
               Se o CST do item for diferente de 200, a nota é rejeitada (1024).
             </p>
           </div>
@@ -222,9 +220,34 @@ export default function ClassificacaoPage() {
             </ul>
             <p className="mt-3 text-slate-700">
               O resultado é entregue com indicador de confiança e link direto para a calculadora
-              CBS/IBS. Para casos críticos (confiança &lt; 70%, regimes especiais, exportação),
+              CBS/IBS. Para casos críticos (confiança &lt; {CONFIANCA_MINIMA_PCT}%, regimes especiais, exportação),
               recomendamos validação manual antes de transmitir a NF-e.
             </p>
+
+            {/* #660: régua visível, derivada da fonte única. Antes os limiares só
+                apareciam soltos em resposta de FAQ — quem lia a página não tinha
+                onde consultar o que cada faixa significa. */}
+            <div className="mt-5 overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full text-sm">
+                <caption className="px-4 pt-3 text-left text-sm font-semibold text-slate-900">
+                  Como ler o indicador de confiança
+                </caption>
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th scope="col" className="px-4 py-2 text-left font-semibold text-slate-700">Confiança</th>
+                    <th scope="col" className="px-4 py-2 text-left font-semibold text-slate-700">O que fazer</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {REGUA_CONFIANCA.map((f) => (
+                    <tr key={f.faixa} className="border-t border-slate-100">
+                      <td className="whitespace-nowrap px-4 py-2 font-mono">{f.rotulo}</td>
+                      <td className="px-4 py-2 text-slate-700">{f.acao}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>

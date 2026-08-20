@@ -5,6 +5,7 @@ import { PublicNavbar } from "@/components/public/PublicNavbar";
 import { NewsFeed } from "@/components/public/NewsFeed";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/changelog" },
   title: "Changelog",
   description: "Novidades e atualizações da plataforma Tribultz de conformidade fiscal.",
 };
@@ -24,8 +25,8 @@ export default function ChangelogPage() {
               Changelog do produto
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-              Este painel carrega as últimas entradas publicadas pelo endpoint
-              `GET /api/v1/news`, sem depender do JSON estatico anterior.
+              Novidades, melhorias e correções da plataforma — publicadas conforme
+              chegam para os clientes.
             </p>
           </div>
         </section>

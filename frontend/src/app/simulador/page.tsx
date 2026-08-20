@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 export const metadata: Metadata = {
+  alternates: { canonical: "/simulador" },
   title: "Simulador de Impacto CBS/IBS — Reforma Tributária 2026",
   description:
     "Compare sua carga tributária atual (ICMS + PIS/COFINS + ISS) com o novo regime CBS/IBS. Simule o impacto da Reforma Tributária por regime e setor. Gratuito.",

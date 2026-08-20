@@ -79,6 +79,12 @@ def classtrib_dfe_allowed(code: str) -> list[str] | None:
 def classtrib_expected_aliquota_2026(code: str) -> tuple[float, float] | None:
     """(pCBS, pIBS_total) esperados para o cClassTrib na fase de teste 2026 — #278 fase 2.
 
+    Retorna **pontos percentuais** (CBS 0,9 / IBS 0,1), a mesma unidade em que o XML
+    declara pCBS/pIBSUF/pIBSMun no grupo IBSCBS (leiaute 3v2-4 da NT 2025.002-RTC) —
+    o único consumidor compara diretamente contra esses campos. #617: devolver fração
+    (0,009) fazia a comparação acusar divergência em toda nota correta, somando um
+    ALERT falso ao FATAL do cálculo.
+
     Deriva da redução oficial × alíquota de referência de 2026 (CBS 0,9% / IBS 0,1%, #315):
         esperado = base × (1 − redução/100).
     Retorna None para códigos zero-rate (cobertos pela fase 1, que é FATAL) ou desconhecidos.
@@ -93,8 +99,8 @@ def classtrib_expected_aliquota_2026(code: str) -> tuple[float, float] | None:
     red_ibs = float(item.get("reduction_ibs_pct", 0) or 0)
     if cst in _ZERO_CSTS or red_cbs >= 100 or red_ibs >= 100:
         return None
-    exp_cbs = float(CBS_TESTE_2026) * (1 - red_cbs / 100)
-    exp_ibs = float(IBS_TESTE_2026_TOTAL) * (1 - red_ibs / 100)
+    exp_cbs = _CBS_2026 * (1 - red_cbs / 100)
+    exp_ibs = _IBS_2026 * (1 - red_ibs / 100)
     return round(exp_cbs, 6), round(exp_ibs, 6)
 
 

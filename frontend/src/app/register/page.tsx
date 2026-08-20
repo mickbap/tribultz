@@ -6,6 +6,7 @@ import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Toast } from "@/components/common/Toast";
 import { registerWithApi } from "@/lib/api";
 import { track } from "@/lib/analytics";
+import { TRIAL_DURATION_LABEL, TRIAL_FEATURE_LIST } from "@/lib/trial";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -15,8 +16,8 @@ const PLANS: { slug: PlanSlug; name: string; price: string; features: string[]; 
   {
     slug: "trial",
     name: "Trial",
-    price: "Grátis por 3 dias",
-    features: ["5 validações", "Download TXT", "Sem dashboard", "Sem suporte"],
+    price: TRIAL_DURATION_LABEL,
+    features: TRIAL_FEATURE_LIST,
   },
   {
     slug: "starter",

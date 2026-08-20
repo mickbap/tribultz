@@ -3,14 +3,21 @@
 
 Disparado pelo workflow `.github/workflows/publish-news.yml` em todo push para main.
 
+Regime OPT-IN ESTRITO (16/08/2026, contenção do incidente de exposição — Lote 0
+da ordem QA→Techlead). Antes, a ausência da seção `## Changelog público` no PR
+fazia o script publicar o primeiro parágrafo do body INTERNO do PR — todo merge
+feat/fix/security em `main` virava entrada pública com conteúdo de processo.
+Agora **só publica com a seção declarada explicitamente**; não há fallback.
+
 Lógica:
 1. Lê o commit em $COMMIT_SHA via `git show`
 2. Se for revert / merge sem mensagem útil → ignora
 3. Identifica o tipo (feat/fix/security) — só esses três viram news
 4. Tenta extrair o número do PR (#N) e busca o body do PR via `gh`
 5. Se o PR tem label `no-changelog` → pula
-6. Se o PR body tem seção `## Changelog público` → usa como description (override)
-7. Caso contrário, monta description automaticamente
+6. Se (e somente se) o PR body tem seção `## Changelog público` → publica essa
+   seção como description. Sem a seção (ou sem PR/sem body) → `[skip]`, exit 0
+7. Denylist de termos internos sobre título+descrição → aborta (exit 1) se casar
 8. POST `/api/v1/news` com Bearer token
 
 Variáveis de ambiente:
@@ -35,16 +42,88 @@ CONVENTIONAL_PREFIX_RE = re.compile(
     r"(?:\((?P<scope>[^)]+)\))?:\s*(?P<subject>.+)$"
 )
 PR_NUMBER_RE = re.compile(r"#(\d+)")
+# Squash merge do GitHub acrescenta " (#N)" ao FIM do assunto.
+SQUASH_PR_RE = re.compile(r"\(#(\d+)\)\s*$")
+# Fronteira da seção: para no PRÓXIMO heading de qualquer nível, numa regra
+# horizontal, ou no fim do texto. Antes parava só em `\n##` — então o rodapé
+# do bot, que vem depois sem heading nenhum, entrava na descrição publicada.
 PUBLIC_CHANGELOG_RE = re.compile(
-    r"##\s*Changelog\s+p[úu]blico\s*\n+(.+?)(?=\n##|\Z)",
+    r"##\s*Changelog\s+p[úu]blico\s*\n+(.+?)(?=\n#{1,6}\s|\n\s*(?:---|\*\*\*|___)\s*\n|\Z)",
     re.IGNORECASE | re.DOTALL,
 )
+
+# Linhas de rodapé que ferramentas acrescentam ao corpo do PR e que não são
+# conteúdo do autor. Cortam a seção a partir delas.
+TRAILER_RE = re.compile(
+    r"^\s*(?:🤖\s*Generated with|Co-[Aa]uthored-[Bb]y:|Generated with \[Claude).*$",
+    re.MULTILINE,
+)
+
+# Marcas que denunciam extração errada: se sobraram, o que foi capturado não é
+# prosa para cliente. Em vez de continuar enumerando o que remover — que foi o
+# ciclo de quatro defeitos deste script —, a saída passa a ter de PARECER texto
+# de cliente, e o que não parecer aborta.
+ARTEFATOS_DE_MARKDOWN = [
+    ("```", "cerca de bloco de código"),
+    ("~~~", "cerca de bloco de código"),
+    ("<!--", "comentário HTML"),
+    ("claude.com/claude-code", "rodapé de ferramenta"),
+    ("| ---", "tabela markdown"),
+    ("|---", "tabela markdown"),
+]
+PUBLIC_TITLE_RE = re.compile(r"^\s*T[íi]tulo:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 PUBLISHABLE_TYPES = {"feat", "fix", "security"}
 TYPE_TO_CATEGORY = {
     "feat": "Feature",
     "fix": "Fix",
     "security": "Security",
 }
+
+# Rede de segurança ATRÁS do opt-in (L0.2): mesmo com a seção `## Changelog
+# público` declarada, vocabulário de processo interno não sai daqui. Casar
+# qualquer padrão aborta a publicação com exit 1 — falhar o workflow é o lado
+# seguro: o autor reescreve a seção em linguagem de cliente e re-dispara.
+INTERNAL_TERM_PATTERNS: list[str] = [
+    r"\bdeploys?\b",
+    r"\bbranch(?:es)?\b",
+    r"\bmigrations?\b",
+    r"\balembic\b",
+    r"\bssh\b",
+    r"\bredis\b",
+    r"\bcelery\b",
+    r"\bworkers?\b",
+    r"\bbeat\b",
+    r"\brounds?\s*\d+\b",
+    r"\bgates?\b",
+    r"\bPR\s*#?\s*\d+\b",
+    r"\bmain\b",
+    r"\bmagalu\b",
+    r"\btribultz-(?:api|vm|db)\b",
+    r"\bdocker\b",
+    r"\bcompose\b",
+    r"\bpytest\b",
+    r"\bruff\b",
+    r"\bstaging\b",
+    r"\brollbacks?\b",
+    r"\bhotfix\b",
+    r"\bworktree\b",
+]
+INTERNAL_TERM_RE = [re.compile(p, re.IGNORECASE) for p in INTERNAL_TERM_PATTERNS]
+
+
+CODE_FENCE_RE = re.compile(r"^[ \t]*(```|~~~).*?^[ \t]*\1[ \t]*$", re.MULTILINE | re.DOTALL)
+
+
+def strip_code_fences(text: str) -> str:
+    """Remove blocos de código cercados antes de procurar a seção pública.
+
+    Um PR que DOCUMENTA a sintaxe da seção — mostrando `## Changelog público`
+    dentro de um bloco de exemplo — não está declarando nada; está explicando.
+    Sem esta limpeza, o exemplo virava a publicação: foi o que aconteceu no
+    #649, cujo corpo trazia o exemplo do recurso recém-criado e acabou
+    publicando o texto de demonstração no feed do cliente.
+    """
+    return CODE_FENCE_RE.sub("", text or "")
 
 
 def run(cmd: list[str], **kwargs) -> str:
@@ -102,11 +181,68 @@ def extract_public_changelog(pr_body: str) -> Optional[str]:
     """Se o PR body tem seção '## Changelog público', retorna o conteúdo."""
     if not pr_body:
         return None
-    m = PUBLIC_CHANGELOG_RE.search(pr_body)
+    limpo = strip_code_fences(pr_body)
+    # Última seção, não a primeira: se ainda restar mais de uma, a declaração
+    # real do autor tende a vir depois da explicação. Mesma classe de defeito da
+    # detecção do número do PR, que pegava o primeiro `#N` (a issue).
+    achados = list(PUBLIC_CHANGELOG_RE.finditer(limpo))
+    if not achados:
+        return None
+    text = achados[-1].group(1)
+    # Corta a partir do primeiro rodapé de ferramenta encontrado.
+    corte = TRAILER_RE.search(text)
+    if corte:
+        text = text[: corte.start()]
+    return text.strip() or None
+
+
+def detect_pr_number(subject: str, body: str) -> Optional[str]:
+    """Número do PR do merge — o do FIM do assunto, não o primeiro que aparecer.
+
+    Nossos títulos já citam a issue que o PR fecha, e o squash merge acrescenta
+    o número do PR ao fim. O assunto final tem dois números:
+
+        feat(billing): Trial com fonte única … (#635) (#647)
+                                                 ↑issue   ↑PR
+
+    A busca antiga pegava o PRIMEIRO — a issue. `gh pr view <issue>` falha
+    ("Could not resolve to a PullRequest"), o script seguia sem body e pulava
+    reportando "PR sem seção '## Changelog público'", mascarando a causa real.
+    Efeito: entre 16 e 17/08 nenhum merge publicou, inclusive cinco que traziam
+    a seção corretamente declarada.
+
+    Consequência secundária, também corrigida: a checagem da label
+    `no-changelog` consultava o PR errado.
+    """
+    m = SQUASH_PR_RE.search(subject.strip())
+    if m:
+        return m.group(1)
+    # Sem o sufixo de squash (merge commit comum), fica o último #N citado —
+    # ainda melhor que o primeiro, que tende a ser a issue.
+    todos = PR_NUMBER_RE.findall(f"{subject}\n{body}")
+    return todos[-1] if todos else None
+
+
+def extract_public_title(pr_body: str) -> Optional[str]:
+    """Título público declarado na seção, na forma `Título: …`.
+
+    Sem isso o título vem do assunto do commit, que é interno por convenção
+    (Conventional Commits, escopo técnico, nome de arquivo). O opt-in do Lote 0
+    curava só a DESCRIÇÃO — e a primeira publicação do regime novo saiu com a
+    descrição em linguagem de cliente e o título dizendo "Publicador do
+    changelog lia o número da ISSUE, não o do PR".
+
+    A denylist não pegava: o título era internamente irrelevante sem usar
+    nenhuma palavra proibida. Vocabulário é filtrável; propósito não.
+    """
+    achados = list(PUBLIC_CHANGELOG_RE.finditer(strip_code_fences(pr_body)))
+    if not achados:
+        return None
+    m = PUBLIC_TITLE_RE.search(achados[-1].group(1))
     if not m:
         return None
-    text = m.group(1).strip()
-    return text or None
+    titulo = m.group(1).strip()
+    return titulo[:200] or None
 
 
 def build_title(parsed: dict, scope_label: Optional[str]) -> str:
@@ -127,33 +263,36 @@ def build_title(parsed: dict, scope_label: Optional[str]) -> str:
     return subject
 
 
-def build_description(parsed: dict, pr_body: str) -> str:
-    """Constrói descrição a partir do override do PR ou do body."""
+def build_description(pr_body: str) -> Optional[str]:
+    """Descrição pública = a seção `## Changelog público` do PR, ou nada.
+
+    Opt-in estrito: sem a seção não há publicação. Não existe fallback para o
+    body interno do PR nem para texto genérico — era exatamente esse caminho
+    que vazava conteúdo de processo para o feed público.
+    """
     override = extract_public_changelog(pr_body)
-    if override:
-        # Limpa markdown básico (mantém legível)
-        override = re.sub(r"^[-*]\s*", "• ", override, flags=re.MULTILINE)
-        return override[:2000]
+    if not override:
+        return None
+    # A linha `Título: …` governa o título, não entra no corpo.
+    override = PUBLIC_TITLE_RE.sub("", override).strip()
+    if not override:
+        return None
+    # Limpa markdown básico (mantém legível)
+    override = re.sub(r"^[-*]\s*", "• ", override, flags=re.MULTILINE)
+    return override[:2000]
 
-    # Fallback: pega o primeiro parágrafo significativo do PR body
-    if pr_body:
-        # Remove headers, pega o primeiro parágrafo real
-        for chunk in pr_body.split("\n\n"):
-            chunk = chunk.strip()
-            if not chunk:
-                continue
-            if chunk.startswith("##") or chunk.startswith("Closes") or chunk.startswith("Fixes"):
-                continue
-            # Limpa marcações markdown comuns
-            chunk = re.sub(r"^#+\s*", "", chunk)
-            chunk = re.sub(r"`([^`]+)`", r"\1", chunk)
-            chunk = re.sub(r"\*\*([^*]+)\*\*", r"\1", chunk)
-            chunk = re.sub(r"^[-*]\s*", "• ", chunk, flags=re.MULTILINE)
-            return chunk[:2000]
 
-    # Último recurso: descrição genérica
-    type_label = {"feat": "Nova funcionalidade", "fix": "Correção", "security": "Atualização de segurança"}
-    return type_label.get(parsed["type"], "Atualização") + " disponível na plataforma."
+def find_internal_terms(*texts: str) -> list[str]:
+    """Retorna os termos internos encontrados no payload (vazio = limpo)."""
+    hits: list[str] = []
+    for text in texts:
+        if not text:
+            continue
+        for pattern in INTERNAL_TERM_RE:
+            m = pattern.search(text)
+            if m and m.group(0) not in hits:
+                hits.append(m.group(0))
+    return hits
 
 
 def main() -> int:
@@ -180,7 +319,7 @@ def main() -> int:
 
     parsed = parse_subject(subject)
     if not parsed:
-        print(f"[skip] subject não segue Conventional Commits — ignorando")
+        print("[skip] subject não segue Conventional Commits — ignorando")
         return 0
 
     if parsed["type"] not in PUBLISHABLE_TYPES:
@@ -189,20 +328,61 @@ def main() -> int:
 
     # Detecta PR via #N no subject ou body
     body = get_commit_body(sha)
-    full_text = f"{subject}\n{body}"
-    pr_match = PR_NUMBER_RE.search(full_text)
+    pr_number = detect_pr_number(subject, body)
     pr_data = {}
-    if pr_match:
-        pr_number = pr_match.group(1)
+    if pr_number:
         print(f"[info] PR detectado: #{pr_number}")
         pr_data = fetch_pr_data(pr_number)
         if has_no_changelog_label(pr_data):
             print(f"[skip] PR #{pr_number} tem label 'no-changelog'")
             return 0
 
-    title = build_title(parsed, parsed.get("scope"))
-    description = build_description(parsed, pr_data.get("body", "") or "")
+    # Opt-in estrito: sem seção `## Changelog público` declarada no PR, nada sai.
+    _pr_body = pr_data.get("body", "") or ""
+    description = build_description(_pr_body)
+    if not description:
+        print("[skip] PR sem seção '## Changelog público' — nada a publicar")
+        return 0
+
+    # Título público é OBRIGATÓRIO quando há seção declarada (decisão de 17/08).
+    # O fallback para o assunto do commit foi removido: assunto segue Conventional
+    # Commits e é interno por convenção — foi ele que publicou "[Fix] Publicador do
+    # changelog lia o número da ISSUE, não o do PR" no feed do cliente. Quem declarou
+    # a seção quis publicar; então escreve o título que o cliente vai ler.
+    title = extract_public_title(_pr_body)
+    if not title:
+        print(
+            "[err] seção '## Changelog público' declarada sem a linha 'Título: ...'. "
+            "O título do commit é interno por convenção e não vai para o feed. "
+            "Acrescente uma linha `Título: <manchete para o cliente>` dentro da seção.",
+            file=sys.stderr,
+        )
+        return 1
     category = TYPE_TO_CATEGORY[parsed["type"]]
+
+    # Porta de sanidade estrutural: a descrição tem de PARECER prosa de cliente.
+    # Quatro defeitos deste script vieram de extração errada que passou porque só
+    # havia filtro de vocabulário. Aqui o critério é a forma do que saiu.
+    artefatos = [nome for marca, nome in ARTEFATOS_DE_MARKDOWN if marca in description]
+    if artefatos:
+        print(
+            f"[err] a descrição extraída contém {sorted(set(artefatos))} — sinal de que a seção "
+            "'## Changelog público' foi capturada errada (exemplo em bloco de código, tabela ou "
+            "rodapé de ferramenta). Publicação abortada; revise a seção.",
+            file=sys.stderr,
+        )
+        return 1
+
+    # Rede de segurança: vocabulário interno nunca chega ao feed público.
+    internal_hits = find_internal_terms(title, description)
+    if internal_hits:
+        print(
+            "[err] payload contém termos internos "
+            f"{internal_hits!r} — publicação abortada. Reescreva a seção "
+            "'## Changelog público' (e o título do commit) em linguagem de cliente.",
+            file=sys.stderr,
+        )
+        return 1
 
     print(f"[info] vai publicar: category={category} title={title!r}")
     print(f"[info] description (primeiros 200 chars): {description[:200]!r}")
