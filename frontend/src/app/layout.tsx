@@ -3,7 +3,7 @@ import { Montserrat, Source_Sans_3, Roboto_Mono } from "next/font/google";
 import Script from "next/script";
 import { AppShell } from "@/components/layout/AppShell";
 import CookieConsent from "@/components/common/CookieConsent";
-import { CONSENT_STORAGE_KEY } from "@/lib/consent";
+import { CONSENT_POLICY_VERSION, CONSENT_STORAGE_KEY } from "@/lib/consent";
 import { RULES_COUNT } from "@/lib/validation/rulesMeta";
 import "./globals.css";
 
@@ -99,13 +99,12 @@ export default function RootLayout({
               analytics_storage: 'denied',
             });
             try {
-              if (localStorage.getItem('${CONSENT_STORAGE_KEY}') === 'granted') {
-                gtag('consent', 'update', {
-                  ad_storage: 'granted',
-                  ad_user_data: 'granted',
-                  ad_personalization: 'granted',
-                  analytics_storage: 'granted',
-                });
+              // Restaura SÓ análise, e SÓ se a decisão foi tomada sob as
+              // premissas vigentes (ANPD: premissa alterada exige novo
+              // consentimento). Sinal de publicidade nunca é concedido aqui.
+              var c = JSON.parse(localStorage.getItem('${CONSENT_STORAGE_KEY}') || 'null');
+              if (c && c.version === '${CONSENT_POLICY_VERSION}' && c.analise === true) {
+                gtag('consent', 'update', { analytics_storage: 'granted' });
               }
             } catch (e) {}
           `}
