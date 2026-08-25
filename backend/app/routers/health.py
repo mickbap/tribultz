@@ -23,6 +23,7 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import SessionLocal
+from app.services import regulatory_freshness
 from app.services.asaas_service import resolve_asaas_v3_base_url
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,30 @@ router = APIRouter(prefix="/health", tags=["health"])
 # ── Response models ───────────────────────────────────────────────────────────
 
 ServiceStatus = Literal["ok", "degraded", "unreachable", "unconfigured"]
+
+
+class ClassTribFreshnessOut(BaseModel):
+    """Evidência temporal da versão regulatória em uso pelo motor (#673).
+
+    ``source_state`` é o campo que torna inequívoca a distinção entre "fonte
+    consultada sem mudança" (``match``) e "fonte não verificável"
+    (``unverifiable``) — que antes eram o mesmo silêncio.
+    """
+
+    status: Literal["ok", "degraded", "stale"]
+    source_state: Literal["match", "drift", "unverifiable"]
+    #: Versão EMBARCADA na imagem (meta.date do classtrib.json). Não confundir
+    #: com "último sync bem-sucedido": ver `sync_execution`.
+    bundled_version_date: str | None = None
+    bundled_version_age_days: int | None = None
+    #: Execução do coletor. `unobservable` enquanto não existir heartbeat (#674).
+    #: Explicitamente ausente — nunca inferida de `source_state == "match"`.
+    sync_execution: Literal["unobservable"] = "unobservable"
+    local_codes: int = 0
+    remote_codes: int | None = None
+    detail: str = ""
+    codes_added: list[str] = []
+    codes_removed: list[str] = []
 
 
 class DeepHealthResponse(BaseModel):
@@ -44,6 +69,10 @@ class DeepHealthResponse(BaseModel):
     email: ServiceStatus
     storage: ServiceStatus
     latency_ms: int
+    # #673 — dependência REGULATÓRIA. Default preserva compatibilidade dos
+    # consumidores anteriores à instrumentação.
+    classtrib: ServiceStatus = "unconfigured"
+    classtrib_freshness: ClassTribFreshnessOut | None = None
 
 
 # ── Probe helpers ─────────────────────────────────────────────────────────────
@@ -97,6 +126,21 @@ def _probe_asaas() -> ServiceStatus:
     except Exception as exc:
         logger.warning("Health: Asaas probe failed — %s", exc)
         return "unreachable"
+
+
+def _probe_classtrib() -> "regulatory_freshness.Freshness | None":
+    """Frescor do dado regulatório cClassTrib (#673).
+
+    Devolve o veredito completo (não só um ServiceStatus) porque a evidência —
+    data do dado, idade, estado da fonte, códigos divergentes — é o produto
+    desta probe. ``None`` quando desligada por configuração.
+
+    Nunca levanta: o módulo já converte qualquer falha de rede em
+    ``source_state='unverifiable'``.
+    """
+    if not settings.CLASSTRIB_FRESHNESS_ENABLED:
+        return None
+    return regulatory_freshness.current(monotonic=time.monotonic)
 
 
 def _probe_hubspot() -> ServiceStatus:
@@ -251,6 +295,7 @@ def readiness() -> DeepHealthResponse:
         "hubspot": _probe_hubspot,
         "email": _probe_email,
         "storage": _probe_s3,
+        "classtrib": _probe_classtrib,   # #673 — dependência regulatória
     }
     with ThreadPoolExecutor(max_workers=len(_probes)) as _pool:
         _futuros = {nome: _pool.submit(fn) for nome, fn in _probes.items()}
@@ -270,6 +315,14 @@ def readiness() -> DeepHealthResponse:
     email_status   = _r["email"]
     storage_status = _r["storage"]
 
+    # #673 — a probe devolve o veredito completo; a falha genérica do pool vira
+    # string "unreachable", tratada aqui como ausência de evidência.
+    _fresh = _r.get("classtrib")
+    _fresh = _fresh if isinstance(_fresh, regulatory_freshness.Freshness) else None
+    classtrib_status: ServiceStatus = (
+        regulatory_freshness.to_service_status(_fresh) if _fresh else "unconfigured"
+    )
+
     latency_ms = int((time.monotonic() - t0) * 1000)
 
     # storage é crítico: sem object storage não há validação com evidência.
@@ -283,7 +336,10 @@ def readiness() -> DeepHealthResponse:
         asaas_status   in ("ok", "unconfigured") and
         ai_status      in ("ok", "unconfigured") and
         hubspot_status in ("ok", "unconfigured") and
-        email_status   in ("ok", "unconfigured")
+        email_status   in ("ok", "unconfigured") and
+        # Dado regulatório velho degrada, mas NUNCA vira `error`: é problema de
+        # confiança no dado, não de disponibilidade do serviço.
+        classtrib_status in ("ok", "unconfigured")
     )
 
     if not critical_ok:
@@ -303,6 +359,23 @@ def readiness() -> DeepHealthResponse:
         email=email_status,
         storage=storage_status,
         latency_ms=latency_ms,
+        classtrib=classtrib_status,
+        classtrib_freshness=(
+            ClassTribFreshnessOut(
+                status=_fresh.status,
+                source_state=_fresh.source_state,
+                bundled_version_date=_fresh.bundled_version_date,
+                bundled_version_age_days=_fresh.bundled_version_age_days,
+                sync_execution=_fresh.sync_execution,
+                local_codes=_fresh.local_codes,
+                remote_codes=_fresh.remote_codes,
+                detail=_fresh.detail,
+                codes_added=list(_fresh.added),
+                codes_removed=list(_fresh.removed),
+            )
+            if _fresh
+            else None
+        ),
     )
 
 

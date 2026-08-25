@@ -1,0 +1,300 @@
+"""Frescor do dado regulatório cClassTrib — observabilidade da dependência SVRS (#673).
+
+O motor valida contra a tabela cClassTrib embarcada em ``app/data/classtrib.json``.
+Essa tabela é mantida fresca pelo workflow ``classtrib-sync`` (cron diário), que
+abre PR de revisão quando a SVRS publica códigos novos.
+
+O defeito que este módulo fecha: **se o sync parar, o produto continua respondendo
+200 e servindo tabela velha**. Nenhuma probe de ``/health/deep`` cobria a
+dependência regulatória — só infraestrutura (db, redis, asaas, hubspot, email,
+ai, storage).
+
+## A distinção que este módulo torna inequívoca
+
+Antes, três situações eram indistinguíveis de fora:
+
+1. **fonte consultada, conteúdo idêntico** → saudável, o dado simplesmente não mudou
+2. **fonte consultada, conteúdo divergente** → o sync está atrasado; há código novo fora do motor
+3. **fonte não verificável** → não sabemos em qual das duas estamos
+
+``source_state`` separa as três (``match`` / ``drift`` / ``unverifiable``).
+Colapsá-las de novo reabre exatamente o defeito.
+
+## Por que ``unverifiable`` não degrada de imediato
+
+O próprio coletor documenta que o portal SVRS "falha de forma intermitente
+(ConnectTimeout/ReadTimeout em ~30% das execuções diárias)" — por isso ele tem
+retry com backoff. Uma probe que degradasse a cada falha pontual produziria
+alarme constante e sem informação. Aqui a indisponibilidade da fonte só degrada
+quando **combinada** com dado velho: é a conjunção que representa risco real.
+
+## Thresholds
+
+- ``warn`` = 7 dias — a SVRS adiciona códigos com frequência (+8 em 2 dias, já
+  observado). Uma semana inteira sem incorporação, sem conseguir confirmar a
+  fonte, é anômalo.
+- ``fail`` = 21 dias — três ciclos semanais. Incompatível com operação saudável;
+  aqui o sync está quebrado, não lento.
+
+Ambos configuráveis (``CLASSTRIB_FRESHNESS_WARN_DAYS`` / ``_FAIL_DAYS``).
+
+## Fora de escopo (#673)
+
+Não acopla às futuras APIs RFB/CGIBS. A camada de integração governamental tem
+desenho próprio — ADR-0016, ADR-0017, RFC-0027, RFC-0028, todos ``proposed``.
+Este módulo trata da dependência regulatória que **já existe**: a consulta
+pública da SVRS, sem credencial.
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import logging
+import threading
+from dataclasses import dataclass, field
+from typing import Callable, Literal, Optional
+
+import httpx
+
+from app.config import settings
+from app.core.observability import capture_alert
+from app.data import classtrib_source
+from app.data.classtrib_table import (
+    CLASSTRIB_BY_CODE,
+    CLASSTRIB_CONTENT_SIGNATURE,
+    CLASSTRIB_SYNCED_AT,
+)
+
+logger = logging.getLogger(__name__)
+
+SOURCE_URL = classtrib_source.SOURCE_URL
+
+#: Resultado da consulta à fonte oficial.
+#: - ``match``        fonte consultada; conjunto de códigos idêntico ao embarcado
+#: - ``drift``        fonte consultada; conjunto divergente (sync atrasado)
+#: - ``unverifiable`` fonte não respondeu / resposta não parseável
+SourceState = Literal["match", "drift", "unverifiable"]
+
+#: Veredito de frescor. NUNCA vira ``error`` no HTTP — ver `to_service_status`.
+FreshnessStatus = Literal["ok", "degraded", "stale"]
+
+#: Estado da EXECUÇÃO do coletor — eixo distinto do conteúdo da fonte.
+#: ``unobservable``: o coletor roda em GitHub Actions e não compartilha estado
+#: com a API; sem a fatia de heartbeat (#674) não há como saber se ele rodou.
+#: Este campo existe para tornar a ausência EXPLÍCITA em vez de silenciosa.
+SyncExecutionState = Literal["unobservable"]
+
+
+@dataclass(frozen=True)
+class SourceProbe:
+    """Resultado bruto da consulta à SVRS, sem julgamento de frescor."""
+
+    state: SourceState
+    remote_codes: Optional[int] = None
+    remote_signature: Optional[str] = None
+    added: tuple[str, ...] = ()
+    removed: tuple[str, ...] = ()
+    error: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class Freshness:
+    """Veredito completo — o que o /health/deep expõe."""
+
+    status: FreshnessStatus
+    source_state: SourceState
+    #: Data da versão EMBARCADA na imagem (meta.date do classtrib.json).
+    #: NÃO é "último sync bem-sucedido" — ver `sync_execution`.
+    bundled_version_date: Optional[str]
+    bundled_version_age_days: Optional[int]
+    local_codes: int
+    remote_codes: Optional[int]
+    detail: str
+    added: tuple[str, ...] = field(default=())
+    removed: tuple[str, ...] = field(default=())
+    #: Execução do coletor (last_attempt_at / last_success_at / outcome).
+    #: `unobservable` até a fatia de heartbeat existir — ver #674. NUNCA
+    #: inferir execução a partir de `source_state == "match"`.
+    sync_execution: SyncExecutionState = "unobservable"
+
+
+# ── Consulta à fonte ──────────────────────────────────────────────────────────
+
+
+def probe_source(
+    local: set[str], local_signature: str, *, timeout: float = 4.0
+) -> SourceProbe:
+    """Consulta a SVRS uma vez e compara o conjunto de códigos com o embarcado.
+
+    SEM retry: retry é responsabilidade do coletor, que tem orçamento de tempo
+    para isso. Aqui uma falha isolada vira ``unverifiable`` — que, sozinha, não
+    degrada nada (ver docstring do módulo).
+    """
+    try:
+        resp = httpx.get(SOURCE_URL, timeout=timeout, follow_redirects=True)
+        resp.raise_for_status()
+        normalizado = classtrib_source.normalize(classtrib_source.extract_groups(resp.text))
+    except Exception as exc:  # noqa: BLE001 — qualquer falha é "não verificável"
+        logger.warning("Freshness: fonte SVRS não verificável — %s", exc)
+        return SourceProbe(state="unverifiable", error=str(exc)[:200])
+
+    remote = classtrib_source.codes_of(normalizado)
+    if not remote:
+        return SourceProbe(state="unverifiable", error="fonte respondeu sem códigos")
+
+    remote_sig = classtrib_source.data_signature(normalizado)
+    added = tuple(sorted(remote - local))
+    removed = tuple(sorted(local - remote))
+
+    # Assinatura de CONTEÚDO, não conjunto de códigos: mudança de alíquota ou de
+    # indicador num código existente também é drift.
+    if remote_sig == local_signature:
+        return SourceProbe(state="match", remote_codes=len(remote), remote_signature=remote_sig)
+    return SourceProbe(
+        state="drift", remote_codes=len(remote), remote_signature=remote_sig,
+        added=added, removed=removed,
+    )
+
+
+# ── Veredito ──────────────────────────────────────────────────────────────────
+
+
+def _age_days(data_date: Optional[str], now: dt.date) -> Optional[int]:
+    if not data_date:
+        return None
+    try:
+        return (now - dt.date.fromisoformat(data_date[:10])).days
+    except ValueError:
+        return None
+
+
+def evaluate(
+    *,
+    local_codes: set[str],
+    bundled_version_date: Optional[str],
+    probe: SourceProbe,
+    now: Optional[dt.date] = None,
+    warn_days: Optional[int] = None,
+    fail_days: Optional[int] = None,
+) -> Freshness:
+    """Combina idade do dado embarcado + estado da fonte. Função pura."""
+    now = now or dt.date.today()
+    warn = warn_days if warn_days is not None else settings.CLASSTRIB_FRESHNESS_WARN_DAYS
+    fail = fail_days if fail_days is not None else settings.CLASSTRIB_FRESHNESS_FAIL_DAYS
+    age = _age_days(bundled_version_date, now)
+
+    def mk(status: FreshnessStatus, detail: str) -> Freshness:
+        """Fecha sobre os campos observados — evita dict heterogêneo com **kwargs."""
+        return Freshness(
+            status=status,
+            source_state=probe.state,
+            bundled_version_date=bundled_version_date,
+            bundled_version_age_days=age,
+            local_codes=len(local_codes),
+            remote_codes=probe.remote_codes,
+            detail=detail,
+            added=probe.added,
+            removed=probe.removed,
+        )
+
+    if probe.state == "match":
+        # Fonte consultada e idêntica: o dado está CORRETO, independentemente da
+        # idade. Idade sozinha nunca condena — só a divergência condena.
+        return mk("ok", f"fonte consultada, sem mudança ({len(local_codes)} códigos)")
+
+    if probe.state == "drift":
+        return mk(
+            "degraded",
+            f"fonte consultada, DIVERGENTE: +{len(probe.added)} / "
+            f"-{len(probe.removed)} códigos não incorporados",
+        )
+
+    # unverifiable — só degrada em conjunção com dado velho.
+    if age is None:
+        return mk("degraded", "fonte não verificável e data da versão embarcada desconhecida")
+    if age >= fail:
+        return mk("stale", f"fonte não verificável e versão embarcada com {age}d (limite {fail}d)")
+    if age >= warn:
+        return mk("degraded", f"fonte não verificável e versão embarcada com {age}d (alerta {warn}d)")
+    return mk("ok", f"fonte não verificável agora, mas versão embarcada recente ({age}d)")
+
+
+def to_service_status(f: Freshness) -> Literal["ok", "degraded"]:
+    """Mapeia para o vocabulário das demais probes.
+
+    ``stale`` vira ``degraded``, nunca ``unreachable``: dado regulatório velho é
+    problema de confiança, não de disponibilidade. **Nunca indisponibiliza o
+    produto** — o critério de aceite é explícito quanto a isso.
+    """
+    return "ok" if f.status == "ok" else "degraded"
+
+
+def emit_alert(f: Freshness) -> None:
+    """Alerta operacional pelo caminho explícito de captura do projeto.
+
+    Não confia na integração implícita logging→Sentry: chama
+    ``capture_alert()``, que faz ``sentry_sdk.capture_message`` quando há DSN e
+    sempre registra em log. Assim o caminho do alerta é testável.
+    """
+    if f.status not in ("stale", "degraded"):
+        return
+    contexto = {
+        "bundled_version_date": f.bundled_version_date,
+        "bundled_version_age_days": f.bundled_version_age_days,
+        "source_state": f.source_state,
+        "sync_execution": f.sync_execution,
+        "local_codes": f.local_codes,
+        "remote_codes": f.remote_codes,
+    }
+    if f.status == "stale":
+        capture_alert(f"ALERTA regulatório: cClassTrib STALE — {f.detail}",
+                      level="error", extra=contexto)
+    else:
+        capture_alert(f"Frescor regulatório degradado: cClassTrib — {f.detail}",
+                      level="warning", extra=contexto)
+
+
+# ── Cache ─────────────────────────────────────────────────────────────────────
+
+_lock = threading.Lock()
+_cache: Optional[tuple[float, Freshness]] = None
+
+
+def current(
+    *,
+    monotonic: Callable[[], float],
+    ttl_seconds: Optional[int] = None,
+    probe_fn: Optional[Callable[[set[str]], SourceProbe]] = None,
+) -> Freshness:
+    """Veredito com cache TTL — /health/deep não pode martelar a SVRS.
+
+    O TTL protege a fonte pública e mantém a latência do endpoint previsível:
+    a consulta remota acontece no máximo uma vez por janela.
+    """
+    global _cache
+    ttl = ttl_seconds if ttl_seconds is not None else settings.CLASSTRIB_FRESHNESS_TTL_SECONDS
+    now = monotonic()
+    with _lock:
+        if _cache is not None and (now - _cache[0]) < ttl:
+            return _cache[1]
+
+    local = set(CLASSTRIB_BY_CODE.keys())
+    probe = (
+        probe_fn(local) if probe_fn
+        else probe_source(local, CLASSTRIB_CONTENT_SIGNATURE)
+    )
+    verdict = evaluate(
+        local_codes=local, bundled_version_date=CLASSTRIB_SYNCED_AT, probe=probe
+    )
+    emit_alert(verdict)
+
+    with _lock:
+        _cache = (now, verdict)
+    return verdict
+
+
+def reset_cache() -> None:
+    """Usado por testes — nunca em produção."""
+    global _cache
+    with _lock:
+        _cache = None

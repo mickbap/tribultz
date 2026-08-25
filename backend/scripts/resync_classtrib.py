@@ -24,23 +24,22 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-import hashlib
 import json
 import sys
 import time
 from pathlib import Path
 
-SOURCE_URL = "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # torna `app` importável
+from app.data.classtrib_source import (  # noqa: E402 — depende do sys.path acima
+    CODE_KEYS as _CODE_KEYS,
+    NCM_KEYS as _NCM_KEYS,
+    SOURCE_URL,
+    data_signature as _data_signature,
+    extract_groups,
+    normalize,
+)
+
 DEFAULT_OUT = Path(__file__).resolve().parents[1] / "app" / "data" / "classtrib.json"
-
-# Indicadores por DFe na fonte SVRS → rótulo no classtrib.json.
-_DFE_INDICATORS = {
-    "IndNfe": "NFE", "IndNfce": "NFCE", "IndCte": "CTE", "IndCteos": "CTEOS",
-    "IndBpe": "BPE", "IndNf3e": "NF3E", "IndNfcom": "NFCOM", "IndNfse": "NFSE",
-    "IndBpetm": "BPETM", "IndBpeta": "BPETA", "IndNfag": "NFAG", "IndNfgas": "NFGAS",
-    "IndNfsvia": "NFSVIA", "IndNfabi": "NFABI",
-}
-
 
 def fetch_html(attempts: int = 4) -> str:
     """Baixa a página pública do SVRS com retry/backoff.
@@ -75,86 +74,6 @@ def fetch_html(attempts: int = 4) -> str:
                 )
                 time.sleep(wait)
     raise SystemExit(f"ERRO: SVRS inacessível após {attempts} tentativas: {last_exc!r}")
-
-
-def extract_groups(html: str) -> list[dict]:
-    """Extrai o maior blob JSON balanceado contendo os grupos de CST/classificações."""
-    decoder = json.JSONDecoder()
-    best: list | None = None
-    i, n = 0, len(html)
-    while i < n:
-        if html[i] in "[{":
-            try:
-                obj, end = decoder.raw_decode(html, i)
-            except ValueError:
-                i += 1
-                continue
-            chunk = html[i:end]
-            if (end - i) > 2000 and ("ClassificacoesTributarias" in chunk or '"Cst"' in chunk):
-                if best is None or (end - i) > len(json.dumps(best)):
-                    best = obj
-                i = end
-                continue
-        i += 1
-    if not isinstance(best, list):
-        raise SystemExit("ERRO: blob JSON de classTrib não encontrado na página.")
-    return best
-
-
-def normalize(groups: list[dict]) -> dict:
-    by_code: dict[str, dict] = {}
-    by_cst: dict[str, list[str]] = {}
-    cst_descriptions: dict[str, str] = {}
-
-    for grp in groups:
-        cst = str(grp.get("Cst", "")).strip()
-        nome_cst = (grp.get("NomeCst") or "").strip()
-        if cst:
-            cst_descriptions[cst] = nome_cst
-        for c in grp.get("ClassificacoesTributarias") or []:
-            code = str(c.get("CodClassTrib", "")).strip()
-            if not code:
-                continue
-            dfe = sorted(label for ind, label in _DFE_INDICATORS.items() if c.get(ind))
-            by_code[code] = {
-                "cst": cst,
-                "cst_description": nome_cst,
-                "description": (c.get("NomeClassTrib") or "").strip(),
-                "reduction_ibs_pct": float(c.get("PercRedIbs") or 0.0),
-                "reduction_cbs_pct": float(c.get("PercRedCbs") or 0.0),
-                "tipo_aliquota": c.get("TipoAliq"),
-                # Crédito presumido IBS/CBS: se True, a operação pode carregar a tag cCredPres
-                # (#339). Só alguns cClassTrib permitem — fonte SVRS: IndPermiteCredPres.
-                "permite_cred_pres": bool(c.get("IndPermiteCredPres")),
-                # Subgrupos do UB84 (gIBSCBSMono) exigidos pelo cClassTrib — NT 2025.002
-                # v1.50, regime monofásico (#404). Fonte SVRS: IndMonoRetem/IndMonoRet/
-                # IndMonoDif. Confirmado ao vivo em 2026-07-18 (não documentado antes
-                # dessa versão do script).
-                "mono_retencao": bool(c.get("IndMonoRetem")),
-                "mono_retido_anteriormente": bool(c.get("IndMonoRet")),
-                "mono_diferimento": bool(c.get("IndMonoDif")),
-                "dfe_allowed": dfe,
-                "vigencia_ini": (c.get("DthIniVig") or "")[:10],
-                "legislacao": c.get("TexUrlLegislacao") or "",
-            }
-            by_cst.setdefault(cst, []).append(code)
-
-    for cst in by_cst:
-        by_cst[cst].sort()
-
-    return {
-        "meta": {
-            "source": "SVRS Conformidade Fácil — consulta pública classTrib (sem credencial)",
-            "source_url": SOURCE_URL,
-            "extraction_method": "JSON embutido na página /CFF/ClassificacaoTributaria",
-            "date": dt.date.today().isoformat(),
-            "total_codes": len(by_code),
-            "total_cst_groups": len(cst_descriptions),
-        },
-        "by_code": dict(sorted(by_code.items())),
-        "by_cst": dict(sorted(by_cst.items())),
-        "cst_descriptions": dict(sorted(cst_descriptions.items())),
-    }
 
 
 def normalize_ncm_mapping(groups: list[dict]) -> dict:
@@ -209,20 +128,6 @@ def print_diff(old: dict, new: dict) -> None:
     bad = [c for c in new_codes if not (c.isdigit() and len(c) == 6)]
     if bad:
         print(f"  ⚠️  códigos fora do formato 6 dígitos: {bad[:10]}")
-
-
-# Chaves de DADOS comparadas para detectar mudança real (o bloco `meta` — que carrega
-# `date` e contagens — é deliberadamente ignorado, senão todo dia haveria "mudança").
-_CODE_KEYS = ("by_code", "by_cst", "cst_descriptions")
-_NCM_KEYS = ("by_ncm",)
-
-
-def _data_signature(d: dict, keys: tuple[str, ...]) -> str:
-    """Hash estável do conteúdo de dados (ignorando `meta`), p/ detectar no-op."""
-    payload = {k: d.get(k) for k in keys}
-    return hashlib.md5(
-        json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()
-    ).hexdigest()
 
 
 def main() -> int:
