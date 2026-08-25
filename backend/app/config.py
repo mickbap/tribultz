@@ -4,6 +4,7 @@ All secrets and service URLs are read from environment variables.
 Defaults are provided only for non-sensitive, development-safe values.
 """
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -76,6 +77,23 @@ class Settings(BaseSettings):
     # canal são decisão de Produto; vazio ⇒ alerta fica só no audit/log.
     HANDOFF_ALERT_EMAILS: str = ""
 
+    # ── Frescor do dado regulatório cClassTrib (#673) ───────
+    # O motor valida contra a tabela SVRS embarcada; se o classtrib-sync parar, o
+    # produto segue 200 servindo tabela velha. Thresholds calibrados pela cadência
+    # real da fonte (a SVRS adiciona códigos com frequência — +8 em 2 dias) e pela
+    # flakiness conhecida do portal (~30% das execuções diárias falham por timeout):
+    # indisponibilidade pontual da fonte NÃO degrada sozinha, só combinada com dado
+    # velho. TTL protege a fonte pública de ser martelada pelo /health/deep.
+    #
+    # Default OFF, como as demais integrações da casa (HUBSPOT_ENABLED,
+    # ATTIO_ENABLED, RUMY_WEBHOOK_ENABLED): a probe faz chamada de saída para um
+    # portal público de governo. Ligar por acidente em dev/CI significaria bater
+    # nessa fonte a cada execução de teste. Produção liga explicitamente no .env.
+    CLASSTRIB_FRESHNESS_ENABLED: bool = False
+    CLASSTRIB_FRESHNESS_WARN_DAYS: int = 7
+    CLASSTRIB_FRESHNESS_FAIL_DAYS: int = 21
+    CLASSTRIB_FRESHNESS_TTL_SECONDS: int = 900
+
     # ── Security ────────────────────────────────────────────
     ALLOWED_ORIGINS: str = "http://localhost:3000,https://tribultz.com.br,https://*.vercel.app"
     ENVIRONMENT: str = "development"  # development | staging | production
@@ -145,6 +163,26 @@ class Settings(BaseSettings):
     CLASSTRIB_API_TOKEN: str = ""
     CNPJ_PRIMARY_URL: str = "https://brasilapi.com.br/api/cnpj/v1/{cnpj}"
     CNPJ_FALLBACK_URL: str = "https://receitaws.com.br/v1/cnpj/{cnpj}"
+
+    @model_validator(mode="after")
+    def _producao_exige_observabilidade_regulatoria(self):
+        """Gate: produção não sobe com o frescor regulatório desligado (#673).
+
+        O default é OFF para proteger dev/CI de chamar um portal de governo. Sem
+        este gate, o mesmo default faria produção subir SILENCIOSAMENTE sem
+        observabilidade da dependência regulatória — exatamente o defeito que a
+        issue existe para fechar, reintroduzido pela porta dos fundos.
+
+        Falha no boot é deliberada: é barulhenta, aparece no deploy e não deixa
+        ninguém descobrir meses depois que o sinal nunca esteve ligado.
+        """
+        if self.ENVIRONMENT == "production" and not self.CLASSTRIB_FRESHNESS_ENABLED:
+            raise ValueError(
+                "CLASSTRIB_FRESHNESS_ENABLED deve ser true em produção — sem isso o "
+                "produto serve tabela cClassTrib potencialmente desatualizada sem "
+                "nenhum sinal de saúde (#673)."
+            )
+        return self
 
     class Config:
         env_file = ".env"

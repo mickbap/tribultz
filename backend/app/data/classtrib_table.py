@@ -13,6 +13,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from app.data import classtrib_source as _classtrib_source
+
 from app.data.uf_rates import (
     CBS_NATIONAL_RATE,
     CBS_TESTE_2026,
@@ -24,6 +26,9 @@ _DATA = json.loads((Path(__file__).parent / "classtrib.json").read_text(encoding
 CLASSTRIB_BY_CODE: dict[str, dict] = _DATA.get("by_code", {})
 # Data da última sincronização SVRS (bloco meta) — exposto como last_synced_at na API.
 CLASSTRIB_SYNCED_AT: str | None = _DATA.get("meta", {}).get("date")
+# Assinatura do CONTEÚDO embarcado (ignora `meta`) — base da detecção de drift do
+# frescor regulatório (#673). Cobre atributos, não só a lista de códigos.
+CLASSTRIB_CONTENT_SIGNATURE: str = _classtrib_source.data_signature(_DATA)
 
 # CSTs do cClassTrib que zeram o tributo independentemente de redução.
 _ZERO_CSTS = {"400", "410"}
