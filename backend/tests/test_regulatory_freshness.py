@@ -311,18 +311,23 @@ def test_capture_alert_sem_dsn_e_no_op_mas_registra(caplog):
 
 def test_producao_nao_sobe_com_observabilidade_regulatoria_desligada():
     """Gate: o default seguro de dev não pode virar cegueira silenciosa em prod."""
-    base = dict(
-        POSTGRES_PASSWORD="x", DATABASE_URL="postgresql://u:p@h/d", REDIS_URL="redis://h/0",
-        JWT_SECRET="x" * 32, MINIO_ROOT_USER="u", MINIO_ROOT_PASSWORD="p",
-        S3_ENDPOINT="http://h", S3_BUCKET="b", S3_ACCESS_KEY="k", S3_SECRET_KEY="s",
-    )
-    with pytest.raises(ValueError, match="CLASSTRIB_FRESHNESS_ENABLED"):
-        Settings(ENVIRONMENT="production", CLASSTRIB_FRESHNESS_ENABLED=False, **base)
+    def _settings(**kw) -> Settings:
+        """kwargs explícitos: `**dict` faria o pyright inferir `str` para tudo."""
+        return Settings(
+            POSTGRES_PASSWORD="x", DATABASE_URL="postgresql://u:p@h/d",
+            REDIS_URL="redis://h/0", JWT_SECRET="x" * 32, MINIO_ROOT_USER="u",
+            MINIO_ROOT_PASSWORD="p", S3_ENDPOINT="http://h", S3_BUCKET="b",
+            S3_ACCESS_KEY="k", S3_SECRET_KEY="s", **kw,
+        )
 
-    ok = Settings(ENVIRONMENT="production", CLASSTRIB_FRESHNESS_ENABLED=True, **base)
-    assert ok.CLASSTRIB_FRESHNESS_ENABLED is True
+    with pytest.raises(ValueError, match="CLASSTRIB_FRESHNESS_ENABLED"):
+        _settings(ENVIRONMENT="production", CLASSTRIB_FRESHNESS_ENABLED=False)
+
+    assert _settings(
+        ENVIRONMENT="production", CLASSTRIB_FRESHNESS_ENABLED=True
+    ).CLASSTRIB_FRESHNESS_ENABLED is True
     # dev/CI seguem livres com o default OFF
-    assert Settings(ENVIRONMENT="development", **base).CLASSTRIB_FRESHNESS_ENABLED is False
+    assert _settings(ENVIRONMENT="development").CLASSTRIB_FRESHNESS_ENABLED is False
 
 
 # ── Cache ─────────────────────────────────────────────────────────────────────
