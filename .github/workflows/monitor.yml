@@ -2,7 +2,8 @@ name: Uptime Monitor
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # a cada 5 minutos
+    - cron: "*/5 * * * *"   # disponibilidade — a cada 5 minutos
+    - cron: "17 * * * *"    # frescor regulatório (#673) — 1x/hora
   workflow_dispatch:
 
 permissions:
@@ -15,6 +16,9 @@ concurrency:
 jobs:
   health-check:
     name: GET /health/deep
+    # Só na cadência de 5 min: disponibilidade. O frescor regulatório tem job
+    # próprio abaixo, com cadência própria.
+    if: github.event.schedule != '17 * * * *' 
     runs-on: ubuntu-latest
     timeout-minutes: 2
 
@@ -94,3 +98,89 @@ jobs:
         run: |
           echo "::warning::API degraded — serviços opcionais com falha"
           echo "${{ steps.probe.outputs.body }}"
+
+  # ── Frescor regulatório (#673, Round 3) ─────────────────────────────────────
+  # Dado cClassTrib velho produz `degraded`, nunca `error` — dado regulatório
+  # desatualizado é problema de CONFIANÇA, não de disponibilidade, e não pode
+  # derrubar o produto. Mas até agora `degraded` só virava anotação no log do
+  # workflow: o e-mail exigia `status == error`, então a degradação regulatória
+  # não tinha NENHUM destino humano. Este job fecha isso sem mexer no HTTP.
+  #
+  # Cadência de 1x/hora, não 5 min: a condição muda em escala de dias e o TTL da
+  # probe é de 15 min. Alertar a cada 5 minutos sobre o mesmo fato ensina o
+  # plantão a ignorar o alerta — que é como um sinal morre.
+  regulatory-freshness:
+    name: Frescor regulatório cClassTrib
+    if: github.event.schedule == '17 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Probe regulatory freshness
+        id: reg
+        run: |
+          RESPONSE=$(curl -sf --max-time 20 \
+            https://api.tribultz.com.br/health/deep 2>&1) || {
+            echo "state=unreachable" >> "$GITHUB_OUTPUT"
+            echo "detail=API inalcançável" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+          RESPONSE="$RESPONSE" python3 - << 'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          d = json.loads(os.environ["RESPONSE"])
+          f = d.get("classtrib_freshness") or {}
+          print(f"state={d.get('classtrib', 'unknown')}")
+          print(f"freshness={f.get('status', 'unknown')}")
+          print(f"source={f.get('source_state', 'unknown')}")
+          print(f"age={f.get('bundled_version_age_days', '?')}")
+          print(f"version={f.get('bundled_version_date', '?')}")
+          # `detail` do payload é gerado por nós e só contém contagens — a origem
+          # não escreve aqui (ver sanitização em regulatory_freshness.py).
+          print(f"detail={f.get('detail', '')[:200]}")
+          PY
+
+      - name: Alertar humano se o dado regulatório não estiver íntegro
+        if: steps.reg.outputs.state != 'ok'
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          STATE:     ${{ steps.reg.outputs.state }}
+          FRESHNESS: ${{ steps.reg.outputs.freshness }}
+          SOURCE:    ${{ steps.reg.outputs.source }}
+          AGE:       ${{ steps.reg.outputs.age }}
+          VERSION:   ${{ steps.reg.outputs.version }}
+          DETAIL:    ${{ steps.reg.outputs.detail }}
+        run: |
+          echo "::warning::Frescor regulatório: ${{ steps.reg.outputs.state }} — ${{ steps.reg.outputs.detail }}"
+          python3 - << 'PY'
+          import os, json, urllib.request, urllib.error
+          e = os.environ
+          html = (
+            "<h2>Frescor do dado regulatório cClassTrib</h2>"
+            "<p>O produto <b>continua disponível</b> — isto não é indisponibilidade. "
+            "É a tabela oficial que pode estar desatualizada ou não verificável.</p>"
+            f"<ul><li><b>Estado:</b> {e['STATE']} ({e['FRESHNESS']})</li>"
+            f"<li><b>Fonte SVRS:</b> {e['SOURCE']}</li>"
+            f"<li><b>Versão embarcada:</b> {e['VERSION']} ({e['AGE']} dias)</li>"
+            f"<li><b>Detalhe:</b> {e['DETAIL']}</li></ul>"
+            "<p><a href='https://api.tribultz.com.br/health/deep'>Ver health</a> · "
+            "<a href='https://github.com/mickbap/tribultz/actions/workflows/classtrib-sync.yml'>Ver classtrib-sync</a></p>"
+          )
+          req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({
+              "from": "noreply@tribultz.com.br",
+              "to": ["mickel@tribultz.com.br"],
+              "subject": f"[REGULATÓRIO] cClassTrib — {e['STATE']}/{e['FRESHNESS']} ({e['AGE']}d)",
+              "html": html,
+            }).encode(),
+            headers={"Authorization": f"Bearer {e['RESEND_API_KEY']}",
+                     "Content-Type": "application/json",
+                     # WAF do Resend bloqueia o UA padrão do urllib — ver o job acima.
+                     "User-Agent": "tribultz-ci/1.0"},
+          )
+          try:
+            with urllib.request.urlopen(req, timeout=10) as r:
+              print("Alert sent:", r.status)
+          except urllib.error.HTTPError as ex:
+            raise SystemExit(f"Resend error: {ex.read().decode()}")
+          PY

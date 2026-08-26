@@ -4,6 +4,8 @@ All secrets and service URLs are read from environment variables.
 Defaults are provided only for non-sensitive, development-safe values.
 """
 
+from typing import ClassVar
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
@@ -164,23 +166,43 @@ class Settings(BaseSettings):
     CNPJ_PRIMARY_URL: str = "https://brasilapi.com.br/api/cnpj/v1/{cnpj}"
     CNPJ_FALLBACK_URL: str = "https://receitaws.com.br/v1/cnpj/{cnpj}"
 
+    #: Ambientes reconhecidamente NÃO produtivos. Tudo que não estiver aqui —
+    #: inclusive vazio, ausente, `staging`, `prod`, `Production` ou um typo — é
+    #: tratado com postura restritiva. A lista de exceções é a dos ambientes
+    #: seguros, nunca a dos perigosos: allowlist de aliases produtivos falharia
+    #: aberto no primeiro nome novo que ninguém lembrasse de cadastrar.
+    NON_PRODUCTION_ENVIRONMENTS: ClassVar[frozenset[str]] = frozenset(
+        {"development", "test", "ci", "local"}
+    )
+
+    def is_production_posture(self) -> bool:
+        """Postura restritiva? Qualquer coisa fora da allowlist responde True."""
+        return (self.ENVIRONMENT or "").strip().lower() not in self.NON_PRODUCTION_ENVIRONMENTS
+
     @model_validator(mode="after")
-    def _producao_exige_observabilidade_regulatoria(self):
-        """Gate: produção não sobe com o frescor regulatório desligado (#673).
+    def _postura_restritiva_exige_observabilidade_regulatoria(self):
+        """Gate: fora de dev/test/ci/local, não se sobe sem frescor regulatório (#673).
 
         O default é OFF para proteger dev/CI de chamar um portal de governo. Sem
         este gate, o mesmo default faria produção subir SILENCIOSAMENTE sem
         observabilidade da dependência regulatória — exatamente o defeito que a
         issue existe para fechar, reintroduzido pela porta dos fundos.
 
+        Round 3: a checagem anterior era `ENVIRONMENT == "production"`, igualdade
+        exata. `prod`, `Production`, ` production `, vazio e ausente passavam
+        direto — 11 de 12 variantes testadas subiam cegas. Agora o desconhecido
+        endurece em vez de afrouxar.
+
         Falha no boot é deliberada: é barulhenta, aparece no deploy e não deixa
         ninguém descobrir meses depois que o sinal nunca esteve ligado.
         """
-        if self.ENVIRONMENT == "production" and not self.CLASSTRIB_FRESHNESS_ENABLED:
+        if self.is_production_posture() and not self.CLASSTRIB_FRESHNESS_ENABLED:
             raise ValueError(
-                "CLASSTRIB_FRESHNESS_ENABLED deve ser true em produção — sem isso o "
-                "produto serve tabela cClassTrib potencialmente desatualizada sem "
-                "nenhum sinal de saúde (#673)."
+                f"CLASSTRIB_FRESHNESS_ENABLED deve ser true em ENVIRONMENT="
+                f"{self.ENVIRONMENT!r} (postura restritiva) — sem isso o produto serve "
+                f"tabela cClassTrib potencialmente desatualizada sem nenhum sinal de "
+                f"saúde (#673). Ambientes livres: "
+                f"{sorted(self.NON_PRODUCTION_ENVIRONMENTS)}."
             )
         return self
 

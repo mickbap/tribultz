@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from app.config import settings
+from app.data.classtrib_table import CLASSTRIB_CONTENT_SIGNATURE
 from app.database import SessionLocal
 from app.services import regulatory_freshness
 from app.services.asaas_service import resolve_asaas_v3_base_url
@@ -54,9 +55,16 @@ class ClassTribFreshnessOut(BaseModel):
     sync_execution: Literal["unobservable"] = "unobservable"
     local_codes: int = 0
     remote_codes: int | None = None
+    #: Impressão digital TRUNCADA do conteúdo embarcado. Serve para casar
+    #: "que bundle está rodando" em suporte, sem revelar a tabela.
+    bundled_fingerprint: str | None = None
     detail: str = ""
-    codes_added: list[str] = []
-    codes_removed: list[str] = []
+
+    # Round 3 (#673): `codes_added`/`codes_removed` foram REMOVIDOS daqui.
+    # /health/deep é público e sem autenticação; aqueles campos devolviam
+    # strings arbitrárias vindas da origem, sem sanitização, a quem pedisse.
+    # O diagnóstico de quais códigos divergiram continua existindo — vai para
+    # o alerta interno (Sentry), já filtrado pelo formato oficial de 6 dígitos.
 
 
 class DeepHealthResponse(BaseModel):
@@ -370,8 +378,7 @@ def readiness() -> DeepHealthResponse:
                 local_codes=_fresh.local_codes,
                 remote_codes=_fresh.remote_codes,
                 detail=_fresh.detail,
-                codes_added=list(_fresh.added),
-                codes_removed=list(_fresh.removed),
+                bundled_fingerprint=CLASSTRIB_CONTENT_SIGNATURE[:12],
             )
             if _fresh
             else None
