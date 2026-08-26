@@ -14,7 +14,9 @@ Nenhum teste toca a rede: a consulta à fonte é sempre injetada.
 from __future__ import annotations
 
 import datetime as dt
+import json
 import logging
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -309,28 +311,149 @@ def test_capture_alert_sem_dsn_e_no_op_mas_registra(caplog):
     assert any("sem dsn" in r.getMessage() for r in caplog.records)
 
 
-def test_producao_nao_sobe_com_observabilidade_regulatoria_desligada():
-    """Gate: o default seguro de dev não pode virar cegueira silenciosa em prod."""
-    def _settings(**kw) -> Settings:
-        """kwargs explícitos: `**dict` faria o pyright inferir `str` para tudo."""
-        return Settings(
-            POSTGRES_PASSWORD="x", DATABASE_URL="postgresql://u:p@h/d",
-            REDIS_URL="redis://h/0", JWT_SECRET="x" * 32, MINIO_ROOT_USER="u",
-            MINIO_ROOT_PASSWORD="p", S3_ENDPOINT="http://h", S3_BUCKET="b",
-            S3_ACCESS_KEY="k", S3_SECRET_KEY="s", **kw,
-        )
+def _settings(**kw) -> Settings:
+    """kwargs explícitos: `**dict` faria o pyright inferir `str` para tudo."""
+    return Settings(
+        POSTGRES_PASSWORD="x", DATABASE_URL="postgresql://u:p@h/d",
+        REDIS_URL="redis://h/0", JWT_SECRET="x" * 32, MINIO_ROOT_USER="u",
+        MINIO_ROOT_PASSWORD="p", S3_ENDPOINT="http://h", S3_BUCKET="b",
+        S3_ACCESS_KEY="k", S3_SECRET_KEY="s", **kw,
+    )
 
+
+#: Matriz do Round 3. Antes, `ENVIRONMENT == "production"` deixava 11 destes 12
+#: subirem com a observabilidade desligada.
+AMBIENTES_RESTRITIVOS = [
+    "production", "prod", "Production", "PRODUCTION", "prd", "live",
+    " production ", "production\n", "staging", "producao", "prodction", "",
+]
+AMBIENTES_LIVRES = ["development", "test", "ci", "local", "  CI  ", "Development"]
+
+
+@pytest.mark.parametrize("env", AMBIENTES_RESTRITIVOS)
+def test_ambiente_desconhecido_ou_produtivo_exige_observabilidade(env):
+    """Fail-closed: o que não está na allowlist de dev endurece, não afrouxa."""
     with pytest.raises(ValueError, match="CLASSTRIB_FRESHNESS_ENABLED"):
-        _settings(ENVIRONMENT="production", CLASSTRIB_FRESHNESS_ENABLED=False)
+        _settings(ENVIRONMENT=env, CLASSTRIB_FRESHNESS_ENABLED=False)
+    # com o sinal ligado, qualquer ambiente sobe
+    assert _settings(ENVIRONMENT=env, CLASSTRIB_FRESHNESS_ENABLED=True).ENVIRONMENT == env
 
-    assert _settings(
-        ENVIRONMENT="production", CLASSTRIB_FRESHNESS_ENABLED=True
-    ).CLASSTRIB_FRESHNESS_ENABLED is True
-    # dev/CI seguem livres com o default OFF
-    assert _settings(ENVIRONMENT="development").CLASSTRIB_FRESHNESS_ENABLED is False
+
+def test_ambiente_vazio_assume_postura_restritiva():
+    """Variável vazia não pode ser lida como 'ambiente de brincadeira'.
+
+    Construído com o sinal LIGADO para poder inspecionar a postura — com ele
+    desligado o próprio gate impede a instância, o que já é o comportamento
+    coberto em AMBIENTES_RESTRITIVOS.
+    """
+    assert _settings(ENVIRONMENT="", CLASSTRIB_FRESHNESS_ENABLED=True).is_production_posture()
+
+
+@pytest.mark.parametrize("env", AMBIENTES_LIVRES)
+def test_ambientes_nao_produtivos_seguem_livres(env):
+    """dev/CI não podem ser forçados a chamar um portal de governo."""
+    s = _settings(ENVIRONMENT=env)
+    assert s.CLASSTRIB_FRESHNESS_ENABLED is False
+    assert s.is_production_posture() is False
+
+
+def test_normalizacao_nao_inventa_alias_produtivo():
+    """`prod` NÃO é reconhecido como produção — é reconhecido como desconhecido.
+
+    A diferença importa: a lista mantida é a dos ambientes seguros. Um nome novo
+    de ambiente entra como restritivo por omissão, que é o lado certo de errar.
+    """
+    for env in ("prod", "qualquer-coisa-nova"):
+        assert _settings(ENVIRONMENT=env, CLASSTRIB_FRESHNESS_ENABLED=True).is_production_posture()
+
+
+# ── Payload público enxuto (SEC-05/06) ────────────────────────────────────────
+
+
+def test_payload_publico_nao_expoe_conteudo_da_origem():
+    """/health/deep é público e sem auth — não devolve string vinda da SVRS."""
+    f = rf.Freshness(
+        status="degraded", source_state="drift", bundled_version_date="2026-08-24",
+        bundled_version_age_days=1, local_codes=164, remote_codes=165,
+        detail="fonte consultada, DIVERGENTE: +1 / -0 códigos não incorporados",
+        added=("9\nERROR linha-injetada", "900001"),
+    )
+    for c in _probes_ok(_probe_classtrib=f):
+        c.start()
+    try:
+        body = TestClient(app).get("/health/ready").json()
+    finally:
+        patch.stopall()
+
+    ev = body["classtrib_freshness"]
+    assert "codes_added" not in ev and "codes_removed" not in ev
+    assert "injetada" not in json.dumps(body), "conteúdo da origem vazou no payload público"
+    # o que fica é diagnóstico seguro
+    assert ev["bundled_fingerprint"] and len(ev["bundled_fingerprint"]) == 12
+    assert ev["source_state"] == "drift" and ev["remote_codes"] == 165
+
+
+def test_diagnostico_de_drift_sobrevive_no_alerta_interno_sanitizado():
+    """Removido do público, mas não perdido: vai ao Sentry, filtrado."""
+    f = rf.Freshness(
+        status="degraded", source_state="drift", bundled_version_date="2026-08-24",
+        bundled_version_age_days=1, local_codes=1, remote_codes=3,
+        detail="d", added=("900001", "9\nERROR injetado", "abc", "900002"),
+    )
+    with patch("app.services.regulatory_freshness.capture_alert") as cap:
+        rf.emit_alert(f)
+    extra = cap.call_args.kwargs["extra"]
+    assert extra["codes_added_sample"] == ["900001", "900002"], "só 6 dígitos passam"
+    assert extra["codes_added_total"] == 4, "o total real não é escondido"
 
 
 # ── Cache ─────────────────────────────────────────────────────────────────────
+
+
+def test_single_flight_12_concorrentes_1_fetch():
+    """SEC-04: cache frio + concorrência disparava 12 fetches ao portal SVRS.
+
+    As probes de health rodam em ThreadPoolExecutor — concorrência aqui é o caso
+    normal. O lock era liberado ANTES do fetch, então todo mundo buscava.
+    """
+    import threading
+    rf.reset_cache()
+    chamadas = []
+
+    def lento(local):
+        chamadas.append(1)
+        time.sleep(0.3)
+        return rf.SourceProbe(state="match", remote_codes=len(local))
+
+    ts = [threading.Thread(target=lambda: rf.current(
+        monotonic=time.monotonic, ttl_seconds=900, probe_fn=lento)) for _ in range(12)]
+    [t.start() for t in ts]
+    [t.join() for t in ts]
+    assert len(chamadas) == 1, f"12 concorrentes com cache frio → {len(chamadas)} fetches"
+
+
+def test_cache_vencido_serve_valor_antigo_sem_bloquear():
+    """Stale-while-revalidate: quem chega durante a renovação não espera."""
+    import threading
+    rf.reset_cache()
+    chamadas = []
+
+    def lento(local):
+        chamadas.append(1)
+        time.sleep(0.3)
+        return rf.SourceProbe(state="match", remote_codes=len(local))
+
+    rf.current(monotonic=time.monotonic, ttl_seconds=0.01, probe_fn=lento)
+    chamadas.clear()
+    time.sleep(0.05)
+
+    t0 = time.monotonic()
+    ts = [threading.Thread(target=lambda: rf.current(
+        monotonic=time.monotonic, ttl_seconds=0.01, probe_fn=lento)) for _ in range(12)]
+    [t.start() for t in ts]
+    [t.join() for t in ts]
+    assert len(chamadas) == 1, "com valor antigo em mãos, só um renova"
+    assert time.monotonic() - t0 < 0.9, "os demais não podem ficar presos na renovação"
 
 
 def test_cache_evita_martelar_a_fonte_publica():

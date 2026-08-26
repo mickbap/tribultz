@@ -50,6 +50,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import re
 import threading
 from dataclasses import dataclass, field
 from typing import Callable, Literal, Optional
@@ -229,6 +230,17 @@ def to_service_status(f: Freshness) -> Literal["ok", "degraded"]:
     return "ok" if f.status == "ok" else "degraded"
 
 
+#: cClassTrib é sempre 6 dígitos. Qualquer outra coisa vinda da fonte é
+#: descartada antes de virar log/Sentry — a origem não escreve nas nossas
+#: trilhas. Amostra limitada: diagnóstico, não dump.
+_CODIGO_VALIDO = re.compile(r"^[0-9]{6}$")
+_AMOSTRA_MAX = 10
+
+
+def _amostra_segura(codigos: tuple[str, ...]) -> list[str]:
+    return [c for c in codigos if _CODIGO_VALIDO.match(c)][:_AMOSTRA_MAX]
+
+
 def emit_alert(f: Freshness) -> None:
     """Alerta operacional pelo caminho explícito de captura do projeto.
 
@@ -245,6 +257,11 @@ def emit_alert(f: Freshness) -> None:
         "sync_execution": f.sync_execution,
         "local_codes": f.local_codes,
         "remote_codes": f.remote_codes,
+        # Amostra sanitizada: só o que casa com o formato oficial.
+        "codes_added_sample": _amostra_segura(f.added),
+        "codes_removed_sample": _amostra_segura(f.removed),
+        "codes_added_total": len(f.added),
+        "codes_removed_total": len(f.removed),
     }
     if f.status == "stale":
         capture_alert(f"ALERTA regulatório: cClassTrib STALE — {f.detail}",
@@ -254,43 +271,72 @@ def emit_alert(f: Freshness) -> None:
                       level="warning", extra=contexto)
 
 
-# ── Cache ─────────────────────────────────────────────────────────────────────
+# ── Cache com single-flight ───────────────────────────────────────────────────
 
-_lock = threading.Lock()
+_lock = threading.Lock()          # protege a leitura/escrita do valor
+_refresh_lock = threading.Lock()  # garante UM fetch por vez neste processo
 _cache: Optional[tuple[float, Freshness]] = None
 
 
 def current(
     *,
     monotonic: Callable[[], float],
-    ttl_seconds: Optional[int] = None,
+    ttl_seconds: Optional[float] = None,  # float: testes usam TTL sub-segundo
     probe_fn: Optional[Callable[[set[str]], SourceProbe]] = None,
 ) -> Freshness:
-    """Veredito com cache TTL — /health/deep não pode martelar a SVRS.
+    """Veredito com cache TTL e **single-flight** — /health/deep não martela a SVRS.
 
-    O TTL protege a fonte pública e mantém a latência do endpoint previsível:
-    a consulta remota acontece no máximo uma vez por janela.
+    Round 3 (#673): a versão anterior liberava o lock ANTES do fetch, então N
+    requisições concorrentes com cache frio disparavam N requisições ao portal
+    público — medido: 12 de 12. As probes rodam em ThreadPoolExecutor, então
+    concorrência aqui é o caso normal, não a exceção.
+
+    Agora:
+
+    - **cache quente** → devolve na hora, sem tocar em lock de refresh;
+    - **cache frio** → todos bloqueiam; o primeiro busca, os demais acordam,
+      reveem o cache já preenchido e voltam sem buscar (12 → 1 fetch);
+    - **cache vencido mas existente** → o primeiro renova; os demais recebem o
+      **último valor conhecido** imediatamente, sem bloquear (stale-while-
+      revalidate). Servir dado de 15 min atrás é melhor que segurar o health.
+
+    Escopo deliberado: single-flight **por processo**. Coordenação entre réplicas
+    seria arquitetura distribuída nova e não cabe neste Round.
     """
-    global _cache
     ttl = ttl_seconds if ttl_seconds is not None else settings.CLASSTRIB_FRESHNESS_TTL_SECONDS
-    now = monotonic()
-    with _lock:
-        if _cache is not None and (now - _cache[0]) < ttl:
-            return _cache[1]
-
-    local = set(CLASSTRIB_BY_CODE.keys())
-    probe = (
-        probe_fn(local) if probe_fn
-        else probe_source(local, CLASSTRIB_CONTENT_SIGNATURE)
-    )
-    verdict = evaluate(
-        local_codes=local, bundled_version_date=CLASSTRIB_SYNCED_AT, probe=probe
-    )
-    emit_alert(verdict)
 
     with _lock:
-        _cache = (now, verdict)
-    return verdict
+        cached = _cache
+    if cached is not None and (monotonic() - cached[0]) < ttl:
+        return cached[1]
+
+    # Sem valor algum ⇒ é obrigatório esperar. Com valor velho ⇒ não bloqueia.
+    if not _refresh_lock.acquire(blocking=(cached is None)):
+        return cached[1]  # type: ignore[index] — não-bloqueante só com cache existente
+
+    try:
+        # Outro thread pode ter renovado enquanto este esperava no lock.
+        with _lock:
+            atual = _cache
+        if atual is not None and (monotonic() - atual[0]) < ttl:
+            return atual[1]
+
+        local = set(CLASSTRIB_BY_CODE.keys())
+        probe = (
+            probe_fn(local) if probe_fn
+            else probe_source(local, CLASSTRIB_CONTENT_SIGNATURE)
+        )
+        verdict = evaluate(
+            local_codes=local, bundled_version_date=CLASSTRIB_SYNCED_AT, probe=probe
+        )
+        emit_alert(verdict)
+
+        with _lock:
+            _cache_novo = (monotonic(), verdict)
+            globals()["_cache"] = _cache_novo
+        return verdict
+    finally:
+        _refresh_lock.release()
 
 
 def reset_cache() -> None:
