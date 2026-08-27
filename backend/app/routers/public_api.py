@@ -80,10 +80,13 @@ class ClassifyRequest(BaseModel):
 
 class ClassifyResponse(BaseModel):
     ncm: str
-    # cClassTrib: NUNCA taxonomia de produto (RF-A1). null + status até o mapeamento
-    # oficial NCM→cClassTrib existir (#313); candidatos populados quando houver.
-    cClassTrib: Optional[str] = None
+    # cClassTrib: NUNCA taxonomia de produto (RF-A1). SEMPRE null (#672 Fase 2) — não
+    # por falta de mapeamento (ele existe, #313), mas porque os anexos delimitam
+    # candidatos condicionados e a determinação depende do contexto da operação, que
+    # este endpoint não recebe. A classificação entregue está em cclasstrib_candidatos.
+    cClassTrib: None = None
     cclasstrib_candidatos: list = []
+    # "requer_validacao" | "candidato_unico" | "multiplos" — cardinalidade, não veredito.
     cclasstrib_status: str = "requer_validacao"
     cest: None = None
     cst: str
@@ -160,7 +163,13 @@ def classify(
 ) -> ClassifyResponse:
     # 1. cClassTrib via mapeamento oficial NCM→cClassTrib (anexos SVRS). NUNCA taxonomia
     #    de produto (RF-A1); candidatos a validar, não veredito (RF-A2); null honesto sem
-    #    mapeamento (RF-A3). Multi-mapeada → cClassTrib null, candidatos na lista.
+    #    mapeamento (RF-A3).
+    #
+    #    `cClassTrib` é null em TODA cardinalidade (#672 Fase 2). Antes vinha preenchido
+    #    quando a NCM tinha um candidato só — o que lia "candidato único" como
+    #    "determinado". Os anexos catalogam tratamentos condicionados por destinação e
+    #    finalidade; a NCM delimita o espaço, o contexto da operação é que escolhe dentro
+    #    dele, e este endpoint não recebe esse contexto. Os candidatos seguem na lista.
     classtrib_codigo, cc_candidatos, cc_status = resolve_cclasstrib(payload.ncm)
 
     # 2. Calcular CBS/IBS
