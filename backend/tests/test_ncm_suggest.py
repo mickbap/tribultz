@@ -42,11 +42,18 @@ class TestCandidatos:
         cand = b["cclasstrib_candidatos"][0]
         assert re.fullmatch(r"\d{6}", cand["codigo"]) and cand["base_legal"]
 
-    def test_unico_retorna_um_candidato(self):
+    def test_candidato_unico_nao_vira_veredito(self):
+        """#672 Fase 2: um candidato só é delimitação, não determinação.
+
+        A NCM 0201.10.00 consta de um anexo apenas (Anexo I, cesta básica) — e o
+        título desse anexo condiciona o tratamento à destinação ("PRODUTOS
+        DESTINADOS À ALIMENTAÇÃO HUMANA"). Destinação é atributo da operação, que
+        este endpoint não recebe. O candidato vem na lista; o veredito, não.
+        """
         b = _post("02011000", "carne bovina").json()
-        assert b["cclasstrib_status"] == "unico"
-        assert b["cClassTrib"] == "200003"
-        assert len(b["cclasstrib_candidatos"]) == 1
+        assert b["cclasstrib_status"] == "candidato_unico"
+        assert b["cClassTrib"] is None
+        assert [c["codigo"] for c in b["cclasstrib_candidatos"]] == ["200003"]
 
     def test_sem_mapeamento_fallback_honesto(self):
         b = _post("84713012", "notebook").json()

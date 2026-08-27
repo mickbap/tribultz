@@ -103,7 +103,9 @@ export default function ApiSettingsPage() {
         <p className="text-sm text-slate-500 mt-1">
           Autentique integrações ERP e sistemas externos com a API pay-per-call.
           Cada chamada a <code className="bg-slate-100 px-1 rounded text-xs">/classify</code> consome 1 crédito.
-          O cálculo CBS/IBS é completo; a classificação NCM→cClassTrib está em ativação e é retornada como sugestão a validar.
+          O cálculo CBS/IBS é completo. A classificação NCM→cClassTrib é retornada como{" "}
+          <strong>candidatos com base legal</strong>, nunca como código único: o NCM delimita
+          os tratamentos possíveis, mas quem determina é o contexto da operação.
         </p>
       </header>
 
@@ -233,7 +235,15 @@ export default function ApiSettingsPage() {
           <p className="text-xs font-medium text-slate-500 mb-1">Resposta</p>
           <pre className="rounded-lg bg-slate-900 text-slate-100 text-xs p-4 overflow-x-auto">{`{
   "ncm": "02013000",
-  "cClassTrib": "02.001.00",
+  "cClassTrib": null,
+  "cclasstrib_status": "candidato_unico",
+  "cclasstrib_candidatos": [
+    {
+      "codigo": "200003",
+      "descricao": "Vendas de produtos destinados à alimentação humana...",
+      "base_legal": "Anexo 1 — LC 214"
+    }
+  ],
   "cst": "000",
   "vBC": "150.00",
   "vCBS": "13.20",

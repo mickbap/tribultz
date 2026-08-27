@@ -160,7 +160,13 @@ def classify(
 ) -> ClassifyResponse:
     # 1. cClassTrib via mapeamento oficial NCM→cClassTrib (anexos SVRS). NUNCA taxonomia
     #    de produto (RF-A1); candidatos a validar, não veredito (RF-A2); null honesto sem
-    #    mapeamento (RF-A3). Multi-mapeada → cClassTrib null, candidatos na lista.
+    #    mapeamento (RF-A3).
+    #
+    #    `cClassTrib` é null em TODA cardinalidade (#672 Fase 2). Antes vinha preenchido
+    #    quando a NCM tinha um candidato só — o que lia "candidato único" como
+    #    "determinado". Os anexos catalogam tratamentos condicionados por destinação e
+    #    finalidade; a NCM delimita o espaço, o contexto da operação é que escolhe dentro
+    #    dele, e este endpoint não recebe esse contexto. Os candidatos seguem na lista.
     classtrib_codigo, cc_candidatos, cc_status = resolve_cclasstrib(payload.ncm)
 
     # 2. Calcular CBS/IBS

@@ -52,7 +52,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Como classificar o NCM correto para o cClassTrib na Reforma Tributária?",
-    a: "O cClassTrib é determinado pelo capítulo NCM e pelo regime tributário aplicável (padrão, reduzido, cesta básica, imune, etc). A Tribultz valida a compatibilidade CST × cClassTrib (a fonte da Rejeição 1024) e calcula CBS/IBS com evidência auditável da base legal; a sugestão automática de cClassTrib a partir do NCM está em ativação e deve ser validada.",
+    a: "O NCM sozinho não determina o cClassTrib: ele delimita os tratamentos possíveis. A determinação decorre das condições tributárias aplicáveis à operação — destinação, finalidade e regime —, e os próprios Anexos da LC 214 trazem essa condição no título (\u0022alimentos destinados ao consumo humano\u0022, \u0022insumos agropecuários\u0022). Por isso a Tribultz devolve os cClassTrib candidatos para o NCM, com a base legal de cada um, em vez de arriscar um palpite único — e valida a compatibilidade CST × cClassTrib, que é a fonte da Rejeição 1024, calculando CBS/IBS com evidência auditável.",
   },
   {
     q: "Como integrar CBS/IBS no TOTVS, SAP, Omie ou Linx?",

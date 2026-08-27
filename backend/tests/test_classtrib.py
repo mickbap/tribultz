@@ -135,17 +135,42 @@ class TestClassTribValidate:
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "OK" and not data["divergencia"]
+        assert data["classtrib_candidatos"] == ["200003"]
 
-    def test_validate_divergente(self, auth_client):
-        # 000001 existe mas NÃO é candidato da NCM 0201.10.00 → DIVERGENTE
+    def test_tributacao_integral_nao_e_erro_por_ausencia_no_anexo(self, auth_client):
+        """#672 Fase 2: falso positivo por construção, removido.
+
+        000001 (tributação integral) não é candidato de NENHUMA das 1.982 NCMs
+        mapeadas — a tributação comum não é objeto de anexo. A regra antiga
+        acusava ERROR de divergência sempre que alguém declarava tributação
+        integral sobre NCM anexada, o que é a operação comum daquela mercadoria
+        fora da condição do anexo.
+        """
         resp = auth_client.post(
             "/api/v1/classtrib/validate",
             json={"ncm": "02011000", "classtrib_informado": "000001"},
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] == "DIVERGENTE" and data["divergencia"]
-        assert data["classtrib_sugerido"] == "200003"
+        assert data["status"] == "NAO_DETERMINAVEL"
+        assert data["divergencia"] is False          # não comprovada
+        assert data["finding"]["severity"] == "WARNING"
+        assert "não esgotam" in data["finding"]["recommendation"]
+
+    def test_validate_nao_elege_candidato_por_posicao(self, auth_client):
+        """#672 Fase 2: `candidatos[0]` era escolha por posição, não por evidência.
+
+        A NCM 1001.99.00 tem três candidatos, um deles em regime DIFERENTE
+        (515001, CST 515 — diferimento). Devolver o primeiro da lista como
+        "sugerido" apresentava a ordem da fonte como preferência dela.
+        """
+        resp = auth_client.post(
+            "/api/v1/classtrib/validate",
+            json={"ncm": "10019900", "classtrib_informado": "000001"},
+        )
+        data = resp.json()
+        assert data["classtrib_sugerido"] is None
+        assert len(data["classtrib_candidatos"]) == 3
 
     def test_validate_nao_encontrado(self, auth_client):
         resp = auth_client.post(

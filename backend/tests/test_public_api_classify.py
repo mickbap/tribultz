@@ -57,9 +57,17 @@ class TestClassifyPago:
         assert len(b["cclasstrib_candidatos"]) >= 2
         assert b["credits_used"] == 1 and b["credits_remaining"] == 99
 
-    def test_unico_cobra(self):
+    def test_candidato_unico_cobra_mas_nao_da_veredito(self):
+        """#672 Fase 2: cClassTrib null mesmo com um candidato só.
+
+        A cobrança não muda — o cliente recebe a classificação delimitada pela
+        fonte, que é o que ele paga. O que sai é a afirmação de unicidade que a
+        fonte não sustenta.
+        """
         b = self._post("02011000").json()
-        assert b["cClassTrib"] == "200003"
+        assert b["cClassTrib"] is None
+        assert b["cclasstrib_status"] == "candidato_unico"
+        assert [c["codigo"] for c in b["cclasstrib_candidatos"]] == ["200003"]
         assert b["credits_used"] == 1
 
     def test_sem_mapeamento_nao_cobra(self):

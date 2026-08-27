@@ -236,8 +236,11 @@ def suggest_ncm(
 
     # cClassTrib via mapeamento oficial NCM→cClassTrib (anexos SVRS, app/data/ncm_cclasstrib.json).
     # NUNCA taxonomia de produto (RF-A1); candidatos a validar, não veredito (RF-A2);
-    # null honesto quando não há mapeamento (RF-A3). Para NCM multi-mapeada, cClassTrib
-    # fica null e os candidatos vêm na lista (palpite único confiante é o que gera a 1024).
+    # null honesto quando não há mapeamento (RF-A3).
+    #
+    # `cClassTrib` é null em TODA cardinalidade (#672 Fase 2) — inclusive quando a NCM tem
+    # um candidato só. Palpite único confiante é justamente o que gera a Rejeição 1024, e
+    # candidato único na fonte é delimitação, não determinação. Os candidatos vêm na lista.
     cclasstrib, cc_candidatos, cc_status = resolve_cclasstrib(ncm)
 
     aviso: str | None = None
