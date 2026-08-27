@@ -919,15 +919,24 @@ class TestClassTribDocType:
     # não ausência de informação — verificado contra a fonte em 26/08/2026.
 
     def test_classtrib_sem_nenhum_dfe_em_nfe_warning(self):
-        """410037 (importação, art. 66) tem dfe_allowed=[] — antes passava calado.
-
-        Par oficial da DUIMP: Fundamento Legal 1071 → cClassTrib 410037. É um
-        código de importação, declarado na DUIMP; numa NF-e não deveria existir.
-        """
+        """410037 tem dfe_allowed=[] — antes passava calado em qualquer modelo."""
         f = self._find(self._nfe("410037"), "NFE")
         assert any(x.id == "F_CLASSTRIB_DOC_TYPE" and x.severity == "WARNING" for x in f)
-        assert "nenhum documento fiscal eletrônico" in f[0].title
+        assert "sem nenhum modelo de DF-e habilitado" in f[0].title
         assert "válido para: " not in f[0].title, "lista vazia não pode virar texto quebrado"
+
+    def test_texto_nao_atribui_fluxo_que_a_fonte_nao_declara(self):
+        """A tabela diz que nenhum indicador está habilitado — não diz o destino.
+
+        Atribuir esses códigos a "importação/DUIMP" seria inferência: dos 10, há
+        planos de saúde, resseguro e ouro como ativo financeiro. O texto tem de
+        parar onde a evidência para.
+        """
+        f = self._find(self._nfe("410037"), "NFE")
+        texto = f"{f[0].title} {f[0].recommendation}"
+        for termo in ("DUIMP", "importação", "importacao"):
+            assert termo not in texto, f"texto atribui fluxo não declarado pela fonte: {termo}"
+        assert "indicadores de modelo de DF-e avaliados desabilitados" in f[0].recommendation
 
     def test_classtrib_sem_nenhum_dfe_tambem_em_nfce(self):
         """Não é específico da NF-e: nenhum modelo aceita."""

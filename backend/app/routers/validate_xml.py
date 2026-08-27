@@ -1348,10 +1348,16 @@ def validate_xml(
     # A condição anterior era `if _allowed and ...`: lista vazia é falsy, então os
     # 10 códigos desse segundo grupo passavam em SILÊNCIO em qualquer modelo (#680).
     #
-    # Que [] significa mesmo "nenhum DFe" foi verificado contra a fonte em 26/08/2026:
+    # Que [] significa "nenhum indicador habilitado" — e não ausência de informação —
+    # foi verificado contra a fonte em 26/08/2026:
     # nos 10 códigos as 14 chaves IndNfe/IndNfce/IndNfse/… estão TODAS PRESENTES e
     # TODAS false — declaração explícita, não ausência de informação. O controle
     # (000001) traz as mesmas 14 chaves com 11 verdadeiras.
+    #
+    # O que a fonte sustenta é só isso: nenhum dos indicadores AVALIADOS está
+    # habilitado. Ela NÃO diz a que fluxo o código pertence. Atribuir esses
+    # códigos a "importação/DUIMP" seria inferência nossa — vários dos 10 não têm
+    # relação com importação (planos de saúde, resseguro, ouro ativo financeiro).
     if doc_type and c_class_trib and re.match(r"^\d{6}$", c_class_trib["value"]):
         _allowed = classtrib_dfe_allowed(c_class_trib["value"])
         if _allowed is not None and doc_type not in _allowed:
@@ -1360,14 +1366,15 @@ def validate_xml(
             _modelos = ", ".join(_allowed)
             if _nenhum:
                 _titulo = (
-                    f'cClassTrib {c_class_trib["value"]} não é publicado para nenhum '
-                    f"documento fiscal eletrônico"
+                    f'cClassTrib {c_class_trib["value"]} sem nenhum modelo de DF-e '
+                    f"habilitado na tabela oficial"
                 )
                 _reco = (
-                    f'O cClassTrib {c_class_trib["value"]} consta na tabela oficial SVRS, mas com '
-                    "todos os indicadores de DFe negativos — não é aplicável a NF-e, NFC-e, NFS-e "
-                    "nem aos demais modelos. Códigos assim existem para fluxos fora do DFe (a "
-                    "importação, por exemplo, é declarada na DUIMP). Revise o cClassTrib do item."
+                    f'O cClassTrib {c_class_trib["value"]} consta na tabela oficial SVRS, porém com '
+                    "todos os indicadores de modelo de DF-e avaliados desabilitados — a fonte não "
+                    f"habilita seu uso em {doc_type} nem nos demais modelos avaliados. A tabela não "
+                    "declara em que fluxo o código se aplica; confirme o enquadramento na fonte "
+                    "normativa aplicável antes de usá-lo neste documento."
                 )
             else:
                 _titulo = (
