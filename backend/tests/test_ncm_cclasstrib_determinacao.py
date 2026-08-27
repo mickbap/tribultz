@@ -133,7 +133,10 @@ class TestContratoDaAPIRecusaVeredito:
 
         with pytest.raises(pydantic.ValidationError):
             ClassifyResponse(
-                ncm="02011000", cClassTrib="200003", cst="000", vBC="1",
+                # Violação DELIBERADA do tipo — é o que o teste verifica. O pyright
+                # acusar aqui é a guarda funcionando também em tempo estático.
+                ncm="02011000", cClassTrib="200003",  # pyright: ignore[reportArgumentType]
+                cst="000", vBC="1",
                 vCBS="1", vIBS="1", total_tributos="1", aliquota_efetiva_pct="1",
                 xml_snippet="", credits_used=1, credits_remaining=1,
             )
@@ -146,7 +149,7 @@ class TestContratoDaAPIRecusaVeredito:
         with pytest.raises(pydantic.ValidationError):
             SuggestResponse(
                 ncm="02011000", ncm_descricao="carne", confidence=0.9,
-                cClassTrib="200003",
+                cClassTrib="200003",  # pyright: ignore[reportArgumentType]  (deliberado)
             )
 
     def test_openapi_declara_cclasstrib_como_null(self):
