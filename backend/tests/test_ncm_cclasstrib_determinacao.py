@@ -115,3 +115,46 @@ def test_contrato_de_retorno_estavel(ncm):
     assert isinstance(cands, list) and isinstance(status, str)
     for c in cands:
         assert set(c) == {"codigo", "descricao", "base_legal", "legislacao"}
+
+
+class TestContratoDaAPIRecusaVeredito:
+    """A recusa é de SCHEMA, não de convenção.
+
+    ``cClassTrib`` foi tipado como ``None`` (não ``Optional[str]``) nos dois
+    endpoints. Quem tentar reintroduzir determinação — por regressão, merge ou
+    "camada de compatibilidade" — colide com o pydantic antes de chegar ao
+    cliente. É a guarda que sobrevive a quem não leu esta issue.
+    """
+
+    def test_classify_recusa_cclasstrib_preenchido(self):
+        import pydantic
+
+        from app.routers.public_api import ClassifyResponse
+
+        with pytest.raises(pydantic.ValidationError):
+            ClassifyResponse(
+                ncm="02011000", cClassTrib="200003", cst="000", vBC="1",
+                vCBS="1", vIBS="1", total_tributos="1", aliquota_efetiva_pct="1",
+                xml_snippet="", credits_used=1, credits_remaining=1,
+            )
+
+    def test_suggest_recusa_cclasstrib_preenchido(self):
+        import pydantic
+
+        from app.routers.ncm_suggest import SuggestResponse
+
+        with pytest.raises(pydantic.ValidationError):
+            SuggestResponse(
+                ncm="02011000", ncm_descricao="carne", confidence=0.9,
+                cClassTrib="200003",
+            )
+
+    def test_openapi_declara_cclasstrib_como_null(self):
+        """O contrato publicado ao integrador também diz null — não 'string opcional'."""
+        from app.main import app
+
+        schemas = app.openapi()["components"]["schemas"]
+        assert schemas["ClassifyResponse"]["properties"]["cClassTrib"].get("type") == "null"
+        # /classtrib/validate: campo novo publicado, vocabulário antigo ausente
+        props = schemas["ValidateClassTribResponse"]["properties"]
+        assert "classtrib_candidatos" in props

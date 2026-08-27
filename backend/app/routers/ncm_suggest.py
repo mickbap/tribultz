@@ -95,12 +95,14 @@ class SuggestResponse(BaseModel):
     ncm: str
     ncm_descricao: str
     confidence: float
-    # cClassTrib: NUNCA taxonomia de produto (RF-A1). null quando não há mapeamento
-    # 6-díg confiável — usar candidatos/status em vez de palpite único (RF-A2/A3).
-    cClassTrib: Optional[str] = None
+    # cClassTrib: NUNCA taxonomia de produto (RF-A1). SEMPRE null (#672 Fase 2) — a
+    # NCM delimita candidatos, não determina tratamento. Use cclasstrib_candidatos.
+    cClassTrib: None = None
     cclasstrib_candidatos: list[CClassTribCandidato] = []
-    # "requer_validacao" (sem mapeamento confiável) | "multiplos" (NCM admite vários)
-    # | "unico" (1:1). Resposta de cClassTrib é sempre SUGESTÃO a validar, não veredito.
+    # Cardinalidade do que a fonte delimita — nenhum valor afirma determinação:
+    #   "requer_validacao" (NCM fora da fonte) | "candidato_unico" (1 candidato)
+    #   | "multiplos" (>1 candidato).
+    # "unico" foi aposentado em #672: afirmava determinação que a fonte não sustenta.
     cclasstrib_status: str = "requer_validacao"
     cest: None = None
     rate_source: str = "ncm_ai"

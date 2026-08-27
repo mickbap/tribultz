@@ -80,10 +80,13 @@ class ClassifyRequest(BaseModel):
 
 class ClassifyResponse(BaseModel):
     ncm: str
-    # cClassTrib: NUNCA taxonomia de produto (RF-A1). null + status até o mapeamento
-    # oficial NCM→cClassTrib existir (#313); candidatos populados quando houver.
-    cClassTrib: Optional[str] = None
+    # cClassTrib: NUNCA taxonomia de produto (RF-A1). SEMPRE null (#672 Fase 2) — não
+    # por falta de mapeamento (ele existe, #313), mas porque os anexos delimitam
+    # candidatos condicionados e a determinação depende do contexto da operação, que
+    # este endpoint não recebe. A classificação entregue está em cclasstrib_candidatos.
+    cClassTrib: None = None
     cclasstrib_candidatos: list = []
+    # "requer_validacao" | "candidato_unico" | "multiplos" — cardinalidade, não veredito.
     cclasstrib_status: str = "requer_validacao"
     cest: None = None
     cst: str
