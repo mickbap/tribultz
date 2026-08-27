@@ -1,0 +1,172 @@
+name: Teste de entrega do canal de alerta
+
+# Prova operacional pendente da #673: quando o monitor regulatório entra no ramo
+# de degradação, a notificação humana é EFETIVAMENTE entregue?
+#
+# Não é possível responder isso exercitando o caminho real sem degradar o dado
+# regulatório de produção — e degradar dado fiscal para testar encanamento é
+# exatamente o tipo de atalho que não se faz. Então este workflow testa o
+# MECANISMO DE ENTREGA isoladamente, preservando a distinção entre:
+#
+#   REGULATORY_FRESHNESS_DEGRADED  → estado fiscal real, vindo do /health/deep
+#   ALERT_DELIVERY_TEST            → este workflow, que não altera estado algum
+#
+# O que ele prova: submissão ao Resend (com id), atravessar o WAF que já
+# bloqueou silenciosamente em julho/2026, e o evento de entrega do provedor.
+# O que NÃO prova: que a condição `state != 'ok'` aciona o step em produção —
+# essa parte tem evidência própria (o step foi corretamente `skipped` com estado
+# íntegro na execução de 26/08).
+#
+# Manual apenas. Sem schedule. Não toca monitor.yml nem estado de produção.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Grupo PRÓPRIO, deliberadamente. O `monitor.yml` usa `group: monitor` com
+# `cancel-in-progress: true` — compartilhar aquele grupo faria este teste
+# cancelar uma checagem de disponibilidade legítima em voo.
+concurrency:
+  group: alert-delivery-test
+  cancel-in-progress: false
+
+jobs:
+  delivery-test:
+    name: ALERT_DELIVERY_TEST
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # Leitura pura, para o e-mail de teste mostrar o estado REAL e assim
+      # deixar evidente que nada foi degradado para produzir esta prova.
+      - name: Ler estado regulatório real (read-only)
+        id: estado
+        run: |
+          RESPONSE=$(curl -sf --max-time 20 \
+            https://api.tribultz.com.br/health/deep 2>&1) || {
+            echo "state=indisponivel" >> "$GITHUB_OUTPUT"
+            echo "detail=nao foi possivel ler /health/deep" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+          RESPONSE="$RESPONSE" python3 - << 'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          d = json.loads(os.environ["RESPONSE"])
+          f = d.get("classtrib_freshness") or {}
+          print(f"state={d.get('classtrib', 'unknown')}")
+          print(f"overall={d.get('status', 'unknown')}")
+          print(f"source={f.get('source_state', 'unknown')}")
+          print(f"age={f.get('bundled_version_age_days', '?')}")
+          print(f"version={f.get('bundled_version_date', '?')}")
+          print(f"fingerprint={f.get('bundled_fingerprint', '?')}")
+          PY
+
+      - name: Enviar e-mail de TESTE e capturar o id do Resend
+        id: envio
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          STATE:       ${{ steps.estado.outputs.state }}
+          OVERALL:     ${{ steps.estado.outputs.overall }}
+          SOURCE:      ${{ steps.estado.outputs.source }}
+          AGE:         ${{ steps.estado.outputs.age }}
+          VERSION:     ${{ steps.estado.outputs.version }}
+          FINGERPRINT: ${{ steps.estado.outputs.fingerprint }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          python3 - << 'PY' >> "$GITHUB_OUTPUT"
+          import json, os, urllib.request, urllib.error
+          e = os.environ
+
+          html = (
+            "<div style='border:3px solid #b45309;padding:16px'>"
+            "<h1 style='color:#b45309;margin-top:0'>⚠️ TESTE — NÃO É INCIDENTE</h1>"
+            "<p><b>Nada está degradado.</b> Esta mensagem existe apenas para provar que o "
+            "canal de alerta entrega. Nenhum dado regulatório foi alterado para gerá-la.</p>"
+            "<p><b>Classificação:</b> <code>ALERT_DELIVERY_TEST</code><br>"
+            "<b>Não confundir com:</b> <code>REGULATORY_FRESHNESS_DEGRADED</code>, que é o "
+            "alerta real e chega com assunto <code>[REGULATÓRIO]</code>.</p>"
+            "<hr><h3>Estado REAL de produção no momento deste teste</h3><ul>"
+            f"<li>classtrib: <b>{e['STATE']}</b> · health geral: {e['OVERALL']}</li>"
+            f"<li>fonte SVRS: {e['SOURCE']}</li>"
+            f"<li>versão embarcada: {e['VERSION']} ({e['AGE']} dias) · fingerprint {e['FINGERPRINT']}</li>"
+            "</ul>"
+            f"<p style='color:#555;font-size:12px'>Disparado manualmente por {e['ACTOR']} · "
+            f"<a href='{e['RUN_URL']}'>execução</a> · workflow alert-delivery-test.yml (#673)</p>"
+            "</div>"
+          )
+
+          req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({
+              "from": "noreply@tribultz.com.br",
+              "to": ["mickel@tribultz.com.br"],
+              "subject": "[TESTE DE ENTREGA] canal de alerta — NÃO É INCIDENTE",
+              "html": html,
+            }).encode(),
+            headers={
+              "Authorization": f"Bearer {e['RESEND_API_KEY']}",
+              "Content-Type": "application/json",
+              # Sem isto o WAF do Resend bloqueia o UA padrão do urllib com 403
+              # "error code: 1010". Foi assim que um alerta real morreu em
+              # silêncio em julho/2026 — testar sem este header não provaria o
+              # caminho que de fato usamos.
+              "User-Agent": "tribultz-ci/1.0",
+            },
+          )
+          try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+              corpo = json.loads(r.read().decode())
+              print(f"http_status={r.status}")
+              print(f"resend_id={corpo.get('id', 'AUSENTE')}")
+          except urllib.error.HTTPError as ex:
+            # Falhar aqui é o resultado mais informativo possível: significa que
+            # o alerta REAL também não sairia.
+            raise SystemExit(f"Resend recusou o POST: {ex.code} — {ex.read().decode()[:300]}")
+          PY
+
+      - name: Aguardar processamento do provedor
+        run: sleep 20
+
+      - name: Consultar last_event (só se a credencial já permitir)
+        id: entrega
+        continue-on-error: true
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_ID: ${{ steps.envio.outputs.resend_id }}
+        run: |
+          python3 - << 'PY' >> "$GITHUB_OUTPUT"
+          import json, os, urllib.request, urllib.error
+          e = os.environ
+          req = urllib.request.Request(
+            f"https://api.resend.com/emails/{e['RESEND_ID']}",
+            headers={"Authorization": f"Bearer {e['RESEND_API_KEY']}",
+                     "User-Agent": "tribultz-ci/1.0"},
+          )
+          try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+              d = json.loads(r.read().decode())
+              print(f"last_event={d.get('last_event', 'ausente')}")
+              print(f"consulta=ok")
+          except urllib.error.HTTPError as ex:
+            # 401/403 = a chave não tem escopo de leitura. NÃO ampliar escopo
+            # para este teste: registra-se a limitação e o aceite do POST + id
+            # permanecem como evidência.
+            print(f"last_event=indisponivel")
+            print(f"consulta=http_{ex.code}")
+          PY
+
+      - name: Evidência
+        run: |
+          {
+            echo "## Evidência — ALERT_DELIVERY_TEST"
+            echo ""
+            echo "| Camada | Resultado |"
+            echo "|---|---|"
+            echo "| 1. Submissão/aceite pelo Resend | HTTP ${{ steps.envio.outputs.http_status }} · id \`${{ steps.envio.outputs.resend_id }}\` |"
+            echo "| 2. Evento de entrega do provedor | \`${{ steps.entrega.outputs.last_event }}\` (consulta: ${{ steps.entrega.outputs.consulta }}) |"
+            echo "| 3. Confirmação humana de recebimento | **pendente — só o Owner confirma na caixa** |"
+            echo ""
+            echo "Estado regulatório de produção durante o teste: \`${{ steps.estado.outputs.state }}\` — **não foi alterado**."
+          } >> "$GITHUB_STEP_SUMMARY"
