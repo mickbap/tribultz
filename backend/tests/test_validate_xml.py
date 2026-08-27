@@ -913,6 +913,35 @@ class TestClassTribDocType:
     def test_desconhecido_sem_finding(self):
         assert self._find(self._nfe("999999"), "NFE") == []
 
+    # ── #680 — código publicado para NENHUM DFe ───────────────────────────────
+    # A fonte SVRS traz, nesses códigos, as 14 chaves IndNfe/IndNfce/IndNfse/…
+    # todas PRESENTES e todas false. É declaração explícita de inaplicabilidade,
+    # não ausência de informação — verificado contra a fonte em 26/08/2026.
+
+    def test_classtrib_sem_nenhum_dfe_em_nfe_warning(self):
+        """410037 (importação, art. 66) tem dfe_allowed=[] — antes passava calado.
+
+        Par oficial da DUIMP: Fundamento Legal 1071 → cClassTrib 410037. É um
+        código de importação, declarado na DUIMP; numa NF-e não deveria existir.
+        """
+        f = self._find(self._nfe("410037"), "NFE")
+        assert any(x.id == "F_CLASSTRIB_DOC_TYPE" and x.severity == "WARNING" for x in f)
+        assert "nenhum documento fiscal eletrônico" in f[0].title
+        assert "válido para: " not in f[0].title, "lista vazia não pode virar texto quebrado"
+
+    def test_classtrib_sem_nenhum_dfe_tambem_em_nfce(self):
+        """Não é específico da NF-e: nenhum modelo aceita."""
+        assert any(x.id == "F_CLASSTRIB_DOC_TYPE"
+                   for x in self._find(self._nfe("011002", mod="65"), "NFCE"))
+
+    def test_positivo_conhecido_segue_silencioso(self):
+        """Guard contra excesso de zelo: o caso válido não pode passar a alertar."""
+        assert self._find(self._nfe("000001"), "NFE") == []
+
+    def test_desconhecido_continua_sem_finding_apos_680(self):
+        """`None` (desconhecido) e `[]` (nenhum DFe) não podem voltar a colapsar."""
+        assert self._find(self._nfe("999999"), "NFE") == []
+
 
 class TestDevolucaoDFeRef:
     """#312 — NF-e de devolução (finNFe=4) referencia a nota original por item via
