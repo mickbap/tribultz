@@ -1,14 +1,18 @@
 """Round 5 — campanha QA do F2: o receptor do webhook Rumy.
 
 Ataques de transporte: flag off, assinatura inválida, secret ausente, corpo
-não-JSON, reentrega byte-idêntica. O broker é mockado (delay) — worker é
-testado à parte em test_handoff_worker.py. Dados 100% sintéticos.
+não-JSON, reentrega. O broker é mockado (delay) — worker é testado à parte em
+test_handoff_worker.py. Dados 100% sintéticos.
+
+Round 16-G (#689): ``_sign`` passou a produzir o contrato REAL do fornecedor
+(Base64 sobre ``{timestamp}.{rawBody}`` + carimbo). A fixture se adaptou ao
+contrato — o contrato nunca se adapta à fixture.
 """
 
 import hashlib
-import hmac
 import json
 import os
+import time
 import uuid
 
 import pytest
@@ -74,8 +78,16 @@ def enabled_fixture(monkeypatch, tenant_id):
     monkeypatch.setattr(settings, "HANDOFF_TENANT_ID", str(tenant_id))
 
 
-def _sign(body: bytes, secret: str = SECRET) -> dict:
-    return {"X-Rumy-Signature": hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()}
+def _sign(body: bytes, secret: str = SECRET, ts: str | None = None) -> dict:
+    """Headers do contrato público do Rumy (#689)."""
+    from app.services.handoff.webhook_auth import expected_signature
+
+    ts = ts or str(int(time.time()))
+    return {
+        "X-Rumy-Signature": expected_signature(ts, body, secret),
+        "X-Rumy-Timestamp": ts,
+        "X-Rumy-Event-Id": f"evt_{uuid.uuid4()}",
+    }
 
 
 BODY = json.dumps({"event_type": "sintetico.qa", "id": "lead-sintetico-001"}).encode()
@@ -119,13 +131,17 @@ def test_assinatura_valida_persiste_bruto_e_enfileira(client, session, enabled):
     row = session.query(CrmLeadEvent).one()
     assert row.status == "received"
     assert row.payload_raw == json.loads(BODY)
-    assert row.idempotency_key.startswith("raw:")
+    # #689: a chave primária de idempotência passou a ser o Event ID do produtor
+    assert row.idempotency_key.startswith("evt:")
+    assert row.provider_event_id
     assert len(client.delay_calls) == 1  # worker enfileirado
 
 
-def test_reentrega_byte_identica_deduplicada(client, session, enabled):
-    client.post("/api/v1/webhooks/rumy", content=BODY, headers=_sign(BODY))
-    r2 = client.post("/api/v1/webhooks/rumy", content=BODY, headers=_sign(BODY))
+def test_reentrega_mesmo_event_id_deduplicada(client, session, enabled):
+    """Retry do Rumy: MESMO Event ID (até 7×). A dedupe é por ele, não por bytes."""
+    h = _sign(BODY)
+    client.post("/api/v1/webhooks/rumy", content=BODY, headers=h)
+    r2 = client.post("/api/v1/webhooks/rumy", content=BODY, headers=h)
     assert r2.json()["status"] == "duplicate"
     row = session.query(CrmLeadEvent).one()  # uma linha só
     assert row.attempts == 2

@@ -2,10 +2,15 @@
 
 Duas camadas de idempotência, deliberadamente distintas:
 
-1. Transporte (este módulo): dedupe de reentregas byte-idênticas pela chave
-   ``raw:<sha256(corpo)>`` — o corpo é persistido ANTES de qualquer validação
-   de schema, então nenhum evento autenticado se perde, nem quando o payload
-   surpreende (Round 3 A1: persistir bruto vem antes de validar).
+1. Transporte (este módulo): dedupe pela identidade que o produtor garante —
+   ``evt:<X-Rumy-Event-Id>``. O Rumy re-tenta até 7× com o MESMO Event ID, mas
+   NÃO garante os mesmos bytes: qualquer reserialização (ordem de chaves,
+   espaçamento, ``api_version``) mudaria um hash de corpo e deixaria o mesmo
+   evento lógico entrar duas vezes (#689). O hash do corpo continua gravado
+   como EVIDÊNCIA (``payload_hash``), não como chave. Sem Event ID — produtor
+   fora do contrato — cai no hash, que é melhor que nada. O corpo é persistido
+   ANTES de qualquer validação de schema, então nenhum evento autenticado se
+   perde (Round 3 A1: persistir bruto vem antes de validar).
 2. Negócio (service.py, F3): a chave do evento normalizado — o mesmo evento
    lógico reentregue com bytes diferentes morre lá.
 
@@ -50,20 +55,33 @@ def persist_raw_event(
     raw_body: bytes,
     parsed: Optional[dict[str, Any]],
     source_system: str = "rumy",
+    provider_event_id: Optional[str] = None,
 ) -> tuple[CrmLeadEvent, bool]:
     """Grava o corpo bruto no ledger (camada de transporte). Retorna (linha, criada?).
 
-    Reentrega byte-idêntica incrementa ``attempts`` na linha existente (dedupe
-    de transporte). Corpo não-JSON é preservado por hash — autenticado, então é
-    evidência de bug do produtor, não lixo a descartar.
+    Reentrega incrementa ``attempts`` na linha existente. Quando o mesmo Event
+    ID chega com bytes diferentes, vence o PRIMEIRO corpo: ``payload_raw`` e
+    ``payload_hash`` não são sobrescritos — reescrever apagaria a evidência do
+    que foi autenticado primeiro. A divergência é registrada em log.
+
+    Corpo não-JSON é preservado por hash — autenticado, então é evidência de bug
+    do produtor, não lixo a descartar.
     """
     body_sha = hashlib.sha256(raw_body).hexdigest()
-    key = f"raw:{body_sha}"
+    evt_id = (provider_event_id or "").strip()
+    key = f"evt:{evt_id}" if evt_id else f"raw:{body_sha}"
     existing = (
         session.query(CrmLeadEvent).filter(CrmLeadEvent.idempotency_key == key).one_or_none()
     )
     if existing is not None:
         existing.attempts = (existing.attempts or 1) + 1  # type: ignore[assignment]
+        if existing.payload_hash != body_sha:
+            # Mesmo evento lógico, bytes diferentes. Idempotência preservada; a
+            # divergência é anomalia do produtor e precisa ser visível.
+            logger.warning(
+                "rumy_event_id_body_divergence event_id=%s ledger=%s hash_gravado=%s hash_recebido=%s",
+                evt_id or "(sem-id)", existing.id, existing.payload_hash, body_sha,
+            )
         return existing, False
 
     row = CrmLeadEvent(
@@ -71,6 +89,7 @@ def persist_raw_event(
         source_system=source_system,
         external_lead_id=RAW_PENDING,
         idempotency_key=key,
+        provider_event_id=evt_id or None,
         schema_version="raw",
         event_type=RAW_EVENT_TYPE,
         occurred_at=None,

@@ -8,7 +8,8 @@ Semântica de resposta — desvio DELIBERADO da convenção sempre-200 dos webho
 Asaas/Attio deste repo: aqui o retry do produtor é desejado (at-least-once).
   404 — RUMY_WEBHOOK_ENABLED=false (default): endpoint inexistente p/ o mundo.
   503 — HANDOFF_TENANT_ID não configurado (fail-closed, sem efeito colateral).
-  401 — assinatura ausente/ inválida (nada é persistido).
+  401 — assinatura/carimbo ausente, inválido ou fora da janela de ±5 min
+        (nada é persistido; o motivo exato fica só no log).
   200 — aceito (accepted) ou reentrega byte-idêntica (duplicate).
   5xx — falha transitória (ex.: banco fora): o produtor re-tenta e a camada de
         idempotência absorve a reentrega.
@@ -26,7 +27,13 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.services.handoff.inbox import persist_raw_event
-from app.services.handoff.webhook_auth import SIGNATURE_HEADER, verify_signature
+from app.services.handoff.webhook_auth import (
+    EVENT_ID_HEADER,
+    EVENT_TYPE_HEADER,
+    SIGNATURE_HEADER,
+    TIMESTAMP_HEADER,
+    verify_signature,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +51,15 @@ async def rumy_webhook(request: Request, db: Session = Depends(get_db)):
 
     raw_body = await request.body()
     signature = request.headers.get(SIGNATURE_HEADER, "")
-    if not verify_signature(raw_body, signature):
+    timestamp = request.headers.get(TIMESTAMP_HEADER, "")
+    if not verify_signature(raw_body, signature, timestamp):
+        # Motivo específico fica no log; ao cliente vai só 401 (não ensinar o
+        # atacante qual borda ele cruzou).
         logger.warning("rumy_webhook_rejected reason=invalid_signature")
         raise HTTPException(status_code=401, detail="assinatura inválida")
+
+    provider_event_id = request.headers.get(EVENT_ID_HEADER, "")
+    event_type_raw = request.headers.get(EVENT_TYPE_HEADER, "")
 
     try:
         parsed = json.loads(raw_body)
@@ -56,7 +69,9 @@ async def rumy_webhook(request: Request, db: Session = Depends(get_db)):
         parsed = None  # persist_raw_event preserva por hash (evidência de bug do produtor)
 
     tenant_id = uuid.UUID(settings.HANDOFF_TENANT_ID)
-    row, created = persist_raw_event(db, tenant_id, raw_body, parsed)
+    row, created = persist_raw_event(
+        db, tenant_id, raw_body, parsed, provider_event_id=provider_event_id
+    )
     db.commit()
 
     if created:
@@ -69,5 +84,8 @@ async def rumy_webhook(request: Request, db: Session = Depends(get_db)):
         except Exception:  # noqa: BLE001 — broker fora não pode derrubar o recebimento
             logger.exception("rumy_webhook_enqueue_failed ledger=%s (linha fica 'received')", row.id)
 
-    logger.info("rumy_webhook_received ledger=%s created=%s", row.id, created)
+    logger.info(
+        "rumy_webhook_received ledger=%s created=%s event_id=%s type=%s",
+        row.id, created, provider_event_id or "(ausente)", event_type_raw or "(ausente)",
+    )
     return {"status": "accepted" if created else "duplicate", "event": str(row.id)}
