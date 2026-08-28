@@ -75,7 +75,7 @@ def persist_raw_event(
     )
     if existing is not None:
         existing.attempts = (existing.attempts or 1) + 1  # type: ignore[assignment]
-        if existing.payload_hash != body_sha:
+        if str(existing.payload_hash) != body_sha:
             # Mesmo evento lógico, bytes diferentes. Idempotência preservada; a
             # divergência é anomalia do produtor e precisa ser visível.
             logger.warning(
