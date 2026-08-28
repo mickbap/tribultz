@@ -70,8 +70,8 @@ class TestVinculo:
             session, tenant_id, [AttioEntry("lead_a", "person_1", "company_1")], dry_run=False
         )
         assert r.linked == ["lead_a"]
-        assert link.attio_person_id == "person_1"
-        assert link.attio_company_id == "company_1"
+        assert str(link.attio_person_id) == "person_1"
+        assert str(link.attio_company_id) == "company_1"
 
     def test_idempotente(self, session, tenant_id):
         _link(session, tenant_id, "lead_a")
@@ -86,7 +86,7 @@ class TestVinculo:
         reconcile_attio_links(
             session, tenant_id, [AttioEntry("lead_a", "person_1", "company_outra")], dry_run=False
         )
-        assert link.attio_company_id == "company_ja_existente"
+        assert str(link.attio_company_id) == "company_ja_existente"
 
 
 class TestFailClosed:
@@ -96,7 +96,7 @@ class TestFailClosed:
             session, tenant_id, [AttioEntry("lead_a", "person_attio")], dry_run=False
         )
         assert r.conflict and r.conflict[0]["external_lead_id"] == "lead_a"
-        assert link.attio_person_id == "person_dominio", "conflito nunca sobrescreve"
+        assert str(link.attio_person_id) == "person_dominio", "conflito nunca sobrescreve"
         assert r.linked == []
 
     def test_ambiguidade_nao_escolhe_heuristicamente(self, session, tenant_id):
@@ -132,10 +132,10 @@ class TestNaoTocaOutrosEixos:
         reconcile_attio_links(
             session, tenant_id, [AttioEntry("lead_a", "person_1")], dry_run=False
         )
-        assert link.ownership_state == "HUMAN_OWNED"
-        assert link.commercial_state == "Discovery"
-        assert link.automation_state == "PAUSED"
-        assert link.owner_ref == "humano.qa"
+        assert str(link.ownership_state) == "HUMAN_OWNED"
+        assert str(link.commercial_state) == "Discovery"
+        assert str(link.automation_state) == "PAUSED"
+        assert str(link.owner_ref) == "humano.qa"
 
     def test_isolamento_entre_tenants(self, session, tenant_id):
         outro = Tenant(name="Outro T691", slug=f"outro-{uuid.uuid4()}")

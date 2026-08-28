@@ -119,7 +119,9 @@ def reconcile_attio_links(
             report.orphan_in_attio.append(external_id)
             continue
 
-        current = link.attio_person_id
+        # str() explícito: o atributo é Column no plano de tipos do SQLAlchemy e
+        # comparar Column em contexto booleano é erro de tipo, não de runtime.
+        current = str(link.attio_person_id) if link.attio_person_id is not None else None
         if current and current != entry.person_id:
             # Duas verdades sobre a mesma pessoa. Sobrescrever destruiria a
             # anterior sem ninguém saber qual estava certa.
@@ -138,7 +140,7 @@ def reconcile_attio_links(
         if not dry_run:
             link.attio_person_id = entry.person_id  # type: ignore[assignment]
             # Company só quando inequívoca: vem preenchida e o domínio está vazio.
-            if entry.company_id and not link.attio_company_id:
+            if entry.company_id and link.attio_company_id is None:
                 link.attio_company_id = entry.company_id  # type: ignore[assignment]
         report.linked.append(external_id)
 
