@@ -57,7 +57,7 @@ def tenant_fixture(session):
 
 
 def _ingest(session, tenant_id, payload):
-    row, _ = persist_raw_event(session, tenant_id, json.dumps(payload).encode(), payload)
+    row, _, _ = persist_raw_event(session, tenant_id, json.dumps(payload).encode(), payload)
     return process_raw_event(session, row.id)  # type: ignore[arg-type]
 
 
