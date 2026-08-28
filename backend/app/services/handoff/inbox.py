@@ -2,10 +2,15 @@
 
 Duas camadas de idempotência, deliberadamente distintas:
 
-1. Transporte (este módulo): dedupe de reentregas byte-idênticas pela chave
-   ``raw:<sha256(corpo)>`` — o corpo é persistido ANTES de qualquer validação
-   de schema, então nenhum evento autenticado se perde, nem quando o payload
-   surpreende (Round 3 A1: persistir bruto vem antes de validar).
+1. Transporte (este módulo): dedupe pela identidade que o produtor garante —
+   ``evt:<X-Rumy-Event-Id>``. O Rumy re-tenta até 7× com o MESMO Event ID, mas
+   NÃO garante os mesmos bytes: qualquer reserialização (ordem de chaves,
+   espaçamento, ``api_version``) mudaria um hash de corpo e deixaria o mesmo
+   evento lógico entrar duas vezes (#689). O hash do corpo continua gravado
+   como EVIDÊNCIA (``payload_hash``), não como chave. Sem Event ID — produtor
+   fora do contrato — cai no hash, que é melhor que nada. O corpo é persistido
+   ANTES de qualquer validação de schema, então nenhum evento autenticado se
+   perde (Round 3 A1: persistir bruto vem antes de validar).
 2. Negócio (service.py, F3): a chave do evento normalizado — o mesmo evento
    lógico reentregue com bytes diferentes morre lá.
 
@@ -50,27 +55,48 @@ def persist_raw_event(
     raw_body: bytes,
     parsed: Optional[dict[str, Any]],
     source_system: str = "rumy",
-) -> tuple[CrmLeadEvent, bool]:
+    provider_event_id: Optional[str] = None,
+) -> tuple[CrmLeadEvent, bool, str]:
     """Grava o corpo bruto no ledger (camada de transporte). Retorna (linha, criada?).
 
-    Reentrega byte-idêntica incrementa ``attempts`` na linha existente (dedupe
-    de transporte). Corpo não-JSON é preservado por hash — autenticado, então é
-    evidência de bug do produtor, não lixo a descartar.
+    Devolve ``(linha, criada?, desfecho)`` com desfecho em
+    ``created`` | ``duplicate`` | ``integrity_conflict``.
+
+    Mesmo Event ID + mesmo hash ⇒ ``duplicate``: retry idempotente do produtor.
+
+    Mesmo Event ID + hash DIFERENTE ⇒ ``integrity_conflict``. Não substitui o
+    corpo original nem reprocessa: o produtor afirmou que os dois payloads são
+    o mesmo evento e eles não são. Descartar em silêncio esconderia um defeito
+    do produtor — ou uma tentativa de reaproveitar um Event ID conhecido.
+
+    Corpo não-JSON é preservado por hash — autenticado, então é evidência de bug
+    do produtor, não lixo a descartar.
     """
     body_sha = hashlib.sha256(raw_body).hexdigest()
-    key = f"raw:{body_sha}"
+    evt_id = (provider_event_id or "").strip()
+    key = f"evt:{evt_id}" if evt_id else f"raw:{body_sha}"
     existing = (
         session.query(CrmLeadEvent).filter(CrmLeadEvent.idempotency_key == key).one_or_none()
     )
     if existing is not None:
         existing.attempts = (existing.attempts or 1) + 1  # type: ignore[assignment]
-        return existing, False
+        if str(existing.payload_hash) != body_sha:
+            # Só os hashes vão ao log — nunca o corpo (higiene de log #693).
+            logger.warning(
+                "rumy_event_id_body_divergence event_id=%s ledger=%s "
+                "hash_gravado=%s hash_recebido=%s bytes=%d",
+                evt_id or "(sem-id)", existing.id, existing.payload_hash,
+                body_sha, len(raw_body),
+            )
+            return existing, False, "integrity_conflict"
+        return existing, False, "duplicate"
 
     row = CrmLeadEvent(
         tenant_id=tenant_id,
         source_system=source_system,
         external_lead_id=RAW_PENDING,
         idempotency_key=key,
+        provider_event_id=evt_id or None,
         schema_version="raw",
         event_type=RAW_EVENT_TYPE,
         occurred_at=None,
@@ -83,7 +109,7 @@ def persist_raw_event(
     )
     session.add(row)
     session.flush()
-    return row, True
+    return row, True, "created"
 
 
 def process_raw_event(
@@ -142,7 +168,9 @@ def process_raw_event(
         row.tenant_id,  # type: ignore[arg-type]
         event,
         payload_raw=row.payload_raw,  # type: ignore[arg-type]
-        provider_event_id=event.event_id,
+        # id do FORNECEDOR (o ULID é identidade interna) — ancora a
+        # idempotência de negócio em compute_idempotency_key (#690).
+        provider_event_id=event.provider_event_id or event.event_id,
         adapter_version=adapter.version,
         now=ts,
     )

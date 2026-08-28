@@ -98,16 +98,17 @@ def _link(session, tenant_id, *, email="pessoa.sintetica@example.com", external_
 
 
 def _envelope(n, lead, email="pessoa.sintetica@example.com", occurred=None):
+    """Payload no formato REAL do Rumy (#690)."""
     return {
-        "schema_version": "1.1",
-        "event_id": _ulid(n),
-        "event_type": "handoff.requested",
+        "id": f"evt_sintetico_c_{n:03d}",
+        "api_version": "2026-08-01",
+        "event_type": "lead.converted",
         "occurred_at": (occurred or datetime(2026, 8, 12, 13, 0, tzinfo=SP)).isoformat(),
-        "external_lead_id": lead,
-        "person": {"full_name": "Pessoa Sintética [QA]",
-                   "email": {"status": "known", "value": email}},
-        "company": {"name": {"status": "known", "value": "Empresa Sintética QA Ltda"}},
-        "reason": "positive_reply",
+        "data": {
+            "reason": "cta_positive",
+            "lead": {"id": lead, "name": "Pessoa Sintética [QA]", "email": email},
+            "company": {"name": "Empresa Sintética QA Ltda"},
+        },
     }
 
 
@@ -118,7 +119,7 @@ def test_alerta_duplicado_por_retry_e_deduplicado(session, tenant_id, monkeypatc
 
     monkeypatch.setattr(settings, "HANDOFF_APPLY_ENABLED", True)
     payload = _envelope(0, "lead-alerta")
-    row, _ = persist_raw_event(session, tenant_id, json.dumps(payload).encode(), payload)
+    row, _, _ = persist_raw_event(session, tenant_id, json.dumps(payload).encode(), payload)
     out = process_raw_event(session, row.id)  # type: ignore[arg-type]
     assert out["status"] == "applied"
     # alerta primário registrado uma vez
@@ -129,7 +130,7 @@ def test_alerta_duplicado_por_retry_e_deduplicado(session, tenant_id, monkeypatc
     )
     assert len(alerts) == 1
     # retry do mesmo evento (bytes diferentes) → duplicate no negócio → sem 2º alerta
-    row2, _ = persist_raw_event(
+    row2, _, _ = persist_raw_event(
         session, tenant_id, json.dumps(payload, indent=2).encode(), payload
     )
     process_raw_event(session, row2.id)  # type: ignore[arg-type]
@@ -306,10 +307,10 @@ def test_evento_antigo_nao_remove_protecao(session, tenant_id, monkeypatch):
 
     monkeypatch.setattr(settings, "HANDOFF_APPLY_ENABLED", True)
     novo = _envelope(1, "lead-antigo", occurred=datetime(2026, 8, 12, 13, 0, tzinfo=SP))
-    row, _ = persist_raw_event(session, tenant_id, json.dumps(novo).encode(), novo)
+    row, _, _ = persist_raw_event(session, tenant_id, json.dumps(novo).encode(), novo)
     process_raw_event(session, row.id)  # type: ignore[arg-type]
     antigo = _envelope(2, "lead-antigo", occurred=datetime(2026, 8, 12, 9, 0, tzinfo=SP))
-    row2, _ = persist_raw_event(session, tenant_id, json.dumps(antigo).encode(), antigo)
+    row2, _, _ = persist_raw_event(session, tenant_id, json.dumps(antigo).encode(), antigo)
     out = process_raw_event(session, row2.id)  # type: ignore[arg-type]
     assert out["status"] == "superseded"
     link = session.query(CrmLeadLink).filter_by(external_lead_id="lead-antigo").one()

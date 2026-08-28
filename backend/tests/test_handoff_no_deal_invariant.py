@@ -57,7 +57,7 @@ def tenant_fixture(session):
 
 
 def _ingest(session, tenant_id, payload):
-    row, _ = persist_raw_event(session, tenant_id, json.dumps(payload).encode(), payload)
+    row, _, _ = persist_raw_event(session, tenant_id, json.dumps(payload).encode(), payload)
     return process_raw_event(session, row.id)  # type: ignore[arg-type]
 
 
@@ -79,18 +79,24 @@ def test_bateria_completa_nenhum_evento_cria_deal(session, tenant_id, monkeypatc
         session,
         tenant_id,
         {
-            "schema_version": "1.1",
-            "event_id": _ulid(0),
-            "event_type": "handoff.requested",
+            # #690 — formato REAL do Rumy. A reação do lead entra como sinal em
+            # conversation[]; continua não qualificando nada.
+            "id": "evt_sintetico_deal_001",
+            "api_version": "2026-08-01",
+            "event_type": "lead.converted",
             "occurred_at": "2026-08-12T12:00:00+00:00",
-            "external_lead_id": "lead-sintetico-deal-001",
-            "person": {
-                "full_name": "Pessoa Sintética [QA]",
-                "email": {"status": "known", "value": "sem.deal@example.test"},
+            "data": {
+                "reason": "cta_positive",
+                "lead": {
+                    "id": "lead-sintetico-deal-001",
+                    "name": "Pessoa Sintética [QA]",
+                    "email": "sem.deal@example.test",
+                },
+                "company": {"name": "Empresa Sintética QA Ltda"},
+                "conversation": [
+                    {"from": "lead", "text": "👍", "at": "2026-08-12T11:59:00+00:00"}
+                ],
             },
-            "company": {"name": {"status": "known", "value": "Empresa Sintética QA Ltda"}},
-            "reason": "positive_reply",
-            "last_interaction": {"channel": "linkedin", "kind": "reaction"},
         },
     )
     _assert_no_deal(session)

@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     # bloqueados. Regra fail-safe transversal: desligar qualquer flag NUNCA
     # re-permite outbound — a permissão é conjuntiva e a proteção de pessoa
     # (DEC-5) persiste independente de flag.
+    #: Teto aplicacional do corpo do webhook Rumy. O nginx da VM permite 50M
+    #: (infra/scripts/magalu-init.sh) — folgado demais para um webhook. Não
+    #: confiar em Content-Length: cliente hostil omite ou mente.
+    RUMY_MAX_BODY_BYTES: int = 1_048_576
     RUMY_WEBHOOK_ENABLED: bool = False
     HANDOFF_APPLY_ENABLED: bool = False
     RUMY_SUPPRESSION_ENABLED: bool = False
