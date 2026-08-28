@@ -168,7 +168,9 @@ def process_raw_event(
         row.tenant_id,  # type: ignore[arg-type]
         event,
         payload_raw=row.payload_raw,  # type: ignore[arg-type]
-        provider_event_id=event.event_id,
+        # id do FORNECEDOR (o ULID é identidade interna) — ancora a
+        # idempotência de negócio em compute_idempotency_key (#690).
+        provider_event_id=event.provider_event_id or event.event_id,
         adapter_version=adapter.version,
         now=ts,
     )

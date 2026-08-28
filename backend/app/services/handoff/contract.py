@@ -23,7 +23,21 @@ SCHEMA_VERSION = "1.1"
 _ULID_RE = re.compile(r"^[0-9A-HJKMNP-TV-Z]{26}$")
 
 EventType = Literal["handoff.requested"]
-HandoffReason = Literal["positive_reply", "meeting_request", "manual_flag", "other"]
+#: ``contact_shared`` entrou no Round 16-G (#690): o Rumy emite esse motivo em
+#: ``lead.converted`` e ele não tinha destino fiel — cairia em ``other``, que é
+#: onde a informação morre. Caso real: Manuel Torres forneceu o e-mail em 20/08
+#: exatamente nesse padrão.
+HandoffReason = Literal[
+    "positive_reply", "meeting_request", "contact_shared", "manual_flag", "other"
+]
+
+#: Origens onde a EMPRESA deixa de ser requisito absoluto de identidade mínima
+#: — decisão de Produto de 28/08/2026 (#690). Restrita a contratos com
+#: identidade externa confiável: o Rumy autentica o evento e carrega um
+#: ``external_lead_id`` próprio, então nome + (e-mail OU LinkedIn) já identifica
+#: sem fabricar nada. NÃO é flexibilização global: outras origens seguem
+#: exigindo empresa, e enfraquecê-las em silêncio era o risco a evitar.
+COMPANY_OPTIONAL_ORIGINS = frozenset({"rumy"})
 
 
 class MaybeStr(BaseModel):
@@ -84,7 +98,14 @@ class HandoffEvent(BaseModel):
     """Evento de handoff normalizado — o que o domínio Tribultz consome."""
 
     schema_version: Literal["1.1"] = SCHEMA_VERSION
+    #: Identidade INTERNA do evento (ULID). Não é o id do fornecedor.
     event_id: str
+    #: Identidade EXTERNA, preservada byte a byte como o produtor enviou
+    #: (ex.: ``evt_<uuid>`` do Rumy). Nunca coagida ao formato interno: coagir
+    #: destrói a chave que serve à idempotência e à auditoria (#690).
+    provider_event_id: Optional[str] = None
+    #: Versão do contrato declarada pelo produtor — proveniência, não lógica.
+    api_version: Optional[str] = None
     event_type: EventType = "handoff.requested"
     occurred_at: datetime
     producer: str = "rumy"
@@ -120,14 +141,36 @@ class HandoffEvent(BaseModel):
         return v.astimezone(timezone.utc)
 
     @property
+    def company_is_optional(self) -> bool:
+        """Empresa deixa de ser requisito só onde há identidade externa confiável.
+
+        Duas condições, ambas necessárias: origem na allowlist E
+        ``external_lead_id`` presente. Origem sozinha não basta — sem o id
+        externo não há identidade confiável a invocar.
+        """
+        return (
+            self.source_system in COMPANY_OPTIONAL_ORIGINS
+            and bool((self.external_lead_id or "").strip())
+        )
+
+    @property
     def has_identity_minimum(self) -> bool:
-        """Mínimo do Round 2 D-2: nome + (e-mail OU LinkedIn) + nome da empresa.
+        """Mínimo de identidade, por origem.
+
+        Base (todas as origens): nome + (e-mail OU LinkedIn).
+        Empresa: exigida por padrão (Round 2 D-2); dispensada nas origens de
+        ``COMPANY_OPTIONAL_ORIGINS`` — decisão de Produto de 28/08 para o
+        ``lead.converted`` do Rumy, cujo contrato documenta ``company`` como
+        nullable (#690).
 
         Sem o mínimo o evento vai à quarentena (fila de exceção humana) — nunca
-        gera escrita parcial nem placeholder.
+        gera escrita parcial nem placeholder. Empresa ausente permanece
+        ``absent()``: não é fabricada, não é enriquecida e não vira conflito.
         """
-        return bool(
+        base = bool(
             self.person.full_name
             and (self.person.email.is_known or self.person.linkedin_url.is_known)
-            and self.company.name.is_known
         )
+        if not base:
+            return False
+        return True if self.company_is_optional else self.company.name.is_known
