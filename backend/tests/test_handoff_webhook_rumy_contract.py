@@ -36,7 +36,8 @@ engine = create_engine(DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 SECRET = "segredo-sintetico-689"
-BODY = json.dumps({"event_type": "lead.converted", "id": "evt_sintetico"}).encode()
+EVENT_ID = "evt_sintetico_693"
+BODY = json.dumps({"event_type": "lead.converted", "id": EVENT_ID}).encode()
 URL = "/api/v1/webhooks/rumy"
 
 
@@ -76,11 +77,17 @@ def enabled_fixture(session, monkeypatch):
 
 
 def _headers(body=BODY, ts=None, event_id=None, secret=SECRET):
+    """Por padrão o Event ID espelha o ``id`` do corpo (binding do #693)."""
     ts = ts or str(int(time.time()))
+    if event_id is None:
+        try:
+            event_id = str(json.loads(body)["id"])
+        except Exception:
+            event_id = f"evt_{uuid.uuid4()}"
     return {
         "X-Rumy-Signature": expected_signature(ts, body, secret),
         "X-Rumy-Timestamp": ts,
-        "X-Rumy-Event-Id": event_id or f"evt_{uuid.uuid4()}",
+        "X-Rumy-Event-Id": event_id,
         "X-Rumy-Event-Type": "lead.converted",
     }
 
@@ -144,42 +151,27 @@ class TestJanelaTemporal:
 
 
 class TestIdempotenciaPorEventId:
-    def test_mesmo_event_id_bytes_diferentes_nao_duplica(self, client, session, enabled):
-        """O caso que o hash de corpo não pegava: retry reserializado (#689)."""
-        eid = f"evt_{uuid.uuid4()}"
-        b1 = json.dumps({"a": 1, "b": 2}).encode()
-        b2 = json.dumps({"b": 2, "a": 1}).encode()  # mesma semântica, bytes outros
-        assert b1 != b2
-
-        client.post(URL, content=b1, headers=_headers(b1, event_id=eid))
-        r2 = client.post(URL, content=b2, headers=_headers(b2, event_id=eid))
-
-        assert r2.json()["status"] == "duplicate"
+    def test_retry_identico_e_duplicate(self, client, session, enabled):
+        """Mesmo Event ID + mesmo hash = retry idempotente."""
+        client.post(URL, content=BODY, headers=_headers())
+        r2 = client.post(URL, content=BODY, headers=_headers())
+        assert r2.status_code == 200 and r2.json()["status"] == "duplicate"
         row = session.query(CrmLeadEvent).one()
-        assert row.attempts == 2
-        assert row.provider_event_id == eid
-        # primeiro corpo vence: reescrever apagaria a evidência do que foi autenticado antes
-        assert row.payload_hash == hashlib.sha256(b1).hexdigest()
+        assert int(row.attempts) == 2
+        assert str(row.provider_event_id) == EVENT_ID
 
-    def test_event_ids_distintos_mesmos_bytes_sao_eventos_distintos(
-        self, client, session, enabled
-    ):
-        client.post(URL, content=BODY, headers=_headers(event_id=f"evt_{uuid.uuid4()}"))
-        client.post(URL, content=BODY, headers=_headers(event_id=f"evt_{uuid.uuid4()}"))
-        assert session.query(CrmLeadEvent).count() == 2
+    def test_mesmo_event_id_hash_diferente_e_conflito_409(self, client, session, enabled):
+        """Mesmo ID + hash diferente = conflito de integridade. Nem substitui, nem cala."""
+        b1 = json.dumps({"id": EVENT_ID, "a": 1}).encode()
+        b2 = json.dumps({"id": EVENT_ID, "a": 2}).encode()
+        client.post(URL, content=b1, headers=_headers(b1))
+        r2 = client.post(URL, content=b2, headers=_headers(b2))
 
-    def test_sem_event_id_cai_no_hash_do_corpo(self, client, session, enabled):
-        """Produtor fora do contrato: degrada para dedupe por bytes, não perde o evento."""
-        h = _headers()
-        del h["X-Rumy-Event-Id"]
-        client.post(URL, content=BODY, headers=h)
-        h2 = _headers()
-        del h2["X-Rumy-Event-Id"]
-        r2 = client.post(URL, content=BODY, headers=h2)
-        assert r2.json()["status"] == "duplicate"
+        assert r2.status_code == 409, "divergência não pode virar 200 silencioso"
         row = session.query(CrmLeadEvent).one()
-        assert row.provider_event_id is None
-        assert row.idempotency_key.startswith("raw:")
+        # corpo original intacto: o divergente não substitui nem reprocessa
+        assert str(row.payload_hash) == hashlib.sha256(b1).hexdigest()
+        assert int(row.attempts) == 2
 
 
 class TestFlagsPermanecemOff:

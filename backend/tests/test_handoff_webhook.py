@@ -79,14 +79,24 @@ def enabled_fixture(monkeypatch, tenant_id):
 
 
 def _sign(body: bytes, secret: str = SECRET, ts: str | None = None) -> dict:
-    """Headers do contrato público do Rumy (#689)."""
+    """Headers do contrato público do Rumy (#689/#693).
+
+    O Event ID espelha o ``id`` do corpo — é o que o binding do #693 exige, e é
+    o que o próprio Rumy faz ("idempotência externa: id / X-Rumy-Event-Id").
+    """
+    import json as _json
+
     from app.services.handoff.webhook_auth import expected_signature
 
     ts = ts or str(int(time.time()))
+    try:
+        eid = str(_json.loads(body)["id"])
+    except Exception:
+        eid = f"evt_{uuid.uuid4()}"
     return {
         "X-Rumy-Signature": expected_signature(ts, body, secret),
         "X-Rumy-Timestamp": ts,
-        "X-Rumy-Event-Id": f"evt_{uuid.uuid4()}",
+        "X-Rumy-Event-Id": eid,
     }
 
 

@@ -1,25 +1,18 @@
-"""Verificação de assinatura do webhook Rumy — contrato público (Round 16-F/G).
+"""Verificação de assinatura do webhook Rumy — contrato público (#689, hardening #693).
 
-Esquema REAL do fornecedor, conforme documentação técnica pública relatada em
-28/08/2026 (#689). Substitui o esquema provisório do Round 5, que assinava só o
-corpo e comparava em hexdigest — incompatível: rejeitaria 100% do tráfego
-legítimo com 401.
-
-Contrato implementado:
+Esquema real do fornecedor:
   assinatura = Base64( HMAC-SHA256( secret, f"{timestamp}.{raw_body}" ) )
   janela      = |now - timestamp| <= 300s
-  headers     = X-Rumy-Signature, X-Rumy-Timestamp
+  headers     = X-Rumy-Signature, X-Rumy-Timestamp, X-Rumy-Event-Id
 
-⚠️ SUPOSIÇÃO EXPLÍCITA — ``timestamp`` é lido como **epoch em segundos**. A
-documentação repassada especifica a concatenação e a janela, mas não o formato
-do carimbo. Epoch-segundos é a convenção dominante; se o fornecedor usar ISO-8601
-ou milissegundos, o único ponto a mudar é ``_parse_timestamp``. Não inventamos
-tolerância a múltiplos formatos: aceitar tudo esconde o dia em que o produtor
-muda de formato.
+Princípio desta camada: **entrada malformada nunca vira exceção**. Toda borda
+devolve ``False`` e o router traduz em 401. Um 500 na fronteira de autenticação
+é pior que um 401: transforma lixo do atacante em erro do servidor, e erro do
+servidor é sinal — para ele, não para nós.
 
-Fail-closed em todas as bordas: secret ausente, header ausente, carimbo
-ilegível ou fora da janela ⇒ rejeita. Nada é persistido antes desta função
-passar.
+⚠️ SUPOSIÇÃO EXPLÍCITA — ``timestamp`` é epoch em **segundos**. A documentação
+repassada especifica a concatenação e a janela, não o formato. Isolado em
+``_parse_timestamp``.
 """
 
 from __future__ import annotations
@@ -28,6 +21,7 @@ import base64
 import hashlib
 import hmac
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -40,27 +34,59 @@ TIMESTAMP_HEADER = "x-rumy-timestamp"
 EVENT_ID_HEADER = "x-rumy-event-id"
 EVENT_TYPE_HEADER = "x-rumy-event-type"
 
-#: Janela máxima documentada pelo fornecedor. Vale para os dois lados: carimbo
-#: no futuro também é rejeitado (relógio adiantado não vira passe livre).
+#: Janela máxima documentada. Vale nos dois sentidos: carimbo no futuro também
+#: é rejeitado — relógio adiantado não vira passe livre.
 MAX_SKEW_SECONDS = 300
+
+#: ``crm_lead_events.idempotency_key`` é String(128) e a chave é ``evt:<id>``.
+#: 124 é o teto real do id externo. Validar ANTES de montar a chave evita que
+#: um header hostil vire erro de banco (500) em vez de recusa (400).
+#: NÃO truncar: truncar cria colisão silenciosa entre ids longos distintos.
+MAX_PROVIDER_EVENT_ID = 124
+
+#: Base64 de um SHA-256 tem 44 chars. A faixa é folgada de propósito — o alvo
+#: é barrar o que não é base64, não adivinhar o comprimento exato do produtor.
+_B64_RE = re.compile(r"^[A-Za-z0-9+/]{40,120}={0,2}$")
+#: Epoch em segundos, só dígitos ASCII. ``int()`` do Python aceita ``1_756``
+#: e dígitos de largura total ("１７５６"); nenhum dos dois é o contrato.
+_EPOCH_RE = re.compile(r"^[0-9]{1,19}$")
+#: Id externo: imprimível ASCII, sem CR/LF nem controle (barra log injection e
+#: header smuggling antes de qualquer persistência).
+_EVENT_ID_RE = re.compile(r"^[\x21-\x7E]{1,%d}$" % MAX_PROVIDER_EVENT_ID)
+
+
+def _secret() -> str:
+    """Secret utilizável, ou string vazia. Nunca calcula HMAC com chave vazia."""
+    raw = getattr(settings, "RUMY_WEBHOOK_SECRET", None)
+    return raw.strip() if isinstance(raw, str) else ""
+
+
+def is_valid_event_id(value: str) -> bool:
+    """Id externo aceitável para virar chave de idempotência."""
+    return bool(_EVENT_ID_RE.match(value or ""))
 
 
 def _parse_timestamp(raw: str) -> Optional[datetime]:
-    """Epoch em segundos → datetime UTC. Qualquer outra coisa ⇒ None (rejeita)."""
+    """Epoch em segundos → datetime UTC. Qualquer outra forma ⇒ None."""
+    value = (raw or "").strip()
+    if not _EPOCH_RE.match(value):
+        return None
     try:
-        return datetime.fromtimestamp(int((raw or "").strip()), tz=timezone.utc)
-    except (ValueError, TypeError, OverflowError, OSError):
+        return datetime.fromtimestamp(int(value), tz=timezone.utc)
+    except (ValueError, OverflowError, OSError):
         return None
 
 
 def signing_payload(timestamp_header: str, raw_body: bytes) -> bytes:
-    """Material assinado: ``{timestamp}.{rawBody}`` — corpo BRUTO, nunca reserializado."""
-    return timestamp_header.encode() + b"." + raw_body
+    """Material assinado: ``{timestamp}.{rawBody}`` — corpo BRUTO, sem reserializar."""
+    return timestamp_header.encode("utf-8", "surrogateescape") + b"." + raw_body
 
 
 def expected_signature(timestamp_header: str, raw_body: bytes, secret: str) -> str:
-    """Assinatura esperada em Base64 (não hexdigest)."""
-    mac = hmac.new(secret.encode(), signing_payload(timestamp_header, raw_body), hashlib.sha256)
+    """Assinatura esperada, Base64 (não hexdigest)."""
+    mac = hmac.new(
+        secret.encode(), signing_payload(timestamp_header, raw_body), hashlib.sha256
+    )
     return base64.b64encode(mac.digest()).decode()
 
 
@@ -70,17 +96,25 @@ def verify_signature(
     timestamp_header: str = "",
     now: Optional[datetime] = None,
 ) -> bool:
-    """Autentica origem e frescor. Todas as recusas são silenciosas p/ o cliente (401)."""
-    secret = settings.RUMY_WEBHOOK_SECRET
+    """Autentica origem e frescor. Nunca levanta; nunca registra segredo."""
+    secret = _secret()
     if not secret:
-        logger.warning("RUMY_WEBHOOK_SECRET não configurado — rejeitando webhook (fail-closed)")
+        # Fail-closed: sem secret utilizável não há o que autenticar.
+        logger.warning("rumy_signature_rejected reason=secret_ausente")
         return False
-    if not signature_header or not timestamp_header:
+
+    sig = (signature_header or "").strip()
+    if not sig or not timestamp_header:
         logger.warning(
             "rumy_signature_rejected reason=header_ausente sig=%s ts=%s",
-            bool(signature_header),
-            bool(timestamp_header),
+            bool(sig), bool(timestamp_header),
         )
+        return False
+
+    if not _B64_RE.match(sig):
+        # Barra não-ASCII e lixo antes do compare_digest, que levanta TypeError
+        # com str não-ASCII — e TypeError aqui viraria 500 no lugar de 401.
+        logger.warning("rumy_signature_rejected reason=assinatura_malformada")
         return False
 
     sent_at = _parse_timestamp(timestamp_header)
@@ -90,10 +124,11 @@ def verify_signature(
 
     skew = abs(((now or datetime.now(timezone.utc)) - sent_at).total_seconds())
     if skew > MAX_SKEW_SECONDS:
-        # Replay: a assinatura pode ser válida: o carimbo é que expirou.
         logger.warning("rumy_signature_rejected reason=fora_da_janela skew=%.0fs", skew)
         return False
 
+    # Ambos ASCII garantidos: sig pelo regex, expected por ser base64.
     return hmac.compare_digest(
-        expected_signature(timestamp_header, raw_body, secret), signature_header
+        expected_signature(timestamp_header, raw_body, secret).encode("ascii"),
+        sig.encode("ascii"),
     )

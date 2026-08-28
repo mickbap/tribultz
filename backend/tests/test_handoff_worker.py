@@ -80,7 +80,7 @@ def apply_on_fixture(monkeypatch):
 
 def _persist(session, tenant_id, payload: dict) -> CrmLeadEvent:
     body = json.dumps(payload).encode()
-    row, created = persist_raw_event(session, tenant_id, body, payload)
+    row, created, _ = persist_raw_event(session, tenant_id, body, payload)
     assert created
     return row
 
@@ -122,7 +122,7 @@ def test_mesmo_evento_bytes_diferentes_morre_na_chave_de_negocio(session, tenant
     process_raw_event(session, row1.id)  # type: ignore[arg-type]
 
     body2 = json.dumps(payload, indent=2).encode()  # bytes diferentes, evento igual
-    row2, created = persist_raw_event(session, tenant_id, body2, payload)
+    row2, created, _ = persist_raw_event(session, tenant_id, body2, payload)
     assert created  # transporte não pega (hash difere)
     out = process_raw_event(session, row2.id)  # type: ignore[arg-type]
     assert out["status"] == "duplicate"  # negócio pega (prov:rumy:<event_id>)

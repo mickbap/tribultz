@@ -56,13 +56,18 @@ def persist_raw_event(
     parsed: Optional[dict[str, Any]],
     source_system: str = "rumy",
     provider_event_id: Optional[str] = None,
-) -> tuple[CrmLeadEvent, bool]:
+) -> tuple[CrmLeadEvent, bool, str]:
     """Grava o corpo bruto no ledger (camada de transporte). Retorna (linha, criada?).
 
-    Reentrega incrementa ``attempts`` na linha existente. Quando o mesmo Event
-    ID chega com bytes diferentes, vence o PRIMEIRO corpo: ``payload_raw`` e
-    ``payload_hash`` não são sobrescritos — reescrever apagaria a evidência do
-    que foi autenticado primeiro. A divergência é registrada em log.
+    Devolve ``(linha, criada?, desfecho)`` com desfecho em
+    ``created`` | ``duplicate`` | ``integrity_conflict``.
+
+    Mesmo Event ID + mesmo hash ⇒ ``duplicate``: retry idempotente do produtor.
+
+    Mesmo Event ID + hash DIFERENTE ⇒ ``integrity_conflict``. Não substitui o
+    corpo original nem reprocessa: o produtor afirmou que os dois payloads são
+    o mesmo evento e eles não são. Descartar em silêncio esconderia um defeito
+    do produtor — ou uma tentativa de reaproveitar um Event ID conhecido.
 
     Corpo não-JSON é preservado por hash — autenticado, então é evidência de bug
     do produtor, não lixo a descartar.
@@ -76,13 +81,15 @@ def persist_raw_event(
     if existing is not None:
         existing.attempts = (existing.attempts or 1) + 1  # type: ignore[assignment]
         if str(existing.payload_hash) != body_sha:
-            # Mesmo evento lógico, bytes diferentes. Idempotência preservada; a
-            # divergência é anomalia do produtor e precisa ser visível.
+            # Só os hashes vão ao log — nunca o corpo (higiene de log #693).
             logger.warning(
-                "rumy_event_id_body_divergence event_id=%s ledger=%s hash_gravado=%s hash_recebido=%s",
-                evt_id or "(sem-id)", existing.id, existing.payload_hash, body_sha,
+                "rumy_event_id_body_divergence event_id=%s ledger=%s "
+                "hash_gravado=%s hash_recebido=%s bytes=%d",
+                evt_id or "(sem-id)", existing.id, existing.payload_hash,
+                body_sha, len(raw_body),
             )
-        return existing, False
+            return existing, False, "integrity_conflict"
+        return existing, False, "duplicate"
 
     row = CrmLeadEvent(
         tenant_id=tenant_id,
@@ -102,7 +109,7 @@ def persist_raw_event(
     )
     session.add(row)
     session.flush()
-    return row, True
+    return row, True, "created"
 
 
 def process_raw_event(
