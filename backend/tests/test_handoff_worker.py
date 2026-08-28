@@ -39,18 +39,22 @@ T0 = "2026-08-12T12:00:00+00:00"
 
 def _envelope(n=0, *, lead="lead-sintetico-001", email="pessoa.sintetica@example.test",
               occurred=T0) -> dict:
+    """Payload no formato REAL do Rumy (#690) — antes era o envelope interno.
+
+    A identidade que ancora a idempotência de negócio passou a ser ``id``
+    (Event ID do fornecedor), não mais o ULID interno: o ULID é gerado pelo
+    adapter e a chave de negócio prefere ``provider_event_id``.
+    """
     return {
-        "schema_version": "1.1",
-        "event_id": _ulid(n),
-        "event_type": "handoff.requested",
+        "id": f"evt_sintetico_{n:03d}",
+        "api_version": "2026-08-01",
+        "event_type": "lead.converted",
         "occurred_at": occurred,
-        "external_lead_id": lead,
-        "person": {
-            "full_name": "Pessoa Sintética [QA]",
-            "email": {"status": "known", "value": email},
+        "data": {
+            "reason": "cta_positive",
+            "lead": {"id": lead, "name": "Pessoa Sintética [QA]", "email": email},
+            "company": {"name": "Empresa Sintética QA Ltda"},
         },
-        "company": {"name": {"status": "known", "value": "Empresa Sintética QA Ltda"}},
-        "reason": "positive_reply",
     }
 
 
@@ -132,12 +136,12 @@ def test_mesmo_evento_bytes_diferentes_morre_na_chave_de_negocio(session, tenant
 
 def test_payload_sem_obrigatorios_quarentena(session, tenant_id, apply_on):
     payload = _envelope(4)
-    del payload["person"]  # sem pessoa: contrato rejeita
+    payload["data"]["lead"]["name"] = ""  # sem nome: contrato rejeita
     row = _persist(session, tenant_id, payload)
     out = process_raw_event(session, row.id)  # type: ignore[arg-type]
     assert out["status"] == "quarantined"
     assert row.status == "quarantined"  # type: ignore[misc]
-    assert "person" in (row.error or "")
+    assert "full_name" in (row.error or "")
     assert session.query(CrmLeadLink).count() == 0
 
 

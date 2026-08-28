@@ -98,16 +98,17 @@ def _link(session, tenant_id, *, email="pessoa.sintetica@example.com", external_
 
 
 def _envelope(n, lead, email="pessoa.sintetica@example.com", occurred=None):
+    """Payload no formato REAL do Rumy (#690)."""
     return {
-        "schema_version": "1.1",
-        "event_id": _ulid(n),
-        "event_type": "handoff.requested",
+        "id": f"evt_sintetico_c_{n:03d}",
+        "api_version": "2026-08-01",
+        "event_type": "lead.converted",
         "occurred_at": (occurred or datetime(2026, 8, 12, 13, 0, tzinfo=SP)).isoformat(),
-        "external_lead_id": lead,
-        "person": {"full_name": "Pessoa Sintética [QA]",
-                   "email": {"status": "known", "value": email}},
-        "company": {"name": {"status": "known", "value": "Empresa Sintética QA Ltda"}},
-        "reason": "positive_reply",
+        "data": {
+            "reason": "cta_positive",
+            "lead": {"id": lead, "name": "Pessoa Sintética [QA]", "email": email},
+            "company": {"name": "Empresa Sintética QA Ltda"},
+        },
     }
 
 

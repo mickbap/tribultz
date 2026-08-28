@@ -80,8 +80,14 @@ def test_minimo_identidade():
     sem_chaves = _event(person=PersonIdentityPayload(full_name="Só Nome [QA]"))
     assert sem_chaves.has_identity_minimum is False
 
-    sem_empresa = _event(company=CompanyIdentityPayload())
-    assert sem_empresa.has_identity_minimum is False
+    # #690 — política por origem: no Rumy (id externo confiável) empresa deixou
+    # de ser requisito; em qualquer outra origem continua exigida.
+    sem_empresa_rumy = _event(company=CompanyIdentityPayload())
+    assert sem_empresa_rumy.source_system == "rumy"
+    assert sem_empresa_rumy.has_identity_minimum is True
+
+    sem_empresa_outra = _event(company=CompanyIdentityPayload(), source_system="outra_origem")
+    assert sem_empresa_outra.has_identity_minimum is False
 
     so_linkedin = _event(
         person=PersonIdentityPayload(
