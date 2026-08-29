@@ -63,16 +63,17 @@ frontend/          Next.js app (app router)
   src/components/  UI: AppShell, Sidebar, EvidenceList, JsonViewer, Toast
 
 backend/           FastAPI
-  app/routers/     30 routers (auditado 16/07/2026, +attio em 31/07/2026, +rumy em 12/08/2026) —
-                   admin, attio, audit, auth, billing, calculadora, classtrib, compliance, credits,
+  app/routers/     29 routers (auditado 16/07/2026, +rumy em 12/08/2026, −attio em 29/08/2026) —
+                   admin, audit, auth, billing, calculadora, classtrib, compliance, credits,
                    documents, exceptions, feedback, founding_partners, health, jobs, lgpd,
                    ncm_suggest, news, public, public_api, reports, rumy, simulator, sped,
                    split_payment, support, tasks, validate, validate_xml, validation. Chat foi
                    descontinuado como produto
                    (mai/2026) e o código remanescente removido (ADR-0012, ver
-                   `knowledge/decisions/` no Brain). attio expõe só o webhook inbound
-                   (POST /api/v1/webhooks/attio) — o resto da integração comercial com o Attio CRM
-                   (PO-2026-07-CRM-001) vive em `app/integrations/attio/`, fora dos routers. rumy
+                   `knowledge/decisions/` no Brain). O Attio foi DESCOMISSIONADO em
+                   29/08/2026 (ROUND 18-A): router, webhook, `app/integrations/attio/` e as
+                   variáveis ATTIO_* não existem mais. Sobrevivem só as colunas históricas
+                   `attio_*` de `crm_lead_links` — dado de auditoria, não integração. rumy
                    expõe o receptor do webhook de handoff (POST /api/v1/webhooks/rumy, F2 da
                    PO-2026-07-CRM-001; 404 com RUMY_WEBHOOK_ENABLED=false, o default — worker em
                    shadow mode sem HANDOFF_APPLY_ENABLED).

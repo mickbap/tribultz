@@ -40,7 +40,6 @@ class Settings(BaseSettings):
     HUBSPOT_PRIVATE_APP_TOKEN: str = ""
     HUBSPOT_API_BASE_URL: str = "https://api.hubapi.com"
 
-    # ── Attio (CRM comercial — prospecção→fechamento, PO-2026-07-CRM-001) ───
     # ── Rumy (AI SDR — handoff comercial, Rounds 4–5 da PO-2026-07-CRM-001) ─
     # Flags OFF por padrão e nenhum efeito externo: com RUMY_WEBHOOK_ENABLED
     # off o endpoint /api/v1/webhooks/rumy responde 404; com

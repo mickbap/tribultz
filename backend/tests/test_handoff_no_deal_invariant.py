@@ -6,6 +6,10 @@ Rumy=Qualificado, resposta recebida, emoji/reação, handoff.requested,
 HANDOFF_REQUESTED, HUMAN_OWNED, Discovery — sem qualificação humana:
 ``attio_deal_id = null``. Reforço estático: nenhum código de produção atribui
 attio_deal_id (a capacidade nem existe nesta fase).
+
+ROUND 18-A: o Attio foi descomissionado e a coluna virou dado histórico puro.
+O guard NÃO foi removido — enquanto a coluna existir, ninguém pode voltar a
+escrevê-la sem passar por uma decisão explícita.
 """
 
 import json

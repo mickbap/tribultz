@@ -114,8 +114,8 @@ def test_cenario_8_identidade_conflitante_sem_merge(session, tenant_id):
 
 def test_cenario_9_dado_compartilhado_colapsa_por_desenho(session, tenant_id):
     """Duas pessoas legitimamente distintas com o MESMO e-mail colapsam na mesma
-    identidade — comportamento explícito e documentado (mesma semântica do
-    Attio, onde e-mail é chave única). Modo de falha conservador: bloqueia
+    identidade — comportamento explícito e documentado (e-mail é chave única
+    de pessoa). Modo de falha conservador: bloqueia
     outbound a mais, nunca a menos; separação é curadoria humana."""
     r1 = resolve_person(session, tenant_id, "caixa.compartilhada@example.test", None,
                         display_name="Pessoa Um [QA]")

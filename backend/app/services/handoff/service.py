@@ -2,8 +2,9 @@
 
 Pipeline interno (camadas 1–3 do kill switch do Round 3 §15): ledger →
 idempotência → identidade (DEC-5) → vínculo → transição de ownership com trava
-local. As camadas 4–5 (comando/confirmação de supressão no Rumy) e a
-orquestração do Attio NÃO existem nesta fatia — não autorizadas.
+local. As camadas 4–5 (comando/confirmação de supressão no Rumy) NÃO existem
+nesta fatia — não autorizadas. A orquestração de CRM externo saiu de vez com
+o descomissionamento do Attio (ROUND 18-A).
 
 Garantias (Round 4 §6): o mesmo evento N vezes ⇒ 1 handoff lógico, 1 transição,
 zero duplicação de pessoa, zero Deal (não existe código de Deal aqui — nasce

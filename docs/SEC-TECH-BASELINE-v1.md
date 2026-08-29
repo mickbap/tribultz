@@ -71,10 +71,10 @@ CI como único intermediário. `NÃO DEMONSTRADO` que isso seja suficiente.
 | Workers / jobs | Celery 5.6 + beat | Executam com o mesmo acesso ao banco que a API |
 | Armazenamento | S3 (Magalu Object Storage) | Acesso por URL pré-assinada, TTL 900s (`documents.py:36`) |
 | APIs | REST sob `/api/v1` | Duas superfícies: sessão (Bearer JWT) e pay-per-call (`X-API-Key`) |
-| Serviços externos | Asaas (billing), OpenRouter (IA), HubSpot, Attio, Resend (SMTP), Sentry | Cada um com credencial própria em `/opt/tribultz/.env` |
+| Serviços externos | Asaas (billing), OpenRouter (IA), HubSpot, Resend (SMTP), Sentry | Cada um com credencial própria em `/opt/tribultz/.env` |
 | Autenticação | JWT HS256, `JWT_EXPIRES_MIN=480` (8h) | Ver §6 |
 | Billing | Asaas + tabelas `plans`/`subscriptions`/`usage_tracking` | Plano governa entitlement (§9) |
-| Webhooks | Asaas, Attio, Rumy | Três mecanismos distintos de verificação (§5) |
+| Webhooks | Asaas, Rumy | Dois mecanismos distintos de verificação (§5). O webhook Attio foi removido em 29/08/2026 (ROUND 18-A) |
 | Observabilidade | Sentry, `/health/deep`, `AdminAuditLog`, workflow `monitor` | §11 |
 | CI/CD | GitHub Actions — `backend-gates`, `frontend-build`, `deploy-prod` via SSH | §12 |
 
@@ -164,7 +164,6 @@ existem. São eixos independentes: ser `admin` de um tenant Trial não concede A
 | API keys | `POST/GET/DELETE /api/v1/api-keys` | autenticado | **`has_api_access`** na criação | criação: 403 sem entitlement; listagem/revogação: por `user_id` | `api_keys` |
 | API pay-per-call | `POST /api/v1/public-api/classify` | integrador | `X-API-Key` válida com saldo | hash + `is_active` + saldo > 0; **não revalida plano** (§9) | debita `credits_balance` |
 | webhook Asaas | `POST /api/v1/webhooks/asaas` | Asaas | — | header `asaas-access-token` conferido; **sempre 200** para evitar retry | `payments`, `subscriptions` |
-| webhook Attio | `POST /api/v1/webhooks/attio` | Attio | — | assinatura HMAC (`verify_signature`); inválida → log + ignora, 200 | integração CRM |
 | webhook Rumy | `POST /api/v1/webhooks/rumy` | Rumy | `RUMY_WEBHOOK_ENABLED` | **404 quando a flag está off (default)**; assinatura por header | handoff |
 | operação administrativa | `/api/v1/admin/*` | superadmin | `require_superadmin` | grava `AdminAuditLog` | multi-tenant |
 | diagnóstico público | `POST /api/v1/public/validate` | anônimo | — | rate limit por IP; **processa em memória e descarta** | nenhum persistido |
@@ -381,7 +380,7 @@ demonstração. Ver §13.
 | Ação administrativa | `AdminAuditLog` (`admin.py:492`, `billing.py:38`), consultável em `/api/v1/admin/audit-log` | ator + ação + alvo |
 | `register` bloqueado por tenant povoado | `logger.info("register_blocked_existing_tenant", extra={cnpj, tenant_slug})` | CNPJ + slug |
 | CNPJ adicionado | `logger.info("cnpj_added", extra={user_id, cnpj, tenant_slug})` | user + tenant |
-| Webhook rejeitado | `logger.warning` em Asaas, Attio e Rumy | motivo |
+| Webhook rejeitado | `logger.warning` em Asaas e Rumy | motivo |
 | Requisição de validação | `X-Transaction-Id` propagado pelo cliente | transação ponta a ponta |
 | Falha de probe de saúde | `logger.warning` por subsistema | — |
 | Exceção não tratada | Sentry (`init_sentry`, no-op sem DSN) | — |
