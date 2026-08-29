@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import datetime as dt
 import re
 from datetime import datetime, timezone
 from typing import Any
@@ -168,6 +169,21 @@ def _detect_doc_type(xml: str) -> str:
 
 def _is_nfe_layout(xml: str) -> bool:
     return bool(re.search(r"<IBSCBS[\s>]", xml, re.IGNORECASE) or re.search(r"<nfeProc[\s>]", xml, re.IGNORECASE))
+
+
+def _parse_iso_date(v: str) -> "dt.date | None":
+    """Data de emissão como `date`, ou None quando ausente/ilegível.
+
+    None NÃO vira "hoje": assumir data faria uma regra com vigência futura
+    disparar sobre documento cuja data não conhecemos.
+    """
+    m = re.match(r"^(\d{4}-\d{2}-\d{2})", (v or "").strip())
+    if not m:
+        return None
+    try:
+        return dt.date.fromisoformat(m.group(1))
+    except ValueError:
+        return None
 
 
 def _xpath(tag: str, doc_type: str) -> str:
@@ -1052,6 +1068,56 @@ def validate_xml(
                     evidence_ids=[ev_id],
                 ),
                 Evidence(id=ev_id, type="xml", label="cClassTrib × CST incompatível (Rejeição 1024)", xpath=_xpath("cClassTrib", doc_type), snippet=c_class_trib["snippet"]),
+            )
+
+    # ── Rule: I08_191_CFOP_EXCLUSIVO_IBSCBS — RV I08-191 (NT 2026.007 v1.00, #615) ──
+    # A avaliação vive em app/services/rules_i08_191.py, que separa DUAS perguntas
+    # e nunca as colapsa: (A) o documento satisfaz as condições documentais e o
+    # CFOP tem indExcIBSCBS=0? (B) há evidência de que a regra se aplica, isto é,
+    # de que o autorizador é a SVRS?
+    #
+    # (B) NÃO é decidível a partir do XML e NÃO é inferida de cUF/UF — não existe
+    # tabela canonizada UF→autorizador no produto. Por isso `autorizador` fica
+    # None aqui: hoje ninguém no fluxo consegue comprovar SVRS, e o resultado é
+    # sempre não-FATAL. Adquirir esse mapeamento como artefato versionado é gap
+    # registrado, não improviso deste round.
+    if doc_type == "NFE":
+        from app.services import rules_i08_191 as _i08191
+
+        _emit_block = _first_tag(xml, ["emit"])
+        _mod_tag = _first_tag(xml, ["mod"])
+        _i08191_res = _i08191.avaliar(_i08191.I08191Entrada(
+            modelo=(_mod_tag or {}).get("value", "").strip(),
+            emit_ie=(_first_tag(_emit_block["snippet"], ["IE"]) or {}).get("value") if _emit_block else None,
+            cfops=[c["value"].strip() for c in _all_tags(xml, "CFOP")],
+            fin_nfe=(_first_tag(xml, ["finNFe"]) or {}).get("value"),
+            tp_nf_credito=(_first_tag(xml, ["tpNFCredito"]) or {}).get("value"),
+            emissao=_parse_iso_date((emission_date or {}).get("value", "")),
+            autorizador=None,
+        ))
+        if _i08191_res.severidade:
+            ev_id = "E_XML_I08_191"
+            _cfop_tag = next(
+                (c for c in _all_tags(xml, "CFOP")
+                 if c["value"].strip() == _i08191_res.cfop_nao_permitido), None)
+            _add(
+                Finding(
+                    id="F_I08_191_CFOP_EXCLUSIVO_IBSCBS",
+                    severity=_i08191_res.severidade,
+                    rule_id="I08_191_CFOP_EXCLUSIVO_IBSCBS",
+                    title=(
+                        f"CFOP {_i08191_res.cfop_nao_permitido} não permitido ao contribuinte "
+                        f"exclusivo do IBS/CBS — {_i08191_res.aplicabilidade}"
+                    ),
+                    where=FindingWhere(field="CFOP", xpath=_xpath("CFOP", doc_type),
+                                       snippet=(_cfop_tag or {}).get("snippet", "")),
+                    recommendation=_i08191.mensagem(_i08191_res),
+                    evidence_ids=[ev_id],
+                ),
+                Evidence(id=ev_id, type="xml",
+                         label=f"I08-191 — {_i08191_res.resultado} ({_i08191_res.aplicabilidade})",
+                         xpath=_xpath("CFOP", doc_type),
+                         snippet=(_cfop_tag or {}).get("snippet", "")),
             )
 
     # ── Rule: MONOFASICO_GRUPO_UB — subgrupo do UB84 presente quando exigido (NT v1.50, #404) ──
