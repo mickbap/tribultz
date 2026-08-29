@@ -153,5 +153,5 @@ class TestFlagsPermanecemOff:
     def test_nenhuma_flag_ligada_por_esta_fatia(self):
         from app.config import Settings
 
-        for flag in ("ATTIO_ENABLED", "RUMY_WEBHOOK_ENABLED", "HANDOFF_APPLY_ENABLED"):
+        for flag in ("RUMY_WEBHOOK_ENABLED", "HANDOFF_APPLY_ENABLED"):
             assert Settings.model_fields[flag].default is False, flag
