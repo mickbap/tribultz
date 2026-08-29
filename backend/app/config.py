@@ -41,16 +41,6 @@ class Settings(BaseSettings):
     HUBSPOT_API_BASE_URL: str = "https://api.hubapi.com"
 
     # ── Attio (CRM comercial — prospecção→fechamento, PO-2026-07-CRM-001) ───
-    # Domínio separado do HubSpot acima: Attio cobre a esteira comercial
-    # (lead→fechado), HubSpot fica isolado no ciclo de vida pós-venda.
-    # Sem API key → integração é no-op (mesmo padrão do HubSpot).
-    ATTIO_ENABLED: bool = False
-    ATTIO_API_KEY: str = ""
-    ATTIO_WORKSPACE: str = ""
-    ATTIO_DEFAULT_PIPELINE: str = ""
-    ATTIO_DEFAULT_STAGE: str = ""
-    ATTIO_WEBHOOK_SECRET: str = ""
-
     # ── Rumy (AI SDR — handoff comercial, Rounds 4–5 da PO-2026-07-CRM-001) ─
     # Flags OFF por padrão e nenhum efeito externo: com RUMY_WEBHOOK_ENABLED
     # off o endpoint /api/v1/webhooks/rumy responde 404; com
@@ -92,7 +82,7 @@ class Settings(BaseSettings):
     # velho. TTL protege a fonte pública de ser martelada pelo /health/deep.
     #
     # Default OFF, como as demais integrações da casa (HUBSPOT_ENABLED,
-    # ATTIO_ENABLED, RUMY_WEBHOOK_ENABLED): a probe faz chamada de saída para um
+    # RUMY_WEBHOOK_ENABLED): a probe faz chamada de saída para um
     # portal público de governo. Ligar por acidente em dev/CI significaria bater
     # nessa fonte a cada execução de teste. Produção liga explicitamente no .env.
     CLASSTRIB_FRESHNESS_ENABLED: bool = False

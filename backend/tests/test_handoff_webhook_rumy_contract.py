@@ -179,5 +179,5 @@ class TestFlagsPermanecemOff:
         """Nada neste round liga superfície externa."""
         from app.config import Settings
 
-        for flag in ("RUMY_WEBHOOK_ENABLED", "HANDOFF_APPLY_ENABLED", "ATTIO_ENABLED"):
+        for flag in ("RUMY_WEBHOOK_ENABLED", "HANDOFF_APPLY_ENABLED"):
             assert Settings.model_fields[flag].default is False, flag
