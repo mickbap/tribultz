@@ -187,6 +187,20 @@ function suframaDvOk(inscricao: string): boolean {
   return calc === Number(digits[8]);
 }
 
+/** Blocos `<det>` do XML, para associar campos DENTRO do mesmo item.
+ *
+ * `allTags` varre o documento inteiro e não sabe a qual item cada valor
+ * pertence. A I08-150 precisa saber: a exceção de UF só vale quando o CFOP
+ * 5.949 e o CST/CSOSN estão no MESMO item — casar o CFOP de um item com o CST
+ * de outro seria inventar exceção. */
+function detBlocks(xml: string): { block: string; index: number }[] {
+  const re = /<det(?=[\s>/])([^>]*)>([\s\S]*?)<\/det>/gi;
+  const out: { block: string; index: number }[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(xml)) !== null) out.push({ block: m[0], index: m.index });
+  return out;
+}
+
 /** Returns ALL matches for a tag (useful for multi-item NF-e). */
 function allTags(xml: string, tag: string): { value: string; snippet: string; index: number }[] {
   const re = new RegExp(`<${tag}(?=[\\s>/])([^>]*)>([\\s\\S]*?)<\\/${tag}>`, "gi");
@@ -1382,15 +1396,62 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
         );
       }
 
-      // ── Rule: DANFE_SIMPLIFICADO_CFOP — allowlist de CFOP (NT 2026.002 v1.00, #482) ──
-      // Regra I08-150 — Rejeição 725 (mesmo código já usado pela SEFAZ para "NFC-e com
-      // CFOP inválido", reaproveitado para NF-e+tpImp=6 — DANFE Simplificado Tipo 2
-      // estende a mesma semântica de venda direta ao consumidor da NFC-e ao NF-e mod. 55).
-      // Confirmado por 2 fontes independentes (fórum SPED Brasil + doc. Senior listando
-      // I08-150 entre as regras da NT 2026.002 v1.00) + a lista de CFOPs bate quase 1:1
-      // com a lista já documentada da Rejeição 725 de NFC-e (mesma fonte, +1 código: 5910).
+      // ── Rule: DANFE_SIMPLIFICADO_CFOP — I08-150 / Rejeição 725 ──────────────
+      // FONTE NORMATIVA: NT 2026.002 v1.10a, regra I08-150, adquirida do Portal
+      // Nacional da NF-e (ver NT_UPSTREAM_VERSION em rulesMeta.ts).
+      //
+      // Até 29/08/2026 a justificativa desta regra no código citava fórum SPED
+      // Brasil e documentação de fornecedor. A NT oficial foi adquirida e
+      // confirma a lista-base EXATAMENTE: os mesmos 10 CFOPs. A regra estava
+      // certa; a evidência é que era secundária. Comportamento da lista-base
+      // preservado; o que muda é a autoridade e as exceções abaixo.
+      //
+      // Reconciliar I08-150 NÃO declara cobertura da NT 1.10a inteira — ver
+      // NT_IMPLEMENTED_VERSION, que segue em 1.00 para a NT 2026.002.
       const cfopAllowlist = new Set(["5101", "5102", "5103", "5104", "5115", "5405", "5656", "5667", "5910", "5933"]);
-      const badCfop = allTags(xml, "CFOP").find((c) => !cfopAllowlist.has(c.value.trim()));
+
+      // Exceções por UF, texto oficial da I08-150:
+      //   Obs. 1 — "Para a UF do RS, poderá ser permitido o uso do CFOP 5.949
+      //             com CSOSN=900 ou CST=90."
+      //   Obs. 2 — "Para a UF do SP, poderá ser permitido o uso do CFOP 5.949
+      //             com CSOSN=900 ou CST=40."
+      //
+      // A exceção significa UMA coisa: a I08-150 não rejeita este item. Não diz
+      // que a operação está fiscalmente correta, nem que 5.949 é válido em
+      // qualquer lugar — só que ESTA regra não é o que a recusa.
+      const EXCECOES_UF_5949: Record<string, Set<string>> = {
+        RS: new Set(["90", "900"]),   // CST=90 ou CSOSN=900
+        SP: new Set(["40", "900"]),   // CST=40 ou CSOSN=900
+      };
+      const ufEmit = firstTag(xml, ["UF"])?.value.trim().toUpperCase() ?? "";
+      const excecoesDaUf = EXCECOES_UF_5949[ufEmit];
+
+      /** O item cai numa exceção oficial de UF? CFOP e CST/CSOSN têm de estar
+       *  no MESMO bloco <det> — casar entre itens inventaria exceção. */
+      const itemIsentoPorUf = (bloco: string, cfop: string): boolean => {
+        if (!excecoesDaUf || cfop !== "5949") return false;
+        const cst = firstTag(bloco, ["CST"])?.value.trim() ?? "";
+        const csosn = firstTag(bloco, ["CSOSN"])?.value.trim() ?? "";
+        return excecoesDaUf.has(cst) || excecoesDaUf.has(csosn);
+      };
+
+      const itens = detBlocks(xml);
+      let badCfop: { value: string; snippet: string; index: number } | undefined;
+      for (const item of itens) {
+        const c = firstTag(item.block, ["CFOP"]);
+        if (!c) continue;
+        const valor = c.value.trim();
+        if (cfopAllowlist.has(valor)) continue;
+        if (itemIsentoPorUf(item.block, valor)) continue;
+        badCfop = { value: valor, snippet: c.snippet, index: item.index + c.index };
+        break;
+      }
+      // Fallback para XML sem <det> reconhecível: mantém a varredura plana em vez
+      // de deixar de validar. Sem item não há CST/CSOSN para casar, logo não há
+      // exceção aplicável — e a lista-base continua valendo.
+      if (!badCfop && itens.length === 0) {
+        badCfop = allTags(xml, "CFOP").find((c) => !cfopAllowlist.has(c.value.trim()));
+      }
       if (badCfop) {
         const evId = makeEvidenceId("DANFE_T2_CFOP");
         pushFindingAndEvidence(findings, evidences, evidenceById,
@@ -1405,7 +1466,8 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             evidenceId: evId,
             recommendation:
               "O DANFE Simplificado Tipo 2 só admite CFOPs de venda direta ao consumidor: 5101, 5102, 5103, " +
-              "5104, 5115, 5405, 5656, 5667, 5910, 5933. Corrija o CFOP do item ou remova tpImp=6. " +
+              "5104, 5115, 5405, 5656, 5667, 5910, 5933 (I08-150, NT 2026.002 v1.10a). RS e SP podem " +
+              "admitir o CFOP 5949 com CSOSN=900 (CST=90 no RS, CST=40 em SP). Corrija o CFOP do item ou remova tpImp=6. " +
               "SEFAZ: Rejeição 725 (regra I08-150).",
           }),
           makeEvidence({ id: evId, type: "xml", label: "DANFE T2 — CFOP fora do allowlist", xpath: inferXpath("CFOP", docType), snippet: badCfop.snippet }),
