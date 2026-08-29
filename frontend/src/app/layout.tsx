@@ -80,11 +80,6 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className={`${montserrat.variable} ${sourceSans.variable} ${robotoMono.variable}`}>
         <AppShell>{children}</AppShell>
-        <Script
-          id="hs-script-loader"
-          src="//js.hs-scripts.com/49735644.js"
-          strategy="afterInteractive"
-        />
         {/* Google Consent Mode v2 — analytics negado por padrão (LGPD).
             Roda antes do gtag.js e respeita a escolha salva pelo usuário. */}
         <Script id="ga-consent-default" strategy="beforeInteractive">
