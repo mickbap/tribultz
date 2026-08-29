@@ -30,22 +30,24 @@ Nenhum segredo está rastreado pelo git — só `.env.prod.template` e os `.env.
 
 Não existe token de deploy da Vercel: o deploy do frontend é via integração GitHub, não via token.
 
-## Attio — criação e armazenamento da API key (PO-2026-07-CRM-001)
+## Attio — DESCOMISSIONADO em 29/08/2026 (ROUND 18-A)
 
-> Pendente: ainda não existe `ATTIO_API_KEY` em nenhum lugar da lista acima. Passos abaixo para gerar e guardar — sem valores reais neste arquivo.
+O Attio deixou de fazer parte da arquitetura operacional da Tribultz. O cockpit
+comercial passou para o Excel mantido pelo Economista; o Rumy segue como origem
+da prospecção. Router, webhook, `app/integrations/attio/` e as variáveis
+`ATTIO_*` foram removidos do código.
 
-**Pré-requisito**: precisa ser **admin do workspace Attio**. Se não for, peça para quem é.
+**Segredos que ainda existem e o que fazer com eles:**
 
-1. No Attio, clique no dropdown ao lado do nome do workspace → **Workspace settings**.
-2. Aba **Developers**.
-3. **+ New access token**.
-4. Dê um nome identificável (ex.: `tribultz-backend-prod`) e marque os **Scopes** necessários — no mínimo leitura+escrita de Objects/Records (companies, people) e de Lists (pipeline/deals), mais o scope de Notes e o de Webhooks se formos consumir eventos (item 9 da PO). A lista exata de scopes aparece na própria tela de criação — confirme lá, não neste doc.
-5. Crie o token. **Aparece uma única vez** — copie imediatamente. Não expira sozinho, mas pode ser revogado/deletado a qualquer momento na mesma tela (ícone de olho para reexibir, menu de três pontos para editar/apagar).
-6. Guarde seguindo o mesmo padrão de todo segredo deste projeto (ver "Onde os segredos estão hoje" acima): a única fonte de verdade é `/opt/tribultz/.env` na VM — adicione `ATTIO_API_KEY=<valor>` lá (nunca num commit, nunca colado no chat). Replique para `.env.prod` local e `secrets/credentials.md` se for usar essas cópias.
-7. `ATTIO_WORKSPACE` não é segredo (é o slug/ID do workspace, visível na URL do Attio) — pode ficar em `.env.example` com placeholder.
-8. `ATTIO_WEBHOOK_SECRET` é gerado pelo Attio ao criar o webhook (item 9 da PO), não na tela de token — trate com o mesmo cuidado do token.
+| Credencial | Onde | Situação |
+|---|---|---|
+| `ATTIO_API_KEY` (atual) | `/opt/tribultz/.env` | remover da VM **depois** de o código descomissionado estar deployado e validado |
+| `ATTIO_API_KEY` (anterior) | fora do nosso controle | **COMPROMETIDA** — exposta em texto puro numa sessão de agente em 27/08/2026. Rotacionada em 29/08 (ROUND 16-N), mas **a revogação externa na UI do Attio continua PENDENTE**: em 29/08 ela ainda respondia HTTP 200 em `/v2/self`, `/v2/objects` e `/v2/workspace_members`. Revogar é a etapa de encerramento. |
+| `ATTIO_WEBHOOK_SECRET` | `/opt/tribultz/.env` | sem consumidor — o webhook não existe mais; remover junto com a API key |
+| cópia local | `~/tribultz/.env.prod` | ainda carrega a chave anterior; sanitizar |
 
-Documentação oficial: [Generate an API key (Attio Help Center)](https://attio.com/help/apps/other-apps/generating-an-api-key) · [Authenticating requests (Attio Docs)](https://docs.attio.com/rest-api/guides/authentication).
+Não apagar registro algum no workspace Attio: 6 people, 14 companies e 1 deal
+seguem lá, preservados. Estamos removendo integração, não reescrevendo passado.
 
 ## Como validar (sem imprimir valores)
 
@@ -57,9 +59,6 @@ curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $(g OPENROUTE
 curl -s -o /dev/null -w '%{http_code}\n' -H "access_token: $(g ASAAS_API_KEY)"          https://api.asaas.com/v3/myAccount
 curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $(g SMTP_PASSWORD)"   https://api.resend.com/domains
 curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $(g HUBSPOT_PRIVATE_APP_TOKEN)" 'https://api.hubapi.com/crm/v3/objects/contacts?limit=1'
-
-# Attio — espera-se HTTP 200 (token ausente/errado responde 401)
-curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $(g ATTIO_API_KEY)" https://api.attio.com/v2/objects
 
 # Object Storage Magalu
 curl -s -o /dev/null -w '%{http_code}\n' --aws-sigv4 "aws:amz:$(g S3_REGION):s3" \

@@ -69,11 +69,12 @@ completo. `dedup_prospects.py` e `score_and_select.py` operam só sobre os
 ## Fora desta entrega (Fase 1 termina no Top 2.000)
 
 Agente de enriquecimento externo, reclassificação, exportação para o CRM
-comercial (**Attio** — corrigido em 07/08/2026; a fase seguinte NÃO exporta
+comercial (**Excel, mantido pelo Economista** — o Attio foi descomissionado em
+29/08/2026, ROUND 18-A; a fase seguinte NÃO exporta
 para o HubSpot, que fica isolado no pós-venda), telemetria e scripts de
 feedback loop são fases seguintes — ver o plano da Fase 1 para o desenho
 completo.
 
 Este pipeline é **outra origem de aquisição** dentro da arquitetura
-comercial (Receita Federal → Pipeline Prospecting → Attio), não um CRM
+comercial (Receita Federal → Pipeline Prospecting → Excel), não um CRM
 paralelo — decisão de Produto/Vendas, 07/08/2026.

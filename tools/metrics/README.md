@@ -48,4 +48,5 @@ Requer `openpyxl` (`backend/requirements.txt`).
 - Créditos fiscais de Split Payment (`documents.fiscal_metadata`) — métrica
   de valor entregue, distinta de unit economics de billing. v2.
 - Uso por rota/feature individual — v2, pela matriz de priorização.
-- CAC e funil comercial — vêm do extrato de Vendas (Attio), não do banco.
+- CAC e funil comercial — vêm do extrato de Vendas (Excel do Economista; era o
+  Attio até o descomissionamento de 29/08/2026), não do banco.

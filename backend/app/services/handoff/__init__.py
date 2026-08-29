@@ -1,4 +1,7 @@
-"""Domínio local do handoff comercial Rumy → Tribultz → Attio (Round 4, F3).
+"""Domínio local do handoff comercial Rumy → Tribultz (Round 4, F3).
+
+O Attio era o destino externo desta esteira e foi descomissionado
+(ROUND 18-A): o handoff termina no domínio local, que é a autoridade.
 
 Módulos:
 - contract  — HandoffEvent v1.1 (envelope interno; known/absent explícito)
