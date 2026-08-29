@@ -1405,3 +1405,62 @@ class TestW03Totals:
         assert f, "IBSCBS_TOTAL esperado (total IBS divergente da soma dos itens)"
         assert f[0].severity == "FATAL"
         assert "1085" in (f[0].recommendation or "")
+
+
+from app.data import cfop_table as _ct  # noqa: E402
+
+_CFOP_NEGADO = sorted(c for c in _ct.all_cfops() if _ct.ind_exc_ibscbs(c) == "0")[0]
+_CFOP_PERMITIDO = sorted(_ct.cfops_permitidos_contribuinte_exclusivo())[0]
+
+
+class TestI08191Integracao:
+    """RV I08-191 ligada ao motor (#615, NT 2026.007 v1.00).
+
+    O contrato da avaliação está em test_rules_i08_191. Aqui provamos só a
+    fiação: o motor lê emit/IE, CFOP, finNFe e tpNFCredito do XML e produz o
+    achado com a severidade correta.
+    """
+
+    NEGADO = _CFOP_NEGADO
+    PERMITIDO = _CFOP_PERMITIDO
+
+    @staticmethod
+    def _nfe(cfop: str, *, ie: str = "", fin: str = "1", tp_cred: str | None = None,
+             dh: str = "2026-12-01") -> str:
+        ie_tag = f"<IE>{ie}</IE>" if ie else ""
+        cred = f"<tpNFCredito>{tp_cred}</tpNFCredito>" if tp_cred else ""
+        return (
+            "<nfeProc><NFe><infNFe>"
+            f"<ide><mod>55</mod><finNFe>{fin}</finNFe>{cred}<dhEmi>{dh}T10:00:00-03:00</dhEmi></ide>"
+            f"<emit><CNPJ>12345678000195</CNPJ>{ie_tag}</emit>"
+            f"<det nItem=\"1\"><prod><CFOP>{cfop}</CFOP><NCM>84713012</NCM></prod></det>"
+            "</infNFe></NFe></nfeProc>"
+        )
+
+    def _find(self, xml: str):
+        return [f for f in validate_xml(xml, "NFE").findings
+                if f.rule_id == "I08_191_CFOP_EXCLUSIVO_IBSCBS"]
+
+    def test_ie_ausente_com_cfop_negado_gera_achado_nao_fatal(self):
+        """Sem autorizador comprovado o achado existe, mas NUNCA é FATAL."""
+        f = self._find(self._nfe(self.NEGADO))
+        assert len(f) == 1
+        assert f[0].severity == "WARNING"
+        assert f[0].severity != "FATAL"
+        assert "APLICABILIDADE_SVRS_NAO_DETERMINADA" in f[0].title
+        assert "autorizador aplicável não foi determinado" in f[0].recommendation
+
+    def test_ie_informada_nao_gera_achado(self):
+        assert self._find(self._nfe(self.NEGADO, ie="123456789")) == []
+
+    def test_cfop_permitido_nao_gera_achado(self):
+        assert self._find(self._nfe(self.PERMITIDO)) == []
+
+    def test_excecao_devolucao_finNFe_4(self):
+        assert self._find(self._nfe(self.NEGADO, fin="4")) == []
+
+    def test_excecao_tpNFCredito_03(self):
+        assert self._find(self._nfe(self.NEGADO, tp_cred="03")) == []
+
+    def test_cfop_fora_do_dominio_oficial_nao_gera_achado(self):
+        assert self._find(self._nfe("9999")) == []
