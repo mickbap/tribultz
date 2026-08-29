@@ -86,8 +86,14 @@ def conflito_contagem() -> dict:
     """Conflito ABERTO entre dois artefatos oficiais, preservado como dado.
 
     O IT 2023.002 v2.00 (06/08/2026, §03) diz "(84 códigos)". A Tabela publicada
-    em 25/08/2026 — posterior — traz 72. ``conflict_status`` é ``UNRESOLVED`` e
-    permanece assim até decisão do Jurídico.
+    em 25/08/2026 — posterior — traz 72. ``conflict_status`` segue ``UNRESOLVED``
+    porque a causa documental continua em aberto.
+
+    O conflito NÃO condiciona comportamento. O Round Fiscal 27/08-D canonizou a
+    Tabela de 25/08 como domínio operacional; o lookup responde pelo valor
+    individual publicado de cada CFOP, e o determinismo da I08-191 depende de
+    condições documentais + indExcIBSCBS=0 + SVRS comprovada + vigência — nunca
+    de resolver esta divergência. Ver ``efeito_operacional``.
 
     O que NÃO foi feito, de propósito: gerar os 12 códigos que fechariam 84,
     alterar o XLSX, ou afirmar que 84 foi oficialmente retificado para 72. O

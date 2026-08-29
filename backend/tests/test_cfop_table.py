@@ -184,3 +184,33 @@ class TestNaoConfundirComOutraRegra:
         danfe_t2 = {"5101", "5102", "5103", "5104", "5115", "5405", "5656", "5667", "5910", "5933"}
         assert danfe_t2 != t.cfops_permitidos_contribuinte_exclusivo()
         assert danfe_t2 <= t.all_cfops(), "os 10 do DANFE T2 existem no domínio oficial"
+
+
+class TestConflitoNaoCondicionaComportamento:
+    """O conflito 84×72 é registro documental, não gate.
+
+    Round Fiscal 27/08-D canonizou a Tabela de 25/08 como domínio operacional.
+    O conflito segue UNRESOLVED — a causa documental continua aberta — mas não
+    bloqueia lookup nem determinismo.
+    """
+
+    def test_efeito_operacional_declara_que_nao_bloqueia(self):
+        e = t.conflito_contagem()["efeito_operacional"]
+        assert e["bloqueia_lookup"] is False
+        assert e["bloqueia_determinismo_i08_191"] is False
+        assert e["dominio_operacional"] == 72
+
+    def test_unresolved_preservado(self):
+        assert t.conflito_contagem()["conflict_status"] == "UNRESOLVED"
+
+    def test_lookup_responde_com_conflito_aberto(self):
+        assert t.conflito_contagem()["conflict_status"] == "UNRESOLVED"
+        assert t.permitido_contribuinte_exclusivo_ibscbs(
+            sorted(t.cfops_permitidos_contribuinte_exclusivo())[0]) is True
+
+    def test_nenhum_requisito_conflict_resolved_no_codigo(self):
+        import pathlib
+        for mod in ("cfop_table.py", "../services/rules_i08_191.py"):
+            src = (pathlib.Path(t.__file__).parent / mod).read_text(encoding="utf-8")
+            assert "conflict_84_72_resolved" not in src
+            assert "conflito_resolvido" not in src
