@@ -1,0 +1,52 @@
+---
+title: "Como corrigir rejeição 1115 na emissão fiscal"
+description: "Entenda como corrigir rejeição 1115, localizar a regra aplicável e ajustar cadastro, ERP e XML com evidências antes de reenviar o documento fiscal."
+slug: "como-corrigir-rejeicao-1115"
+category: "Reforma Tributária"
+author:
+  name: "Equipe Tribultz"
+  jobTitle: "Conteúdo Fiscal"
+  url: "https://tribultz.com.br"
+publishedAt: "2026-08-19T04:21:32.000Z"
+tags: []
+coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/4fb8471f-d230-4cb4-817e-48e94d580302/1815f327-62e5-439e-a78a-e6e5e1fd9125.webp"
+legalRefs: []
+soroGuid: "1815f327-62e5-439e-a78a-e6e5e1fd9125"
+---
+
+{/* Gerado pelo Soro — REVISAR antes do merge: precisão fiscal, legalRefs, tags, category. */}
+
+<p>Uma rejeição 1115 interrompe um processo que, na prática, não pode esperar: a emissão fiscal ligada ao faturamento, à expedição e ao atendimento do cliente. Saber <strong>como corrigir rejeição 1115</strong> não significa apenas alterar um campo no XML. Significa identificar qual regra foi violada na versão aplicável do documento, encontrar a origem do dado no ERP e corrigir a causa sem criar novas inconsistências no próximo envio.</p>
+<p>O primeiro cuidado é não tratar o número da rejeição como um diagnóstico completo. A mensagem retornada pela autorização fiscal, o tipo de documento eletrônico, o ambiente utilizado e o leiaute vigente definem a condição exata que precisa ser atendida. O código aponta a falha; o texto de retorno, o XML transmitido e a regra técnica correspondente mostram o caminho de correção.</p>
+<h2>O que verificar antes de corrigir a rejeição 1115</h2>
+<p>A resposta mais rápida costuma ser editar o XML e reenviar. Em operações recorrentes, essa solução pode apenas esconder um problema de parametrização. Se a causa estiver no cadastro do produto, na regra fiscal da operação ou na integração entre sistemas, a rejeição tende a reaparecer na próxima nota com características semelhantes.</p>
+<p>Comece preservando três evidências: o XML enviado, o XML retornado ou protocolo de rejeição e a mensagem completa da autorização fiscal. Registre também data, hora, ambiente, empresa emitente, operação envolvida e versão do sistema que gerou o documento. Esse conjunto evita que a análise se baseie em uma tela resumida do ERP, que nem sempre exibe todos os grupos e tags transmitidos.</p>
+<p>Em seguida, valide se o documento foi gerado conforme o leiaute e as regras vigentes para aquela operação. Regras fiscais não são estáticas. Alterações em notas técnicas, esquemas XML, períodos de teste, produção e vigência legal podem mudar campos obrigatórios, combinações aceitas e validações aplicadas na autorização.</p>
+<p>A sequência de análise deve responder a uma pergunta objetiva: qual informação foi informada, omitida ou combinada de forma incompatível para que a regra retornasse a rejeição 1115? Só depois disso faz sentido alterar a configuração.</p>
+<h2>Como corrigir rejeição 1115 com rastreabilidade</h2>
+<p>A correção exige olhar para a origem do dado, não somente para o resultado no XML. Em uma operação estruturada, isso normalmente envolve o cadastro mestre, a determinação fiscal do ERP, as regras da natureza da operação e a camada de integração que monta o documento eletrônico.</p>
+<h3>1. Leia a mensagem completa e confirme o contexto técnico</h3>
+<p>Localize o campo `xMotivo` ou a descrição integral apresentada pelo autorizador. Compare-a com a documentação oficial vigente para o respectivo documento fiscal e confirme a versão do leiaute aplicável. Uma mesma tela de rejeições pode agrupar retornos de cenários diferentes, enquanto a mensagem detalhada aponta o grupo, a condição ou a informação esperada.</p>
+<p>Não faça inferências apenas pelo código. Verifique se a emissão é de NF-e, NFC-e ou outro documento eletrônico, qual é a unidade federada envolvida quando esse contexto for relevante e se o ambiente é de homologação ou produção. Uma correção validada em teste também precisa ser confirmada no cenário produtivo, respeitando as regras então vigentes.</p>
+<h3>2. Compare o XML rejeitado com uma emissão válida equivalente</h3>
+<p>Escolha um documento autorizado com a mesma natureza de operação, perfil de destinatário, produto ou serviço e tratamento tributário comparável. A comparação deve ser estrutural e semântica: não basta ver se uma tag existe. É necessário verificar se ela está no grupo correto, possui valor permitido e mantém coerência com os demais campos fiscais.</p>
+<p>Observe especialmente os dados que o ERP usa para determinar a tributação: classificação do item, NCM quando aplicável, CST, enquadramentos, origem da mercadoria, indicadores da operação e os grupos tributários exigidos pelo leiaute. No contexto da Reforma Tributária, também é prudente verificar campos e classificações relacionados a CBS, IBS e cClassTrib quando exigidos pela legislação e documentação técnica vigente.</p>
+<p>A presença isolada de uma informação não comprova consistência. Uma classificação correta no cadastro pode ser anulada por uma regra de exceção da operação, por uma parametrização de filial ou por uma rotina de integração que sobrescreve o valor antes da transmissão.</p>
+<h3>3. Encontre o ponto de origem do dado incorreto</h3>
+<p>Depois de identificar a divergência no XML, rastreie seu caminho no processo. Em muitos ERPs, um campo fiscal pode ser alimentado por mais de uma fonte: cadastro do produto, cadastro do cliente, regra de operação, tabela tributária, parâmetro da empresa ou customização.</p>
+<p>Documente qual fonte prevaleceu na geração do documento. Essa etapa é decisiva para evitar correções manuais repetidas. Se o analista ajusta o XML, mas a origem continua errada no cadastro ou na regra, o processo permanece dependente de intervenção e perde previsibilidade.</p>
+<p>Também vale revisar alterações recentes. Atualizações de ERP, mudanças de regras fiscais, inclusão de novos produtos, revisão de cadastros em massa e troca de integrações costumam explicar rejeições que surgem em operações antes estáveis. O objetivo não é procurar um culpado, mas estabelecer uma linha de evidência entre a alteração e o efeito na emissão.</p>
+<h3>4. Corrija a parametrização e gere um novo XML</h3>
+<p>Ajuste o cadastro ou a regra de determinação fiscal no sistema de origem, de acordo com a análise técnica e a documentação aplicável. Depois, gere um <a href="https://tribultz.com.br/blog/api-validacao-xml-nfe-na-pratica">novo XML</a>, em vez de reutilizar o arquivo rejeitado com modificações sem controle.</p>
+<p>Antes do reenvio, valide a estrutura do documento e a coerência entre os grupos tributários relacionados. Confirme se a mudança não afetou cálculos, bases, totais, obrigações acessórias ou outras operações que compartilham a mesma regra. Dependendo da arquitetura do ERP, uma parametrização aparentemente local pode ter efeito sobre diversas filiais, séries ou tipos de saída.</p>
+<p>O reenvio deve ser acompanhado do registro da evidência: qual regra foi revisada, quem aprovou a alteração, quais documentos foram impactados e qual foi o retorno da autorização. Esse histórico transforma uma correção pontual em conhecimento operacional reutilizável.</p>
+<h2>Erros que prolongam a rejeição 1115</h2>
+<p>O erro mais comum é executar tentativas sucessivas sem preservar as versões do XML. Isso aumenta o tempo de análise e torna difícil demonstrar o que mudou entre uma rejeição e outra. Outro problema frequente é usar um documento autorizado como cópia literal, sem confirmar se destinatário, produto, operação e regime aplicável são realmente equivalentes.</p>
+<p>Também há risco em delegar toda a correção a uma única área. O fiscal entende a regra e o impacto tributário; TI e ERP conhecem a origem técnica do campo; operações conhece a urgência e o efeito no faturamento. Quando cada área atua isoladamente, a correção pode ser rápida, mas pouco sustentável.</p>
+<p>Por fim, não confunda autorização com conformidade ampla. Um documento autorizado merece continuar coerente com cadastros, escrituração e regras tributárias aplicáveis. A rejeição é um controle relevante, mas não substitui uma validação preventiva da decisão fiscal que gerou o documento.</p>
+<h2>Prevenção: trate rejeições como sinal de qualidade de dados</h2>
+<p>Empresas com catálogos extensos e múltiplas regras fiscais não conseguem depender de conferências manuais na etapa final da emissão. O ponto mais seguro para atuar é antes da autorização, quando ainda há tempo para revisar a decisão tributária sem interromper a expedição ou criar retrabalho entre fiscal e faturamento.</p>
+<p>Uma política preventiva começa pela governança dos cadastros. Produtos, operações e classificações tributárias precisam ter responsáveis definidos, critérios de alteração e trilha de auditoria. Mudanças de legislação ou de leiaute devem ser traduzidas em requisitos operacionais, testadas em cenários representativos e acompanhadas após a entrada em produção.</p>
+<p>A segunda camada é a validação determinística das regras que sustentam cada emissão. Quando o ERP gera o XML, a empresa precisa conseguir responder por que determinada classificação, <a href="https://tribultz.com.br/blog/exemplo-erro-cst-cclasstrib">CST, cClassTrib</a> ou grupo tributário foi aplicado. Essa explicabilidade é tão relevante quanto detectar uma inconsistência, porque facilita a revisão técnica, a auditoria e a tomada de decisão entre áreas.</p>
+<p>A Tribultz atua nesse ponto como uma camada de inteligência tributária entre o ERP e a autorização fiscal. Ao confrontar cadastros, parametrizações e documentos com regras estruturais e tributárias aplicáveis, a plataforma ajuda a identificar inconsistências antes da emissão e gera evidências técnicas em formatos auditáveis. Não substitui o ERP nem a análise do contador: complementa o processo com rastreabilidade para decisões fiscais mais confiáveis.</p>
+<p>A rejeição 1115 deve deixar de ser apenas um chamado urgente na fila do faturamento. Quando a empresa registra a causa, corrige a origem e transforma o caso em uma regra preventiva, cada ocorrência passa a fortalecer a qualidade do processo fiscal - com menos improviso, mais evidência e maior continuidade operacional.</p>
