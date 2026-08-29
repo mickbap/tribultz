@@ -35,16 +35,72 @@ export const RULES_LABEL = `${RULES_COUNT} regras determinísticas alinhadas às
 export const CLASSTRIB_COUNT = 164;
 
 /**
- * Versão vigente de cada Nota Técnica coberta pelo motor — fonte única pro
- * `blogFiscalLint` detectar posts do blog que citam uma versão desatualizada
- * (achado real: 4 posts citando "NT 2025.002 V1.36" quando a vigente já é
- * v1.40, 2026-07-26). Atualizar aqui sempre que o motor migrar pra versão
- * nova de uma NT — o lint aponta sozinho todo post que ficou pra trás.
+ * Portal Nacional da NF-e — listagem oficial de Notas Técnicas. Única
+ * autoridade normativa para versão upstream; fórum, blog e documentação de
+ * fornecedor não entram aqui nem para "confirmar".
  */
-export const NT_CURRENT_VERSION: Record<string, string> = {
+export const PORTAL_NFE_NOTAS_TECNICAS =
+  "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY=";
+
+/**
+ * Versão que o MOTOR efetivamente cobre. NÃO é a versão publicada.
+ *
+ * Até 29/08/2026 um único campo (`NT_CURRENT_VERSION`) respondia por dois
+ * conceitos incompatíveis — "versão vigente lá fora" e "versão coberta aqui" —
+ * e o comentário logo abaixo dele documentava a colisão na prática: v1.51 e
+ * v1.10 foram publicadas e deliberadamente NÃO bumpadas, porque bumpar marcaria
+ * ~13 posts corretos como desatualizados. Ou seja, na prática o campo já
+ * significava cobertura. A separação torna isso explícito em vez de implícito.
+ *
+ * Consumidor: `blogFiscalLint`. É o mapa certo para ele — o post descreve o que
+ * o motor faz, então citar a versão coberta é o que o mantém verdadeiro.
+ * Publicação upstream NUNCA é prova de cobertura.
+ *
+ * Só bump aqui quando o motor de fato implementar a versão nova.
+ */
+export const NT_IMPLEMENTED_VERSION: Record<string, string> = {
   "NT 2025.002": "1.40",
   "NT 2026.002": "1.00",
 };
+
+/** Identidade de uma NT observada na fonte oficial. */
+export type UpstreamNT = {
+  /** Versão declarada pela própria fonte. */
+  versao: string;
+  /** Data de publicação declarada na listagem oficial. */
+  publicada_em: string;
+  /** Quando NÓS observamos essa versão como a mais recente. */
+  observado_em: string;
+  /** URL oficial de onde a observação saiu. */
+  source_url: string;
+};
+
+/**
+ * Versão OFICIAL vigente, observada no portal. NÃO implica cobertura.
+ *
+ * Divergir de `NT_IMPLEMENTED_VERSION` é o estado esperado, não defeito: é
+ * exatamente a lacuna de cobertura, agora mensurável em vez de invisível.
+ * Ver `ntCoverageGap()`.
+ */
+export const NT_UPSTREAM_VERSION: Record<string, UpstreamNT> = {
+  "NT 2025.002": { versao: "1.51", publicada_em: "2026-08-04", observado_em: "2026-08-29", source_url: PORTAL_NFE_NOTAS_TECNICAS },
+  "NT 2026.002": { versao: "1.10a", publicada_em: "2026-08-25", observado_em: "2026-08-29", source_url: PORTAL_NFE_NOTAS_TECNICAS },
+  "NT 2026.006": { versao: "1.00", publicada_em: "2026-08-25", observado_em: "2026-08-29", source_url: PORTAL_NFE_NOTAS_TECNICAS },
+  "NT 2026.007": { versao: "1.00", publicada_em: "2026-08-04", observado_em: "2026-08-29", source_url: PORTAL_NFE_NOTAS_TECNICAS },
+};
+
+/**
+ * Lacuna de cobertura por NT: publicada lá fora × implementada aqui.
+ *
+ * `implementada: null` significa que o motor não cobre a NT em versão nenhuma —
+ * distinto de cobrir numa versão anterior. Não confundir os dois estados.
+ */
+export function ntCoverageGap(): Array<{ nt: string; upstream: string; implementada: string | null; defasada: boolean }> {
+  return Object.entries(NT_UPSTREAM_VERSION).map(([nt, up]) => {
+    const impl = NT_IMPLEMENTED_VERSION[nt] ?? null;
+    return { nt, upstream: up.versao, implementada: impl, defasada: impl !== up.versao };
+  });
+}
 
 /**
  * NT 2025.002 v1.51 (04/08/2026) e NT 2026.002 v1.10 (04/08/2026) foram publicadas
