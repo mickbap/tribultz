@@ -11,8 +11,8 @@ Casos de borda decididos aqui (e testados):
 - identidade encontrada por uma chave e a outra chave livre ⇒ enriquecimento
   determinístico (preenche a chave vazia); jamais sobrescreve chave existente.
 - dado compartilhado por pessoas legitimamente distintas (ex.: e-mail comum):
-  colapsa na mesma identidade POR DESENHO (mesma semântica do Attio, onde
-  e-mail é chave única de pessoa). Modo de falha é conservador — bloqueia
+  colapsa na mesma identidade POR DESENHO (e-mail é chave única de
+  pessoa). Modo de falha é conservador — bloqueia
   outbound a mais, nunca a menos; separação exige curadoria humana.
 """
 

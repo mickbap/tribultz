@@ -223,29 +223,27 @@ def test_mesmo_external_lead_id_entre_tenants_isola(session, tenant_id, apply_on
 
 
 def test_pipeline_nao_conhece_attio_por_construcao():
-    """'Backend persiste + Attio indisponível': o NÚCLEO do pipeline (trava,
-    ownership, identidade, ingest, transporte) não referencia integrations/attio
-    — indisponibilidade do Attio é estruturalmente irrelevante para a proteção.
+    """O handoff inteiro ignora o Attio — agora sem exceção sancionada.
 
-    Exceção SANCIONADA (Round 7 §7): alerts.py cria a task operacional no Attio
-    como parte do alerta do Caminho C — best-effort, import LAZY (dentro da
-    função, atrás de try/except e de ATTIO_ENABLED). Attio fora do ar degrada o
-    alerta, nunca a trava."""
+    Até o ROUND 18-A havia UMA borda tolerada: ``alerts.py`` criava a task
+    operacional no Attio dentro do alerta do Caminho C (import lazy, atrás de
+    try/except). O Attio foi descomissionado e essa borda saiu junto, então o
+    guard endureceu: ``integrations.attio`` não pode aparecer em NENHUM arquivo
+    do núcleo, ``alerts.py`` incluído.
+
+    O que sobra do Attio no domínio são as colunas históricas ``attio_*`` de
+    ``crm_lead_links`` — dado, não integração. Elas não são varridas aqui.
+    """
     import pathlib
 
     base = pathlib.Path(__file__).resolve().parents[1] / "app"
-    core = [
-        p for p in (base / "services" / "handoff").glob("*.py")
-        if p.name != "alerts.py"
-    ] + [base / "routers" / "rumy.py", base / "tasks" / "task_k_rumy.py"]
-    for f in core:
-        assert "integrations.attio" not in f.read_text(), f"{f} referencia attio"
-    # a borda sancionada: import de attio em alerts.py existe mas NUNCA no
-    # nível de módulo (lazy = Attio indisponível não impede nem importar)
-    alerts_src = (base / "services" / "handoff" / "alerts.py").read_text()
-    toplevel_imports = [
-        line for line in alerts_src.splitlines()
-        if line.startswith(("import ", "from ")) and "attio" in line
+    core = list((base / "services" / "handoff").glob("*.py")) + [
+        base / "routers" / "rumy.py",
+        base / "tasks" / "task_k_rumy.py",
     ]
-    assert toplevel_imports == [], f"import de attio no topo de alerts.py: {toplevel_imports}"
-    assert "from app.integrations.attio.tasks import" in alerts_src  # lazy, na função
+    ofensores = [str(f) for f in core if "integrations.attio" in f.read_text()]
+    assert not ofensores, (
+        "o núcleo do handoff voltou a referenciar integrations/attio: %s" % ofensores
+    )
+
+

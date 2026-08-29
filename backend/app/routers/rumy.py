@@ -5,7 +5,7 @@ persiste bruto → enfileira worker. Validação de schema e domínio acontecem 
 worker — nenhum evento autenticado se perde por payload inesperado.
 
 Semântica de resposta — desvio DELIBERADO da convenção sempre-200 dos webhooks
-Asaas/Attio deste repo: aqui o retry do produtor é desejado (at-least-once).
+Asaas deste repo: aqui o retry do produtor é desejado (at-least-once).
   404 — RUMY_WEBHOOK_ENABLED=false (default): endpoint inexistente p/ o mundo.
   503 — HANDOFF_TENANT_ID não configurado (fail-closed, sem efeito colateral).
   413 — corpo acima do teto aplicacional (recusado durante a leitura).
