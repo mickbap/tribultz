@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import json
 
 from fastapi.testclient import TestClient
 
@@ -55,59 +54,28 @@ def test_verify_signature_rejects_tampered_body(monkeypatch):
     assert verify_signature(tampered, signature) is False
 
 
-# ── POST /api/v1/webhooks/attio ──────────────────────────────
-def test_webhook_endpoint_accepts_valid_signature(monkeypatch):
-    monkeypatch.setattr(settings, "ATTIO_WEBHOOK_SECRET", SECRET)
-    payload = {"events": [{"event_type": "list-entry.created"}]}
-    body = json.dumps(payload).encode()
+# ── Descomissionamento (ROUND 18-A, fatia 1) ─────────────────
+# O endpoint POST /api/v1/webhooks/attio foi removido: o Attio deixou de fazer
+# parte da arquitetura operacional. Os testes de aceitação do endpoint saíram
+# junto com ele; sobra este guard, que falha se o router voltar a ser montado.
+# `verify_signature` continua coberto acima e sai na fatia 2, com o módulo.
+def test_webhook_attio_desmontado_retorna_404():
+    for header in ("attio-signature", "x-attio-signature"):
+        r = client.post(
+            "/api/v1/webhooks/attio",
+            content=b'{"events":[]}',
+            headers={header: "qualquer", "content-type": "application/json"},
+        )
+        assert r.status_code == 404, (
+            "router Attio voltou a ser montado — o descomissionamento do "
+            "ROUND 18-A exige que esta rota nao exista"
+        )
 
-    response = client.post(
-        "/api/v1/webhooks/attio",
-        content=body,
-        headers={"attio-signature": _sign(body), "content-type": "application/json"},
+
+def test_nenhuma_rota_attio_registrada_no_app():
+    from app.main import app as _app
+
+    rotas = [getattr(r, "path", "") for r in _app.routes]
+    assert not [p for p in rotas if "attio" in p.lower()], (
+        "ha rota com 'attio' no path: %s" % [p for p in rotas if "attio" in p.lower()]
     )
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok", "events_received": 1}
-
-
-def test_webhook_endpoint_accepts_legacy_header(monkeypatch):
-    monkeypatch.setattr(settings, "ATTIO_WEBHOOK_SECRET", SECRET)
-    payload = {"events": [{"event_type": "note.created"}]}
-    body = json.dumps(payload).encode()
-
-    response = client.post(
-        "/api/v1/webhooks/attio",
-        content=body,
-        headers={"x-attio-signature": _sign(body), "content-type": "application/json"},
-    )
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok", "events_received": 1}
-
-
-def test_webhook_endpoint_rejects_invalid_signature_without_crashing(monkeypatch):
-    monkeypatch.setattr(settings, "ATTIO_WEBHOOK_SECRET", SECRET)
-    payload = {"events": [{"event_type": "list-entry.created"}]}
-    body = json.dumps(payload).encode()
-
-    response = client.post(
-        "/api/v1/webhooks/attio",
-        content=body,
-        headers={"attio-signature": "invalid", "content-type": "application/json"},
-    )
-    # Sempre 200 pra não gerar retry — mesma convenção do webhook Asaas.
-    assert response.status_code == 200
-    assert response.json() == {"status": "ignored", "reason": "invalid signature"}
-
-
-def test_webhook_endpoint_handles_bare_event_without_wrapper(monkeypatch):
-    monkeypatch.setattr(settings, "ATTIO_WEBHOOK_SECRET", SECRET)
-    payload = {"event_type": "list-entry.updated"}
-    body = json.dumps(payload).encode()
-
-    response = client.post(
-        "/api/v1/webhooks/attio",
-        content=body,
-        headers={"attio-signature": _sign(body), "content-type": "application/json"},
-    )
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok", "events_received": 1}
