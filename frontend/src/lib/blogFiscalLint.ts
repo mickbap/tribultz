@@ -11,7 +11,8 @@
  * sobre todos os posts — determinístico, sem LLM, custo zero de token.
  *
  * Também valida (regra F) que nenhum post cita uma versão de Nota Técnica mais
- * antiga que a vigente (`NT_CURRENT_VERSION`, rulesMeta.ts) — achado real: 4 posts
+ * antiga que a COBERTA pelo motor (`NT_IMPLEMENTED_VERSION`, rulesMeta.ts) — achado
+ * real: 4 posts
  * citando "NT 2025.002 V1.36" quando a vigente já é v1.40 (2026-07-26). Esse é o
  * mecanismo de detecção da estratégia de atualização de posts do blog.
  *
@@ -27,7 +28,7 @@
  * Filosofia: somos uma empresa de validação determinística — dogfood no nosso conteúdo.
  */
 
-import { NT_CURRENT_VERSION } from "./validation/rulesMeta";
+import { NT_IMPLEMENTED_VERSION } from "./validation/rulesMeta";
 import { parsePostDate } from "./formatPostDate";
 
 export type FiscalFinding = { rule: string; severity: "error"; message: string };
@@ -87,13 +88,14 @@ export function lintBlogFiscal(mdx: string, valid: ClassTribValid): FiscalFindin
   }
 
   // F) Versão de NT citada (legalRefs.instrumento ou prosa) desatualizada em relação
-  //    à vigente (NT_CURRENT_VERSION). Cobre "NT 2025.002 V1.36" e "NT 2025.002-RTC v1.40".
+  //    à coberta pelo motor (NT_IMPLEMENTED_VERSION — nunca a upstream: publicação
+  //    lá fora não é prova de cobertura aqui). Cobre "NT 2025.002 V1.36" e "…v1.40".
   const ntVersionRx = /NT\s+(\d{4}\.\d{3})(?:-RTC)?\s+[vV](\d+)\.(\d+)/g;
   for (const m of mdx.matchAll(ntVersionRx)) {
     const ntId = m[1];
     const citedMajor = parseInt(m[2], 10);
     const citedMinor = parseInt(m[3], 10);
-    const current = NT_CURRENT_VERSION[`NT ${ntId}`];
+    const current = NT_IMPLEMENTED_VERSION[`NT ${ntId}`];
     if (!current) continue;
     const [curMajor, curMinor] = current.split(".").map((n) => parseInt(n, 10));
     const isOlder = citedMajor !== curMajor ? citedMajor < curMajor : citedMinor < curMinor;
