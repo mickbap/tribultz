@@ -44,7 +44,14 @@
     "onde": "Tabela de CFOP publicada em 25/08/2026, coluna indExcIBSCBS",
     "metodo": "contagem por openpyxl e por parse do XML bruto do XLSX, independentes, concordantes"
    },
-   "nota": "Conflito entre dois artefatos oficiais, NÃO resolvido por nós. O domínio operacional é a Tabela publicada em 25/08/2026 e o lookup por CFOP usa o valor individual efetivamente publicado. NÃO foram gerados os 12 códigos que fechariam 84, o XLSX não foi alterado, e não se afirma que 84 tenha sido oficialmente retificado para 72. Decisão pendente do Jurídico."
+   "nota": "Conflito DOCUMENTAL entre dois artefatos oficiais, não resolvido por nós — conflict_status segue UNRESOLVED porque a causa continua em aberto. NÃO foram gerados os 12 códigos que fechariam 84, o XLSX não foi alterado, e não se afirma que 84 tenha sido oficialmente retificado para 72.",
+   "efeito_operacional": {
+    "bloqueia_lookup": false,
+    "bloqueia_determinismo_i08_191": false,
+    "dominio_operacional": 72,
+    "decidido_em": "Round Fiscal 27/08-D (parecer jurídico)",
+    "nota": "O parecer canonizou a Tabela de 25/08/2026 como domínio operacional (DOMINIO_I08_191=72, TABELA_25_08_CANONIZAVEL=SIM). O conflito é preservado como registro documental e NÃO condiciona nada: o lookup responde pelo valor individual publicado de cada CFOP, e o determinismo da I08-191 depende apenas de condições documentais + indExcIBSCBS=0 + SVRS comprovada + vigência. Não existe requisito conflict_84_72_resolved."
+   }
   }
  },
  "colunas": [
