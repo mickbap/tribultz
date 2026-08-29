@@ -1,9 +1,9 @@
-"""Fundações do handoff comercial Rumy → Tribultz → Attio (Round 4, PO-2026-07-CRM-001).
+"""Fundações do handoff comercial Rumy → Tribultz (Round 4, PO-2026-07-CRM-001).
 
 Quatro tabelas, dois papéis:
 
 - Estado corrente: ``crm_person_identities`` (identidade de pessoa, DEC-5) e
-  ``crm_lead_links`` (vínculo operacional lead externo ↔ Tribultz ↔ Attio, com os
+  ``crm_lead_links`` (vínculo operacional lead externo ↔ Tribultz, com os
   eixos ownership/automation).
 - Ledger: ``crm_lead_events`` (append-only, dedupe-store de idempotência e fonte
   de auditoria) e ``crm_state_transitions`` (trilha de toda transição de estado).
@@ -85,7 +85,8 @@ class CrmLeadLink(Base):
 
     Eixos independentes: commercial_state (espelho do funil), ownership_state
     (quem controla a conversa) e automation_state (permissão de outbound).
-    A autoridade destes eixos é este banco — o Attio é espelho.
+    A autoridade destes eixos é este banco. O Attio era o espelho externo e
+    foi descomissionado (ROUND 18-A); não há mais espelho.
     """
 
     __tablename__ = "crm_lead_links"
@@ -112,6 +113,9 @@ class CrmLeadLink(Base):
     identity_conflict = Column(Boolean, nullable=False, server_default=text("false"))
     provider_ids = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
 
+    # Colunas históricas do espelho Attio, descomissionado no ROUND 18-A.
+    # Preservadas de propósito: são DADO de auditoria, não integração. Nada
+    # em produção as escreve; dropá-las é decisão separada, com migration.
     attio_person_id = Column(String(64), nullable=True)
     attio_company_id = Column(String(64), nullable=True)
     attio_deal_id = Column(String(64), nullable=True)

@@ -2,6 +2,11 @@
 
 > Registrada em 12/08/2026 por ordem do Round 8 (Ermes — Produto/Vendas), §1/§3.
 > Contexto: PO-2026-07-CRM-001, série de Rounds do handoff Rumy → Attio.
+>
+> **Nota de 29/08/2026 (ROUND 18-A):** o Attio foi descomissionado. A DEC-9
+> continua valendo no que importa — uma única implementação canônica do domínio
+> de handoff — só que o destino externo deixou de existir: o handoff termina no
+> domínio local, que sempre foi a autoridade.
 
 ## Decisão
 
