@@ -36,7 +36,8 @@ class TestIdentidadeDoArtefato:
         """Auditoria byte a byte: o hash registrado tem de corresponder ao XLSX
         oficial guardado no repo. É isso que impede uma edição do JSON de passar
         por 'dado oficial'."""
-        bruto = DATA / json.loads((DATA / "cfop_table.json").read_text())["meta"]["arquivo_bruto"]
+        meta = json.loads((DATA / "cfop_table.json").read_text(encoding="utf-8"))["meta"]
+        bruto = DATA / meta["arquivo_bruto"]
         assert bruto.exists(), "o artefato bruto sumiu — a proveniência vira alegação"
         assert hashlib.sha256(bruto.read_bytes()).hexdigest() == t.provenance().fingerprint
 
@@ -46,6 +47,44 @@ class TestIdentidadeDoArtefato:
         assert t.provenance().is_live_source is True
         assert t.instituido_por().versao == "2.00"
         assert t.instituido_por().artefato == "IT 2023.002"
+
+
+class TestContratoDeContagem:
+    def test_619_547_72(self):
+        """Contrato fechado pelo parecer: 619 totais, 547 com 0, 72 com 1."""
+        c = t.contagem()
+        assert c == {"total": 619, "indExcIBSCBS_0": 547, "indExcIBSCBS_1": 72}
+        assert c["indExcIBSCBS_0"] + c["indExcIBSCBS_1"] == c["total"]
+
+    def test_contagem_declarada_bate_com_o_dado_carregado(self):
+        # meta não pode divergir do conteúdo: seria proveniência mentindo
+        c = t.contagem()
+        assert len(t.all_cfops()) == c["total"]
+        assert len(t.cfops_permitidos_contribuinte_exclusivo()) == c["indExcIBSCBS_1"]
+
+
+class TestConflito84x72:
+    def test_conflito_permanece_UNRESOLVED(self):
+        k = t.conflito_contagem()
+        assert k["conflict_status"] == "UNRESOLVED"
+
+    def test_ambas_as_contagens_ficam_registradas(self):
+        k = t.conflito_contagem()
+        assert k["it_2023_002_v200"]["textual_count"] == 84
+        assert k["tabela_oficial_20260825"]["observed_count"] == 72
+
+    def test_nao_geramos_os_12_codigos_que_fechariam_84(self):
+        """A tentação óbvia — inventar 12 CFOPs para bater com o texto do IT."""
+        assert len(t.cfops_permitidos_contribuinte_exclusivo()) == 72
+
+    def test_o_lookup_usa_o_valor_individual_publicado_e_nao_a_contagem(self):
+        """Cada CFOP responde pelo próprio indicador. Contagem agregada é
+        estatística; ela não decide nada, e o conflito nela não contamina o
+        lookup de um código específico."""
+        for c in sorted(t.all_cfops())[:40]:
+            reg = t.get(c)
+            assert reg is not None
+            assert t.ind_exc_ibscbs(c) == reg["indExcIBSCBS"]
 
 
 class TestDominioCompleto:

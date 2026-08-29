@@ -27,7 +27,25 @@
   },
   "total_cfop": 619,
   "total_indExcIBSCBS_1": 72,
-  "divergencia_observada": "A IT 2023.002 v2.00 (PDF de 06/08/2026, §03) declara '1 – CFOP permitido ao contribuinte exclusivo do IBS/CBS (84 códigos)'. A Tabela de CFOP publicada em 25/08/2026 — posterior à IT — contém 72 códigos com indExcIBSCBS=1. Fato registrado, não conciliado: a tabela é o artefato de dados e prevalece aqui; a divergência de contagem com o texto da IT não foi resolvida por nós."
+  "contagem": {
+   "total": 619,
+   "indExcIBSCBS_0": 547,
+   "indExcIBSCBS_1": 72
+  },
+  "conflito_contagem": {
+   "conflict_status": "UNRESOLVED",
+   "it_2023_002_v200": {
+    "textual_count": 84,
+    "trecho": "1 – CFOP permitido ao contribuinte exclusivo do IBS/CBS (84 códigos).",
+    "onde": "IT 2023.002 v2.00, §03, publicado em 06/08/2026"
+   },
+   "tabela_oficial_20260825": {
+    "observed_count": 72,
+    "onde": "Tabela de CFOP publicada em 25/08/2026, coluna indExcIBSCBS",
+    "metodo": "contagem por openpyxl e por parse do XML bruto do XLSX, independentes, concordantes"
+   },
+   "nota": "Conflito entre dois artefatos oficiais, NÃO resolvido por nós. O domínio operacional é a Tabela publicada em 25/08/2026 e o lookup por CFOP usa o valor individual efetivamente publicado. NÃO foram gerados os 12 códigos que fechariam 84, o XLSX não foi alterado, e não se afirma que 84 tenha sido oficialmente retificado para 72. Decisão pendente do Jurídico."
+  }
  },
  "colunas": [
   "inicio_vigencia",

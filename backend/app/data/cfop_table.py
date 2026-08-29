@@ -64,7 +64,7 @@ def provenance() -> ArtifactProvenance:
         source_url=m["source_url"],
         observado_em=dt.date.fromisoformat(m["observado_em"]),
         fingerprint=m["fingerprint"],
-        notas=m["divergencia_observada"],
+        notas=m["conflito_contagem"]["nota"],
     )
 
 
@@ -80,6 +80,26 @@ def instituido_por() -> ArtifactProvenance:
         observado_em=dt.date.fromisoformat(m["observado_em"]),
         fingerprint=i["fingerprint"],
     )
+
+
+def conflito_contagem() -> dict:
+    """Conflito ABERTO entre dois artefatos oficiais, preservado como dado.
+
+    O IT 2023.002 v2.00 (06/08/2026, §03) diz "(84 códigos)". A Tabela publicada
+    em 25/08/2026 — posterior — traz 72. ``conflict_status`` é ``UNRESOLVED`` e
+    permanece assim até decisão do Jurídico.
+
+    O que NÃO foi feito, de propósito: gerar os 12 códigos que fechariam 84,
+    alterar o XLSX, ou afirmar que 84 foi oficialmente retificado para 72. O
+    domínio operacional é a Tabela, e o lookup por CFOP usa o valor individual
+    efetivamente publicado — não uma contagem agregada.
+    """
+    return _doc()["meta"]["conflito_contagem"]
+
+
+def contagem() -> dict:
+    """``{total, indExcIBSCBS_0, indExcIBSCBS_1}`` observados na Tabela."""
+    return _doc()["meta"]["contagem"]
 
 
 def all_cfops() -> frozenset[str]:
