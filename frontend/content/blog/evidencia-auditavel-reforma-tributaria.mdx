@@ -16,6 +16,40 @@ tags:
   - CBS
   - auditoria
 coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/76fc4d86-d528-4294-a3c6-020f77cb3995/50f03c5e-4d6a-4cc5-b19c-6d99b5729ddc.webp"
+provenance:
+  - claim_scope: "Proveniência e versionamento são controles relevantes para a reconstrução de decisões"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "NT 2025.002-RTC"
+    artifact_version: "1.51"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+    claim_scope_limit: "Governança, não obrigação geral autônoma."
+  - claim_scope: "Artefatos fiscais e regras de validação possuem versões e aplicabilidade temporal"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "NT 2026.002"
+    artifact_version: "1.10a"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+  - claim_scope: "A Tribultz possui relatório PDF com hash e persistência"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "backend/app/routers/reports.py"
+    source_authority: "Tribultz — repositório"
+    source_kind: "internal_repo"
+    source_repo: "tribultz"
+    source_path: "backend/app/routers/reports.py"
+    source_commit: "7d06d15"
+    verified_at: "2026-08-30"
+    claim_scope_limit: "Fato técnico do produto."
+  - claim_scope: "Evidência auditável é controle relevante para a continuidade do faturamento"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "NT 2025.002-RTC"
+    artifact_version: "1.51"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+    claim_scope_limit: "Descreve prática de controle; não é obrigação legal autônoma de geração de evidência."
 legalRefs:
   - instrumento: "LC 214/2025"
     descricao: "Institui CBS e IBS; base legal da transição tributária referida ao longo do texto."
@@ -23,7 +57,7 @@ legalRefs:
 soroGuid: "50f03c5e-4d6a-4cc5-b19c-6d99b5729ddc"
 ---
 
-<p>Uma divergência fiscal raramente começa na transmissão da NF-e. Ela costuma nascer antes: em um cadastro de produto desatualizado, em uma classificação aplicada sem critério documentado, em uma regra alterada no ERP sem validação ou em uma decisão tomada por mensagem e perdida no fluxo operacional. É nesse ponto que a evidência auditável na Reforma Tributária deixa de ser um tema de auditoria e passa a ser um requisito de continuidade do faturamento.</p>
+<p>Uma divergência fiscal raramente começa na transmissão da NF-e. Ela costuma nascer antes: em um cadastro de produto desatualizado, em uma classificação aplicada sem critério documentado, em uma regra alterada no ERP sem validação ou em uma decisão tomada por mensagem e perdida no fluxo operacional. É nesse ponto que a evidência auditável na Reforma Tributária deixa de ser apenas um tema de auditoria e passa a ser um controle relevante para a continuidade, a rastreabilidade e a governança do faturamento. Essa afirmação descreve uma prática de controle e não, por si só, uma obrigação legal autônoma de geração de evidência.</p>
 <p>A transição para o novo modelo tributário amplia a necessidade de conectar regra, dado e decisão. Não basta calcular ou preencher campos fiscais. A empresa precisa conseguir demonstrar por que determinada classificação, tratamento tributário ou parametrização foi aplicada, com base em qual versão de regra, em qual momento e sobre quais dados de origem.</p>
 <p>Para CFOs, controllers e lideranças de operação, isso representa mais do que organização documental. Representa capacidade de governar o risco fiscal sem transformar cada emissão em uma investigação manual. Para as equipes fiscal, tributária, TI e ERP, significa reduzir o intervalo entre identificar uma inconsistência e corrigir sua causa.</p>
 <h2>O que caracteriza uma evidência auditável</h2>

@@ -456,30 +456,144 @@ test("Y: percentuais de 2024 nunca aparecem como alíquota fixada ou vigente", (
   }
 });
 
-test("Z: a proveniência dos percentuais de 2024 tem fonte oficial e limpa", () => {
+test("Z: proveniência com fonte endereçável — externa por URL, interna por commit", () => {
   for (const f of arquivos) {
     const s = ler(f);
     const blocos = (/^provenance:\n([\s\S]*?)(?=^\w|\n---)/m.exec(s)?.[1] ?? "").split(/\n  - /).filter(Boolean);
     for (const b of blocos) {
-      const url = /source_url:\s*"([^"]*)"/.exec(b)?.[1] ?? "";
-      assert.notEqual(url.trim(), "", `${f}: claim sem source_url`);
-      assert.ok(!/^PENDENTE$/i.test(url), `${f}: source_url ainda marcado como pendente`);
-      // Tracking nunca entra na proveniência: a URL é o endereço do artefato,
-      // não um link de campanha. Um utm_ carrega origem de navegação para
-      // dentro do registro de fonte — e a origem da navegação não é a fonte.
-      assert.ok(
-        !/[?&](utm_[a-z]+|gclid|fbclid|si)=/i.test(url),
-        `${f}: source_url com parâmetro de rastreamento — "${url}"`,
-      );
-      // O claim da estimativa de 2024 se ancora no Ministério da Fazenda.
-      if (/\b(8,8|17,7|26,5)\b/.test(b)) {
-        assert.match(
-          url,
-          /^https:\/\/www\.gov\.br\/fazenda\//,
-          `${f}: estimativa de 2024 fora do domínio oficial da Fazenda — "${url}"`,
+      const val = (n: string) => new RegExp(`(^|\\n)\\s*${n}:\\s*"([^"]*)"`).exec(b)?.[2] ?? "";
+      const kind = val("source_kind") || "external";
+      const url = val("source_url");
+
+      if (kind === "internal_repo") {
+        // Evidência de código precisa de endereço fixo: caminho + commit.
+        for (const req of ["source_repo", "source_path", "source_commit"]) {
+          assert.notEqual(val(req), "", `${f}: internal_repo sem ${req}`);
+        }
+        // Commit móvel faria a evidência mudar sem o claim mudar.
+        assert.doesNotMatch(val("source_commit"), /^(main|master|head|latest)$/i,
+          `${f}: source_commit móvel — a evidência mudaria sem o claim mudar`);
+        // URL em fonte interna a apresentaria como publicação oficial.
+        assert.equal(url, "", `${f}: internal_repo com source_url decorativa`);
+      } else {
+        // Artefato que é caminho de código não vira publicação externa por
+        // ganhar um link: sem esta checagem, bastava trocar o bloco interno
+        // por uma URL qualquer para a evidência passar por fonte oficial.
+        assert.doesNotMatch(
+          val("artifact"),
+          /^(backend|frontend|tools|infra|crews)\/[\w./-]+\.(py|ts|tsx|js|sql|ya?ml)$/,
+          `${f}: artefato de código declarado como fonte external — use source_kind: internal_repo`,
         );
+        assert.notEqual(url.trim(), "", `${f}: claim external sem source_url`);
+        assert.ok(!/^PENDENTE$/i.test(url), `${f}: source_url ainda pendente`);
+        assert.ok(!/[?&](utm_[a-z]+|gclid|fbclid|si)=/i.test(url),
+          `${f}: source_url com parâmetro de rastreamento — "${url}"`);
+        for (const proibido of ["source_repo", "source_path", "source_commit"]) {
+          assert.equal(val(proibido), "", `${f}: fonte external com ${proibido} — declare internal_repo`);
+        }
+        if (/\b(8,8|17,7|26,5)\b/.test(b)) {
+          assert.match(url, /^https:\/\/www\.gov\.br\/fazenda\//,
+            `${f}: estimativa de 2024 fora do domínio oficial da Fazenda`);
+        }
       }
     }
+  }
+});
+
+test("Z2: capacidade genérica de API não vira integração específica de ERP", () => {
+  const s = um("erp-versus-inteligencia-tributaria");
+  // ERP-03 é NAO_DETERMINADO por decisão jurídica: a existência de API
+  // genérica não prova conector para TOTVS/SAP/Omie/Linx. Rebaixar essa
+  // classificação seria usar a evidência interna para provar o que ela não prova.
+  const bloco = /\n  - claim_scope: "Integração específica[\s\S]*?(?=\n  - claim_scope:|\nlegalRefs:)/.exec(s)?.[0] ?? "";
+  assert.notEqual(bloco, "", "claim de integração específica sumiu");
+  assert.match(bloco, /claim_classification: "NAO_DETERMINADO"/,
+    "integração específica não pode virar FATO_NORMATIVO porque existe API genérica");
+  // E o corpo não pode reafirmar a integração nominal como fato.
+  for (const { alvo: j, contexto: ctx } of janelas(corpo(s))) {
+    if (/TOTVS|SAP\b|Omie|Linx/.test(j) && /integraç\w+|conect\w+|permite inserir/i.test(j)) {
+      assert.match(ctx, /\bs[óo]\s+deve ser afirmada\b|comprovad\w+|\bn[ãa]o\b/i,
+        `erp: integração nominal afirmada sem ressalva — "${j.slice(0, 140)}"`);
+    }
+  }
+});
+
+// ── AA–AH — teses proibidas do ROUND BLOG 30/08-M ───────────────────────────
+/** Percorre todos os artigos, indexados ou contidos: contido também não pode regredir. */
+function todasJanelas() {
+  return arquivos.flatMap((f) => janelas(corpo(ler(f))).map((j) => ({ ...j, f })));
+}
+const NEGA_M = /\bn[ãa]o\b|\bnem\b|\bsem\b|\bjamais\b|\bapenas\b|\bs[óo]\b|deixa de|diferen[çt]|distint/i;
+
+test("AA: LC 214 não é apresentada como fonte técnica das tags", () => {
+  for (const { alvo: j, contexto: ctx, f } of todasJanelas()) {
+    if (!/LC\s*214|Lei Complementar n?[ºo°]?\s*214/i.test(j)) continue;
+    if (!/gIBSCBS|cClassTrib|tag\b|leiaute|XML|campo t[ée]cnico/i.test(j)) continue;
+    if (!/base d\w+ obrigatoriedade|fonte t[ée]cnica|define o (campo|grupo)|institui o campo/i.test(j)) continue;
+    assert.match(ctx, NEGA_M, `${f}: LC 214 como fonte técnica de tag — "${j.slice(0, 150)}"`);
+  }
+});
+
+test("AB: versões correntes das NTs não regridem", () => {
+  for (const { alvo: j, contexto: ctx, f } of todasJanelas()) {
+    if (/NT\s*2025\.002[^.]{0,30}v?1\.40/i.test(j)) {
+      assert.match(ctx, /hist[óo]ric|anterior|superad|\bn[ãa]o\b/i, `${f}: v1.40 como corrente — "${j.slice(0,140)}"`);
+    }
+    if (/NT\s*2026\.002[^.]{0,30}v?1\.10(?!a)/i.test(j)) {
+      assert.match(ctx, /hist[óo]ric|anterior|superad|\bn[ãa]o\b|1\.10a/i, `${f}: NT 2026.002 v1.10 como corrente — "${j.slice(0,140)}"`);
+    }
+  }
+});
+
+test("AC: preservação do lote v1.00 não é afirmada sem contrato de delta", () => {
+  for (const { alvo: j, contexto: ctx, f } of todasJanelas()) {
+    if (/v1\.00|vers[ãa]o 1\.00/i.test(j) && /n[ãa]o (afeta|foi afetad)|preserv|inalterad|mant[ée]m a cobertura/i.test(j)) {
+      assert.match(ctx, /delta|conferid|contrato|\bnão determinad/i,
+        `${f}: preservação do lote v1.00 afirmada sem delta — "${j.slice(0, 150)}"`);
+    }
+  }
+});
+
+test("AD: evidência auditável não vira obrigação legal autônoma", () => {
+  for (const { alvo: j, contexto: ctx, f } of todasJanelas()) {
+    if (!/evid[êe]ncia auditáv|rastreabilidade/i.test(j)) continue;
+    if (!/requisito de continuidade|obriga[çc][ãa]o legal|exig[êe]ncia legal|passa a ser (um )?requisito/i.test(j)) continue;
+    assert.match(ctx, /controle|governan[çc]a|pr[áa]tica|\bn[ãa]o\b/i,
+      `${f}: evidência como obrigação legal autônoma — "${j.slice(0, 150)}"`);
+  }
+});
+
+test("AE: EFD ICMS/IPI não é apresentada como apuradora de CBS/IBS/IS", () => {
+  for (const { alvo: j, contexto: ctx, f } of todasJanelas()) {
+    if (!/EFD\s*ICMS\/?IPI|SPED Fiscal/i.test(j)) continue;
+    if (!/apura\w*|apuraç[ãa]o/i.test(j) || !/CBS|IBS|Imposto Seletivo|\bIS\b/.test(j)) continue;
+    assert.match(ctx, NEGA_M, `${f}: EFD ICMS/IPI apurando CBS/IBS/IS — "${j.slice(0, 150)}"`);
+  }
+});
+
+test("AF: fim da dispensa específica não vira multa automática", () => {
+  for (const { alvo: j, contexto: ctx, f } of todasJanelas()) {
+    if (!/multa|penalidade|san[çc][ãa]o/i.test(j)) continue;
+    if (!/autom[áa]tic|passa a (incidir|ser aplic)|desde 01\/08|a partir de 01\/08|gen[ée]ric/i.test(j)) continue;
+    assert.match(ctx, /\bn[ãa]o\b|espec[íi]fic|depende|concret|\bnão determinad/i,
+      `${f}: multa automática após o fim da janela — "${j.slice(0, 150)}"`);
+  }
+});
+
+test("AG: obrigação documental não é condicionada à rejeição do autorizador", () => {
+  for (const { alvo: j, contexto: ctx, f } of todasJanelas()) {
+    if (!/obriga[çc][ãa]o|deve (destacar|informar|calcular)|exig\w+ inform/i.test(j)) continue;
+    if (!/autoriza[çc][ãa]o|autorizador|rejei[çt]\w+|valida[çc][ãa]o/i.test(j)) continue;
+    if (!/precisam? estar alinhad|s[óo] (existe|vale) quando|depende d\w+ (autorizador|rejei)/i.test(j)) continue;
+    assert.match(ctx, NEGA_M, `${f}: obrigação condicionada ao autorizador — "${j.slice(0, 150)}"`);
+  }
+});
+
+test("AH: schema válido não prova mérito tributário", () => {
+  for (const { alvo: j, contexto: ctx, f } of todasJanelas()) {
+    if (!/schema|estrutura do XML|valida[çc][ãa]o estrutural/i.test(j)) continue;
+    if (!/correto|corre[çc][ãa]o|adequad|mérito|garante|prova/i.test(j)) continue;
+    assert.match(ctx, NEGA_M, `${f}: schema apresentado como prova de mérito — "${j.slice(0, 150)}"`);
   }
 });
 
