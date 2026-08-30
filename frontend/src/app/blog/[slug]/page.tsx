@@ -5,6 +5,7 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import { getAllSlugs, getPostBySlug } from "@/lib/blog";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { ProvenienciaClaims } from "@/components/seo/ProvenienciaClaims";
 import { FundamentacaoLegal } from "@/components/seo/FundamentacaoLegal";
 import { articleSchema, breadcrumbsSchema, personSchema } from "@/components/seo/schemas";
 import { formatPostDate } from "@/lib/formatPostDate";
@@ -137,6 +138,9 @@ export default async function BlogPostPage({
             />
           </div>
 
+          {post.provenance && post.provenance.length > 0 && (
+            <ProvenienciaClaims items={post.provenance} />
+          )}
           {post.legalRefs && post.legalRefs.length > 0 && (
             <FundamentacaoLegal items={post.legalRefs} />
           )}
