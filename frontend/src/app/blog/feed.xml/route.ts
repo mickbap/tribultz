@@ -1,4 +1,4 @@
-import { getAllPosts } from "@/lib/blog";
+import { getIndexablePosts } from "@/lib/blog";
 import { formatPostDateRfc822 } from "@/lib/formatPostDate";
 
 const SITE_URL = "https://tribultz.com.br";
@@ -6,7 +6,7 @@ const SITE_URL = "https://tribultz.com.br";
 export const dynamic = "force-static";
 
 export function GET() {
-  const posts = getAllPosts();
+  const posts = getIndexablePosts();
   const lastBuild = posts[0]?.publishedAt ?? new Date().toISOString();
 
   const items = posts
@@ -32,7 +32,7 @@ export function GET() {
     <link>${SITE_URL}/blog</link>
     <description>Artigos técnicos sobre cClassTrib, NCM, CBS/IBS e a Reforma Tributária de 2026.</description>
     <language>pt-BR</language>
-    <lastBuildDate>${new Date(lastBuild + "T00:00:00").toUTCString()}</lastBuildDate>
+    <lastBuildDate>${formatPostDateRfc822(lastBuild) || new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${SITE_URL}/blog/feed.xml" rel="self" type="application/rss+xml"/>
     ${items}
   </channel>

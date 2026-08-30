@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
-import { getAllPosts } from "@/lib/blog";
+import { getIndexablePosts } from "@/lib/blog";
 
 const SITE_URL = "https://tribultz.com.br";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date().toISOString();
-  const posts = getAllPosts();
+  const posts = getIndexablePosts();
 
   const blogEntries: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/blog`, lastModified: posts[0]?.publishedAt ?? now, changeFrequency: "weekly", priority: 0.8 },

@@ -108,6 +108,28 @@ export function lintBlogFiscal(mdx: string, valid: ClassTribValid): FiscalFindin
     }
   }
 
+  // J) Contenção editorial sem motivo declarado. `noindex` tira o post do
+  //    índice, da listagem e do RSS — uma decisão editorial forte que não pode
+  //    ficar sem rastro do porquê.
+  if (/^noindex:\s*true\s*$/m.test(mdx) && !/^noindexReason:\s*\S/m.test(mdx)) {
+    out.push({
+      rule: "NOINDEX_SEM_MOTIVO",
+      severity: "error",
+      message: "noindex: true sem noindexReason — contenção editorial precisa declarar o motivo.",
+    });
+  }
+
+  // K) Post contido não pode continuar afirmando data de atualização recente
+  //    como se estivesse vigente. Não é bloqueio: é exigir que a contenção
+  //    apareça no próprio artefato, não só no código.
+  if (/^noindex:\s*true\s*$/m.test(mdx) && !/^updatedAt:\s*\S/m.test(mdx)) {
+    out.push({
+      rule: "NOINDEX_SEM_UPDATED_AT",
+      severity: "error",
+      message: "post contido sem updatedAt — registre a data da contenção.",
+    });
+  }
+
   // G) Marcador de revisão do Soro ainda presente no corpo — post nunca foi
   //    auditado por um humano antes do merge (achado real: #580).
   if (/Gerado pelo Soro — REVISAR antes do merge/.test(mdx)) {
