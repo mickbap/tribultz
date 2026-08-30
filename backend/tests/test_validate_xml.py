@@ -570,14 +570,22 @@ class TestImportIbscbsRequired:
 
 
 class TestPfContribCnpj:
-    """Comunicado Conjunto CGIBS/RFB 01/2025 previa 01/07/2026; o Decreto 13.075/2026
-    (altera o Decreto 12.955/2026 art. 239) adiou para 01/01/2027 a PF contribuinte de
-    IBS/CBS ter CNPJ (emissão por CPF não permitida a partir daí, LC 214 art. 251).
-    Enquadramento não verificável do XML → ALERT: emitente CPF + data ≥ 01/01/2027."""
+    """Gatilho documental: emit/CPF presente, emit/CNPJ ausente, emissão ≥ 01/01/2027.
 
-    def _nfe(self, ident, dh=None):
+    O ENQUADRAMENTO não é verificável do XML — nem como contribuinte, nem como
+    nanoempreendedor, nem como optante pelo regime regular. Por isso ALERT, nunca
+    FATAL. O Ato Conjunto RFB/CGIBS nº 6/2026 dispensa o nanoempreendedor não
+    optante, com efeitos até 31/12/2028, e a orientação tem de dizer isso."""
+
+    def _nfe(self, ident, dh=None, cclass="000001"):
         dh_xml = f"<dhEmi>{dh}</dhEmi>" if dh else ""
         return (
+            f'<nfeProc><NFe><infNFe><ide><mod>55</mod>{dh_xml}</ide>'
+            f'<emit>{ident}<CRT>1</CRT></emit><dest><CPF>11122233344</CPF></dest>'
+            f'<det nItem="1"><prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>100.00</vProd></prod>'
+            f'<imposto><IBSCBS><CST>410</CST><cClassTrib>{cclass}</cClassTrib></IBSCBS></imposto></det>'
+            f'<total></total></infNFe></NFe></nfeProc>'
+        ) if cclass != "000001" else (
             f'<nfeProc><NFe><infNFe><ide><mod>55</mod>{dh_xml}</ide>'
             f'<emit>{ident}<CRT>1</CRT></emit><dest><CPF>11122233344</CPF></dest>'
             f'<det nItem="1"><prod><NCM>84713012</NCM><CEST>2104900</CEST><vProd>100.00</vProd></prod>'
@@ -591,7 +599,7 @@ class TestPfContribCnpj:
     def test_emit_cpf_apos_01_01_2027_alert(self):
         f = self._find(self._nfe("<CPF>12345678909</CPF>", "2027-01-01T10:00:00-03:00"))
         assert f and f[0].severity == "ALERT"
-        assert "Decreto 13.075/2026" in f[0].recommendation
+        assert "Ato Conjunto RFB/CGIBS nº 6/2026" in f[0].recommendation
 
     def test_emit_cpf_antes_de_01_01_2027_sem_finding(self):
         assert self._find(self._nfe("<CPF>12345678909</CPF>", "2026-12-31T10:00:00-03:00")) == []
@@ -1464,3 +1472,115 @@ class TestI08191Integracao:
 
     def test_cfop_fora_do_dominio_oficial_nao_gera_achado(self):
         assert self._find(self._nfe("9999")) == []
+
+
+# ── Ato Conjunto RFB/CGIBS nº 6/2026 — dispensa do nanoempreendedor ──────────
+class TestPfContribCnpjAto6:
+    """Contratos do ROUND FISCAL 29/08-K.
+
+    A orientação passou a contemplar o Ato nº 6. O que NÃO mudou: gatilho e
+    severidade. O que não pode nascer: classificação de nanoempreendedor,
+    supressão do ALERT por cClassTrib, ou obrigação automática em 2029.
+    """
+
+    IDEIAS_OBRIGATORIAS = (
+        ("enquadramento", "obrigação depende do enquadramento aplicável"),
+        ("Ato Conjunto RFB/CGIBS nº 6/2026", "existe a dispensa do Ato nº 6"),
+        ("regime regular", "a opção pelo regime regular exclui a dispensa"),
+        ("31/12/2028", "a dispensa produz efeitos até 31/12/2028"),
+        ("isoladamente", "o XML sozinho não determina o enquadramento"),
+        ("nanoempreendedor", "a dispensa é do nanoempreendedor"),
+    )
+
+    def _nfe(self, dh, cclass="000001"):
+        return (
+            f'<nfeProc><NFe><infNFe><ide><mod>55</mod><dhEmi>{dh}</dhEmi></ide>'
+            f'<emit><CPF>12345678909</CPF><CRT>1</CRT></emit><dest><CPF>11122233344</CPF></dest>'
+            f'<det nItem="1"><prod><NCM>84713012</NCM><vProd>100.00</vProd></prod>'
+            f'<imposto><IBSCBS><CST>410</CST><cClassTrib>{cclass}</cClassTrib></IBSCBS></imposto></det>'
+            f'<total></total></infNFe></NFe></nfeProc>'
+        )
+
+    def _find(self, xml):
+        return [f for f in validate_xml(xml, "NFE").findings if f.rule_id == "PF_CONTRIB_CNPJ"]
+
+    def test_31_12_2026_sem_finding(self):
+        assert self._find(self._nfe("2026-12-31T10:00:00-03:00")) == []
+
+    def test_01_01_2027_alert(self):
+        f = self._find(self._nfe("2027-01-01T10:00:00-03:00"))
+        assert len(f) == 1 and f[0].severity == "ALERT"
+
+    def test_31_12_2028_alert_com_orientacao_do_ato_6(self):
+        f = self._find(self._nfe("2028-12-31T10:00:00-03:00"))
+        assert len(f) == 1 and f[0].severity == "ALERT"
+        for trecho, porque in self.IDEIAS_OBRIGATORIAS:
+            assert trecho in f[0].recommendation, porque
+
+    def test_01_01_2029_permanece_verificacao_sem_conclusao_automatica(self):
+        """A expiração do Ato nº 6 não autoriza afirmar obrigação em 2029.
+
+        O guard é ESTRUTURAL, não lista de frases: a redação aprovada não fala
+        de 2029 em lugar nenhum, então QUALQUER menção a 2029 na orientação é,
+        por construção, inferência que não podemos fazer. Um guard por frase
+        proibida falharia em passar — a primeira versão dele checava "está
+        obrigado" e deixou passar "está obrigada".
+        """
+        f = self._find(self._nfe("2029-01-01T10:00:00-03:00"))
+        assert len(f) == 1
+        assert f[0].severity == "ALERT"
+        assert "Verifique o enquadramento" in f[0].recommendation
+        assert "2029" not in f[0].recommendation, (
+            "a orientação passou a afirmar algo sobre 2029; a expiração do Ato nº 6 "
+            "não autoriza concluir obrigação — depende da legislação então vigente"
+        )
+        assert "2029" not in f[0].title
+
+    def test_cclasstrib_410035_nao_suprime_o_alert(self):
+        """410035 é DECLARAÇÃO do emitente compatível com nanoempreendedor.
+        Não é prova de enquadramento nem de não-opção pelo regime regular."""
+        f = self._find(self._nfe("2027-06-01T10:00:00-03:00", cclass="410035"))
+        assert len(f) == 1 and f[0].severity == "ALERT"
+
+    def test_severidade_nunca_e_fatal(self):
+        for dh in ("2027-01-01", "2028-12-31", "2029-01-01", "2030-06-01"):
+            for f in self._find(self._nfe(f"{dh}T10:00:00-03:00")):
+                assert f.severity == "ALERT"
+                assert f.severity != "FATAL"
+
+    def test_ausencia_de_cnpj_nao_e_afirmada_como_irregularidade(self):
+        f = self._find(self._nfe("2027-06-01T10:00:00-03:00"))[0]
+        assert "verificar" in f.title.lower()
+        for proibido in ("irregular", "inválido", "proibido", "vedado"):
+            assert proibido not in f.recommendation.lower()
+
+    def test_artefato_do_ato_6_esta_canonizado(self):
+        import hashlib
+        import pathlib as _pl
+
+        from app.data import regulatory_acts as ra
+
+        chave = ra.ATO_CONJUNTO_RFB_CGIBS_6_2026
+        a = ra.get(chave)
+        assert a is not None
+        assert a["ato_date"] == "2026-08-28"
+        assert a["effective_from"] == "2026-08-29"
+        assert a["effective_from_semantics"] == "INTERPRETACAO_SEGURA"
+        assert a["effective_until"] == "2028-12-31"
+        assert a["effective_until_inclusive"] is True
+
+        prov = ra.provenance(chave)
+        assert "cgibs.gov.br" in prov.source_url
+        bruto = _pl.Path(ra.__file__).parent / a["arquivo_bruto"]
+        assert hashlib.sha256(bruto.read_bytes()).hexdigest() == prov.fingerprint
+
+    def test_janela_do_ato_nao_liga_nem_desliga_comportamento(self):
+        """A regra dispara igual dentro e fora da janela de efeitos do Ato."""
+        from app.data import regulatory_acts as ra
+
+        ini, fim, _ = ra.janela_de_efeitos(ra.ATO_CONJUNTO_RFB_CGIBS_6_2026)
+        assert ini.isoformat() == "2026-08-29" and fim.isoformat() == "2028-12-31"
+        dentro = self._find(self._nfe("2028-12-31T10:00:00-03:00"))
+        fora = self._find(self._nfe("2029-01-02T10:00:00-03:00"))
+        assert len(dentro) == len(fora) == 1
+        assert dentro[0].severity == fora[0].severity == "ALERT"

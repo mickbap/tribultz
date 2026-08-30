@@ -44,6 +44,11 @@ OFFICIAL_HOSTS: frozenset[str] = frozenset({
     "www.svrs.rs.gov.br",
     "www.gov.br",
     "www.confaz.fazenda.gov.br",
+    # Comitê Gestor do IBS — órgão emissor dos Atos Conjuntos RFB/CGIBS. O
+    # próprio Ato nº 6/2026 (art. 3º) nomeia este sítio como veículo de
+    # publicação, ao lado do DOU.
+    "www.cgibs.gov.br",
+    "cgibs.gov.br",
     "www.planalto.gov.br",
 })
 

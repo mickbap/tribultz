@@ -1,0 +1,26 @@
+{
+ "atos": {
+  "ATO_CONJUNTO_RFB_CGIBS_6_2026": {
+   "artefato": "Ato Conjunto RFB/CGIBS nº 6/2026",
+   "versao": "6/2026",
+   "fonte": "Comitê Gestor do IBS — Atos Conjuntos",
+   "source_url": "https://www.cgibs.gov.br/upload/arquivos/202608/28193542-ade-rfb-cgibs-n-6-28-8-2026-com-paragrafo-unico-assinado.pdf",
+   "observado_em": "2026-08-29",
+   "fingerprint": "ecb129d646f2b6170e5174d17dec0902f8901fc7afecd10b70bcb2e289ac652b",
+   "arquivo_bruto": "artefatos/ato_conjunto_rfb_cgibs_6_2026.pdf",
+   "ato_date": "2026-08-28",
+   "effective_from": "2026-08-29",
+   "effective_from_semantics": "INTERPRETACAO_SEGURA",
+   "effective_until": "2028-12-31",
+   "effective_until_inclusive": true,
+   "subject": "nanoempreendedor referido no art. 25, caput, inciso IV, dos Regulamentos CBS (Decreto nº 12.955/2026) e IBS (Resolução CGIBS nº 6/2026)",
+   "dispensa": [
+    "inscrição no cadastro com identificação única, mediante inscrição no CNPJ (art. 105, § 3º, VI, 'b')",
+    "emissão dos documentos fiscais eletrônicos (art. 115, caput, VI, 'b')"
+   ],
+   "regular_regime_option": "A dispensa NÃO se aplica ao nanoempreendedor que exercer a opção pelo regime regular do IBS e da CBS (art. 26, § 1º, II, da LC 214/2025).",
+   "apos_effective_until": "Após 31/12/2028 este Ato deixa de sustentar a dispensa. Isso NÃO autoriza afirmar que a PF passa a estar obrigada ao CNPJ em 01/01/2029 — a conclusão depende da legislação então vigente, que não está canonizada aqui.",
+   "observacao_documental": "O PDF publicado traz no título 'MINUTA DO ATO CONJUNTO RFB/CGIBS Nº 6'. Está assinado digitalmente por ambos os signatários (Secretário Especial da RFB e Presidente do CGIBS) em 28/08/2026 16:07 e publicado na seção oficial de Atos Conjuntos do CGIBS, sítio que o próprio art. 3º nomeia como veículo de publicação. Fato registrado, não conciliado por nós."
+  }
+ }
+}

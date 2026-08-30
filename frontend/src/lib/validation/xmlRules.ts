@@ -93,11 +93,17 @@ function isWithinNoPenaltyWindow(emissionDate: string | undefined): boolean {
   return datePart >= NO_PENALTY_WINDOW_START && datePart < NO_PENALTY_WINDOW_END;
 }
 
-// ── Comunicado Conjunto CGIBS/RFB nº 01/2025 — CNPJ p/ PF contribuinte ───────
-// A partir de 01/07/2026, a pessoa física contribuinte de IBS/CBS deve se inscrever
-// no CNPJ e não pode emitir documento fiscal por CPF (LC 214 art. 251). O enquadramento
-// como contribuinte (atividade habitual; locação com >3 imóveis e renda > R$ 240 mil/ano)
-// não é verificável do XML — por isso a regra é ALERT informativo (verificar enquadramento).
+// ── CNPJ p/ PF contribuinte — gatilho documental, enquadramento não verificável ──
+// Gatilho: emit/CPF presente, emit/CNPJ ausente, emissão ≥ 01/01/2027. O ENQUADRAMENTO
+// não é verificável do XML — nem como contribuinte, nem como nanoempreendedor, nem como
+// optante pelo regime regular. Por isso ALERT, nunca FATAL: ausência de CNPJ não é
+// irregularidade determinística.
+//
+// Ato Conjunto RFB/CGIBS nº 6/2026 (art. 2º) dispensa o nanoempreendedor do art. 25, IV,
+// dos Regulamentos CBS/IBS da inscrição no CNPJ e da emissão de DF-e, com efeitos até
+// 31/12/2028 (art. 3º); o parágrafo único exclui quem exercer a opção pelo regime regular.
+// A expiração em 31/12/2028 é FATO do ato, não gatilho: não autoriza concluir obrigação
+// em 01/01/2029. Artefato canonizado em backend/app/data/regulatory_acts.json.
 // Decreto 13.075/2026 (CBS, altera o Decreto 12.955/2026 art. 239) + Resolução
 // CGIBS nº 13/2026 (IBS, altera o art. 617 do Regulamento do IBS/Resolução
 // CGIBS nº 6/2026) adiaram, em conjunto, de 01/07/2026 para 01/01/2027 — não
@@ -1052,14 +1058,16 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             snippet: emitCpf.snippet,
             evidenceId: evId,
             recommendation:
-              `Emitente identificado por CPF. A partir de 01/01/2027 (Decreto 13.075/2026 ` +
-              `para CBS + Resolução CGIBS nº 13/2026 para IBS, que adiaram em conjunto o ` +
-              `prazo original do Comunicado Conjunto CGIBS/RFB nº 01/2025), a pessoa física ` +
-              `contribuinte de IBS/CBS deve se inscrever no CNPJ e não pode emitir documento fiscal por CPF ` +
-              `(LC 214 art. 251). Verifique o enquadramento como contribuinte (atividade ` +
-              `econômica habitual; locação com mais de 3 imóveis e renda anual acima de ` +
-              `R$ 240 mil) e, se for o caso, providencie a inscrição no CNPJ. A inscrição ` +
-              `não transforma a PF em PJ.`,
+              `Emitente identificado por CPF, sem CNPJ. A partir de 1º/01/2027, a obrigação de ` +
+              `inscrição no CNPJ e de emissão de documentos fiscais passa a produzir efeitos para ` +
+              `pessoas físicas que sejam contribuintes ou responsáveis tributários da CBS, conforme ` +
+              `o enquadramento aplicável. O Ato Conjunto RFB/CGIBS nº 6/2026 dispensa o ` +
+              `nanoempreendedor abrangido por suas regras, desde que não exerça a opção pelo regime ` +
+              `regular do IBS e da CBS, da obrigatoriedade de inscrição no CNPJ e da emissão dos ` +
+              `documentos fiscais eletrônicos nele abrangidos, com efeitos até 31/12/2028. Este XML, ` +
+              `isoladamente, não permite determinar se o emitente é contribuinte, nanoempreendedor ou ` +
+              `optante pelo regime regular. Verifique o enquadramento antes de concluir pela ` +
+              `existência da obrigação.`,
           }),
           makeEvidence({ id: evId, type: "xml", label: "Emitente PF (CPF) — verificar CNPJ", xpath: inferXpath("CPF", docType), snippet: emitCpf.snippet }),
         );
