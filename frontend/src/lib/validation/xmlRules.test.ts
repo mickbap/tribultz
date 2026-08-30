@@ -952,7 +952,7 @@ test("PF_CNPJ: emitente CPF + data ≥ 01/01/2027 → ALERT", () => {
   const f = pfFinding(nfeEmit("<CPF>12345678909</CPF>", "2027-01-01T10:00:00-03:00"));
   assert.ok(f, "PF_CONTRIB_CNPJ esperado");
   assert.equal(f!.severity, "ALERT");
-  assert.match(f!.recommendation ?? "", /Decreto 13\.075\/2026/);
+  assert.match(f!.recommendation ?? "", /Ato Conjunto RFB\/CGIBS nº 6\/2026/);
 });
 
 test("PF_CNPJ: emitente CPF antes de 01/01/2027 → sem finding", () => {
@@ -1642,4 +1642,98 @@ test("#482 CFOP inválido antes da vigência (03/08/2026) → WARNING", () => {
 test("#482 CFOP inválido após a vigência → FATAL", () => {
   const f = danfeT2CfopFindings(danfeT2Nfe({ cfop: "5949", dhEmi: "2026-08-10" }));
   assert.ok(f.some((x) => x.id === "F_DANFE_T2_CFOP" && x.severity === "FATAL"));
+});
+
+
+// ── Ato Conjunto RFB/CGIBS nº 6/2026 — dispensa do nanoempreendedor ─────────
+// Contratos do ROUND FISCAL 29/08-K. Backend e frontend têm de concordar: os
+// mesmos casos existem em backend/tests/test_validate_xml.py::TestPfContribCnpjAto6.
+const nfeAto6 = (dh: string, cclass = "000001") => `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod><dhEmi>${dh}</dhEmi></ide>
+  <emit><CPF>12345678909</CPF><CRT>1</CRT></emit>
+  <dest><CPF>11122233344</CPF></dest>
+  <det nItem="1"><prod><NCM>84713012</NCM><vProd>100.00</vProd></prod>
+    <imposto><IBSCBS><CST>410</CST><cClassTrib>${cclass}</cClassTrib></IBSCBS></imposto></det>
+  <total></total>
+</infNFe></NFe></nfeProc>`;
+
+const IDEIAS_ATO6: Array<[string, string]> = [
+  ["enquadramento", "obrigação depende do enquadramento aplicável"],
+  ["Ato Conjunto RFB/CGIBS nº 6/2026", "existe a dispensa do Ato nº 6"],
+  ["regime regular", "a opção pelo regime regular exclui a dispensa"],
+  ["31/12/2028", "a dispensa produz efeitos até 31/12/2028"],
+  ["isoladamente", "o XML sozinho não determina o enquadramento"],
+  ["nanoempreendedor", "a dispensa é do nanoempreendedor"],
+];
+
+test("Ato6: 31/12/2026 + CPF sem CNPJ → sem PF_CONTRIB_CNPJ", () => {
+  assert.equal(pfFinding(nfeAto6("2026-12-31T10:00:00-03:00")), undefined);
+});
+
+test("Ato6: 01/01/2027 + CPF sem CNPJ → ALERT", () => {
+  const f = pfFinding(nfeAto6("2027-01-01T10:00:00-03:00"));
+  assert.ok(f);
+  assert.equal(f!.severity, "ALERT");
+});
+
+test("Ato6: 31/12/2028 → ALERT com orientação juridicamente atualizada", () => {
+  const f = pfFinding(nfeAto6("2028-12-31T10:00:00-03:00"));
+  assert.ok(f);
+  assert.equal(f!.severity, "ALERT");
+  for (const [trecho, porque] of IDEIAS_ATO6) {
+    assert.ok((f!.recommendation ?? "").includes(trecho), porque);
+  }
+});
+
+test("Ato6: 01/01/2029 permanece verificação, sem conclusão automática", () => {
+  // A expiração do Ato nº 6 não autoriza afirmar obrigação em 2029.
+  const f = pfFinding(nfeAto6("2029-01-01T10:00:00-03:00"));
+  assert.ok(f);
+  assert.equal(f!.severity, "ALERT");
+  const rec = f!.recommendation ?? "";
+  assert.ok(rec.includes("Verifique o enquadramento"));
+  // Guard ESTRUTURAL: a redação aprovada não fala de 2029, então qualquer
+  // menção a 2029 é inferência que não podemos fazer. Lista de frases
+  // proibidas é frágil — a primeira versão deixou passar "está obrigada".
+  assert.ok(!rec.includes("2029"),
+    "a orientação passou a afirmar algo sobre 2029; a expiração do Ato nº 6 não autoriza concluir obrigação");
+  assert.ok(!f!.title.includes("2029"));
+});
+
+test("Ato6: cClassTrib 410035 não suprime o ALERT", () => {
+  // 410035 é DECLARAÇÃO do emitente compatível com nanoempreendedor; não prova
+  // enquadramento nem ausência de opção pelo regime regular.
+  const f = pfFinding(nfeAto6("2027-06-01T10:00:00-03:00", "410035"));
+  assert.ok(f, "410035 não pode suprimir automaticamente o ALERT");
+  assert.equal(f!.severity, "ALERT");
+});
+
+test("Ato6: severidade nunca é FATAL", () => {
+  for (const dh of ["2027-01-01", "2028-12-31", "2029-01-01", "2030-06-01"]) {
+    const f = pfFinding(nfeAto6(`${dh}T10:00:00-03:00`));
+    if (f) assert.equal(f.severity, "ALERT");
+  }
+});
+
+test("Ato6: ausência de CNPJ não é afirmada como irregularidade", () => {
+  const f = pfFinding(nfeAto6("2027-06-01T10:00:00-03:00"))!;
+  assert.match(f.title.toLowerCase(), /verificar/);
+  for (const proibido of ["irregular", "inválido", "proibido", "vedado"]) {
+    assert.ok(!(f.recommendation ?? "").toLowerCase().includes(proibido));
+  }
+});
+
+test("guard: a recomendação da DEVOLUCAO_DFEREF não foi sobrescrita", () => {
+  // Regressão real: uma substituição de texto mal ancorada trocou a orientação
+  // desta regra pela da PF. A suíte inteira passou sem notar.
+  const devol = validateXmlWithRules({
+    tenantId: "t", documentType: "NFE",
+    xml: `<nfeProc><NFe><infNFe><ide><mod>55</mod><finNFe>4</finNFe>` +
+         `<dhEmi>2026-10-10T10:00:00-03:00</dhEmi></ide>` +
+         `<det nItem="1"><prod><NCM>84713012</NCM></prod></det></infNFe></NFe></nfeProc>`,
+  }).findings.find((f) => f.rule_id === "DEVOLUCAO_DFEREF");
+  assert.ok(devol, "DEVOLUCAO_DFEREF esperado");
+  assert.match(devol!.recommendation ?? "", /DFeReferenciado/);
+  assert.ok(!(devol!.recommendation ?? "").includes("nanoempreendedor"));
 });
