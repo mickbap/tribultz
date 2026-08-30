@@ -25,6 +25,20 @@ export type PostFrontmatter = {
   tags: string[];
   coverImage?: string;
   legalRefs?: LegalRef[];
+  /**
+   * Contenção editorial REVERSÍVEL (#round-blog-30-08-A).
+   *
+   * `true` retira o post da listagem `/blog`, do `sitemap.xml` e do RSS, e
+   * marca a página com `robots: noindex, nofollow`. A URL continua
+   * respondendo e o arquivo continua versionado — contenção não é remoção:
+   * apagar destruiria histórico e criaria 404 sem destino avaliado.
+   *
+   * Usar quando o conteúdo é tecnicamente incorreto e não pode seguir sendo
+   * apresentado como orientação válida enquanto aguarda reescrita.
+   */
+  noindex?: boolean;
+  /** Por que o post está contido. Obrigatório quando `noindex` é `true`. */
+  noindexReason?: string;
 };
 
 export type Post = PostFrontmatter & {
@@ -32,6 +46,10 @@ export type Post = PostFrontmatter & {
   readingTime: number;
 };
 
+/**
+ * TODOS os posts, contidos inclusive. Use apenas onde a contenção não se
+ * aplica (ex.: gerar rotas estáticas, para a URL continuar respondendo).
+ */
 export function getAllPosts(): PostFrontmatter[] {
   if (!fs.existsSync(CONTENT_DIR)) return [];
   return fs
@@ -47,6 +65,15 @@ export function getAllPosts(): PostFrontmatter[] {
     );
 }
 
+/**
+ * Posts que podem ser indexados e listados. É esta a função que listagem,
+ * sitemap e RSS devem consumir — nunca `getAllPosts`.
+ */
+export function getIndexablePosts(): PostFrontmatter[] {
+  return getAllPosts().filter((p) => p.noindex !== true);
+}
+
+/** Slugs de TODOS os posts — a rota do post contido continua existindo. */
 export function getAllSlugs(): string[] {
   return getAllPosts().map((p) => p.slug);
 }

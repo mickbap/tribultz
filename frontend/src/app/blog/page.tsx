@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllPosts } from "@/lib/blog";
+import { getIndexablePosts } from "@/lib/blog";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { formatPostDate } from "@/lib/formatPostDate";
 
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default function BlogListPage() {
-  const posts = getAllPosts();
+  const posts = getIndexablePosts();
 
   return (
     <>

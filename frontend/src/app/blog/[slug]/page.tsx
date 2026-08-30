@@ -33,6 +33,8 @@ export async function generateMetadata({
     title: post.title,
     description: post.description,
     alternates: { canonical: `${SITE_URL}/blog/${post.slug}` },
+    // Contenção editorial: o post contido responde, mas sai do índice.
+    ...(post.noindex ? { robots: { index: false, follow: false } } : {}),
     openGraph: {
       title: post.title,
       description: post.description,
@@ -145,7 +147,7 @@ export default async function BlogPostPage({
             <p className="mb-4 text-xs text-slate-500">
               Atualizado em{" "}
               <time dateTime={post.updatedAt}>
-                {new Date(post.updatedAt + "T00:00:00").toLocaleDateString("pt-BR", {
+                {formatPostDate(post.updatedAt) || new Date(post.updatedAt).toLocaleDateString("pt-BR", {
                   day: "2-digit",
                   month: "long",
                   year: "numeric",
