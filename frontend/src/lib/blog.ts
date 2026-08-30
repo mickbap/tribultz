@@ -3,6 +3,49 @@ import path from "path";
 import matter from "gray-matter";
 import type { LegalRef } from "@/components/seo/FundamentacaoLegal";
 
+/**
+ * Como o produto classifica a natureza de uma afirmação técnica.
+ *
+ * A distinção não é estilística: `NAO_DETERMINADO` nunca pode ser renderizado
+ * como afirmação factual, e `INTERPRETACAO_SEGURA` não pode ser apresentada
+ * como se fosse texto de norma.
+ */
+export type ClaimClassification =
+  | "FATO_NORMATIVO"
+  | "INTERPRETACAO_SEGURA"
+  | "NAO_DETERMINADO";
+
+/**
+ * Proveniência de UM claim material — não do artigo.
+ *
+ * Uma lista genérica de fontes no rodapé não rastreia nada: não diz qual
+ * afirmação veio de onde, nem em que versão, nem quando foi conferida. Foi
+ * assim que sete artigos P0 chegaram ao ar afirmando o que a norma não diz.
+ *
+ * `claim_scope` delimita a que a proveniência se aplica. Pode cobrir um claim
+ * único ou um grupo EXPLICITAMENTE delimitado — nunca "o artigo inteiro".
+ */
+export type ClaimProvenance = {
+  /** A que afirmação (ou grupo delimitado) esta proveniência se aplica. */
+  claim_scope: string;
+  claim_classification: ClaimClassification;
+  /** Documento de origem: "NT 2025.002-RTC", "LC 214/2025", "IN RFB 2.057/2021". */
+  artifact: string;
+  /** Quem publica. Fonte secundária nunca é autoridade — só localiza. */
+  source_authority: string;
+  source_url: string;
+  /** Data em que NÓS conferimos a afirmação contra o artefato. */
+  verified_at: string;
+  /** Versão do artefato, quando ele for versionado. */
+  artifact_version?: string;
+  /** Regra ou dispositivo de onde o claim decorre: "UB14-20", "Art. 26, §1º, II". */
+  rule_item?: string;
+  /** Recorte temporal, quando a dimensão temporal for material. */
+  temporal_applicability?: string;
+  /** Registro de conflito oficial × oficial, preservado sem conciliação. */
+  conflict_note?: string;
+};
+
 const CONTENT_DIR = path.join(process.cwd(), "content", "blog");
 
 export type PostAuthor = {
@@ -39,6 +82,17 @@ export type PostFrontmatter = {
   noindex?: boolean;
   /** Por que o post está contido. Obrigatório quando `noindex` é `true`. */
   noindexReason?: string;
+  /**
+   * Proveniência POR CLAIM. Obrigatória em artigo técnico indexável — ver
+   * `blogProvenanceLint`. Complementa `legalRefs`, que é bibliografia de
+   * rodapé e não rastreia afirmação individual.
+   */
+  provenance?: ClaimProvenance[];
+  /**
+   * Marca o artigo como técnico para o gate de proveniência. Inferido por
+   * heurística quando ausente; declarar explicitamente vence a heurística.
+   */
+  technical?: boolean;
 };
 
 export type Post = PostFrontmatter & {
