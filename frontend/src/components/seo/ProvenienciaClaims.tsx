@@ -74,6 +74,19 @@ export function ProvenienciaClaims({
             )}
             {/* Texto literal aprovado — já carrega o próprio rótulo; o atributo
                 é que classifica a nota como proveniência de versionamento. */}
+            {c.claim_scope_limit && (
+              <p>
+                <small>Limite do alcance: {c.claim_scope_limit}</small>
+              </p>
+            )}
+            {c.provenance_blocked && (
+              <p data-note="blocked">
+                <small>
+                  Proveniência pendente de fechamento oficial
+                  {c.blocked_reason ? `: ${c.blocked_reason}` : "."}
+                </small>
+              </p>
+            )}
             {c.versioning_note && (
               <p data-note="versioning">
                 <small>{c.versioning_note}</small>

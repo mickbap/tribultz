@@ -1,6 +1,7 @@
 ---
 title: "Rejeição 960 NF-e/NFC-e: ICMS monofásico sobre combustíveis e regra N12-110"
-description: "Entenda quando ocorre a Rejeição 960 da NF-e/NFC-e, quais condições da regra N12-110 devem ser verificadas e por que ela não é uma rejeição de cClassTrib."
+metaTitle: "Rejeição 960: ICMS monofásico de combustíveis"
+description: "Entenda quando ocorre a Rejeição 960 da NF-e/NFC-e, as condições da regra N12-110 e por que ela não é uma rejeição de cClassTrib."
 slug: "rejeicao-960-nf-e"
 category: "Compliance Fiscal"
 author:
@@ -9,7 +10,7 @@ author:
   url: "https://tribultz.com.br"
 publishedAt: "2026-07-24T06:15:58.000Z"
 updatedAt: "2026-08-30"
-updateNote: "Reescrita integral. A versão anterior associava a Rejeição 960 ao cClassTrib e à Reforma Tributária do Consumo, o que é incorreto: a regra N12-110 pertence à NT 2023.001 e trata da tributação monofásica do ICMS sobre combustíveis. Contrato revisado contra a NT 2023.001 v1.60 e a exceção posterior finNFe=5/6 documentada na NT 2025.002-RTC v1.51."
+updateNote: "Substituição integral pelo texto final aprovado no ROUND BLOG 30/08-H. Contrato reconferido na NT 2023.001 v1.60, publicada em 09/06/2025 conforme a listagem do Portal Nacional da NF-e, e na reprodução atualizada da N12-110 pela NT 2025.002-RTC."
 tags:
   - "Rejeição 960"
   - NF-e
@@ -20,56 +21,41 @@ tags:
   - SEFAZ
 coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/4fb8471f-d230-4cb4-817e-48e94d580302/rejeicao-960.webp"
 provenance:
-  - claim_scope: "A Rejeição 960 corresponde à regra de validação N12-110, aplicável aos modelos 55 e 65, com aplicabilidade obrigatória"
+  - claim_scope: "Rejeição 960 — identificação da RV e domínio: cStat 960 corresponde à RV N12-110 e ao ICMS monofásico sobre combustíveis, modelos 55 e 65"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "NT 2023.001 — Tributação Monofásica sobre Combustíveis"
+    artifact_version: "1.60 como versão corrente; 1.51 preservada historicamente"
+    rule_item: "N12-110"
+    source_authority: "Portal Nacional da Nota Fiscal Eletrônica / ENCAT"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+    temporal_applicability: "Homologação até 25/09/2023; produção em 30/10/2023, conforme contrato da RV"
+    versioning_note: "A v1.60 sucedeu a v1.51 sem mudança material da N12-110. A listagem oficial registra a v1.60 publicada em 09/06/2025 e a v1.51 em 27/05/2024; o histórico da v1.60 descreve alteração das regras N41-10 e N41-20 e ativação da LA18-10, sem tocar a N12-110."
+  - claim_scope: "CSTs da N12-110: os CST monofásicos exigidos são 02, 15, 53 e 61; também podem ser aceitos 40, 41, 50 e 90"
     claim_classification: "FATO_NORMATIVO"
     artifact: "NT 2023.001"
-    artifact_version: "1.60"
+    artifact_version: "linhagem preservada na v1.60"
     rule_item: "N12-110"
     source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
     source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
     verified_at: "2026-08-30"
-  - claim_scope: "A condição da N12-110 é cProdANP presente na Tabela de Combustíveis Sujeitos à Tributação Monofásica, exigindo CST 02, 15, 53 ou 61"
+  - claim_scope: "Exceção atual de finalidade: a documentação RTC posterior excepciona finNFe=5 e finNFe=6"
     claim_classification: "FATO_NORMATIVO"
-    artifact: "NT 2023.001"
-    artifact_version: "1.60"
-    rule_item: "N12-110"
-    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
-    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
-    verified_at: "2026-08-30"
-  - claim_scope: "Os CST 40, 41, 50 e 90 também podem ser aceitos pela N12-110"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "NT 2023.001"
-    artifact_version: "1.60"
-    rule_item: "N12-110, Observacao 3"
-    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
-    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
-    verified_at: "2026-08-30"
-  - claim_scope: "Cronograma de implantacao da N12-110: homologacao ate 25/09/2023 e producao em 30/10/2023"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "NT 2023.001"
-    artifact_version: "1.60"
-    rule_item: "N12-110, Observacao 2"
-    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
-    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
-    verified_at: "2026-08-30"
-    temporal_applicability: "Regra em producao desde 30/10/2023; vigente na referencia corrente de 30/08/2026"
-  - claim_scope: "A N12-110 nao se aplica a NF-e de Credito (finNFe=5) nem a NF-e de Debito (finNFe=6)"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "NT 2025.002-RTC"
+    artifact: "NT 2025.002-RTC, reprodução atualizada da N12-110"
     artifact_version: "1.51"
-    rule_item: "N12-110, Excecao"
+    rule_item: "N12-110"
     source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
     source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
     verified_at: "2026-08-30"
-    temporal_applicability: "Excecao acrescentada por documentacao posterior a NT 2023.001; integra o comportamento corrente em 30/08/2026"
-  - claim_scope: "Quais codigos cProdANP compoem a Tabela de Combustiveis Sujeitos a Tributacao Monofasica"
+    versioning_note: "Evolução posterior da RV; não é alteração ocorrida entre a v1.51 e a v1.60 da NT 2023.001."
+  - claim_scope: "Quais códigos cProdANP compõem a Tabela de Combustíveis Sujeitos à Tributação Monofásica"
     claim_classification: "NAO_DETERMINADO"
-    artifact: "Tabela de Combustiveis Sujeitos a Tributacao Monofasica"
+    artifact: "Tabela de Combustíveis Sujeitos à Tributação Monofásica"
     source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
     source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=/NJarYc9nus="
     verified_at: "2026-08-30"
-    temporal_applicability: "A tabela e publicada por data e atualizada de forma independente da NT"
-    conflict_note: "A lista de codigos nao e reproduzida aqui: ela tem versionamento proprio e reproduzi-la sem proveniencia versionada da tabela criaria copia desatualizada. Consulte sempre a tabela vigente na fonte oficial."
+    temporal_applicability: "A tabela é publicada por data e atualizada de forma independente da Nota Técnica"
+    claim_scope_limit: "A lista de códigos não é reproduzida aqui: ela tem versionamento próprio e reproduzi-la sem proveniência versionada criaria cópia desatualizada."
 legalRefs:
   - instrumento: "NT 2023.001"
     artigo: "Regra de validação N12-110"
@@ -81,46 +67,131 @@ legalRefs:
     link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
 ---
 
-<p>A Rejeição 960 não é uma regra de cClassTrib. Ela pertence à NT 2023.001 e está relacionada à tributação monofásica do ICMS sobre combustíveis nas condições previstas pela RV N12-110.</p>
+A Rejeição 960 não é uma regra de cClassTrib nem nasceu com a Reforma Tributária do Consumo. Ela pertence ao conjunto de validações do ICMS monofásico sobre combustíveis e está associada à RV N12-110, aplicável às NF-e e NFC-e dos modelos 55 e 65.
 
-<h2>O que a regra N12-110 verifica</h2>
+## O que significa a Rejeição 960?
 
-<p>A regra se aplica à NF-e (modelo 55) e à NFC-e (modelo 65), com aplicabilidade obrigatória. A condição de disparo é objetiva: quando o produto informado no item tem <strong>cProdANP presente na Tabela de Combustíveis Sujeitos à Tributação Monofásica</strong>, torna-se obrigatório o preenchimento do CST de tributação monofásica sobre combustíveis.</p>
+A Rejeição 960 possui a descrição oficial:
 
-<p>Os CST exigidos pela regra são <strong>02, 15, 53 e 61</strong>. A própria Nota Técnica registra, em observação, que <strong>os CST 40, 41, 50 e 90 também poderão ser aceitos</strong>.</p>
+**"Obrigatório o preenchimento de Grupo de Tributação do ICMS monofásica sobre combustíveis."**
 
-<p>Quando a condição ocorre e o grupo não é preenchido, a autorizadora devolve a mensagem 960: <em>"Obrigatório o preenchimento de Grupo de Tributação do ICMS monofásica sobre combustíveis"</em>, com indicação do item.</p>
+O contrato original da regra está na **NT 2023.001 — Tributação Monofásica sobre Combustíveis**. A versão 1.60 foi publicada pelo Portal Nacional da NF-e em 9 de junho de 2025 e permanece a referência corrente dessa Nota Técnica.
 
-<h2>A exceção que integra o comportamento corrente</h2>
+A RV que produz a rejeição é a **N12-110**, aplicável aos modelos 55 e 65.
 
-<p>A redação da regra na NT 2023.001 não previa exceções. Documentação posterior acrescentou uma, e ela precisa ser considerada em qualquer diagnóstico feito hoje: <strong>a N12-110 não se aplica à NF-e de Crédito (finNFe=5) nem à NF-e de Débito (finNFe=6)</strong>.</p>
+O ponto mais importante é este:
 
-<p>Descrever a regra apenas pela redação de origem, sem essa exceção, produziria diagnóstico incorreto em documentos com essas finalidades.</p>
+**a Rejeição 960 não valida cClassTrib.**
 
-<h2>Desde quando a regra está em produção</h2>
+Ela verifica uma condição ligada ao código ANP do produto e ao tratamento de **ICMS monofásico sobre combustíveis**.
 
-<p>A Nota Técnica registra que a N12-110 foi implantada <strong>até 25/09/2023 em homologação e em 30/10/2023 em produção</strong>. Ou seja, é uma regra estabelecida e em vigor há bastante tempo — não um efeito de mudança recente.</p>
+## Quando a N12-110 é acionada?
 
-<h2>Onde consultar a tabela de combustíveis</h2>
+A regra utiliza como referência o `cProdANP` informado no grupo de combustível.
 
-<p>A Tabela de Combustíveis Sujeitos à Tributação Monofásica é publicada na aba <strong>Documentos</strong>, opção <strong>Diversos</strong>, do Portal Nacional da Nota Fiscal Eletrônica.</p>
+Quando esse código está presente na **Tabela de Combustíveis Sujeitos à Tributação Monofásica** publicada no Portal Nacional da NF-e, a N12-110 exige o tratamento de ICMS monofásico previsto pela documentação técnica.
 
-<p>Deliberadamente não reproduzimos aqui a lista de códigos cProdANP. A tabela tem versionamento próprio e é atualizada de forma independente da Nota Técnica: uma cópia colada neste artigo envelheceria sem aviso e passaria a orientar de forma errada. Consulte sempre a versão vigente na fonte oficial.</p>
+Os CST expressamente indicados pela regra como CST de tributação monofásica são:
 
-<h2>Como investigar uma Rejeição 960</h2>
+- `02`;
+- `15`;
+- `53`;
+- `61`.
 
-<p>A sequência útil é curta, porque a condição da regra é objetiva:</p>
+A própria regra informa ainda que podem ser aceitos os CST:
 
-<ol>
-  <li>Identifique o item apontado na mensagem de retorno.</li>
-  <li>Confirme se o <code>cProdANP</code> daquele item consta na tabela vigente.</li>
-  <li>Verifique a finalidade da nota — <code>finNFe=5</code> e <code>finNFe=6</code> estão fora da regra.</li>
-  <li>Confira o CST informado contra os aceitos pela regra.</li>
-  <li>Corrija na origem: cadastro do produto ou parametrização fiscal, não apenas o XML daquela emissão.</li>
-</ol>
+- `40`;
+- `41`;
+- `50`;
+- `90`.
 
-<p>Preserve o XML rejeitado e o retorno da autorizadora antes de reprocessar. Sem a evidência original, a investigação fica mais difícil e a rastreabilidade em auditoria se enfraquece.</p>
+A mensagem associada à falha dessa validação é o **cStat 960**.
 
-<h2>O que a Rejeição 960 não é</h2>
+Isso significa que a análise da Rejeição 960 deve começar por três perguntas:
 
-<p>Vale registrar explicitamente, porque a confusão é comum: a 960 <strong>não</strong> é uma rejeição de cClassTrib, <strong>não</strong> tem origem na Reforma Tributária do Consumo e <strong>não</strong> decorre de nenhuma obrigação iniciada em 2026. Ela trata de ICMS monofásico sobre combustíveis, num domínio próprio e anterior.</p>
+1. qual `cProdANP` foi informado;
+2. esse código está no domínio oficial de combustíveis sujeitos à tributação monofásica aplicável à data da emissão;
+3. qual CST de ICMS foi utilizado no item.
+
+Não é correto tentar resolver a 960 alterando `cClassTrib`.
+
+## A tabela de combustíveis faz parte da validação
+
+A N12-110 não contém uma lista permanente de produtos dentro da própria regra.
+
+Ela remete à **Tabela de Combustíveis Sujeitos à Tributação Monofásica**, mantida como artefato oficial associado à NT 2023.001.
+
+Por isso, uma validação histórica precisa considerar a versão da tabela efetivamente aplicável à emissão analisada.
+
+Copiar uma lista de códigos ANP para dentro de um ERP e tratá-la como imutável cria risco de desatualização.
+
+O correto é preservar a proveniência da tabela utilizada.
+
+## NF-e de Crédito e NF-e de Débito
+
+A documentação técnica posterior da RTC reproduziu a N12-110 e acrescentou uma exceção relevante:
+
+a regra não se aplica à:
+
+- NF-e de Crédito (`finNFe=5`);
+- NF-e de Débito (`finNFe=6`).
+
+Portanto, uma validação atual não deve aplicar mecanicamente a N12-110 a essas duas finalidades.
+
+Essa exceção é uma evolução posterior da documentação da regra. Ela não transforma a Rejeição 960 em uma regra da RTC: a origem da N12-110 continua sendo a NT 2023.001 e o domínio material continua sendo o ICMS monofásico sobre combustíveis.
+
+## Como diagnosticar a Rejeição 960
+
+Uma investigação segura deve seguir esta ordem.
+
+### 1. Verifique o produto
+
+Confirme se o item realmente é combustível e se o `cProdANP` informado corresponde ao produto comercializado.
+
+Não altere o código ANP apenas para eliminar uma rejeição.
+
+### 2. Consulte a tabela oficial
+
+Verifique se o `cProdANP` pertence ao conjunto de combustíveis sujeitos à tributação monofásica na versão aplicável.
+
+Essa é uma dependência externa da regra.
+
+### 3. Verifique o CST de ICMS
+
+Se o produto estiver no domínio da tributação monofásica, valide se o CST utilizado é compatível com a N12-110.
+
+### 4. Verifique a finalidade da NF-e
+
+Antes de apontar a 960, verifique `finNFe`.
+
+NF-e de Crédito e NF-e de Débito estão excepcionadas na documentação técnica atual da regra.
+
+### 5. Corrija a causa fiscal, não apenas o XML
+
+Uma rejeição não deve ser "resolvida" selecionando um CST apenas porque ele passa pela validação técnica.
+
+O CST precisa representar corretamente a operação.
+
+A função de uma validação preventiva é identificar a inconsistência antes da transmissão, não substituir a análise fiscal necessária para definir o tratamento correto.
+
+## Rejeição 960 e cClassTrib são problemas diferentes
+
+A Reforma Tributária introduziu novos campos e novas validações relacionadas a CST de IBS/CBS e cClassTrib.
+
+Isso não autoriza misturar essas regras com validações preexistentes de ICMS.
+
+A Rejeição 960 é um bom exemplo dessa separação:
+
+**cStat 960 → N12-110 → ICMS monofásico sobre combustíveis.**
+
+Já incompatibilidades entre CST de IBS/CBS e cClassTrib possuem contratos próprios, como a Rejeição 1024.
+
+Misturar os dois domínios pode fazer uma empresa corrigir um campo que não participa da rejeição recebida.
+
+## Conclusão
+
+Ao receber a Rejeição 960, não comece pelo cClassTrib.
+
+Comece pelo `cProdANP`, pela tabela oficial de combustíveis sujeitos à tributação monofásica, pelo CST de ICMS utilizado e pela finalidade do documento.
+
+A regra N12-110 existe para verificar o tratamento de ICMS monofásico de determinados combustíveis. Uma correção segura precisa reproduzir exatamente esse contrato — sem transportar para a 960 regras da Reforma Tributária que pertencem a outros grupos do XML.

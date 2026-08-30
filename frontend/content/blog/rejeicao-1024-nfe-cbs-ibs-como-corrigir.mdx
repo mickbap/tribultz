@@ -1,7 +1,7 @@
 ---
 title: "Rejeição 1024 NF-e/NFC-e: cClassTrib incompatível com CST — regra UB14-20"
 metaTitle: "Rejeição 1024: cClassTrib incompatível com CST IBS/CBS"
-description: "Entenda a RV UB14-20, que gera a Rejeição 1024 quando o cClassTrib informado é incompatível com o CST de IBS/CBS, e veja como validar a combinação usando a tabela oficial."
+description: "Entenda a Rejeição 1024, a regra UB14-20 e como validar a compatibilidade entre CST e cClassTrib pela tabela oficial da RTC."
 slug: "rejeicao-1024-nfe-cbs-ibs-como-corrigir"
 category: "Compliance Fiscal"
 author:
@@ -10,7 +10,7 @@ author:
   url: "https://tribultz.com.br"
 publishedAt: "2026-06-05"
 updatedAt: "2026-08-30"
-updateNote: "Reescrita integral. A versão anterior publicava uma tabela de códigos de rejeição adjacentes sem contrato individual verificado, apresentava a coincidência entre CST e os primeiros dígitos do cClassTrib como regra normativa, e afirmava data de vigência que a Nota Técnica não declara. O contrato da UB14-20 foi reconferido na NT 2025.002-RTC v1.51 e a tabela de classificação tributária foi reconferida na fonte SVRS."
+updateNote: "Substituição integral pelo texto final aprovado no ROUND BLOG 30/08-H. A versão corrente da NT 2025.002-RTC foi reconferida na listagem oficial do Portal Nacional da NF-e, que registra a v1.51 publicada em 04/08/2026 como a mais recente."
 tags:
   - "Rejeição 1024"
   - NF-e
@@ -22,176 +22,176 @@ tags:
   - SEFAZ
 coverImage: "https://tribultz.com.br/blog/og-rejeicao-1024.png"
 provenance:
-  - claim_scope: "A Rejeição 1024 corresponde à regra de validação UB14-20, aplicável aos modelos 55 e 65, com aplicabilidade obrigatória"
+  - claim_scope: "Contrato da Rejeição 1024: cStat 1024 corresponde à RV UB14-20, modelos 55 e 65, por incompatibilidade entre cClassTrib e CST"
     claim_classification: "FATO_NORMATIVO"
     artifact: "NT 2025.002-RTC"
-    artifact_version: "1.51"
+    artifact_version: "1.51 como versão corrente em 30/08/2026"
     rule_item: "UB14-20"
-    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
+    source_authority: "Portal Nacional da Nota Fiscal Eletrônica / ENCAT"
     source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
     verified_at: "2026-08-30"
-  - claim_scope: "A condição da UB14-20 é: cClassTrib informado e incompatível com o CST de IBS/CBS do mesmo item"
+    temporal_applicability: "Conforme cronograma vigente da NT 2025.002; este artigo não atribui data adicional não necessária ao claim"
+  - claim_scope: "Versão corrente da Nota Técnica: a v1.51 é a versão mais recente da NT 2025.002-RTC listada oficialmente, publicada em 04/08/2026"
     claim_classification: "FATO_NORMATIVO"
     artifact: "NT 2025.002-RTC"
     artifact_version: "1.51"
-    rule_item: "UB14-20"
-    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
+    source_authority: "Portal Nacional da Nota Fiscal Eletrônica / ENCAT"
     source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
     verified_at: "2026-08-30"
-  - claim_scope: "A verificação da compatibilidade entre CST e cClassTrib remete à Tabela de Código de Classificação Tributária do IBS e CBS"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "NT 2025.002-RTC"
-    artifact_version: "1.51"
-    rule_item: "UB14-20, Observação"
-    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
-    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
-    verified_at: "2026-08-30"
-  - claim_scope: "A mensagem devolvida pela SEFAZ na Rejeição 1024 identifica o item pelo nItem"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "NT 2025.002-RTC"
-    artifact_version: "1.51"
-    rule_item: "UB14-20, mensagem"
-    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
-    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
-    verified_at: "2026-08-30"
-  - claim_scope: "Na consulta de 30/08/2026, a tabela oficial publica 164 códigos de cClassTrib distribuídos em 18 grupos de CST"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
-    source_authority: "SVRS — Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
-    verified_at: "2026-08-30"
-    temporal_applicability: "A tabela tem versionamento próprio e é atualizada de forma independente da Nota Técnica"
-  - claim_scope: "Todo código da versão consultada da tabela começa pelos dígitos do CST a que pertence — regularidade observada na tabela publicada, não critério declarado pela regra de validação"
+    versioning_note: "A listagem oficial registra, para a NT 2025.002, as versões 1.00 a 1.51, sendo a 1.51 a de data mais recente na consulta de 30/08/2026."
+  - claim_scope: "Limites do NCM como determinante de cClassTrib: o NCM pode restringir candidatos, mas não determina sozinho um cClassTrib único"
     claim_classification: "INTERPRETACAO_SEGURA"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
-    source_authority: "SVRS — Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
+    artifact: "Conformidade Fácil — Assistente para Classificação Tributária"
+    artifact_version: "serviço corrente consultado em 30/08/2026"
+    source_authority: "SVRS — Portal da Conformidade Fácil"
+    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributariaNcm"
     verified_at: "2026-08-30"
-    conflict_note: "A UB14-20 não enuncia critério de prefixo: ela remete à tabela. A coincidência foi medida sobre os 164 códigos da consulta de 30/08/2026 e pode não valer em versões futuras. Usá-la no lugar da consulta à tabela substituiria a fonte normativa por uma inferência."
-  - claim_scope: "A partir de qual data a UB14-20 passa a rejeitar em produção"
-    claim_classification: "NAO_DETERMINADO"
-    artifact: "NT 2025.002-RTC"
-    artifact_version: "1.51"
-    rule_item: "UB14-20"
-    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
-    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
-    verified_at: "2026-08-30"
-    conflict_note: "A UB14-20 não traz observação de cronograma, diferentemente de outras regras da mesma Nota Técnica, que declaram datas de homologação e produção. Nenhuma data de ativação é afirmada aqui."
+    claim_scope_limit: "O assistente oficial rotula os resultados como Sugestão e adverte que a aplicação da redução depende do cumprimento dos requisitos legais e pode ter exceções."
 legalRefs:
   - instrumento: "NT 2025.002-RTC"
     artigo: "Regra de validação UB14-20"
-    descricao: "Define a Rejeição 1024 para os modelos 55 e 65 quando o cClassTrib informado é incompatível com o CST de IBS/CBS."
+    descricao: "Define a Rejeição 1024 quando o cClassTrib informado é incompatível com o CST de IBS/CBS, remetendo à tabela oficial de classificação tributária."
     link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
-  - instrumento: "Tabela de Código de Classificação Tributária do IBS e CBS"
+  - instrumento: "Tabela de Código de Classificação Tributária do IBS e da CBS"
     artigo: "—"
-    descricao: "Tabela oficial referida pela Observação da UB14-20. Fonte da compatibilidade entre CST e cClassTrib."
+    descricao: "Fonte de domínio indicada pela própria regra para a compatibilidade entre CST e cClassTrib."
     link: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
 ---
 
-A Rejeição 1024 ocorre quando o cClassTrib informado é incompatível com o CST de IBS/CBS segundo a tabela oficial aplicável. Ela não deve ser confundida com rejeições de ausência de grupo, alíquota ou diferimento.
+A Rejeição 1024 ocorre quando o `cClassTrib` informado é incompatível com o CST de IBS/CBS utilizado no item, segundo a tabela oficial aplicável. Ela não deve ser confundida com rejeições por ausência de grupo, alíquota ou diferimento.
 
-## O contrato da regra, como está publicado
+## O que é a Rejeição 1024?
 
-A Rejeição 1024 tem uma única regra de validação associada, a **UB14-20**. Este é o contrato dela, como consta na NT 2025.002-RTC v1.51:
+A Rejeição 1024 pertence às regras de validação da Reforma Tributária do Consumo para NF-e e NFC-e.
 
-| Elemento | Conteúdo |
-|----------|----------|
-| Regra de validação | UB14-20 |
-| Modelos | 55 e 65 |
-| Aplicabilidade | Obrigatória |
-| Campo avaliado | `IBSCBS/cClassTrib` (id UB14) |
-| Condição | cClassTrib informado e incompatível com o CST (`IBSCBS/CST`) |
-| Código devolvido | 1024 |
-| Mensagem | "Classificação Tributária do IBS e da CBS incompatível com o CST informado [nItem: 999]" |
-| Observação | "Consultar Tabela de Código de Classificação Tributária do IBS e CBS" |
+Seu contrato é:
 
-Três consequências práticas saem daí, e nenhuma delas depende de interpretação:
+- **cStat:** 1024;
+- **RV:** UB14-20;
+- **modelos:** 55 e 65;
+- **artefato:** NT 2025.002-RTC;
+- **versão corrente em 30/08/2026:** v1.51.
 
-1. **A regra só dispara se o cClassTrib estiver informado.** A condição começa em "se cClassTrib for informado". Documento sem o campo não é avaliado por esta regra — é assunto de outra.
-2. **O par avaliado é CST × cClassTrib, no mesmo item.** Não é NCM, não é CFOP, não é alíquota.
-3. **O critério de compatibilidade está na tabela, não na regra.** A Observação remete explicitamente à Tabela de Código de Classificação Tributária do IBS e CBS. A regra não reproduz o critério; ela aponta para onde ele vive.
+O Portal DF-e/SVRS lista a v1.51 como a versão corrente da NT 2025.002-RTC.
 
-## O que a 1024 não é
+A UB14-20 determina que, quando `IBSCBS/cClassTrib` for informado, o código deve ser compatível com o `IBSCBS/CST`.
 
-Este ponto é a origem da maior parte do diagnóstico errado. A 1024 é uma rejeição de **incompatibilidade entre dois campos preenchidos**. Ela não cobre:
+Se a combinação não for admitida pela tabela oficial de classificação tributária, o resultado previsto é:
 
-- **ausência do grupo de IBS/CBS** — documento sem o grupo não chega a ter cClassTrib para comparar;
-- **valor de alíquota** — a 1024 não avalia percentual nem valor calculado;
-- **diferimento** — regime não é avaliado por esta regra;
-- **existência do código** — um cClassTrib que sequer conste da tabela é problema distinto de um que conste e não combine com o CST informado.
+**Rejeição 1024 — Classificação Tributária do IBS e da CBS incompatível com o CST informado.**
 
-Cada um desses casos tem sua própria regra de validação e seu próprio código. Este artigo trata apenas do contrato da 1024, porque é o único que foi conferido linha a linha contra a Nota Técnica. Publicar a tabela vizinha de códigos "aproveitando o assunto" foi exatamente o defeito da versão anterior deste texto.
+## O que a regra realmente valida?
 
-## Como validar a combinação usando a tabela oficial
+A UB14-20 não pergunta apenas:
 
-O caminho é a consulta, não a dedução.
+> "O cClassTrib existe?"
 
-**1. Leia o `nItem` da mensagem.** A rejeição identifica o item que causou o problema. Sem isso você corrige o produto errado.
+Ela verifica uma relação específica:
 
-**2. Extraia o par do XML.** No item indicado, dentro do grupo de IBS/CBS, leia os dois campos que a regra compara: `CST` e `cClassTrib`. É esse par — e não o CST do ICMS — que a UB14-20 avalia.
+**CST informado × cClassTrib informado.**
 
-**3. Consulte a tabela oficial.** Localize o cClassTrib informado na Tabela de Código de Classificação Tributária do IBS e CBS e verifique a qual CST ele pertence. Se o CST da tabela não for o CST do documento, está aí a incompatibilidade.
+Isso é importante porque dois códigos podem existir individualmente e, ainda assim, não formar uma combinação permitida.
 
-**4. Decida qual dos dois campos está errado.** Este é o passo que nenhuma ferramenta decide por você. A incompatibilidade prova que os dois campos discordam, não qual deles descreve a operação real. Trocar o cClassTrib para "casar" com o CST autoriza o documento e pode declarar um tratamento tributário que a operação não tem.
+A fonte de domínio indicada pela própria regra é a **Tabela de Código de Classificação Tributária do IBS e da CBS**.
 
-**5. Reemita e reconfira o par.** A correção se valida relendo os mesmos dois campos do XML gerado.
+Portanto, uma validação preventiva precisa conhecer a versão dessa tabela utilizada na análise.
 
-### O que a tabela publica
+## NCM não substitui a validação CST × cClassTrib
 
-Na consulta de 30/08/2026, a tabela oficial trazia **164 códigos**, distribuídos em **18 grupos de CST**:
+O NCM pode ser relevante para identificar tratamentos possíveis previstos pela legislação, especialmente quando anexos legais delimitam mercadorias.
 
-| CST | Códigos de cClassTrib na consulta de 30/08/2026 |
-|-----|-------------------------------------------|
-| 000 | 5 |
-| 010 | 2 |
-| 011 | 5 |
-| 200 | 54 |
-| 220 | 3 |
-| 221 | 4 |
-| 222 | 1 |
-| 400 | 2 |
-| 410 | 38 |
-| 510 | 1 |
-| 515 | 1 |
-| 550 | 25 |
-| 620 | 7 |
-| 800 | 2 |
-| 810 | 1 |
-| 811 | 3 |
-| 820 | 9 |
-| 830 | 1 |
+Mas NCM e cClassTrib não formam um de-para universal.
 
-A distribuição diz algo operacionalmente útil: os grupos 200 e 410 concentram mais da metade dos códigos. Saber que o CST é 200 estreita pouco — restam dezenas de códigos, e a escolha entre eles depende da operação e dos requisitos legais de cada tratamento, não de um atributo isolado do produto.
+O próprio Portal da Conformidade Fácil apresenta os resultados encontrados a partir de uma NCM como **"Sugestão"** e, em determinadas consultas, alerta expressamente que a aplicação do tratamento depende do cumprimento dos requisitos legais e pode possuir exceções.
 
-> **Sobre a coincidência de prefixo.** Nos 164 códigos da consulta de 30/08/2026, todo cClassTrib começa pelos dígitos do CST a que pertence. Isso é uma regularidade **observada na tabela publicada** — a UB14-20 não enuncia critério de prefixo, ela manda consultar a tabela. A conferência continua sendo a consulta: a tabela também define quais códigos existem e sob que condições cada um se aplica, e nenhuma dessas duas coisas se lê no prefixo.
+Por isso, a sequência:
 
-## O que não está determinado
+**NCM → escolher automaticamente um cClassTrib → transmitir**
 
-A UB14-20 aparece uma única vez na Nota Técnica e **não traz observação de cronograma**. Outras regras do mesmo documento declaram explicitamente datas de homologação e de produção; esta não declara.
+não é uma política segura.
 
-Portanto: a partir de qual data a UB14-20 rejeita em produção é ponto **não determinado pela fonte oficial**, e este artigo não afirma data alguma. Quem precisa da informação deve acompanhar as publicações do Portal Nacional da NF-e e o ambiente de homologação da sua autorizadora — não uma data inferida de artigo técnico.
+O NCM pode restringir candidatos. A escolha final precisa representar os fatos da operação e os requisitos jurídicos do tratamento selecionado.
 
-## Perguntas frequentes
+## Como corrigir a Rejeição 1024
 
-**O cClassTrib certo pode ser deduzido do NCM do produto?**
+### 1. Identifique o CST realmente aplicável
 
-Não. O NCM pode ajudar a identificar tratamentos possíveis, mas a classificação depende da operação, do perfil das partes e dos requisitos legais do tratamento pretendido. Um mesmo produto pode admitir códigos diferentes conforme a operação.
+Antes de modificar o cClassTrib, confirme qual CST de IBS/CBS representa o tratamento tributário da operação.
 
-**Se eu ajustar o cClassTrib até a nota ser autorizada, resolvi o problema?**
+Não escolha um CST apenas porque ele aceita determinado cClassTrib.
 
-Você resolveu a rejeição. Não necessariamente o problema. A autorização prova que os dois campos ficaram coerentes entre si — não que descrevem a operação corretamente. Um documento autorizado com tratamento tributário indevido é um passivo, não uma entrega.
+### 2. Confirme o cClassTrib informado
 
-**A 1024 gera multa?**
+Verifique:
 
-O documento rejeitado não é autorizado — não há documento fiscal. O risco material está em operar sem documento autorizado quando ele era exigido, não na tentativa de emissão em si.
+- se o código existe na tabela oficial aplicável;
+- sua descrição;
+- fundamento legal;
+- indicadores e condições relevantes;
+- compatibilidade com o CST utilizado.
 
-**As alíquotas reduzidas de 2026 dispensam o preenchimento correto?**
+### 3. Verifique os requisitos materiais
 
-Não. Alíquota e validação de leiaute são coisas distintas: o valor devido ser pequeno não torna o par CST × cClassTrib dispensável. A UB14-20 avalia a compatibilidade dos campos, não o montante.
+A existência de uma combinação tecnicamente válida não prova, por si só, que ela é juridicamente aplicável à operação concreta.
 
-## Artigos relacionados
+Uma classificação pode depender, por exemplo, de:
 
-- [cClassTrib e NCM: como usar sugestões oficiais e validar a Rejeição 1024](/blog/classtrib-2026-ncm-mapeamento-completo)
-- [cClassTrib em 2026: como NCM, operação e requisitos legais orientam a classificação](/blog/classtrib-2026-mapear-ncm-regime-ibs-cbs)
+- natureza do fornecimento;
+- produto ou serviço;
+- finalidade;
+- características do adquirente;
+- localização;
+- regime aplicável;
+- benefício ou regime diferenciado;
+- requisitos específicos previstos em lei.
+
+É por isso que "compatível" não deve ser confundido com "tributariamente correto em qualquer situação".
+
+### 4. Corrija a informação que não representa a operação
+
+Se o CST estiver correto e o cClassTrib for incompatível, ajuste o cClassTrib para uma classificação juridicamente sustentada.
+
+Se o cClassTrib estiver correto e o CST estiver errado, corrija o CST.
+
+Se ambos estiverem baseados em uma premissa fiscal incorreta, a correção deve começar pela classificação da operação — não pela tentativa de eliminar a rejeição.
+
+## O que a Rejeição 1024 não significa
+
+A Rejeição 1024 não é uma rejeição genérica para qualquer erro de IBS/CBS.
+
+Ela não deve ser usada editorialmente como sinônimo de:
+
+- ausência do grupo IBS/CBS;
+- alíquota inválida;
+- erro de diferimento;
+- erro de cálculo;
+- ausência de NCM;
+- ausência de CEST.
+
+Esses temas possuem contratos técnicos próprios quando previstos nas Notas Técnicas.
+
+A Tribultz não deve agrupar códigos diferentes em uma tabela de "rejeições relacionadas" sem validar individualmente a RV, versão, condição, exceções e aplicabilidade de cada código.
+
+## Como prevenir a 1024 antes da transmissão
+
+A prevenção é mais forte quando o ERP ou validador separa duas etapas:
+
+**1. determinação fiscal da operação;**
+
+**2. validação determinística da combinação escolhida.**
+
+A primeira etapa pode exigir interpretação das condições jurídicas da operação.
+
+A segunda pode ser automatizada com maior segurança: uma vez definidos CST e cClassTrib, a compatibilidade da combinação pode ser confrontada com a tabela oficial versionada.
+
+Essa separação reduz um erro comum: transformar uma tabela técnica em mecanismo automático de decisão tributária.
+
+## Conclusão
+
+A Rejeição 1024 possui um contrato claro: a UB14-20 verifica se o cClassTrib informado é compatível com o CST de IBS/CBS.
+
+Isso torna a combinação **CST × cClassTrib** um excelente objeto de validação preventiva.
+
+Mas a regra não autoriza concluir que um NCM determina sozinho o código correto, nem que qualquer combinação aceita pela tabela é necessariamente o tratamento juridicamente adequado para uma operação concreta.
+
+A validação técnica precisa confirmar a compatibilidade. A classificação fiscal precisa continuar sustentada pelos fatos e pela legislação aplicável.

@@ -97,6 +97,6 @@ test("a Rejeição 960 saiu da contenção porque foi corrigida, não por atalho
   assert.ok(!/^noindex:\s*true\s*$/m.test(s), "960 foi reindexada após a reescrita");
   assert.ok(/^provenance:\s*$/m.test(s), "só reindexa com proveniência por claim");
   assert.match(s, /rule_item:\s*"N12-110"/, "contrato da RV precisa estar declarado");
-  assert.match(s, /artifact_version:\s*"1\.60"/, "versão corrente da NT 2023.001");
+  assert.match(s, /artifact_version:\s*"1\.60/, "versão corrente da NT 2023.001");
   assert.ok(s.length > 2000, "o conteúdo do post não pode ter sido apagado");
 });

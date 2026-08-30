@@ -1,7 +1,7 @@
 ---
-title: "Como calcular alíquota CBS e IBS em 2026 sem erro"
+title: "Como calcular CBS e IBS em 2026: alíquotas de 0,9% e 0,1% sem confundir estimativas futuras"
 metaTitle: "CBS 0,9% e IBS 0,1% em 2026: como calcular"
-description: "Entenda as alíquotas normativas de 2026 — CBS 0,9% e IBS 0,1% — e por que estimativas históricas de 8,8%, 17,7% e 26,5% não devem ser tratadas como alíquotas futuras já fixadas."
+description: "Veja as alíquotas legais de CBS e IBS em 2026, as regras especiais do período de teste e por que 26,5% não é uma alíquota futura já fixada."
 slug: "como-calcular-aliquota-cbs-ibs"
 category: "Reforma Tributária"
 author:
@@ -10,7 +10,7 @@ author:
   url: "https://tribultz.com.br"
 publishedAt: "2026-06-25T14:13:01.000Z"
 updatedAt: "2026-08-30"
-updateNote: "Reescrita integral. A versão anterior apresentava percentuais de regime pleno como alíquotas de referência já fixadas e omitia as regras específicas de 2026 da LC 214/2025 — redução proporcional nos regimes diferenciados, não aplicação aos optantes pelo Simples Nacional, compensação com PIS/COFINS e dispensa de recolhimento condicionada às obrigações acessórias. Os dispositivos foram conferidos no texto da lei em 30/08/2026."
+updateNote: "Substituição integral pelo texto final aprovado no ROUND BLOG 30/08-H. Permanece fora do índice: o claim ALIQ-04 aponta como artefato a apresentação do Ministério da Fazenda de 24/04/2024, cuja URL oficial não pôde ser resolvida. Os arts. 346, 348 e 349 da LC 214 foram reconferidos no texto da lei; o exemplo com redução de 60% foi localizado no Manual de Serviços RTC."
 tags:
   - CBS
   - IBS
@@ -19,70 +19,68 @@ tags:
   - "LC 214/2025"
 coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/76fc4d86-d528-4294-a3c6-020f77cb3995/4aa3737a-e38b-4624-a082-2472b7b92a70.webp"
 soroGuid: "4aa3737a-e38b-4624-a082-2472b7b92a70"
+noindex: true
+noindexReason: "PROVENANCE_BLOCKED no claim ALIQ-04. O artefato indicado pelo pacote editorial e a apresentacao de regulamentacao da Reforma Tributaria do Ministerio da Fazenda, de 24/04/2024, e nao foi possivel resolver a URL oficial correspondente. Alem disso, os valores retornados no exemplo do Manual de Servicos RTC e o percentual de IBS municipal em 2026 nao sao verificaveis no texto extraivel dos artefatos consultados. Nenhuma fonte secundaria foi usada e nenhum claim foi apagado. Aguarda fechamento pelo Juridico ou pelo Owner."
 provenance:
-  - claim_scope: "Para os fatos geradores ocorridos de 1º de janeiro a 31 de dezembro de 2026, a CBS será cobrada mediante aplicação da alíquota de 0,9%"
+  - claim_scope: "Alíquotas normativas de 2026: CBS de 0,9% e IBS de 0,1% para os fatos geradores ocorridos de 1º de janeiro a 31 de dezembro de 2026"
     claim_classification: "FATO_NORMATIVO"
     artifact: "Lei Complementar nº 214, de 16 de janeiro de 2025"
-    rule_item: "art. 346"
+    artifact_version: "texto compilado vigente em 30/08/2026"
+    rule_item: "arts. 343 e 346"
     source_authority: "Presidência da República — Planalto"
     source_url: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
     verified_at: "2026-08-30"
-    temporal_applicability: "Fatos geradores ocorridos em 2026"
-  - claim_scope: "Para os fatos geradores ocorridos de 1º de janeiro a 31 de dezembro de 2026, o IBS será cobrado mediante aplicação da alíquota estadual de 0,1%"
+    temporal_applicability: "Fatos geradores de 01/01/2026 a 31/12/2026"
+  - claim_scope: "Regras transitórias de 2026: redução proporcional nas operações sujeitas a alíquota reduzida, regimes específicos com bases próprias, não aplicação aos optantes pelo Simples Nacional e dispensa de recolhimento para quem cumprir as obrigações acessórias"
     claim_classification: "FATO_NORMATIVO"
+    artifact: "Lei Complementar nº 214, de 16 de janeiro de 2025"
+    artifact_version: "texto compilado vigente em 30/08/2026"
+    rule_item: "art. 348"
+    source_authority: "Presidência da República — Planalto"
+    source_url: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
+    verified_at: "2026-08-30"
+    temporal_applicability: "2026"
+  - claim_scope: "Existência do exemplo oficial com redução de 60%: o Manual de Serviços RTC simula operação com base de cálculo de R$ 10.000,00, CST 200 e cClassTrib 200031, sujeita à redução de 60% prevista no Anexo V da LC 214/2025, retornando cálculo de CBS, IBS Estadual e IBS Municipal"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Manual de Serviços RTC"
+    source_authority: "Secretaria Especial da Receita Federal do Brasil"
+    source_url: "https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/manuais/reforma-tributaria-do-consumo/manual-servicos-rtc.pdf"
+    verified_at: "2026-08-30"
+    claim_scope_limit: "Confere-se a existência e os parâmetros do exemplo. Os valores retornados aparecem em captura de tela do manual e não são verificáveis no texto extraível do PDF."
+  - claim_scope: "Os percentuais de 8,8% de CBS, 17,7% de IBS e 26,5% no total foram divulgados como estimativa de alíquotas, não como alíquotas futuras legalmente fixadas"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Apresentação de regulamentação da Reforma Tributária, de 24/04/2024"
+    artifact_version: "publicação histórica"
+    source_authority: "Ministério da Fazenda"
+    source_url: "PENDENTE"
+    verified_at: "2026-08-30"
+    provenance_blocked: true
+    blocked_reason: "A URL oficial da apresentação de 24/04/2024 não foi resolvida. A pasta oficial de apresentações da Secretaria Extraordinária da Reforma Tributária não lista item datado de abril de 2024. Nenhuma fonte secundária foi usada para preencher o campo."
+    claim_scope_limit: "Estimativa histórica; não alíquota futura fixada."
+  - claim_scope: "Fixação futura: resolução do Senado Federal fixará a alíquota de referência da CBS para os anos de 2027 a 2033 e as alíquotas de referência do IBS para Estados, Municípios e Distrito Federal para os anos de 2029 a 2033"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Lei Complementar nº 214, de 16 de janeiro de 2025"
+    artifact_version: "texto compilado vigente em 30/08/2026"
+    rule_item: "art. 349"
+    source_authority: "Presidência da República — Planalto"
+    source_url: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
+    verified_at: "2026-08-30"
+  - claim_scope: "Qual será a alíquota de CBS e de IBS aplicável a partir do regime permanente"
+    claim_classification: "NAO_DETERMINADO"
+    artifact: "Lei Complementar nº 214, de 16 de janeiro de 2025"
+    rule_item: "art. 349"
+    source_authority: "Presidência da República — Planalto"
+    source_url: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
+    verified_at: "2026-08-30"
+    conflict_note: "A lei define o instrumento — resolução do Senado Federal — e não um percentual. Enquanto a resolução não fixar a alíquota de referência do período, o estado correto é não fixada."
+  - claim_scope: "Qual o percentual de IBS municipal aplicável aos fatos geradores de 2026"
+    claim_classification: "NAO_DETERMINADO"
     artifact: "Lei Complementar nº 214, de 16 de janeiro de 2025"
     rule_item: "art. 343"
     source_authority: "Presidência da República — Planalto"
     source_url: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
     verified_at: "2026-08-30"
-    temporal_applicability: "Fatos geradores ocorridos em 2026"
-  - claim_scope: "Em 2026 as alíquotas dos arts. 343 e 346 são aplicadas com a respectiva redução nas operações sujeitas a alíquota reduzida, aplicam-se aos regimes específicos observadas as respectivas bases de cálculo, exceto combustíveis e biocombustíveis dos arts. 172 a 180, e não se aplicam às operações dos optantes pelo Simples Nacional"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Lei Complementar nº 214, de 16 de janeiro de 2025"
-    rule_item: "art. 348, III"
-    source_authority: "Presidência da República — Planalto"
-    source_url: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
-    verified_at: "2026-08-30"
-    temporal_applicability: "Fatos geradores ocorridos em 2026"
-  - claim_scope: "Em 2026 o montante recolhido de IBS e CBS é compensado com o valor devido das contribuições sociais e do PIS no mesmo período de apuração e, na falta de débitos suficientes, pode ser compensado com outro tributo federal ou ressarcido em até 60 dias mediante requerimento"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Lei Complementar nº 214, de 16 de janeiro de 2025"
-    rule_item: "art. 348, I e II"
-    source_authority: "Presidência da República — Planalto"
-    source_url: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
-    verified_at: "2026-08-30"
-    temporal_applicability: "Fatos geradores ocorridos em 2026"
-  - claim_scope: "Fica dispensado o recolhimento do IBS e da CBS relativo aos fatos geradores de 2026 em relação aos sujeitos passivos que cumprirem as obrigações acessórias previstas na legislação, permanecendo obrigatório o pagamento integral das contribuições sociais e do PIS"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Lei Complementar nº 214, de 16 de janeiro de 2025"
-    rule_item: "art. 348, §§ 1º e 2º"
-    source_authority: "Presidência da República — Planalto"
-    source_url: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
-    verified_at: "2026-08-30"
-    temporal_applicability: "Fatos geradores ocorridos em 2026"
-  - claim_scope: "Para os fatos geradores de 1º de janeiro de 2027 a 31 de dezembro de 2028, o IBS será cobrado à alíquota estadual de 0,05% e à alíquota municipal de 0,05%"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Lei Complementar nº 214, de 16 de janeiro de 2025"
-    rule_item: "art. 344"
-    source_authority: "Presidência da República — Planalto"
-    source_url: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
-    verified_at: "2026-08-30"
-    temporal_applicability: "Fatos geradores de 2027 e 2028"
-  - claim_scope: "As alíquotas da CBS e do IBS serão fixadas por lei específica do respectivo ente federativo, podendo cada ente vinculá-la à alíquota de referência por acréscimo ou decréscimo de pontos percentuais, ou defini-la sem essa vinculação"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Lei Complementar nº 214, de 16 de janeiro de 2025"
-    rule_item: "art. 14, caput e §§ 2º e 3º"
-    source_authority: "Presidência da República — Planalto"
-    source_url: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
-    verified_at: "2026-08-30"
-  - claim_scope: "Qual será a alíquota de CBS e de IBS aplicável a partir de 2029"
-    claim_classification: "NAO_DETERMINADO"
-    artifact: "Lei Complementar nº 214, de 16 de janeiro de 2025"
-    rule_item: "art. 14"
-    source_authority: "Presidência da República — Planalto"
-    source_url: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
-    verified_at: "2026-08-30"
-    conflict_note: "A lei fixa números para 2026 e para 2027-2028 e, além disso, define o mecanismo de fixação por lei específica de cada ente federativo. Percentuais de carga plena divulgados em material de imprensa são estimativas produzidas sob esse mecanismo, não alíquotas fixadas em lei."
+    conflict_note: "O art. 343 fixa, para 2026, apenas a alíquota estadual de 0,1%. A composição estadual mais municipal aparece no art. 344, para 2027 e 2028. O percentual municipal de 2026 não foi confirmado em artefato consultável."
 legalRefs:
   - instrumento: "LC 214/2025"
     artigo: "Arts. 343 e 346"
@@ -90,90 +88,194 @@ legalRefs:
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
   - instrumento: "LC 214/2025"
     artigo: "Art. 348"
-    descricao: "Disposições comuns ao IBS e à CBS em 2026: compensação com as contribuições, ressarcimento, aplicação das alíquotas nos regimes diferenciados e específicos, não aplicação ao Simples Nacional e dispensa de recolhimento condicionada às obrigações acessórias."
+    descricao: "Disposições comuns ao IBS e à CBS em 2026, inclusive dispensa de recolhimento condicionada ao cumprimento das obrigações acessórias."
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
   - instrumento: "LC 214/2025"
-    artigo: "Arts. 14, 344 e 347"
-    descricao: "Mecanismo de fixação das alíquotas por lei de cada ente federativo e alíquotas aplicáveis aos fatos geradores de 2027 e 2028."
+    artigo: "Art. 349"
+    descricao: "Resolução do Senado Federal fixará as alíquotas de referência da CBS e do IBS nos períodos indicados."
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
+  - instrumento: "Manual de Serviços RTC"
+    artigo: "—"
+    descricao: "Manual oficial com exemplo de simulação de operação sujeita à redução de 60% do Anexo V da LC 214/2025."
+    link: "https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/manuais/reforma-tributaria-do-consumo/manual-servicos-rtc.pdf"
 ---
 
-Para os fatos geradores de 2026, a LC nº 214 estabelece CBS de 0,9% e IBS de 0,1%, observadas as regras específicas aplicáveis à operação. Percentuais de 8,8%, 17,7% e 26,5% divulgados anteriormente pelo Ministério da Fazenda eram estimativas e não devem ser apresentados como alíquotas futuras já fixadas.
+Para os fatos geradores de 2026, a LC nº 214 estabelece CBS de 0,9% e IBS de 0,1%, observadas as regras específicas da operação e do período de transição. Percentuais como 8,8%, 17,7% e 26,5% foram divulgados historicamente como estimativas e não devem ser tratados como alíquotas futuras legalmente fixadas.
 
-## As alíquotas de 2026, como estão na lei
+## Quais são as alíquotas de CBS e IBS em 2026?
 
-Os dois números vêm de dispositivos distintos:
+A Lei Complementar nº 214/2025 estabelece, para os fatos geradores ocorridos de **1º de janeiro a 31 de dezembro de 2026**:
 
-| Tributo | Alíquota em 2026 | Dispositivo |
-|---------|------------------|-------------|
-| CBS | 0,9% | art. 346 |
-| IBS | 0,1% (alíquota **estadual**) | art. 343 |
+- **CBS: 0,9%**;
+- **IBS: 0,1%**.
 
-Repare no detalhe do IBS: a lei fala em alíquota **estadual** para 2026. A composição estadual mais municipal aparece a partir de 2027, quando o art. 344 fixa 0,05% estadual e 0,05% municipal.
+O art. 346 fixa a CBS em 0,9%. A documentação oficial da NF-e e o Portal da Conformidade Fácil registram, para 2026, IBS estadual de 0,1% e IBS municipal de 0%, conforme as regras transitórias da LC 214.
 
-## Por que a conta não termina na multiplicação
+Esses percentuais são as referências normativas para o período de teste de 2026.
 
-Aplicar 0,9% e 0,1% sobre a base resolve o caso geral. O art. 348, III, estabelece três condicionantes que mudam o resultado:
+Mas isso não significa que toda operação de qualquer contribuinte deva simplesmente multiplicar a base por 1% e recolher o resultado.
 
-- **Regimes diferenciados**: nas operações sujeitas a alíquota reduzida, as alíquotas de 2026 "serão aplicadas com a respectiva redução". A redução do regime não substitui o percentual do ano — ela incide sobre ele.
-- **Regimes específicos**: aplicam-se "observadas as respectivas bases de cálculo", com exceção expressa dos combustíveis e biocombustíveis dos arts. 172 a 180. Nesses casos a base é própria, e usar a base geral produz valor errado com a alíquota certa.
-- **Simples Nacional**: as alíquotas de 2026 **não se aplicam** às operações dos contribuintes optantes. É exclusão, não redução.
+## 2026 possui regras transitórias próprias
 
-Ou seja: antes de multiplicar, é preciso saber em qual dos quatro trilhos a operação está — geral, diferenciado, específico ou Simples. Errar o trilho é o erro caro; errar a multiplicação é raro.
+O art. 348 da LC nº 214 estabelece regras específicas para 2026.
 
-## O que acontece com o valor recolhido em 2026
+Entre elas:
 
-Este é o ponto que mais surpreende quem lê apenas a alíquota. O art. 348 organiza 2026 assim:
+- operações sujeitas a alíquota reduzida recebem a redução correspondente;
+- regimes específicos devem observar suas próprias bases e regras;
+- as alíquotas gerais de 2026 não são aplicadas às operações dos optantes pelo Simples Nacional;
+- o recolhimento do IBS e da CBS é dispensado para os sujeitos passivos que cumprirem as obrigações acessórias previstas na legislação, observadas as condições legais do período.
 
-1. **Compensação (inciso I).** O montante recolhido de IBS e CBS é compensado com o valor devido, no mesmo período de apuração, das contribuições sociais e da contribuição para o PIS.
-2. **Sobra (inciso II).** Se o contribuinte não tem débitos suficientes para compensar, o valor pode ser compensado com qualquer outro tributo federal ou ressarcido em até 60 dias, mediante requerimento.
-3. **Dispensa condicionada (§ 1º).** Fica dispensado o recolhimento de IBS e CBS dos fatos geradores de 2026 para os sujeitos passivos **que cumprirem as obrigações acessórias** previstas na legislação.
-4. **O que não muda (§ 2º).** Quem é dispensado do recolhimento continua obrigado ao pagamento integral das contribuições sociais e do PIS.
+Portanto:
 
-A leitura conjunta explica o desenho de 2026: o esforço está em **declarar corretamente**, não em recolher. A dispensa do § 1º é condicionada ao cumprimento das obrigações acessórias — quem calcula certo e declara certo não recolhe; quem não cumpre a obrigação acessória não tem a dispensa.
+**alíquota nominal não é sinônimo de valor necessariamente recolhido.**
 
-Por isso o cálculo importa mesmo com percentual pequeno: ele alimenta a declaração, e a declaração é a condição da dispensa.
+## Exemplo básico de cálculo nominal
 
-## De 2027 em diante
+Considere, apenas para demonstrar a mecânica, uma operação com base de cálculo de:
 
-| Período | IBS | CBS |
-|---------|-----|-----|
-| 2026 | 0,1% estadual (art. 343) | 0,9% (art. 346) |
-| 2027–2028 | 0,05% estadual + 0,05% municipal (art. 344) | alíquota fixada nos termos do art. 14, reduzida em 0,1 ponto percentual, exceto combustíveis dos arts. 172 a 180 (art. 347) |
+**R$ 10.000,00**
 
-A diferença de natureza entre as duas colunas de 2027–2028 é o ponto: o IBS tem número na lei; a CBS tem **mecanismo**. O art. 347 não traz percentual — ele remete ao art. 14.
+sem redução ou regime específico.
 
-E o art. 14 diz como as alíquotas se fixam em regime permanente: por **lei específica de cada ente federativo** — a União fixa a da CBS, cada Estado e cada Município fixa a sua do IBS. Cada ente pode vincular sua alíquota à alíquota de referência da respectiva esfera, por acréscimo ou decréscimo de pontos percentuais, ou defini-la sem essa vinculação. Na ausência de lei específica, aplica-se a alíquota de referência.
+### CBS
 
-É daí que decorre a conclusão prática: a carga do regime permanente depende de leis que cada ente ainda editará e da alíquota de referência que vier a ser apurada. Números de carga plena que circularam em divulgação são projeções feitas sobre esse mecanismo — úteis para planejar, impróprios para parametrizar sistema como se fossem alíquota vigente.
+0,9% de R$ 10.000,00:
 
-## Roteiro de cálculo
+**R$ 90,00**
 
-1. **Identifique o trilho da operação.** Geral, regime diferenciado, regime específico ou Simples Nacional. Essa é a decisão que domina o resultado.
-2. **Confirme a base de cálculo aplicável.** Regime específico costuma ter base própria.
-3. **Aplique o percentual do período.** Em 2026, 0,9% de CBS e 0,1% de IBS estadual, com a redução do regime quando houver.
-4. **Confira a coerência dos campos do documento.** O valor calculado precisa ser coerente com o CST e o cClassTrib declarados — incompatibilidade entre esses dois gera [Rejeição 1024](/blog/rejeicao-1024-nfe-cbs-ibs-como-corrigir).
-5. **Trate a declaração como o produto final.** Em 2026, é ela que sustenta a dispensa de recolhimento.
+### IBS estadual
 
-## Perguntas frequentes
+0,1% de R$ 10.000,00:
 
-**Se o recolhimento pode ser dispensado, por que calcular com precisão?**
+**R$ 10,00**
 
-Porque a dispensa é condicionada ao cumprimento das obrigações acessórias. O cálculo alimenta a declaração; a declaração é a condição. Além disso, um cálculo errado hoje vira cadastro errado quando os percentuais subirem.
+### IBS municipal em 2026
 
-**Optante pelo Simples calcula CBS e IBS em 2026?**
+No desenho transitório indicado pelo Portal oficial:
 
-As alíquotas de 2026 não se aplicam às operações dos optantes pelo Simples Nacional, conforme o art. 348, III, "c". Isso trata da aplicação das alíquotas — obrigações acessórias e o regime próprio do Simples seguem sua própria disciplina.
+**0%**
 
-**Posso parametrizar o ERP com a carga do regime permanente para já ir testando?**
+Resultado nominal do exemplo:
 
-Pode testar em ambiente de teste. O que não se deve é tratar esses percentuais como alíquota vigente ou futura já fixada: eles dependem de leis de cada ente e da alíquota de referência.
+- CBS: R$ 90;
+- IBS: R$ 10;
+- total nominal: R$ 100.
 
-**Alíquota zero e alíquota não aplicável são a mesma coisa?**
+Esse exemplo não deve ser utilizado sem verificar se a operação possui:
 
-Não. Alíquota reduzida a zero é aplicação da regra com resultado nulo; não aplicação — o caso do Simples — significa que a regra do art. 348 não incide sobre aquela operação. O tratamento no documento fiscal é diferente.
+- redução;
+- alíquota zero;
+- suspensão;
+- diferimento;
+- imunidade;
+- não incidência;
+- regime específico;
+- tratamento transitório;
+- dispensa de recolhimento.
 
-## Artigos relacionados
+## Exemplo com redução
 
-- [Rejeição 1024 NF-e/NFC-e: cClassTrib incompatível com CST](/blog/rejeicao-1024-nfe-cbs-ibs-como-corrigir)
-- [cClassTrib em 2026: como NCM, operação e requisitos legais orientam a classificação](/blog/classtrib-2026-mapear-ncm-regime-ibs-cbs)
+O próprio simulador oficial da RTC apresenta exemplo de operação sujeita à redução de 60%.
+
+Em uma base de R$ 10.000,00, utilizando as alíquotas de 2026, o exemplo oficial demonstra:
+
+- CBS nominal de 0,9% com redução de 60% → R$ 36;
+- IBS estadual de 0,1% com redução de 60% → R$ 4;
+- IBS municipal de 0% → R$ 0.
+
+Isso mostra por que a alíquota nominal não pode ser aplicada sem considerar o tratamento tributário da operação.
+
+## De onde vieram 8,8%, 17,7% e 26,5%?
+
+Durante a regulamentação da Reforma Tributária, o Ministério da Fazenda divulgou estimativas de:
+
+- **CBS: 8,8%**;
+- **IBS: 17,7%**;
+- **total: 26,5%**.
+
+O próprio material oficial qualificava esses números como **estimativa de alíquotas**.
+
+Eles tiveram importância para o debate econômico e legislativo.
+
+Mas não devem ser publicados atualmente como:
+
+> "a CBS será 8,8%";
+
+> "o IBS será 17,7%";
+
+ou:
+
+> "a alíquota definitiva será 26,5%".
+
+Essas frases transformariam uma projeção histórica em norma vigente.
+
+## Como serão definidas as alíquotas futuras?
+
+A LC nº 214 disciplina um mecanismo específico para fixação das alíquotas de referência dos anos posteriores.
+
+O art. 349 prevê a fixação das alíquotas de referência nos períodos definidos pela própria lei, por meio dos instrumentos competentes.
+
+A documentação técnica da NF-e também evita substituir esse processo por um número presumido.
+
+Para períodos posteriores, as RVs registram que a alíquota de referência deverá ser publicada ou que o dispositivo legal correspondente deve ser verificado.
+
+Portanto, quando uma alíquota futura ainda não estiver fixada pelo instrumento jurídico aplicável, o estado editorial correto é:
+
+**NÃO FIXADA / AGUARDAR LEGISLAÇÃO.**
+
+## cClassTrib determina a alíquota?
+
+Não sozinho.
+
+O cClassTrib identifica determinada classificação tributária e pode carregar informações relevantes sobre redução ou tratamento.
+
+Mas o cálculo final depende da operação, do CST, do período, dos requisitos legais e das demais regras aplicáveis.
+
+Um cClassTrib não deve ser tratado como um número mágico que, isoladamente, produz a carga tributária correta.
+
+## Como validar um cálculo de 2026
+
+Um processo seguro pode seguir esta sequência:
+
+### 1. Determine o período
+
+Confirme que o fato gerador pertence a 2026.
+
+### 2. Identifique o sujeito e o regime
+
+Verifique se a operação está dentro do regime ao qual as alíquotas gerais se aplicam.
+
+### 3. Determine o tratamento
+
+Confirme CST, cClassTrib e os requisitos materiais aplicáveis.
+
+### 4. Determine a base de cálculo
+
+Não assuma que a base é sempre o valor bruto do produto.
+
+### 5. Aplique as alíquotas normativas do período
+
+Para a hipótese geral de 2026:
+
+- CBS 0,9%;
+- IBS estadual 0,1%;
+- IBS municipal 0%.
+
+### 6. Aplique reduções ou regras específicas
+
+Se houver tratamento diferenciado, aplique apenas aquilo que tiver fundamento legal para a operação.
+
+### 7. Separe cálculo de recolhimento
+
+Em 2026, o valor matematicamente calculado e o montante efetivamente exigível/recolhido podem ser diferentes por causa das regras transitórias do art. 348.
+
+## Conclusão
+
+Em 2026, a informação normativa é objetiva:
+
+**CBS 0,9% e IBS 0,1%, dentro das condições previstas pela LC 214.**
+
+O cálculo, porém, continua dependendo do tratamento concreto da operação.
+
+E percentuais históricos de 8,8%, 17,7% e 26,5% devem permanecer onde pertencem: como estimativas utilizadas durante o debate da Reforma — não como alíquotas futuras já fixadas.

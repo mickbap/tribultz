@@ -1,7 +1,7 @@
 ---
-title: "cClassTrib e NCM: como usar sugestões oficiais e validar a Rejeição 1024"
-metaTitle: "cClassTrib e NCM: sugestões oficiais, CST e Rejeição 1024"
-description: "Veja como a tabela oficial relaciona CST e cClassTrib, por que o NCM não define sozinho a classificação e como validar a regra UB14-20 sem criar um de-para tributário indevido."
+title: "cClassTrib e NCM: guia completo de sugestões, CST e validação da Rejeição 1024"
+metaTitle: "cClassTrib e NCM: CST, sugestões e Rejeição 1024"
+description: "Entenda a função de NCM, CST e cClassTrib, o limite das sugestões oficiais e como validar combinações sem criar um mapeamento tributário universal."
 slug: "classtrib-2026-ncm-mapeamento-completo"
 category: "Compliance Fiscal"
 author:
@@ -10,7 +10,7 @@ author:
   url: "https://tribultz.com.br"
 publishedAt: "2026-06-05"
 updatedAt: "2026-08-30"
-updateNote: "Reescrita integral. A versão anterior derivava o cClassTrib apenas do NCM, prometia prevenção total da Rejeição 1024, descrevia efeitos de split payment sem contrato normativo conferido e apresentava percentuais de regime pleno como alíquotas já fixadas. A estrutura e a vigência da tabela oficial foram reconferidas na fonte SVRS em 30/08/2026."
+updateNote: "Substituição integral pelo texto final aprovado no ROUND BLOG 30/08-H. Permanece fora do índice: o claim FULL-03 aponta como artefato a apresentação do Ministério da Fazenda de 24/04/2024, cuja URL oficial não pôde ser resolvida."
 tags:
   - cClassTrib
   - NCM
@@ -20,176 +20,227 @@ tags:
   - IBS
   - "Reforma Tributária"
 coverImage: "https://tribultz.com.br/blog/og-classtrib-2026.png"
+noindex: true
+noindexReason: "PROVENANCE_BLOCKED no claim FULL-03. O artefato indicado pelo pacote editorial e a apresentacao Regulamentacao da Reforma Tributaria do Ministerio da Fazenda, de 24/04/2024, e nao foi possivel resolver a URL oficial correspondente. A pasta oficial de apresentacoes da Secretaria Extraordinaria da Reforma Tributaria nao lista item datado de abril de 2024. Nenhuma fonte secundaria foi usada para preencher o campo e o claim nao foi apagado. Aguarda fechamento pelo Juridico ou pelo Owner."
 provenance:
-  - claim_scope: "A tabela oficial organiza os 164 códigos de cClassTrib em 18 grupos de CST, cada um com nome próprio publicado"
+  - claim_scope: "O Portal da Conformidade Fácil apresenta, para uma mesma NCM, diversos resultados identificados como Sugestão, e alerta que a aplicação da redução depende do cumprimento dos requisitos legais e pode ter exceções"
     claim_classification: "FATO_NORMATIVO"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
+    artifact: "Conformidade Fácil — Assistente para Classificação Tributária"
+    artifact_version: "consulta de 30/08/2026"
     source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
+    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributariaNcm"
     verified_at: "2026-08-30"
-  - claim_scope: "Cada código publica datas próprias de publicação, de início de vigência e, quando aplicável, de fim de vigência"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
-    source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
-    verified_at: "2026-08-30"
-  - claim_scope: "Na consulta de 30/08/2026, três códigos do CST 220 constam da tabela com fim de vigência declarado em 01/01/2026"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
-    source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
-    verified_at: "2026-08-30"
-    temporal_applicability: "Situação da consulta de 30/08/2026; a tabela é atualizada e o conjunto de códigos vigentes muda"
-  - claim_scope: "A Rejeição 1024 corresponde à regra de validação UB14-20, aplicável aos modelos 55 e 65, que compara o cClassTrib informado com o CST de IBS/CBS e remete à tabela oficial"
+    claim_scope_limit: "Sugestão indica hipótese a avaliar; não comprova enquadramento."
+  - claim_scope: "A RV UB14-20, dos modelos 55 e 65, gera a Rejeição 1024 quando o cClassTrib informado é incompatível com o CST de IBS/CBS"
     claim_classification: "FATO_NORMATIVO"
     artifact: "NT 2025.002-RTC"
     artifact_version: "1.51"
     rule_item: "UB14-20"
-    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
     source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
     verified_at: "2026-08-30"
-  - claim_scope: "Entre os 1.792 códigos NCM presentes nos anexos da tabela, 1.273 aparecem em mais de um cClassTrib"
+  - claim_scope: "Os percentuais de 8,8% de CBS, 17,7% de IBS e 26,5% no total foram divulgados pelo Ministério da Fazenda como estimativa de alíquotas, não como alíquotas futuras legalmente fixadas"
     claim_classification: "FATO_NORMATIVO"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
-    source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
+    artifact: "Apresentação Regulamentação da Reforma Tributária, de 24/04/2024"
+    artifact_version: "publicação histórica"
+    source_authority: "Ministério da Fazenda"
+    source_url: "PENDENTE"
     verified_at: "2026-08-30"
-  - claim_scope: "Para os fatos geradores ocorridos de 1º de janeiro a 31 de dezembro de 2026, a CBS é cobrada à alíquota de 0,9% e o IBS à alíquota estadual de 0,1%"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Lei Complementar nº 214, de 16 de janeiro de 2025"
-    rule_item: "art. 346 (CBS) e art. 343 (IBS)"
-    source_authority: "Presidência da República — Planalto"
-    source_url: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
-    verified_at: "2026-08-30"
-    temporal_applicability: "Alíquotas fixadas para os fatos geradores de 2026"
-  - claim_scope: "Se a validação da UB14-20 previne integralmente a rejeição de um documento fiscal"
-    claim_classification: "NAO_DETERMINADO"
-    artifact: "NT 2025.002-RTC"
-    artifact_version: "1.51"
-    rule_item: "UB14-20"
-    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
-    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
-    verified_at: "2026-08-30"
-    conflict_note: "A UB14-20 é uma entre muitas regras de validação do documento. Conferir o par CST × cClassTrib elimina a causa desta regra; não existe fonte que autorize afirmar prevenção total da rejeição do documento."
+    provenance_blocked: true
+    blocked_reason: "A URL oficial da apresentação de 24/04/2024 não foi resolvida. A pasta oficial de apresentações da Secretaria Extraordinária da Reforma Tributária não lista item datado de abril de 2024. Nenhuma fonte secundária foi usada para preencher o campo."
+    claim_scope_limit: "Estimativa histórica; não alíquota futura fixada."
 legalRefs:
   - instrumento: "NT 2025.002-RTC"
     artigo: "Regra de validação UB14-20"
-    descricao: "Define a Rejeição 1024 quando o cClassTrib informado é incompatível com o CST de IBS/CBS, remetendo à tabela oficial."
+    descricao: "Define a Rejeição 1024 por incompatibilidade entre cClassTrib e CST de IBS/CBS."
     link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
-  - instrumento: "Tabela de Código de Classificação Tributária do IBS e CBS"
+  - instrumento: "Conformidade Fácil — Assistente para Classificação Tributária"
     artigo: "—"
-    descricao: "Fonte da compatibilidade entre CST e cClassTrib, com vigência declarada por código."
-    link: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
-  - instrumento: "LC 214/2025"
-    artigo: "Arts. 343 e 346"
-    descricao: "Fixam, para os fatos geradores de 2026, a alíquota estadual do IBS em 0,1% e a alíquota da CBS em 0,9%."
-    link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
+    descricao: "Serviço oficial que devolve tratamentos sugeridos por NCM, com condições e exceções."
+    link: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributariaNcm"
 ---
 
-NCM, CST e cClassTrib se relacionam, mas não formam um de-para universal. O NCM pode restringir tratamentos possíveis; a classificação final depende da operação e dos requisitos legais, enquanto a compatibilidade CST × cClassTrib pode ser validada contra a tabela oficial versionada.
+NCM, CST e cClassTrib se relacionam, mas não formam um de-para universal. O NCM pode restringir hipóteses; a escolha do tratamento depende dos fatos e requisitos legais; e a compatibilidade entre CST e cClassTrib pode ser validada objetivamente contra a tabela oficial.
 
-## Três eixos que costumam ser confundidos
+## O que é cClassTrib?
 
-A confusão prática nasce de tratar três perguntas distintas como uma só:
+O cClassTrib é o código utilizado para representar uma classificação tributária de IBS/CBS associada a determinada hipótese legal.
 
-| Pergunta | O que responde | Onde se resolve |
-|----------|----------------|-----------------|
-| Que mercadoria é esta? | NCM | Regras Gerais de Interpretação, Notas legais, NESH |
-| Que tratamento tem esta operação? | cClassTrib | Tabela oficial + requisitos legais do tratamento |
-| Os dois campos do XML são coerentes? | CST × cClassTrib | Tabela oficial, validado pela UB14-20 |
+Ele não substitui o CST e não possui a mesma função do NCM.
 
-Só a terceira é conferível por máquina com resposta fechada. A primeira é classificação fiscal. A segunda depende dos fatos da operação. Prometer que um sistema resolve as três a partir do NCM é o erro que este texto cometia antes desta revisão.
+Para evitar erros de cadastro e de emissão, é útil pensar em três camadas distintas.
 
-## O eixo CST: 18 grupos, e o que cada um significa
+### NCM
 
-A tabela oficial organiza os 164 códigos em 18 grupos de CST. Os nomes são publicados e valem a leitura, porque revelam a lógica do enquadramento:
+Identifica a classificação fiscal da mercadoria.
 
-| CST | Nome publicado | Códigos |
-|-----|----------------|---------|
-| 000 | Tributação integral | 5 |
-| 010 | Tributação com alíquotas uniformes | 2 |
-| 011 | Tributação com alíquotas uniformes reduzidas | 5 |
-| 200 | Alíquota reduzida | 54 |
-| 220 | Alíquota fixa | 3 |
-| 221 | Alíquota fixa proporcional | 4 |
-| 222 | Redução de Base de Cálculo | 1 |
-| 400 | Isenção | 2 |
-| 410 | Imunidade e não incidência | 38 |
-| 510 | Diferimento | 1 |
-| 515 | Diferimento com redução de alíquota | 1 |
-| 550 | Suspensão | 25 |
-| 620 | Tributação Monofásica | 7 |
-| 800 | Transferência de crédito | 2 |
-| 810 | Ajuste de IBS na ZFM | 1 |
-| 811 | Ajustes | 3 |
-| 820 | Tributação em documento específico | 9 |
-| 830 | Exclusão da Base de Cálculo | 1 |
+### CST IBS/CBS
 
-Repare no que descreve cada grupo: diferimento, suspensão, imunidade, transferência de crédito, ajuste. São **situações de operação**, não categorias de produto. Só uma minoria dos códigos passa por listas de mercadorias — dos 164, apenas 16 mencionam a NCM/SH no próprio texto legal.
+Representa a situação tributária utilizada na operação.
 
-Daí a assimetria útil: o NCM **restringe** tratamentos possíveis quando o tratamento depende de rol de mercadorias, e não diz nada quando o tratamento depende da operação. Nos anexos, 1.273 dos 1.792 códigos NCM aparecem em mais de um cClassTrib — o NCM estreita a lista de candidatos, raramente a fecha.
+### cClassTrib
 
-## A tabela é versionada — e isso tem efeito prático
+Detalha a classificação tributária correspondente à hipótese legal selecionada.
 
-Cada código publica três datas: publicação, início de vigência e, quando aplicável, fim de vigência. Isso significa que **constar da tabela não é o mesmo que estar vigente**.
+O problema surge quando essas três camadas são fundidas em uma regra simples como:
 
-Na consulta de 30/08/2026, três códigos do CST 220 (Alíquota fixa) constavam da tabela com **fim de vigência declarado em 01/01/2026**. Eles continuam publicados — o histórico não é apagado — mas um cadastro que os capturou em 2025 e nunca releu a tabela está apontando para códigos cuja vigência terminou.
+> NCM X = cClassTrib Y.
 
-É por isso que a validação precisa ser feita contra a tabela **na versão corrente**, e não contra uma cópia congelada dentro do ERP. Uma cópia local envelhece em silêncio: ela não avisa quando um código expira nem quando um novo é publicado.
+Essa relação não é universal.
 
-## Como validar a compatibilidade CST × cClassTrib
+## Por que não existe um mapeamento NCM→cClassTrib completo e determinístico?
 
-Este é o eixo com resposta objetiva, e o único que a Rejeição 1024 avalia.
+Alguns tratamentos legais são definidos por NCM.
 
-A regra de validação **UB14-20**, dos modelos 55 e 65, dispara quando o cClassTrib informado é incompatível com o CST de IBS/CBS do mesmo item. A observação da regra remete explicitamente à Tabela de Código de Classificação Tributária do IBS e CBS — o critério está na tabela, não no texto da regra.
+Outros não dependem exclusivamente de produto.
 
-A conferência, então, é uma consulta em quatro movimentos:
+Mesmo quando uma NCM aparece em anexo legal, podem existir requisitos adicionais relacionados ao destinatário, finalidade, regime, local ou natureza da operação.
 
-1. localizar no XML o par `CST` e `cClassTrib` do item;
-2. localizar o código na tabela oficial vigente;
-3. confirmar a qual CST ele pertence;
-4. confirmar que a vigência do código cobre a data da operação.
+O Portal oficial da Conformidade Fácil evidencia esse comportamento ao apresentar diversos resultados para uma mesma NCM, identificados como **"Sugestão"**.
 
-Se o CST da tabela diverge do CST do documento, está achada a incompatibilidade. O que a conferência **não** diz é qual dos dois campos deve mudar: isso depende de qual deles descreve a operação real. Ajustar o cClassTrib até o documento ser autorizado troca uma rejeição por uma declaração possivelmente indevida.
+Além disso, para NCMs abrangidas por tratamentos diferenciados, o próprio serviço alerta que é necessário verificar os requisitos legais e possíveis exceções.
 
-O detalhamento do contrato da regra está em [Rejeição 1024: cClassTrib incompatível com CST](/blog/rejeicao-1024-nfe-cbs-ibs-como-corrigir).
+Por isso, "mapeamento completo" deve significar:
 
-## O que a conferência não resolve
+**mapear os critérios e candidatos possíveis**, e não prometer uma tabela universal de resposta única.
 
-Conferir o par CST × cClassTrib elimina a causa da UB14-20. Não é o mesmo que garantir a autorização do documento: a regra é uma entre muitas do processo de validação, e cada uma tem seu próprio contrato e seu próprio código de retorno.
+## O que uma tabela oficial permite validar?
 
-Este artigo afirmava, antes desta revisão, que o problema era integralmente prevenível. Não há fonte que sustente isso, e a afirmação foi removida. O que se pode dizer com base na regra publicada é mais modesto e mais verdadeiro: a incompatibilidade entre esses dois campos é detectável antes do envio, porque os dois campos e a tabela de referência estão disponíveis antes do envio.
+A tabela oficial de classificação tributária possui grande valor para validações determinísticas.
 
-## Alíquotas: o que está fixado e o que não está
+Por exemplo, depois que um CST e um cClassTrib foram definidos, a Tribultz pode verificar se aquela combinação é permitida.
 
-Para os fatos geradores ocorridos de 1º de janeiro a 31 de dezembro de 2026, a LC 214/2025 fixa a alíquota da CBS em **0,9%** (art. 346) e a alíquota estadual do IBS em **0,1%** (art. 343).
+A NT 2025.002-RTC contém uma regra específica para isso.
 
-Percentuais de regime pleno que circulam em material de divulgação são **estimativas** e não devem ser tratados como alíquotas futuras já fixadas — o assunto é tratado em [Como calcular alíquota CBS e IBS em 2026](/blog/como-calcular-aliquota-cbs-ibs). A versão anterior deste texto apresentava referências de regime pleno ao lado das alíquotas de 2026 sem essa distinção.
+A **UB14-20**, aplicável aos modelos 55 e 65, gera a **Rejeição 1024** quando o `cClassTrib` informado é incompatível com o CST de IBS/CBS.
 
-## Perguntas frequentes
+Essa é uma relação objetiva:
 
-**Posso cadastrar um cClassTrib fixo por produto?**
+> para uma versão específica da tabela, a combinação é compatível ou incompatível.
 
-Funciona enquanto o produto participa de um único tipo de operação. Como 1.273 dos 1.792 códigos NCM dos anexos aparecem em mais de um código, a chance de o cadastro fixo estar certo para todas as operações do item é menor do que parece.
+Ela não responde, sozinha:
 
-**Como sei que o código que cadastrei ainda vale?**
+> essa é a classificação correta para a operação?
 
-Pela data de fim de vigência publicada na tabela. É um campo, não uma dedução — e é o motivo para reler a tabela periodicamente em vez de confiar em cópia local.
+Essa segunda pergunta depende do enquadramento material.
 
-**A Rejeição 1024 tem relação com CEST?**
+## Sugestão, candidato e classificação
 
-Não. O CEST pertence à disciplina da substituição tributária do ICMS. A UB14-20 compara CST de IBS/CBS com cClassTrib, e o CEST não participa dessa comparação.
+Esses termos não devem ser usados como sinônimos.
 
-**Validar antes de emitir dispensa a análise fiscal do produto?**
+### Sugestão
 
-Não. A validação prévia confere coerência entre campos declarados. Ela não decide o enquadramento — e um documento coerente com um enquadramento errado passa na validação e continua errado.
+É o termo utilizado pelo próprio Portal da Conformidade Fácil para apresentar hipóteses relacionadas à pesquisa realizada.
 
-## Artigos relacionados
+### Candidato
 
-- [cClassTrib em 2026: como NCM, operação e requisitos legais orientam a classificação](/blog/classtrib-2026-mapear-ncm-regime-ibs-cbs)
-- [Rejeição 1024 NF-e/NFC-e: cClassTrib incompatível com CST](/blog/rejeicao-1024-nfe-cbs-ibs-como-corrigir)
-- [Como classificar NCM corretamente: RGI, NESH e consulta à Receita Federal](/blog/como-classificar-ncm-corretamente-2026)
+É uma forma segura de representar internamente uma hipótese que ainda depende de verificação.
+
+### Classificação
+
+É o tratamento efetivamente adotado após a análise dos requisitos necessários.
+
+Um sistema pode, portanto, dizer:
+
+> "Foram identificados três candidatos."
+
+É muito diferente de dizer:
+
+> "O NCM possui três classificações corretas."
+
+A primeira frase descreve incerteza de forma honesta. A segunda cria uma contradição.
+
+## Um fluxo seguro de classificação
+
+### Etapa 1 — qualidade do cadastro
+
+Confirme:
+
+- NCM;
+- descrição do produto;
+- unidade;
+- demais atributos relevantes.
+
+### Etapa 2 — contexto da operação
+
+Identifique os fatos que podem alterar o tratamento:
+
+- fornecedor;
+- adquirente;
+- finalidade;
+- regime;
+- local;
+- natureza da operação;
+- benefício ou regime específico.
+
+### Etapa 3 — busca de candidatos
+
+Use as fontes oficiais para restringir as hipóteses possíveis.
+
+### Etapa 4 — verificação jurídica
+
+Leia o fundamento legal e confirme os requisitos da hipótese candidata.
+
+### Etapa 5 — compatibilidade técnica
+
+Valide CST × cClassTrib contra a tabela oficial.
+
+### Etapa 6 — geração de evidência
+
+Registre:
+
+- versão da tabela;
+- versão normativa;
+- classificação utilizada;
+- momento da validação;
+- critérios considerados.
+
+Esse histórico é importante porque tabelas e regras podem mudar.
+
+## A Rejeição 1024 é prevenível?
+
+A incompatibilidade **formal** entre CST e cClassTrib pode ser detectada antes da emissão.
+
+Isso não significa que todo erro de classificação tributária seja 100% prevenível apenas com uma tabela.
+
+Se a entrada estiver errada — por exemplo, NCM, regime ou fato da operação incorretamente informado — o sistema poderá receber uma combinação tecnicamente válida baseada em uma premissa materialmente errada.
+
+Por isso, o correto é dizer:
+
+**a validação determinística reduz significativamente o risco de incompatibilidades conhecidas**, e não que elimina 100% dos erros fiscais.
+
+## E as alíquotas?
+
+cClassTrib pode estar associado a tratamentos que afetam a tributação, inclusive reduções.
+
+Mas o artigo não deve incorporar como "alíquota futura definitiva" estimativas divulgadas durante a tramitação da Reforma.
+
+Percentuais como 8,8% de CBS, 17,7% de IBS e 26,5% no total foram divulgados historicamente pelo Ministério da Fazenda como **estimativas**, não como as alíquotas futuras legalmente fixadas.
+
+Para uma validação atual, use apenas a alíquota juridicamente aplicável ao período e à operação analisada.
+
+## E o split payment?
+
+Vinculação financeira, split payment e cClassTrib são domínios diferentes.
+
+Uma regra de classificação não deve incorporar automaticamente conclusões sobre pagamento, liquidação ou obrigação de vinculação.
+
+Qualquer validação desse domínio precisa possuir contrato normativo próprio.
+
+## Conclusão
+
+O melhor "mapeamento completo" não é uma planilha prometendo uma resposta única para cada NCM.
+
+É uma estrutura capaz de separar:
+
+- classificação da mercadoria;
+- hipóteses de tratamento;
+- requisitos legais;
+- CST;
+- cClassTrib;
+- compatibilidade técnica;
+- versão da fonte utilizada.
+
+A automação deve ser determinística onde a norma e as tabelas permitem.
+
+Onde a classificação depende do contexto, o sistema deve explicitar as condições e trabalhar com candidatos, em vez de fabricar certeza.

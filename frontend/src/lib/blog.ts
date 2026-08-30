@@ -53,6 +53,22 @@ export type ClaimProvenance = {
    * anterior é preservada como linhagem histórica, não como estado vigente.
    */
   versioning_note?: string;
+  /**
+   * Limite explícito do alcance do claim: até onde ele vale e onde deixa de
+   * valer. Distinto de `claim_scope`, que diz sobre o que o claim é.
+   */
+  claim_scope_limit?: string;
+  /**
+   * Claim cuja fonte oficial não pôde ser resolvida. O claim NÃO é apagado —
+   * apagar esconderia a afirmação em vez de sustentá-la —, mas o artigo que o
+   * contém não pode ser indexado enquanto a URL oficial não for fechada.
+   *
+   * Nunca preencher `source_url` com blog, agregador ou fonte secundária para
+   * destravar: fonte secundária localiza, não autoriza.
+   */
+  provenance_blocked?: boolean;
+  /** Por que a proveniência está bloqueada e o que falta para destravá-la. */
+  blocked_reason?: string;
 };
 
 const CONTENT_DIR = path.join(process.cwd(), "content", "blog");
