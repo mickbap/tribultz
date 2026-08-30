@@ -98,21 +98,12 @@ test("H/I: artigo indexável não inverte RGI 3b/3c nem cita IN RFB 1.799/2018",
 
 // ── J — alíquotas ───────────────────────────────────────────────────────────
 /**
- * Defeito VIVO conhecido, mantido indexável por determinação expressa do
- * ROUND BLOG 30/08-C ("Manter indexável durante correção"). Não é dispensa:
- * é registro de que a exposição é decisão do Produto, não descuido nosso.
- * Sai da lista quando o baseline editorial do artigo chegar.
+ * A exceção ALIQUOTA_DEFEITO_VIVO_2026_08_30 foi REMOVIDA em 30/08/2026, com a
+ * reescrita de `como-calcular-aliquota-cbs-ibs` no ROUND BLOG 30/08-E. O guard
+ * volta a valer para todo artigo indexável, sem lista de dispensa.
  */
-const ALIQUOTA_DEFEITO_VIVO_2026_08_30 = ["como-calcular-aliquota-cbs-ibs.mdx"];
-
-test("J: a exceção da alíquota é finita e nomeada", () => {
-  assert.ok(ALIQUOTA_DEFEITO_VIVO_2026_08_30.length <= 1);
-  assert.ok(indexaveis.includes(ALIQUOTA_DEFEITO_VIVO_2026_08_30[0]),
-    "se o artigo saiu do índice, a exceção deve sair junto");
-});
-
 test("J: artigo indexável não apresenta estimativa futura como alíquota normativa", () => {
-  for (const f of indexaveis.filter((x) => !ALIQUOTA_DEFEITO_VIVO_2026_08_30.includes(x))) {
+  for (const f of indexaveis) {
     const t = corpo(ler(f));
     for (const m of t.matchAll(/[^.]*\b(8,8|17,7|26,5)\s?%[^.]*\./g)) {
       assert.match(
@@ -165,6 +156,38 @@ test("N: NAO_DETERMINADO tem rótulo próprio e distinto de fato na renderizaç�
   // E a página do post usa este componente, não uma renderização paralela.
   const page = readFileSync(join(raiz, "src", "app", "blog", "[slug]", "page.tsx"), "utf8");
   assert.ok(page.includes("ProvenienciaClaims"), "a página precisa renderizar por este caminho");
+});
+
+// ── P0 do ROUND BLOG 30/08 — não regredir ───────────────────────────────────
+/**
+ * Os sete P0 da auditoria de 30/08/2026. Seis foram reindexados com baseline
+ * editorial aprovado; o sétimo segue contido por divergência aberta entre o
+ * contrato e a NT 2025.002-RTC v1.51 quanto à produção da UB12-10.
+ */
+test("P0 reindexado carrega META_TITLE aprovado e proveniência por claim", () => {
+  const reindexados = [
+    "rejeicao-960-nf-e",
+    "rejeicao-1024-nfe-cbs-ibs-como-corrigir",
+    "classtrib-2026-mapear-ncm-regime-ibs-cbs",
+    "classtrib-2026-ncm-mapeamento-completo",
+    "como-classificar-ncm-corretamente-2026",
+    "como-calcular-aliquota-cbs-ibs",
+  ];
+  for (const slug of reindexados) {
+    const s = um(slug);
+    assert.ok(indexaveis.includes(`${slug}.mdx`), `${slug}: reindexado não pode voltar a conter`);
+    assert.match(s, /^provenance:$/m, `${slug}: sem bloco provenance`);
+  }
+  // O 960 veio do Round D/E, sem META_TITLE próprio; os seis do ADENDO têm.
+  for (const slug of reindexados.slice(1)) {
+    assert.match(um(slug), /^metaTitle:\s*"[^"]+"/m, `${slug}: META_TITLE aprovado ausente`);
+  }
+});
+
+test("P0 contido declara a divergência que o mantém fora do índice", () => {
+  const s = um("nfe-rejeitada-03-08-2026-regime-normal-crt3");
+  assert.ok(contido(s), "não reindexar enquanto a divergência da UB12-10 estiver aberta");
+  assert.match(s, /noindexReason:[^\n]*[Dd]ivergencia/, "a contenção precisa dizer por quê");
 });
 
 // ── Q — Invalid Date (não regredir) ─────────────────────────────────────────
