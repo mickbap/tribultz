@@ -952,7 +952,7 @@ test("PF_CNPJ: emitente CPF + data ≥ 01/01/2027 → ALERT", () => {
   const f = pfFinding(nfeEmit("<CPF>12345678909</CPF>", "2027-01-01T10:00:00-03:00"));
   assert.ok(f, "PF_CONTRIB_CNPJ esperado");
   assert.equal(f!.severity, "ALERT");
-  assert.match(f!.recommendation ?? "", /Decreto 13\.075\/2026/);
+  assert.match(f!.recommendation ?? "", /Ato Conjunto RFB\/CGIBS nº 6\/2026/);
 });
 
 test("PF_CNPJ: emitente CPF antes de 01/01/2027 → sem finding", () => {
@@ -1483,6 +1483,83 @@ function danfeT2CfopFindings(xml: string, documentType: "NFE" | "NFCE" = "NFE", 
     .findings.filter((f) => f.rule_id === "DANFE_SIMPLIFICADO_CFOP");
 }
 
+// ── I08-150 — exceções oficiais de UF para o CFOP 5.949 ─────────────────────
+// NT 2026.002 v1.10a, I08-150:
+//   Obs. 1 — "Para a UF do RS, poderá ser permitido o uso do CFOP 5.949 com
+//             CSOSN=900 ou CST=90."
+//   Obs. 2 — "Para a UF do SP, poderá ser permitido o uso do CFOP 5.949 com
+//             CSOSN=900 ou CST=40."
+// A exceção diz UMA coisa: a I08-150 não rejeita. Nunca "operação correta" nem
+// "5949 válido em qualquer lugar".
+function danfeT2Uf(opts: { uf?: string; cfop?: string; cst?: string; csosn?: string; itens?: Array<{ cfop: string; cst?: string; csosn?: string }> }): string {
+  const { uf = "RS", cfop = "5949", cst, csosn, itens } = opts;
+  const trib = (c?: string, s?: string) =>
+    c ? `<ICMS><ICMS90><CST>${c}</CST></ICMS90></ICMS>` :
+    s ? `<ICMS><ICMSSN900><CSOSN>${s}</CSOSN></ICMSSN900></ICMS>` : "";
+  const lista = itens ?? [{ cfop, cst, csosn }];
+  const dets = lista.map((it, i) =>
+    `<det nItem="${i + 1}"><prod><CFOP>${it.cfop}</CFOP><NCM>84713012</NCM><vProd>10.00</vProd></prod>` +
+    `<imposto>${trib(it.cst, it.csosn)}</imposto></det>`).join("");
+  return `<nfeProc><NFe><infNFe><ide><mod>55</mod><tpImp>6</tpImp><tpNF>1</tpNF>` +
+    `<idDest>1</idDest><finNFe>1</finNFe><dhEmi>2026-06-01T10:00:00-03:00</dhEmi></ide>` +
+    `<emit><CNPJ>12345678000195</CNPJ><CRT>3</CRT><enderEmit><UF>${uf}</UF></enderEmit></emit>` +
+    dets + `</infNFe></NFe></nfeProc>`;
+}
+
+test("I08-150 exceção RS: 5949 + CST=90 → sem Rejeição 725", () => {
+  assert.equal(danfeT2CfopFindings(danfeT2Uf({ uf: "RS", cst: "90" })).length, 0);
+});
+
+test("I08-150 exceção RS: 5949 + CSOSN=900 → sem Rejeição 725", () => {
+  assert.equal(danfeT2CfopFindings(danfeT2Uf({ uf: "RS", csosn: "900" })).length, 0);
+});
+
+test("I08-150 exceção SP: 5949 + CST=40 → sem Rejeição 725", () => {
+  assert.equal(danfeT2CfopFindings(danfeT2Uf({ uf: "SP", cst: "40" })).length, 0);
+});
+
+test("I08-150 exceção SP: 5949 + CSOSN=900 → sem Rejeição 725", () => {
+  assert.equal(danfeT2CfopFindings(danfeT2Uf({ uf: "SP", csosn: "900" })).length, 0);
+});
+
+test("I08-150 negativo: 5949 em UF sem exceção (MG) → Rejeição 725", () => {
+  const f = danfeT2CfopFindings(danfeT2Uf({ uf: "MG", cst: "90" }));
+  assert.ok(f.some((x) => x.rule_id === "DANFE_SIMPLIFICADO_CFOP"), "5949 fora de RS/SP continua rejeitado");
+});
+
+test("I08-150 negativo: RS + 5949 com CST=40 (exceção é do SP) → Rejeição 725", () => {
+  // Cada UF tem o SEU par. Aceitar o CST do SP no RS seria inventar exceção.
+  assert.equal(danfeT2CfopFindings(danfeT2Uf({ uf: "RS", cst: "40" })).length, 1);
+});
+
+test("I08-150 negativo: SP + 5949 com CST=90 (exceção é do RS) → Rejeição 725", () => {
+  assert.equal(danfeT2CfopFindings(danfeT2Uf({ uf: "SP", cst: "90" })).length, 1);
+});
+
+test("I08-150 negativo: RS + 5949 sem CST/CSOSN → Rejeição 725", () => {
+  assert.equal(danfeT2CfopFindings(danfeT2Uf({ uf: "RS" })).length, 1);
+});
+
+test("I08-150 negativo: exceção é só do 5949 — RS + 6102 + CST=90 → Rejeição 725", () => {
+  assert.equal(danfeT2CfopFindings(danfeT2Uf({ uf: "RS", cfop: "6102", cst: "90" })).length, 1);
+});
+
+test("I08-150: exceção não vaza entre itens do mesmo XML", () => {
+  // Item 1 tem 5949 SEM tributação isenta; item 2 tem CST=90 com CFOP válido.
+  // Casar o CST do item 2 com o CFOP do item 1 inventaria exceção.
+  const f = danfeT2CfopFindings(danfeT2Uf({
+    uf: "RS",
+    itens: [{ cfop: "5949" }, { cfop: "5102", cst: "90" }],
+  }));
+  assert.equal(f.length, 1, "o 5949 do item 1 não é isentado pelo CST do item 2");
+});
+
+test("I08-150: lista-base oficial preservada — os 10 CFOPs seguem aceitos", () => {
+  for (const cfop of ["5101", "5102", "5103", "5104", "5115", "5405", "5656", "5667", "5910", "5933"]) {
+    assert.equal(danfeT2CfopFindings(danfeT2Uf({ uf: "RS", cfop })).length, 0, `CFOP ${cfop} deveria ser aceito`);
+  }
+});
+
 test("#405 DANFE T2 compliant (saída/interna/normal/sem NFref) → sem finding", () => {
   assert.equal(danfeT2Findings(danfeT2Nfe()).length, 0);
 });
@@ -1565,4 +1642,98 @@ test("#482 CFOP inválido antes da vigência (03/08/2026) → WARNING", () => {
 test("#482 CFOP inválido após a vigência → FATAL", () => {
   const f = danfeT2CfopFindings(danfeT2Nfe({ cfop: "5949", dhEmi: "2026-08-10" }));
   assert.ok(f.some((x) => x.id === "F_DANFE_T2_CFOP" && x.severity === "FATAL"));
+});
+
+
+// ── Ato Conjunto RFB/CGIBS nº 6/2026 — dispensa do nanoempreendedor ─────────
+// Contratos do ROUND FISCAL 29/08-K. Backend e frontend têm de concordar: os
+// mesmos casos existem em backend/tests/test_validate_xml.py::TestPfContribCnpjAto6.
+const nfeAto6 = (dh: string, cclass = "000001") => `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><mod>55</mod><dhEmi>${dh}</dhEmi></ide>
+  <emit><CPF>12345678909</CPF><CRT>1</CRT></emit>
+  <dest><CPF>11122233344</CPF></dest>
+  <det nItem="1"><prod><NCM>84713012</NCM><vProd>100.00</vProd></prod>
+    <imposto><IBSCBS><CST>410</CST><cClassTrib>${cclass}</cClassTrib></IBSCBS></imposto></det>
+  <total></total>
+</infNFe></NFe></nfeProc>`;
+
+const IDEIAS_ATO6: Array<[string, string]> = [
+  ["enquadramento", "obrigação depende do enquadramento aplicável"],
+  ["Ato Conjunto RFB/CGIBS nº 6/2026", "existe a dispensa do Ato nº 6"],
+  ["regime regular", "a opção pelo regime regular exclui a dispensa"],
+  ["31/12/2028", "a dispensa produz efeitos até 31/12/2028"],
+  ["isoladamente", "o XML sozinho não determina o enquadramento"],
+  ["nanoempreendedor", "a dispensa é do nanoempreendedor"],
+];
+
+test("Ato6: 31/12/2026 + CPF sem CNPJ → sem PF_CONTRIB_CNPJ", () => {
+  assert.equal(pfFinding(nfeAto6("2026-12-31T10:00:00-03:00")), undefined);
+});
+
+test("Ato6: 01/01/2027 + CPF sem CNPJ → ALERT", () => {
+  const f = pfFinding(nfeAto6("2027-01-01T10:00:00-03:00"));
+  assert.ok(f);
+  assert.equal(f!.severity, "ALERT");
+});
+
+test("Ato6: 31/12/2028 → ALERT com orientação juridicamente atualizada", () => {
+  const f = pfFinding(nfeAto6("2028-12-31T10:00:00-03:00"));
+  assert.ok(f);
+  assert.equal(f!.severity, "ALERT");
+  for (const [trecho, porque] of IDEIAS_ATO6) {
+    assert.ok((f!.recommendation ?? "").includes(trecho), porque);
+  }
+});
+
+test("Ato6: 01/01/2029 permanece verificação, sem conclusão automática", () => {
+  // A expiração do Ato nº 6 não autoriza afirmar obrigação em 2029.
+  const f = pfFinding(nfeAto6("2029-01-01T10:00:00-03:00"));
+  assert.ok(f);
+  assert.equal(f!.severity, "ALERT");
+  const rec = f!.recommendation ?? "";
+  assert.ok(rec.includes("Verifique o enquadramento"));
+  // Guard ESTRUTURAL: a redação aprovada não fala de 2029, então qualquer
+  // menção a 2029 é inferência que não podemos fazer. Lista de frases
+  // proibidas é frágil — a primeira versão deixou passar "está obrigada".
+  assert.ok(!rec.includes("2029"),
+    "a orientação passou a afirmar algo sobre 2029; a expiração do Ato nº 6 não autoriza concluir obrigação");
+  assert.ok(!f!.title.includes("2029"));
+});
+
+test("Ato6: cClassTrib 410035 não suprime o ALERT", () => {
+  // 410035 é DECLARAÇÃO do emitente compatível com nanoempreendedor; não prova
+  // enquadramento nem ausência de opção pelo regime regular.
+  const f = pfFinding(nfeAto6("2027-06-01T10:00:00-03:00", "410035"));
+  assert.ok(f, "410035 não pode suprimir automaticamente o ALERT");
+  assert.equal(f!.severity, "ALERT");
+});
+
+test("Ato6: severidade nunca é FATAL", () => {
+  for (const dh of ["2027-01-01", "2028-12-31", "2029-01-01", "2030-06-01"]) {
+    const f = pfFinding(nfeAto6(`${dh}T10:00:00-03:00`));
+    if (f) assert.equal(f.severity, "ALERT");
+  }
+});
+
+test("Ato6: ausência de CNPJ não é afirmada como irregularidade", () => {
+  const f = pfFinding(nfeAto6("2027-06-01T10:00:00-03:00"))!;
+  assert.match(f.title.toLowerCase(), /verificar/);
+  for (const proibido of ["irregular", "inválido", "proibido", "vedado"]) {
+    assert.ok(!(f.recommendation ?? "").toLowerCase().includes(proibido));
+  }
+});
+
+test("guard: a recomendação da DEVOLUCAO_DFEREF não foi sobrescrita", () => {
+  // Regressão real: uma substituição de texto mal ancorada trocou a orientação
+  // desta regra pela da PF. A suíte inteira passou sem notar.
+  const devol = validateXmlWithRules({
+    tenantId: "t", documentType: "NFE",
+    xml: `<nfeProc><NFe><infNFe><ide><mod>55</mod><finNFe>4</finNFe>` +
+         `<dhEmi>2026-10-10T10:00:00-03:00</dhEmi></ide>` +
+         `<det nItem="1"><prod><NCM>84713012</NCM></prod></det></infNFe></NFe></nfeProc>`,
+  }).findings.find((f) => f.rule_id === "DEVOLUCAO_DFEREF");
+  assert.ok(devol, "DEVOLUCAO_DFEREF esperado");
+  assert.match(devol!.recommendation ?? "", /DFeReferenciado/);
+  assert.ok(!(devol!.recommendation ?? "").includes("nanoempreendedor"));
 });

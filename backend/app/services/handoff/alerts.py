@@ -155,27 +155,14 @@ def raise_pause_alert(
         except Exception:  # noqa: BLE001 — alerta nunca derruba o ingest
             logger.exception("handoff_alert_email_failed link=%s", link.id)
 
-    task_created = False
-    try:
-        from app.integrations.attio.tasks import create_pause_task
-
-        linked = []
-        if link.attio_person_id:  # type: ignore[misc]
-            linked.append({"target_object": "people", "target_record_id": link.attio_person_id})
-        result = create_pause_task(summary, deadline.isoformat(), linked_records=linked)
-        task_created = bool(result) and result.get("noop") is None
-    except Exception:  # noqa: BLE001
-        logger.exception("handoff_alert_attio_task_failed link=%s", link.id)
-
     session.flush()
     logger.info(
-        "handoff_pause_alert link=%s email=%s attio_task=%s deadline=%s",
-        link.id, email_sent, task_created, deadline.isoformat(),
+        "handoff_pause_alert link=%s email=%s deadline=%s",
+        link.id, email_sent, deadline.isoformat(),
     )
     return {
         "raised": True,
         "email_sent": email_sent,
-        "attio_task_created": task_created,
         "deadline": deadline.isoformat(),
     }
 

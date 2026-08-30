@@ -93,11 +93,17 @@ function isWithinNoPenaltyWindow(emissionDate: string | undefined): boolean {
   return datePart >= NO_PENALTY_WINDOW_START && datePart < NO_PENALTY_WINDOW_END;
 }
 
-// ── Comunicado Conjunto CGIBS/RFB nº 01/2025 — CNPJ p/ PF contribuinte ───────
-// A partir de 01/07/2026, a pessoa física contribuinte de IBS/CBS deve se inscrever
-// no CNPJ e não pode emitir documento fiscal por CPF (LC 214 art. 251). O enquadramento
-// como contribuinte (atividade habitual; locação com >3 imóveis e renda > R$ 240 mil/ano)
-// não é verificável do XML — por isso a regra é ALERT informativo (verificar enquadramento).
+// ── CNPJ p/ PF contribuinte — gatilho documental, enquadramento não verificável ──
+// Gatilho: emit/CPF presente, emit/CNPJ ausente, emissão ≥ 01/01/2027. O ENQUADRAMENTO
+// não é verificável do XML — nem como contribuinte, nem como nanoempreendedor, nem como
+// optante pelo regime regular. Por isso ALERT, nunca FATAL: ausência de CNPJ não é
+// irregularidade determinística.
+//
+// Ato Conjunto RFB/CGIBS nº 6/2026 (art. 2º) dispensa o nanoempreendedor do art. 25, IV,
+// dos Regulamentos CBS/IBS da inscrição no CNPJ e da emissão de DF-e, com efeitos até
+// 31/12/2028 (art. 3º); o parágrafo único exclui quem exercer a opção pelo regime regular.
+// A expiração em 31/12/2028 é FATO do ato, não gatilho: não autoriza concluir obrigação
+// em 01/01/2029. Artefato canonizado em backend/app/data/regulatory_acts.json.
 // Decreto 13.075/2026 (CBS, altera o Decreto 12.955/2026 art. 239) + Resolução
 // CGIBS nº 13/2026 (IBS, altera o art. 617 do Regulamento do IBS/Resolução
 // CGIBS nº 6/2026) adiaram, em conjunto, de 01/07/2026 para 01/01/2027 — não
@@ -185,6 +191,20 @@ function suframaDvOk(inscricao: string): boolean {
   let calc = 11 - (total % 11);
   if (calc >= 10) calc = 0;
   return calc === Number(digits[8]);
+}
+
+/** Blocos `<det>` do XML, para associar campos DENTRO do mesmo item.
+ *
+ * `allTags` varre o documento inteiro e não sabe a qual item cada valor
+ * pertence. A I08-150 precisa saber: a exceção de UF só vale quando o CFOP
+ * 5.949 e o CST/CSOSN estão no MESMO item — casar o CFOP de um item com o CST
+ * de outro seria inventar exceção. */
+function detBlocks(xml: string): { block: string; index: number }[] {
+  const re = /<det(?=[\s>/])([^>]*)>([\s\S]*?)<\/det>/gi;
+  const out: { block: string; index: number }[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(xml)) !== null) out.push({ block: m[0], index: m.index });
+  return out;
 }
 
 /** Returns ALL matches for a tag (useful for multi-item NF-e). */
@@ -1038,14 +1058,16 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             snippet: emitCpf.snippet,
             evidenceId: evId,
             recommendation:
-              `Emitente identificado por CPF. A partir de 01/01/2027 (Decreto 13.075/2026 ` +
-              `para CBS + Resolução CGIBS nº 13/2026 para IBS, que adiaram em conjunto o ` +
-              `prazo original do Comunicado Conjunto CGIBS/RFB nº 01/2025), a pessoa física ` +
-              `contribuinte de IBS/CBS deve se inscrever no CNPJ e não pode emitir documento fiscal por CPF ` +
-              `(LC 214 art. 251). Verifique o enquadramento como contribuinte (atividade ` +
-              `econômica habitual; locação com mais de 3 imóveis e renda anual acima de ` +
-              `R$ 240 mil) e, se for o caso, providencie a inscrição no CNPJ. A inscrição ` +
-              `não transforma a PF em PJ.`,
+              `Emitente identificado por CPF, sem CNPJ. A partir de 1º/01/2027, a obrigação de ` +
+              `inscrição no CNPJ e de emissão de documentos fiscais passa a produzir efeitos para ` +
+              `pessoas físicas que sejam contribuintes ou responsáveis tributários da CBS, conforme ` +
+              `o enquadramento aplicável. O Ato Conjunto RFB/CGIBS nº 6/2026 dispensa o ` +
+              `nanoempreendedor abrangido por suas regras, desde que não exerça a opção pelo regime ` +
+              `regular do IBS e da CBS, da obrigatoriedade de inscrição no CNPJ e da emissão dos ` +
+              `documentos fiscais eletrônicos nele abrangidos, com efeitos até 31/12/2028. Este XML, ` +
+              `isoladamente, não permite determinar se o emitente é contribuinte, nanoempreendedor ou ` +
+              `optante pelo regime regular. Verifique o enquadramento antes de concluir pela ` +
+              `existência da obrigação.`,
           }),
           makeEvidence({ id: evId, type: "xml", label: "Emitente PF (CPF) — verificar CNPJ", xpath: inferXpath("CPF", docType), snippet: emitCpf.snippet }),
         );
@@ -1382,15 +1404,62 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
         );
       }
 
-      // ── Rule: DANFE_SIMPLIFICADO_CFOP — allowlist de CFOP (NT 2026.002 v1.00, #482) ──
-      // Regra I08-150 — Rejeição 725 (mesmo código já usado pela SEFAZ para "NFC-e com
-      // CFOP inválido", reaproveitado para NF-e+tpImp=6 — DANFE Simplificado Tipo 2
-      // estende a mesma semântica de venda direta ao consumidor da NFC-e ao NF-e mod. 55).
-      // Confirmado por 2 fontes independentes (fórum SPED Brasil + doc. Senior listando
-      // I08-150 entre as regras da NT 2026.002 v1.00) + a lista de CFOPs bate quase 1:1
-      // com a lista já documentada da Rejeição 725 de NFC-e (mesma fonte, +1 código: 5910).
+      // ── Rule: DANFE_SIMPLIFICADO_CFOP — I08-150 / Rejeição 725 ──────────────
+      // FONTE NORMATIVA: NT 2026.002 v1.10a, regra I08-150, adquirida do Portal
+      // Nacional da NF-e (ver NT_UPSTREAM_VERSION em rulesMeta.ts).
+      //
+      // Até 29/08/2026 a justificativa desta regra no código citava fórum SPED
+      // Brasil e documentação de fornecedor. A NT oficial foi adquirida e
+      // confirma a lista-base EXATAMENTE: os mesmos 10 CFOPs. A regra estava
+      // certa; a evidência é que era secundária. Comportamento da lista-base
+      // preservado; o que muda é a autoridade e as exceções abaixo.
+      //
+      // Reconciliar I08-150 NÃO declara cobertura da NT 1.10a inteira — ver
+      // NT_IMPLEMENTED_VERSION, que segue em 1.00 para a NT 2026.002.
       const cfopAllowlist = new Set(["5101", "5102", "5103", "5104", "5115", "5405", "5656", "5667", "5910", "5933"]);
-      const badCfop = allTags(xml, "CFOP").find((c) => !cfopAllowlist.has(c.value.trim()));
+
+      // Exceções por UF, texto oficial da I08-150:
+      //   Obs. 1 — "Para a UF do RS, poderá ser permitido o uso do CFOP 5.949
+      //             com CSOSN=900 ou CST=90."
+      //   Obs. 2 — "Para a UF do SP, poderá ser permitido o uso do CFOP 5.949
+      //             com CSOSN=900 ou CST=40."
+      //
+      // A exceção significa UMA coisa: a I08-150 não rejeita este item. Não diz
+      // que a operação está fiscalmente correta, nem que 5.949 é válido em
+      // qualquer lugar — só que ESTA regra não é o que a recusa.
+      const EXCECOES_UF_5949: Record<string, Set<string>> = {
+        RS: new Set(["90", "900"]),   // CST=90 ou CSOSN=900
+        SP: new Set(["40", "900"]),   // CST=40 ou CSOSN=900
+      };
+      const ufEmit = firstTag(xml, ["UF"])?.value.trim().toUpperCase() ?? "";
+      const excecoesDaUf = EXCECOES_UF_5949[ufEmit];
+
+      /** O item cai numa exceção oficial de UF? CFOP e CST/CSOSN têm de estar
+       *  no MESMO bloco <det> — casar entre itens inventaria exceção. */
+      const itemIsentoPorUf = (bloco: string, cfop: string): boolean => {
+        if (!excecoesDaUf || cfop !== "5949") return false;
+        const cst = firstTag(bloco, ["CST"])?.value.trim() ?? "";
+        const csosn = firstTag(bloco, ["CSOSN"])?.value.trim() ?? "";
+        return excecoesDaUf.has(cst) || excecoesDaUf.has(csosn);
+      };
+
+      const itens = detBlocks(xml);
+      let badCfop: { value: string; snippet: string; index: number } | undefined;
+      for (const item of itens) {
+        const c = firstTag(item.block, ["CFOP"]);
+        if (!c) continue;
+        const valor = c.value.trim();
+        if (cfopAllowlist.has(valor)) continue;
+        if (itemIsentoPorUf(item.block, valor)) continue;
+        badCfop = { value: valor, snippet: c.snippet, index: item.index + c.index };
+        break;
+      }
+      // Fallback para XML sem <det> reconhecível: mantém a varredura plana em vez
+      // de deixar de validar. Sem item não há CST/CSOSN para casar, logo não há
+      // exceção aplicável — e a lista-base continua valendo.
+      if (!badCfop && itens.length === 0) {
+        badCfop = allTags(xml, "CFOP").find((c) => !cfopAllowlist.has(c.value.trim()));
+      }
       if (badCfop) {
         const evId = makeEvidenceId("DANFE_T2_CFOP");
         pushFindingAndEvidence(findings, evidences, evidenceById,
@@ -1405,7 +1474,8 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
             evidenceId: evId,
             recommendation:
               "O DANFE Simplificado Tipo 2 só admite CFOPs de venda direta ao consumidor: 5101, 5102, 5103, " +
-              "5104, 5115, 5405, 5656, 5667, 5910, 5933. Corrija o CFOP do item ou remova tpImp=6. " +
+              "5104, 5115, 5405, 5656, 5667, 5910, 5933 (I08-150, NT 2026.002 v1.10a). RS e SP podem " +
+              "admitir o CFOP 5949 com CSOSN=900 (CST=90 no RS, CST=40 em SP). Corrija o CFOP do item ou remova tpImp=6. " +
               "SEFAZ: Rejeição 725 (regra I08-150).",
           }),
           makeEvidence({ id: evId, type: "xml", label: "DANFE T2 — CFOP fora do allowlist", xpath: inferXpath("CFOP", docType), snippet: badCfop.snippet }),

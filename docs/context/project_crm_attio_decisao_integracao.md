@@ -1,5 +1,12 @@
 # Decisão — Integração Attio: backend custom é o caminho oficial de automação
 
+> **SUPERADA em 29/08/2026 (ROUND 18-A).** O Attio deixou de fazer parte da
+> arquitetura operacional da Tribultz: o cockpit comercial passou para o Excel
+> mantido pelo Economista e o Rumy segue como origem da prospecção. Router,
+> webhook, `app/integrations/attio/` e as variáveis `ATTIO_*` foram removidos.
+> O documento fica como registro do que foi decidido e por quê — não descreve
+> mais o sistema atual.
+
 > Registrada em 12/08/2026 por ordem do Round 2 (Ermes — Produto/Vendas), seção 1.
 > Decisão de arquitetura **FECHADA**. Contexto do programa: PO-2026-07-CRM-001.
 
