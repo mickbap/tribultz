@@ -1342,21 +1342,61 @@ def validate_xml(
     # (NF-e/NFC-e/NFS-e/…). Usar um cClassTrib fora dos seus modelos tende à rejeição da
     # SEFAZ (cClassTrib inválido para o modelo — família 1106/960). Confiança alta na tabela,
     # mas o código de rejeição exato não é citável aqui → WARNING (não FATAL).
+    # `classtrib_dfe_allowed` distingue DOIS estados que não podem voltar a colapsar:
+    #   None → código desconhecido (outra regra trata; aqui nada a dizer)
+    #   []   → código CONHECIDO que a fonte publica para NENHUM DFe
+    # A condição anterior era `if _allowed and ...`: lista vazia é falsy, então os
+    # 10 códigos desse segundo grupo passavam em SILÊNCIO em qualquer modelo (#680).
+    #
+    # Que [] significa "nenhum indicador habilitado" — e não ausência de informação —
+    # foi verificado contra a fonte: as chaves Ind* estão TODAS PRESENTES e todas
+    # false nesses códigos, enquanto o controle (000001) traz várias verdadeiras.
+    #
+    # A conferência de 26/08 cobria 14 indicadores e apontava 10 códigos vazios.
+    # Eram 17 na fonte: DERE, DIR e DUIMP faltavam no mapa (corrigido junto com
+    # esta mudança). Seis daqueles 10 tinham IndDere=true, ou seja, a mensagem de
+    # "nenhum modelo habilitado" teria sido FALSA para eles. Com o mapa completo,
+    # restam 4 códigos genuinamente sem nenhum modelo — e só para esses o texto
+    # abaixo se aplica.
+    #
+    # O que a fonte sustenta é só isso: nenhum dos indicadores AVALIADOS está
+    # habilitado. Ela NÃO diz a que fluxo o código pertence. Atribuir esses
+    # códigos a "importação/DUIMP" seria inferência nossa — vários dos 10 não têm
+    # relação com importação (planos de saúde, resseguro, ouro ativo financeiro).
     if doc_type and c_class_trib and re.match(r"^\d{6}$", c_class_trib["value"]):
         _allowed = classtrib_dfe_allowed(c_class_trib["value"])
-        if _allowed and doc_type not in _allowed:
+        if _allowed is not None and doc_type not in _allowed:
             ev_id = "E_XML_CLASSTRIB_DOC_TYPE"
+            _nenhum = not _allowed
             _modelos = ", ".join(_allowed)
+            if _nenhum:
+                _titulo = (
+                    f'cClassTrib {c_class_trib["value"]} sem nenhum modelo de DF-e '
+                    f"habilitado na tabela oficial"
+                )
+                _reco = (
+                    f'O cClassTrib {c_class_trib["value"]} consta na tabela oficial SVRS, porém com '
+                    "todos os indicadores de modelo de DF-e avaliados desabilitados — a fonte não "
+                    f"habilita seu uso em {doc_type} nem nos demais modelos avaliados. A tabela não "
+                    "declara em que fluxo o código se aplica; confirme o enquadramento na fonte "
+                    "normativa aplicável antes de usá-lo neste documento."
+                )
+            else:
+                _titulo = (
+                    f'cClassTrib {c_class_trib["value"]} não é aplicável a {doc_type} '
+                    f"(válido para: {_modelos})"
+                )
+                _reco = (
+                    f'O cClassTrib {c_class_trib["value"]} é publicado apenas para {_modelos} (tabela oficial SVRS). '
+                    f"Usá-lo em {doc_type} tende à rejeição da SEFAZ (cClassTrib inválido para o modelo — família 1106/960). "
+                    "Revise o cClassTrib do item."
+                )
             _add(
                 Finding(
                     id="F_CLASSTRIB_DOC_TYPE", severity="WARNING", rule_id="CLASSTRIB_DOC_TYPE",
-                    title=f'cClassTrib {c_class_trib["value"]} não é aplicável a {doc_type} (válido para: {_modelos})',
+                    title=_titulo,
                     where=FindingWhere(field="cClassTrib", xpath=_xpath("cClassTrib", doc_type), snippet=c_class_trib["snippet"]),
-                    recommendation=(
-                        f'O cClassTrib {c_class_trib["value"]} é publicado apenas para {_modelos} (tabela oficial SVRS). '
-                        f"Usá-lo em {doc_type} tende à rejeição da SEFAZ (cClassTrib inválido para o modelo — família 1106/960). "
-                        "Revise o cClassTrib do item."
-                    ),
+                    recommendation=_reco,
                     evidence_ids=[ev_id],
                 ),
                 Evidence(id=ev_id, type="xml", label="cClassTrib — modelo de documento incompatível", xpath=_xpath("cClassTrib", doc_type), snippet=c_class_trib["snippet"]),

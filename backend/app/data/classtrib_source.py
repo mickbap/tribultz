@@ -29,6 +29,10 @@ DFE_INDICATORS = {
     "IndBpe": "BPE", "IndNf3e": "NF3E", "IndNfcom": "NFCOM", "IndNfse": "NFSE",
     "IndBpetm": "BPETM", "IndBpeta": "BPETA", "IndNfag": "NFAG", "IndNfgas": "NFGAS",
     "IndNfsvia": "NFSVIA", "IndNfabi": "NFABI",
+    # Faltavam no mapa e a fonte publica os três (#680). Sem eles, um cClassTrib
+    # publicado só para DeRE/DIR/DUIMP saía com `dfe_allowed` vazio — indistinguível
+    # de "não vale para DFe nenhum". Era o caso de 6 dos 10 códigos vazios.
+    "IndDere": "DERE", "IndDir": "DIR", "IndDuimp": "DUIMP",
 }
 
 #: Chaves de DADOS comparadas para detectar mudança real. O bloco ``meta`` — que

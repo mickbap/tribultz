@@ -913,6 +913,44 @@ class TestClassTribDocType:
     def test_desconhecido_sem_finding(self):
         assert self._find(self._nfe("999999"), "NFE") == []
 
+    # ── #680 — código publicado para NENHUM DFe ───────────────────────────────
+    # A fonte SVRS traz, nesses códigos, as 14 chaves IndNfe/IndNfce/IndNfse/…
+    # todas PRESENTES e todas false. É declaração explícita de inaplicabilidade,
+    # não ausência de informação — verificado contra a fonte em 26/08/2026.
+
+    def test_classtrib_sem_nenhum_dfe_em_nfe_warning(self):
+        """410037 tem dfe_allowed=[] — antes passava calado em qualquer modelo."""
+        f = self._find(self._nfe("410037"), "NFE")
+        assert any(x.id == "F_CLASSTRIB_DOC_TYPE" and x.severity == "WARNING" for x in f)
+        assert "sem nenhum modelo de DF-e habilitado" in f[0].title
+        assert "válido para: " not in f[0].title, "lista vazia não pode virar texto quebrado"
+
+    def test_texto_nao_atribui_fluxo_que_a_fonte_nao_declara(self):
+        """A tabela diz que nenhum indicador está habilitado — não diz o destino.
+
+        Atribuir esses códigos a "importação/DUIMP" seria inferência: dos 10, há
+        planos de saúde, resseguro e ouro como ativo financeiro. O texto tem de
+        parar onde a evidência para.
+        """
+        f = self._find(self._nfe("410037"), "NFE")
+        texto = f"{f[0].title} {f[0].recommendation}"
+        for termo in ("DUIMP", "importação", "importacao"):
+            assert termo not in texto, f"texto atribui fluxo não declarado pela fonte: {termo}"
+        assert "indicadores de modelo de DF-e avaliados desabilitados" in f[0].recommendation
+
+    def test_classtrib_sem_nenhum_dfe_tambem_em_nfce(self):
+        """Não é específico da NF-e: nenhum modelo aceita."""
+        assert any(x.id == "F_CLASSTRIB_DOC_TYPE"
+                   for x in self._find(self._nfe("011002", mod="65"), "NFCE"))
+
+    def test_positivo_conhecido_segue_silencioso(self):
+        """Guard contra excesso de zelo: o caso válido não pode passar a alertar."""
+        assert self._find(self._nfe("000001"), "NFE") == []
+
+    def test_desconhecido_continua_sem_finding_apos_680(self):
+        """`None` (desconhecido) e `[]` (nenhum DFe) não podem voltar a colapsar."""
+        assert self._find(self._nfe("999999"), "NFE") == []
+
 
 class TestDevolucaoDFeRef:
     """#312 — NF-e de devolução (finNFe=4) referencia a nota original por item via
@@ -1584,3 +1622,26 @@ class TestPfContribCnpjAto6:
         fora = self._find(self._nfe("2029-01-02T10:00:00-03:00"))
         assert len(dentro) == len(fora) == 1
         assert dentro[0].severity == fora[0].severity == "ALERT"
+
+def test_dfe_allowed_cobre_todos_os_indicadores_da_fonte():
+    """#680 — `dfe_allowed` vazio só pode significar "nenhum modelo", nunca
+    "modelo que o nosso mapa esqueceu".
+
+    O mapa tinha 14 indicadores; a fonte publica 17. DERE, DIR e DUIMP ficavam
+    de fora, e 6 códigos publicados para DeRE saíam com lista vazia — do ponto
+    de vista do consumidor, indistinguíveis de "não vale para DFe nenhum".
+    """
+    from app.data.classtrib_source import DFE_INDICATORS
+    from app.data.classtrib_table import CLASSTRIB_BY_CODE
+
+    assert {"IndDere", "IndDir", "IndDuimp"} <= set(DFE_INDICATORS), (
+        "indicador de modelo removido do mapa — código publicado só para ele voltaria a sair vazio"
+    )
+
+    vazios = {c for c, r in CLASSTRIB_BY_CODE.items() if r.get("dfe_allowed") == []}
+    dere = {"011001", "011002", "011004", "011005", "200018", "410034"}
+    assert not (dere & vazios), (
+        f"códigos publicados para DeRE voltaram a ficar vazios: {sorted(dere & vazios)}"
+    )
+    for code in sorted(dere):
+        assert "DERE" in CLASSTRIB_BY_CODE[code]["dfe_allowed"], code
