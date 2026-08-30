@@ -145,7 +145,9 @@ test("J: artigo indexável não apresenta estimativa futura como alíquota norma
     for (const m of t.matchAll(/[^.]*\b(8,8|17,7|26,5)\s?%[^.]*\./g)) {
       assert.match(
         m[0],
-        /estimativ|projeç|refer[êe]ncia|não\s+fixad|aguard/i,
+        // Mesmo conjunto do guard Y: marcação de estimativa OU repúdio
+        // explícito da formulação normativa contam como marcação.
+        /estimativ|proje[çc]|simula[çc]|hist[óo]ric|refer[êe]ncia|n[ãa]o\s+fixad|n[ãa]o devem?\b|aguard/i,
         `${f}: percentual futuro sem marcação de estimativa: "${m[0].trim().slice(0, 120)}"`,
       );
     }
@@ -425,6 +427,57 @@ test("W: nenhuma promessa de prevenção total", () => {
     for (const { alvo: j, contexto: ctx } of janelas(corpo(ler(f)))) {
       if (rx.test(j) && !NEGA.test(ctx)) {
         assert.fail(`${f}: promessa de prevenção total — "${j.slice(0, 150)}"`);
+      }
+    }
+  }
+});
+
+// ── Y/Z — estimativa de 2024 x norma vigente (ROUND BLOG 30/08-K) ───────────
+test("Y: percentuais de 2024 nunca aparecem como alíquota fixada ou vigente", () => {
+  // Forma da tese proibida, não frase literal: um dos percentuais ligado a
+  // qualquer predicado de definitividade/vigência.
+  //
+  // A isenção NÃO pode ser a mera presença da palavra "estimativa": ela
+  // aparece dentro da própria tese proibida ("a estimativa de 2024 passa a
+  // valer como norma"). Só nega a tese uma negação explícita.
+  //
+  // Linhas de citação (`>`) ficam fora: ali o artigo reproduz a formulação
+  // alheia para repudiá-la, e a prosa ao redor é que se pronuncia.
+  const pct = /\b(8,8|17,7|26,5)\s?%/;
+  const definitiv = /definitiv\w*|fixad\w*|vigente|em vigor|ser[áa]\s+(a\s+)?al[íi]quota|al[íi]quota\s+(de\s+)?refer[êe]ncia\s+(vigente|atual)|automaticamente aplic\w*|passa(m)? a valer|norma tribut\w*/i;
+  const NEGA_TESE = /\bn[ãa]o\b|\bnunca\b|\bjamais\b|\bnem\b|\bsem\b|deixou de|equivocad|incorret/i;
+  for (const f of indexaveis) {
+    for (const { alvo: j, contexto: ctx } of janelas(corpo(ler(f)))) {
+      if (/^\s*>/.test(j)) continue;
+      if (pct.test(j) && definitiv.test(j)) {
+        assert.match(ctx, NEGA_TESE, `${f}: percentual de 2024 como alíquota fixada/vigente — "${j.slice(0, 150)}"`);
+      }
+    }
+  }
+});
+
+test("Z: a proveniência dos percentuais de 2024 tem fonte oficial e limpa", () => {
+  for (const f of arquivos) {
+    const s = ler(f);
+    const blocos = (/^provenance:\n([\s\S]*?)(?=^\w|\n---)/m.exec(s)?.[1] ?? "").split(/\n  - /).filter(Boolean);
+    for (const b of blocos) {
+      const url = /source_url:\s*"([^"]*)"/.exec(b)?.[1] ?? "";
+      assert.notEqual(url.trim(), "", `${f}: claim sem source_url`);
+      assert.ok(!/^PENDENTE$/i.test(url), `${f}: source_url ainda marcado como pendente`);
+      // Tracking nunca entra na proveniência: a URL é o endereço do artefato,
+      // não um link de campanha. Um utm_ carrega origem de navegação para
+      // dentro do registro de fonte — e a origem da navegação não é a fonte.
+      assert.ok(
+        !/[?&](utm_[a-z]+|gclid|fbclid|si)=/i.test(url),
+        `${f}: source_url com parâmetro de rastreamento — "${url}"`,
+      );
+      // O claim da estimativa de 2024 se ancora no Ministério da Fazenda.
+      if (/\b(8,8|17,7|26,5)\b/.test(b)) {
+        assert.match(
+          url,
+          /^https:\/\/www\.gov\.br\/fazenda\//,
+          `${f}: estimativa de 2024 fora do domínio oficial da Fazenda — "${url}"`,
+        );
       }
     }
   }
