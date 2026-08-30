@@ -1,5 +1,9 @@
 /**
- * Gate de proveniência editorial + catraca do débito (ROUND BLOG 30/08-C).
+ * Dois gates independentes (ROUND BLOG 30/08-N).
+ *
+ * PUBLICATION_GATE responde "este conteúdo aprovado publica corretamente?".
+ * PROVENANCE_AUDIT responde "já atingiu o padrão máximo de rastreabilidade?".
+ * Só o primeiro bloqueia. O segundo é backlog.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -7,7 +11,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { lintProvenance, isTechnical, DEBITO_PROVENANCE_2026_08_30 } from "./blogProvenanceLint";
+import { lintProvenance, isTechnical, bloqueiaPublicacao, dividaDeAuditoria, auditoriaPendente } from "./blogProvenanceLint";
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const dir = join(raiz, "content", "blog");
@@ -27,27 +31,33 @@ const PROV_OK = `provenance:
 const post = (extra: string, corpo = "<p>Rejeição 1024 e cClassTrib.</p>") =>
   `---\ntitle: "T"\nslug: "novo-artigo-tecnico"\n${extra}---\n${corpo}`;
 
-test("nenhum artigo do blog reprova no gate hoje", () => {
+test("PUBLICATION_GATE: nenhum artigo do blog está impedido de publicar", () => {
   for (const f of arquivos) {
-    const r = lintProvenance(mdx(f));
+    const r = bloqueiaPublicacao(lintProvenance(mdx(f)));
     assert.equal(r.length, 0, `${f}: ${r.map((x) => x.message).join(" | ")}`);
   }
 });
 
-test("o débito só encolhe — nenhum slug novo pode entrar", () => {
-  assert.ok(
-    DEBITO_PROVENANCE_2026_08_30.length <= 22,
-    "o débito de proveniência cresceu; artigo novo cumpre o gate, não entra na lista",
-  );
-  const slugs = new Set(arquivos.map((f) => f.replace(".mdx", "")));
-  for (const s of DEBITO_PROVENANCE_2026_08_30) {
-    assert.ok(slugs.has(s), `débito cita "${s}", que não existe mais — remova da lista`);
-  }
+test("fast lane: artigo aprovado sem provenance PUBLICA, com auditoria pendente", () => {
+  // O caso que motivou o Round N: conteúdo liberado pelo Jurídico não pode
+  // ficar preso porque falta metadata acessória.
+  const r = lintProvenance(post(""));
+  assert.equal(bloqueiaPublicacao(r).length, 0, "ausência de provenance não pode impedir publicação");
+  assert.ok(dividaDeAuditoria(r).some((x) => x.rule === "PROVENANCE_AUSENTE"), "mas vira dívida registrada");
 });
 
-test("artigo técnico indexável NOVO sem provenance reprova", () => {
-  const r = lintProvenance(post(""));
-  assert.ok(r.some((x) => x.rule === "PROVENANCE_AUSENTE"));
+test("provenance declarada e malformada continua bloqueando", () => {
+  // Aqui não é padrão de excelência: é bug. Bloco quebrado rende errado.
+  const r = lintProvenance(post(PROV_OK.replace('    verified_at: "2026-08-30"\n', "")));
+  assert.ok(bloqueiaPublicacao(r).length > 0, "provenance quebrada é erro de publicação");
+});
+
+test("PROVENANCE_AUDIT é relatório derivado, não lista curada", () => {
+  const pend = auditoriaPendente(arquivos.map((f) => ({ slug: f.replace(".mdx", ""), mdx: mdx(f) })));
+  // Hoje o acervo está completo; o valor do teste é o mecanismo continuar
+  // derivando do conteúdo em vez de depender de alguém manter uma lista.
+  assert.ok(Array.isArray(pend));
+  assert.ok(pend.every((s) => arquivos.includes(`${s}.mdx`)));
 });
 
 test("artigo contido não é barrado — conter é urgente, corrigir é cuidadoso", () => {
