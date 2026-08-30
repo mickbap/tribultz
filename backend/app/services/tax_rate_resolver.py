@@ -139,12 +139,6 @@ def calculate(
     Returns:
         CalculationResult with all calculated values and XML snippet.
     """
-    # `calculate` é público: pode ser chamado sem passar por `calculate_full`.
-    # Sem lastro unânime não há o que multiplicar — e um padrão silencioso aqui
-    # reabriria o defeito da #685 por outra porta.
-    if rates.ncm_modifier is None:
-        raise NcmNaoDeterminavel(ncm=None, fontes=list(rates.ncm_fontes), motivo=rates.ncm_motivo or "")
-
     base = (vBC * quantity).quantize(_Q_MONEY, ROUND_HALF_UP)
 
     # Combined modifier: CST × NCM
