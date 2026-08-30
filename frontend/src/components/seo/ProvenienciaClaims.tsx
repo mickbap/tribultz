@@ -72,6 +72,13 @@ export function ProvenienciaClaims({
                 <small>Conflito registrado: {c.conflict_note}</small>
               </p>
             )}
+            {/* Texto literal aprovado — já carrega o próprio rótulo; o atributo
+                é que classifica a nota como proveniência de versionamento. */}
+            {c.versioning_note && (
+              <p data-note="versioning">
+                <small>{c.versioning_note}</small>
+              </p>
+            )}
           </li>
         ))}
       </ul>
