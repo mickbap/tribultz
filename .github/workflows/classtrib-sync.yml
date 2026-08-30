@@ -103,7 +103,15 @@ jobs:
           )
           try:
             with urllib.request.urlopen(req, timeout=10) as r:
-              print("Alert sent:", r.status)
+              # O corpo traz {"id": "<uuid>"} — é o único identificador que
+              # permite reconciliar "o step passou" com "a mensagem saiu".
+              # Imprimir só o status deixa a entrega cega (#684).
+              _body = r.read().decode("utf-8", "replace")
+              try:
+                _id = json.loads(_body).get("id") or "sem id no corpo"
+              except Exception:
+                _id = f"corpo não-JSON: {_body[:120]}"
+              print(f"Alert sent: {r.status} resend_id={_id}")
           except urllib.error.HTTPError as e:
             # Antes só imprimia — o step reportava sucesso mesmo com a entrega
             # falhando (mesmo incidente do 403/1010 acima). Falhar de verdade aqui
