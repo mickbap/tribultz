@@ -1,7 +1,7 @@
 ---
 title: "cClassTrib em 2026: como NCM, operação e requisitos legais orientam a classificação"
 metaTitle: "cClassTrib e NCM: por que a classificação depende da operação"
-description: "Entenda por que o NCM não determina sozinho o cClassTrib e como CST, operação, perfil das partes e requisitos legais orientam a avaliação das sugestões oficiais."
+description: "Entenda por que NCM não determina sozinho o cClassTrib e como operação, CST e requisitos legais orientam a análise das sugestões oficiais."
 slug: "classtrib-2026-mapear-ncm-regime-ibs-cbs"
 category: "Compliance Fiscal"
 author:
@@ -10,7 +10,7 @@ author:
   url: "https://tribultz.com.br"
 publishedAt: "2026-06-05"
 updatedAt: "2026-08-30"
-updateNote: "Reescrita integral. A versão anterior apresentava um fluxo determinístico do NCM até o cClassTrib, deduzia CST a partir de ausência em anexo e prometia classificação correta com base apenas no NCM. A estrutura real da tabela oficial foi reconferida na fonte SVRS em 30/08/2026 e as afirmações passaram a ser medidas sobre ela."
+updateNote: "Substituição integral pelo texto final aprovado no ROUND BLOG 30/08-H. O rótulo Sugestão e o alerta sobre requisitos legais foram reconferidos no Assistente para Classificação Tributária do Portal da Conformidade Fácil, em consulta de 30/08/2026."
 tags:
   - cClassTrib
   - NCM
@@ -21,189 +21,201 @@ tags:
   - "Reforma Tributária"
 coverImage: "https://tribultz.com.br/blog/og-classtrib-ncm-regime.png"
 provenance:
-  - claim_scope: "A tabela oficial de classificação tributária publica 164 códigos de cClassTrib distribuídos em 18 grupos de CST"
+  - claim_scope: "Semântica de sugestão por NCM: o Assistente para Classificação Tributária apresenta resultados por NCM sob o rótulo Sugestão e alerta que a aplicação da redução depende do cumprimento dos requisitos legais e pode ter exceções"
     claim_classification: "FATO_NORMATIVO"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
+    artifact: "Conformidade Fácil — Assistente para Classificação Tributária"
+    artifact_version: "serviço corrente consultado em 30/08/2026; a tabela subjacente tem versionamento próprio"
     source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
+    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributariaNcm"
     verified_at: "2026-08-30"
-    temporal_applicability: "A tabela tem versionamento próprio e é atualizada de forma independente das Notas Técnicas"
-  - claim_scope: "Dos 164 códigos publicados, 16 mencionam a NCM/SH no próprio texto legal e 34 trazem lista de itens de anexo"
+    claim_scope_limit: "Sugestão não constitui prova automática do enquadramento."
+  - claim_scope: "O assistente oficial expõe filtros de operação — condição do fornecedor, identificação do bem e demais características — como parte da consulta"
     claim_classification: "FATO_NORMATIVO"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
+    artifact: "Conformidade Fácil — Assistente para Classificação Tributária"
+    artifact_version: "consulta de 30/08/2026"
     source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
+    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributariaNcm"
     verified_at: "2026-08-30"
-  - claim_scope: "Os itens de anexo publicados somam 4.628 registros, sendo 4.174 identificados por NCM e 454 por NBS, cobrindo 1.792 códigos NCM distintos"
+  - claim_scope: "Compatibilidade CST × cClassTrib: a RV UB14-20 produz a Rejeição 1024 quando o cClassTrib é incompatível com o CST informado, nos modelos 55 e 65"
     claim_classification: "FATO_NORMATIVO"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
-    source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
+    artifact: "NT 2025.002-RTC"
+    artifact_version: "1.51"
+    rule_item: "UB14-20"
+    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
     verified_at: "2026-08-30"
-  - claim_scope: "Entre os 1.792 códigos NCM presentes nos anexos, 1.273 aparecem em mais de um cClassTrib, e um mesmo NCM chega a constar de cinco códigos diferentes"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
-    source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
-    verified_at: "2026-08-30"
-    conflict_note: "Contagem feita sobre os itens de anexo da consulta de 30/08/2026. Vale para a versão consultada: a tabela é atualizada e a distribuição pode mudar."
-  - claim_scope: "Os itens de anexo carregam condição de uso em 3.902 registros e exceção expressa em 1.677 registros"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
-    source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
-    verified_at: "2026-08-30"
-  - claim_scope: "Cada cClassTrib publica indicadores de quais modelos de documento fiscal o admitem: 97 códigos são admitidos em NF-e e 40 em NFC-e"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
-    source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
-    verified_at: "2026-08-30"
-  - claim_scope: "O Portal da Conformidade Fácil descreve-se como projeto das Administrações Tributárias para fornecer mecanismos e ferramentas que auxiliam os contribuintes a obter a autorização dos documentos fiscais"
-    claim_classification: "FATO_NORMATIVO"
-    artifact: "Portal da Conformidade Fácil — página Sobre"
-    artifact_version: "consulta pública de 30/08/2026"
-    source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/Sobre"
-    verified_at: "2026-08-30"
-  - claim_scope: "Um código devolvido pela consulta oficial é candidato a ser verificado, e não classificação encerrada, porque o mesmo item de anexo traz condição e exceção próprias"
-    claim_classification: "INTERPRETACAO_SEGURA"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
-    source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
-    verified_at: "2026-08-30"
-    conflict_note: "A leitura decorre da estrutura publicada — multiplicidade de códigos por NCM somada a condições e exceções por item. A tabela não enuncia essa conclusão em texto; ela é o comportamento observável dos dados."
   - claim_scope: "Qual cClassTrib se aplica a uma operação concreta"
     claim_classification: "NAO_DETERMINADO"
-    artifact: "Tabela de Código de Classificação Tributária do IBS e CBS"
-    artifact_version: "consulta pública de 30/08/2026"
+    artifact: "Conformidade Fácil — Assistente para Classificação Tributária"
+    artifact_version: "consulta de 30/08/2026"
     source_authority: "SVRS — Portal da Conformidade Fácil"
-    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
+    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributariaNcm"
     verified_at: "2026-08-30"
-    conflict_note: "A tabela publica códigos, condições e exceções. Ela não decide o enquadramento de uma operação concreta, que depende dos fatos da operação e dos requisitos legais do tratamento pretendido."
+    conflict_note: "A fonte oficial devolve sugestões e condições; ela não decide o enquadramento de uma operação concreta, que depende dos fatos e dos requisitos legais do tratamento pretendido."
 legalRefs:
-  - instrumento: "Tabela de Código de Classificação Tributária do IBS e CBS"
+  - instrumento: "Conformidade Fácil — Assistente para Classificação Tributária"
     artigo: "—"
-    descricao: "Tabela oficial dos códigos de cClassTrib, com base legal, indicadores por modelo de DFe e itens de anexo com condições e exceções."
-    link: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
-  - instrumento: "LC 214/2025"
-    artigo: "Anexos I a XV"
-    descricao: "Anexos que relacionam bens e serviços com tratamento diferenciado, com a especificação das respectivas classificações da NCM/SH referidas pelos códigos de cClassTrib."
-    link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
+    descricao: "Serviço oficial que devolve, para uma NCM e um tipo de DFe, os tratamentos sugeridos com suas condições e exceções."
+    link: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributariaNcm"
+  - instrumento: "NT 2025.002-RTC"
+    artigo: "Regra de validação UB14-20"
+    descricao: "Define a Rejeição 1024 por incompatibilidade entre cClassTrib e CST de IBS/CBS."
+    link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
 ---
 
-O NCM pode ser um elemento relevante para identificar tratamentos tributários, mas não determina sozinho o cClassTrib. O próprio assistente oficial apresenta sugestões e exige que os requisitos legais e as características da operação sejam verificados antes da classificação.
+O NCM pode ser um elemento relevante para identificar tratamentos tributários, mas não determina sozinho o cClassTrib. O próprio Portal da Conformidade Fácil apresenta resultados como sugestões e exige que os requisitos legais e as características da operação sejam avaliados antes da classificação.
 
-## O que a tabela oficial publica de fato
+## NCM e cClassTrib não são a mesma classificação
 
-Antes de discutir método, vale olhar o que a fonte realmente entrega. Na consulta de 30/08/2026, a tabela oficial de classificação tributária publicava:
+A Reforma Tributária aumentou a importância da qualidade dos cadastros fiscais, mas também criou um risco: tentar transformar qualquer relação entre NCM e cClassTrib em um de-para automático.
 
-| Elemento | Quantidade |
-|----------|-----------|
-| Códigos de cClassTrib | 164 |
-| Grupos de CST | 18 |
-| Códigos que citam a NCM/SH no texto legal | 16 |
-| Códigos com lista de itens de anexo | 34 |
-| Itens de anexo publicados | 4.628 |
+Essa simplificação não é segura.
 
-Cada código traz o texto legal do tratamento, o link para o dispositivo correspondente, indicadores de quais modelos de documento fiscal o admitem e — quando aplicável — a lista de itens de anexo com **condição** e **exceção** próprias.
+O **NCM** classifica mercadorias na Nomenclatura Comum do Mercosul.
 
-Duas leituras saem imediatamente desse retrato:
+O **CST de IBS/CBS** representa uma situação tributária.
 
-- **A maior parte dos códigos não passa por NCM.** Dos 164, apenas 16 mencionam a NCM/SH no próprio texto legal. Diferimento, suspensão, imunidade, transferência de crédito, ajustes — tratamentos definidos pela natureza da operação ou pelo perfil das partes, não pela mercadoria.
-- **Onde o NCM entra, ele entra acompanhado.** Dos 4.628 itens de anexo, **3.902 trazem condição de uso** e **1.677 trazem exceção expressa**. O NCM aparece dentro de uma frase, não sozinho.
+O **cClassTrib** identifica uma classificação tributária associada a determinado tratamento e fundamento legal.
 
-## Onde o NCM entra — e onde ele para
+Essas informações podem se relacionar, mas cumprem funções diferentes.
 
-Os anexos cobrem **1.792 códigos NCM distintos**, identificados em 4.174 itens (outros 454 usam NBS, para serviços). O dado decisivo é a distribuição:
+## O que o NCM pode determinar?
 
-**1.273 desses 1.792 códigos NCM — 71% — aparecem em mais de um cClassTrib.** Um mesmo NCM chega a constar de **cinco** códigos diferentes.
+A legislação pode utilizar uma NCM para delimitar mercadorias abrangidas por determinado tratamento.
 
-Isso não é ruído de cadastro. É como a lei foi escrita. Veja o arroz da subposição 1006.20:
+Nesse sentido, o NCM pode ser um requisito relevante.
 
-| cClassTrib | Tratamento | Condição publicada no item |
-|-----------|-----------|---------------------------|
-| 200003 | Cesta Básica Nacional de Alimentos (Anexo I) | "Destinados à alimentação humana" |
-| 200034 | Alimentos para consumo humano (Anexo VII) | Exceção: produtos relacionados no Anexo I |
-| 200038 | Insumos agropecuários e aquícolas (Anexo IX) | "Insumos agropecuários e aquícolas" |
-| 515001 | Diferimento com insumos agropecuários (art. 138) | "Insumos agropecuários e aquícolas" |
+Mas a mesma mercadoria pode participar de operações distintas e essas operações podem depender de condições adicionais.
 
-O mesmo grão. Quatro códigos. O que separa um do outro não está no produto — está **na operação**: para quem se vende, com que destinação, sob qual regime. E repare no 200034: a condição dele é uma *exceção* que remete ao Anexo I. Os códigos conversam entre si; ler um isoladamente produz enquadramento errado mesmo com o NCM certo.
+O Portal da Conformidade Fácil deixa isso visível.
 
-Por isso não existe correspondência direta e universal entre NCM e código de classificação: a pergunta "qual o cClassTrib deste NCM" está mal formulada em 71% dos casos, porque admite mais de uma resposta correta conforme a operação.
+Ao consultar uma NCM, o serviço apresenta diferentes tratamentos sob o rótulo **"Sugestão"**. Em algumas pesquisas, o próprio Portal alerta que a aplicação de reduções depende do cumprimento dos requisitos legais e pode ser afastada ou alterada por outras características da operação.
 
-## O que a consulta oficial entrega — e o que ela não entrega
+Portanto:
 
-O Portal da Conformidade Fácil se apresenta como "projeto das Administrações Tributárias que tem por objetivo fornecer mecanismos e ferramentas que **auxiliam** os contribuintes". A palavra é do próprio portal, e ela descreve bem o alcance: a consulta devolve os códigos cujos anexos contêm aquele NCM, com as condições e exceções de cada um.
+**NCM compatível com um tratamento ≠ enquadramento automaticamente comprovado.**
 
-O que ela devolve é, portanto, um **conjunto de candidatos**. Candidato é código potencial, anterior à verificação completa. Entre o candidato e a classificação existe trabalho que a ferramenta não faz por você:
+## O que significa "Sugestão"?
 
-- ler a condição do item e confrontá-la com a destinação real da mercadoria;
-- ler a exceção e verificar se a operação cai nela;
-- verificar os requisitos legais do tratamento no dispositivo citado pelo código;
-- confirmar que o código é admitido no modelo de documento que você emite.
+Quando a fonte oficial chama um resultado de sugestão, o produto não deve transformá-lo editorialmente em certificação.
 
-Nenhuma dessas quatro etapas é decidida pelo NCM. Uma consulta atendida não equivale a enquadramento verificado — ela devolve o que a tabela contém, e a responsabilidade pelo enquadramento continua sendo de quem emite.
+Uma sugestão significa que existe uma hipótese de classificação que merece avaliação.
 
-## O modelo do documento também restringe
+Na Tribultz, o termo tecnicamente mais seguro antes da confirmação dos requisitos é **candidato**.
 
-Um filtro que costuma passar despercebido: nem todo código vale em todo documento. Cada cClassTrib publica indicadores por modelo de DFe. Na consulta de 30/08/2026:
+Um candidato a cClassTrib pode ser apresentado porque os dados conhecidos são compatíveis com aquela hipótese.
 
-| Modelo | Códigos admitidos |
-|--------|------------------|
-| NF-e | 97 |
-| NFC-e | 40 |
-| NFS-e | 71 |
-| CT-e | 12 |
+A classificação só pode ser tratada como confirmada quando os fatos necessários ao enquadramento tiverem sido verificados.
 
-Dos 164 códigos, 97 são admitidos em NF-e e apenas 40 em NFC-e. Um código legalmente adequado à operação pode simplesmente não ser aceito no modelo que você emite — e isso se resolve consultando o indicador, não deduzindo.
+## Quais elementos podem ser relevantes?
 
-## Como avaliar um candidato
+Dependendo do tratamento analisado, a classificação pode exigir informações além do NCM, como:
 
-O caminho útil inverte a pergunta. Em vez de "qual código pertence a este NCM", pergunte "esta operação satisfaz as condições deste código".
+- natureza da operação;
+- CST;
+- condição do fornecedor;
+- condição do adquirente;
+- destinação do bem;
+- localização;
+- regime tributário;
+- finalidade da operação;
+- benefício específico;
+- requisito legal adicional.
 
-1. **Descreva a operação, não só o produto.** Quem vende, para quem, com que destinação declarada, sob qual regime. É esse conjunto que separa os quatro códigos do arroz.
-2. **Levante os candidatos na tabela oficial.** Espere mais de um. Em 71% dos casos haverá.
-3. **Leia a condição e a exceção de cada item.** São campos publicados, não interpretação. A exceção elimina candidato tão bem quanto a condição confirma.
-4. **Abra o dispositivo legal citado pelo código.** Cada código publica o link para a base legal do tratamento. Os requisitos estão lá, não na tabela.
-5. **Confirme o indicador do modelo de DFe.** Antes de cadastrar, verifique se o código é admitido no documento que a operação exige.
-6. **Confirme o par com o CST.** O CST informado precisa ser compatível com o código escolhido, sob pena de [Rejeição 1024](/blog/rejeicao-1024-nfe-cbs-ibs-como-corrigir).
+Não existe uma lista universal aplicável a todos os cClassTrib.
 
-Um cadastro de produto que guarda um único código fixo por item resolve o passo 6 e ignora os cinco anteriores. Funciona enquanto a empresa faz um tipo só de operação com aquele item — e falha silenciosamente no dia em que faz outra.
+Cada classificação precisa ser confrontada com seu próprio fundamento.
 
-## O que não está determinado
+## O que pode ser validado de forma determinística?
 
-Qual cClassTrib se aplica a uma operação concreta é ponto que **a tabela não determina**. Ela publica códigos, condições, exceções e base legal; o enquadramento depende dos fatos da operação e dos requisitos legais do tratamento pretendido.
+Há uma diferença entre **escolher uma classificação** e **validar propriedades objetivas de uma classificação já escolhida**.
 
-Isso não é uma lacuna da fonte — é a divisão de trabalho que a lei estabeleceu. Qualquer ferramenta, nossa inclusive, que prometa devolver "o código certo" a partir do NCM está prometendo uma decisão que a fonte oficial deliberadamente não toma.
+Uma vez informado determinado cClassTrib, é possível verificar objetivamente, conforme a tabela oficial aplicável:
 
-## Perguntas frequentes
+- se o código existe;
+- se ele é compatível com determinado CST;
+- quais indicadores documentais estão associados ao código, quando publicados na fonte oficial.
 
-**Se o NCM do meu produto não aparece em nenhum anexo, qual código eu uso?**
+A compatibilidade CST × cClassTrib, por exemplo, possui regra específica na NF-e/NFC-e: a RV UB14-20 produz a Rejeição 1024 quando o cClassTrib é incompatível com o CST informado.
 
-A ausência nos anexos significa que o produto não está nos rols de tratamento diferenciado que passam por NCM. Ela não determina, por si, qual código se aplica: tratamentos definidos pela natureza da operação continuam disponíveis. O caminho é o mesmo — descrever a operação e verificar as condições dos códigos candidatos.
+Esse tipo de validação é diferente de afirmar que o sistema conseguiu deduzir o único tratamento correto a partir do NCM.
 
-**Posso montar uma tabela interna de conversão para acelerar o cadastro?**
+## Por que "NCM não consta no anexo" não significa automaticamente CST 000?
 
-Pode, desde que ela seja tratada pelo que é: um cache de decisões já verificadas, válido para as operações que você já analisou. O que não se sustenta é usar essa tabela como regra geral, porque a mesma linha vale para uma operação e não vale para outra.
+A ausência de uma NCM em determinado anexo apenas demonstra que ela não foi encontrada naquele recorte específico.
 
-**Um produto pode mudar de código sem mudar de NCM?**
+Isso não prova que nenhuma outra regra, regime, imunidade, não incidência, suspensão, diferimento ou tratamento específico possa ser aplicável.
 
-Sim. É o caso normal, não a exceção. Mudar a destinação, o destinatário ou o regime da operação pode mudar o enquadramento com o mesmo produto e o mesmo NCM.
+O próprio Portal da Conformidade Fácil, quando uma NCM não aparece em anexo da LC 214, continua apresentando várias sugestões possíveis e orienta o usuário a avaliá-las.
 
-**A classificação NCM em si é o mesmo assunto?**
+Portanto, não é seguro programar:
 
-Não. Determinar o NCM de uma mercadoria é classificação fiscal, regida pelas Regras Gerais de Interpretação — assunto tratado em [Como classificar NCM corretamente](/blog/como-classificar-ncm-corretamente-2026). O cClassTrib é uma etapa posterior e distinta.
+> se NCM não estiver no anexo, usar CST 000.
 
-## Artigos relacionados
+Uma decisão desse tipo precisa de base normativa adicional.
 
-- [cClassTrib e NCM: como usar sugestões oficiais e validar a Rejeição 1024](/blog/classtrib-2026-ncm-mapeamento-completo)
-- [Rejeição 1024 NF-e/NFC-e: cClassTrib incompatível com CST](/blog/rejeicao-1024-nfe-cbs-ibs-como-corrigir)
-- [Como classificar NCM corretamente: RGI, NESH e consulta à Receita Federal](/blog/como-classificar-ncm-corretamente-2026)
+## Como construir um processo seguro
+
+### 1. Confirme o NCM
+
+Antes de utilizar o NCM como entrada tributária, valide se a classificação da mercadoria está correta.
+
+Uma classificação NCM errada contamina todas as análises que dependam dela.
+
+### 2. Identifique os fatos da operação
+
+Não analise apenas o produto.
+
+Registre os fatos necessários para definir o tratamento fiscal daquela operação concreta.
+
+### 3. Consulte as fontes oficiais
+
+Use:
+
+- legislação;
+- tabela oficial de CST/cClassTrib;
+- Portal da Conformidade Fácil;
+- Notas Técnicas aplicáveis;
+- demais atos específicos do tratamento.
+
+### 4. Trabalhe com candidatos quando faltarem dados
+
+Se os dados conhecidos permitirem mais de uma hipótese, o sistema deve devolver candidatos e indicar quais condições ainda precisam ser verificadas.
+
+Isso é mais seguro do que apresentar uma falsa certeza.
+
+### 5. Valide a combinação final
+
+Depois de definida a hipótese aplicável, confronte CST e cClassTrib com a tabela oficial versionada antes da emissão do documento.
+
+## E nas devoluções?
+
+Não deve existir uma regra editorial genérica dizendo:
+
+> "devolução sempre utiliza o mesmo cClassTrib da operação original."
+
+A tributação de devoluções e documentos de crédito possui regras próprias e pode depender do tipo de documento, finalidade e operação.
+
+Sem uma regra específica aplicável ao caso, a Tribultz não deve criar uma equivalência universal.
+
+## E o Simples Nacional?
+
+Regras do regime regular não devem ser transportadas automaticamente para optantes do Simples Nacional ou MEI.
+
+Cada cronograma e obrigação precisa ser verificado no dispositivo próprio antes de ser apresentado como vigente.
+
+A existência de campos ou tabelas técnicas não autoriza antecipar a aplicabilidade jurídica de um regime.
+
+## Conclusão
+
+NCM é uma entrada importante para a inteligência tributária, mas não é um oráculo de cClassTrib.
+
+A relação segura é:
+
+**NCM + fatos da operação + requisitos legais → candidatos → validação da classificação aplicável.**
+
+Quando a fonte oficial oferece uma sugestão, o produto deve tratá-la como sugestão.
+
+Quando existe uma relação determinística — como compatibilidade entre CST e cClassTrib na tabela oficial — essa relação pode e deve ser validada objetivamente.
+
+Separar essas duas situações é essencial para automatizar compliance sem automatizar inferências tributárias que a legislação não sustenta.

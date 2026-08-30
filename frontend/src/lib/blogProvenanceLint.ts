@@ -176,6 +176,19 @@ export function lintProvenance(mdx: string, slug?: string): ProvenanceFinding[] 
       out.push({ rule: "PROVENANCE_URL_INVALIDA", severity: "error", message: `${ref}: source_url não é URL.` });
     }
 
+    // Claim com proveniência bloqueada não impede que o claim exista — impede
+    // que o artigo seja indexado. Só chegamos aqui em artigo indexável, então
+    // a presença da marca já é a reprovação.
+    if (/(^|\n)\s*provenance_blocked:\s*true/.test(b)) {
+      out.push({
+        rule: "PROVENANCE_BLOCKED",
+        severity: "error",
+        message:
+          `${ref}: claim marcado como PROVENANCE_BLOCKED em artigo indexável — ` +
+          `a fonte oficial precisa ser fechada antes de indexar, e nunca preenchida com fonte secundária.`,
+      });
+    }
+
     const verified = campo("verified_at");
     if (verified && Number.isNaN(new Date(verified).getTime())) {
       out.push({ rule: "PROVENANCE_VERIFIED_AT_INVALIDO", severity: "error", message: `${ref}: verified_at \`${verified}\` não é data.` });

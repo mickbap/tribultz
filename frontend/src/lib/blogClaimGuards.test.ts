@@ -26,20 +26,32 @@ const corpo = (s: string) => s.replace(/^---\n[\s\S]*?\n---/, "").replace(/<[^>]
 const um = (slug: string) => ler(`${slug}.mdx`);
 
 // ── A/B/C — Rejeição 960 ────────────────────────────────────────────────────
+/**
+ * Os guards encodam as EXPRESSÕES PROIBIDAS do pacote editorial, não uma
+ * redação específica. Exigir o token "não" em toda frase reprovava negações
+ * legítimas ("são problemas diferentes") e aprovaria uma afirmação proibida
+ * que contivesse um "não" acidental em outro ponto da frase.
+ */
+const NEGA_960 = /\bn[ãa]o\b|\bnem\b|\bsem\b|diferente|distint|separad|pr[óo]pri|outros? (dom[íi]nios?|grupos?)/i;
+const frases = (t: string) => [...t.matchAll(/[^.]+\./g)].map((m) => m[0]);
+
 test("A: 960 não volta a ser associada a cClassTrib", () => {
-  const s = um("rejeicao-960-nf-e");
-  const texto = corpo(s);
-  // Só a negativa explícita é permitida ("não é uma rejeição de cClassTrib").
-  for (const m of texto.matchAll(/[^.]*cClassTrib[^.]*\./g)) {
-    assert.match(m[0], /\bnão\b/i, `960 afirma algo sobre cClassTrib: "${m[0].trim()}"`);
+  const t = corpo(um("rejeicao-960-nf-e"));
+  // Proibido: "960 é erro de cClassTrib" / "cClassTrib ausente causa 960".
+  const liga = /\b(é|e|significa|ocorre|decorre|causa|gera|resulta|valida|verifica|indica)\b/i;
+  for (const f of frases(t)) {
+    if (!/cClassTrib/.test(f)) continue;
+    if (!/\b960\b|N12-110/.test(f)) continue;
+    assert.match(f, NEGA_960, `960 associada a cClassTrib sem separação explícita: "${f.trim()}"`);
+    void liga;
   }
 });
 
 test("B: 960 usa v1.60 como versão corrente, nunca v1.51 da NT 2023.001", () => {
   const s = um("rejeicao-960-nf-e");
-  assert.match(s, /artifact:\s*"NT 2023\.001"[\s\S]{0,200}?artifact_version:\s*"1\.60"/);
+  assert.match(s, /artifact:\s*"NT 2023\.001[^"]*"[\s\S]{0,120}?artifact_version:\s*"1\.60/);
   assert.ok(
-    !/NT 2023\.001[^\n]{0,40}v?1\.51/.test(s),
+    !/NT 2023\.001[^\n]{0,40}v\.?1\.51/.test(s),
     "v1.51 é histórica da NT 2023.001 — não pode voltar como corrente",
   );
 });
@@ -48,15 +60,38 @@ test("C: 960 registra a exceção corrente finNFe=5/6", () => {
   const s = um("rejeicao-960-nf-e");
   assert.match(corpo(s), /finNFe=5/, "corpo precisa registrar a exceção NF-e de Crédito");
   assert.match(corpo(s), /finNFe=6/, "corpo precisa registrar a exceção NF-e de Débito");
-  assert.match(s, /rule_item:\s*"N12-110, Excecao"/);
+  // A exceção precisa de claim próprio, ancorado na documentação que a criou.
+  assert.match(
+    s,
+    /claim_scope:[^\n]*finNFe[\s\S]{0,400}?artifact:\s*"NT 2025\.002-RTC/,
+    "a exceção finNFe=5/6 precisa de claim próprio na documentação RTC",
+  );
 });
 
 test("960: sem RTC como origem e sem 03/08/2026", () => {
   const t = corpo(um("rejeicao-960-nf-e"));
   assert.ok(!/03\/08\/2026|03\/08/.test(t), "960 não tem relação com 03/08/2026");
-  for (const m of t.matchAll(/[^.]*Reforma Tribut[^.]*\./g)) {
-    assert.match(m[0], /\bnão\b/i, `960 associa a RTC como origem: "${m[0].trim()}"`);
+  // Proibido: "a Rejeição 960 surgiu com a Reforma Tributária".
+  const origem = /surgiu|nasceu|origem|criada|introduzid|pertence|deriv|vem d/i;
+  for (const f of frases(t)) {
+    if (!/Reforma Tribut|\bRTC\b/i.test(f)) continue;
+    if (!/\b960\b|N12-110/.test(f)) continue;
+    if (!origem.test(f)) continue;
+    assert.match(f, NEGA_960, `960 associada à RTC como origem: "${f.trim()}"`);
   }
+});
+
+test("960: nenhuma lista fixa de cProdANP sem proveniência versionada", () => {
+  const s = um("rejeicao-960-nf-e");
+  const t = corpo(s);
+  // Uma lista de códigos ANP no corpo só se admite com claim versionado da tabela.
+  const listaAnp = /cProdANP[^.]{0,80}(\d{6,}\s*[,;]\s*){2,}/i;
+  assert.ok(!listaAnp.test(t), "lista fixa de cProdANP reproduzida no corpo");
+  assert.match(
+    s,
+    /artifact:\s*"Tabela de Combust[íi]veis Sujeitos [àa] Tributa[çc][ãa]o Monof[áa]sica"/,
+    "a tabela de combustíveis precisa de claim próprio",
+  );
 });
 
 // ── D — Rejeição 1024 ───────────────────────────────────────────────────────
@@ -76,7 +111,7 @@ test("E/F/G: artigo indexável não faz NCM determinar cClassTrib, CST ou benef�
     [/de-para\s+(universal\s+)?(de\s+)?NCM/i, "de-para universal de NCM"],
     [/NCM\s+(determina|define)\s+o\s+CST/i, "NCM → CST definitivo"],
     [/NCM[^.]{0,60}benefício\s+autom/i, "NCM → benefício automático"],
-    [/[Ss]ugest[ãa]o[^.]{0,40}(certificad|garante|determina)/i, "CFF Sugestão como classificação certificada"],
+    [/[Ss]ugest[ãa]o[^.]{0,40}\b(certificad\w*|garante|garantem|determina|determinam|confirma|comprova)\b/i, "CFF Sugestão como classificação certificada"],
   ];
   for (const f of indexaveis) {
     const t = corpo(ler(f));
@@ -90,8 +125,10 @@ test("E/F/G: artigo indexável não faz NCM determinar cClassTrib, CST ou benef�
 test("H/I: artigo indexável não inverte RGI 3b/3c nem cita IN RFB 1.799/2018", () => {
   for (const f of indexaveis) {
     const t = corpo(ler(f));
-    assert.ok(!/RGI\s*3\s*b[^.]{0,40}(maior valor|mais específic)/i.test(t), `${f}: RGI 3b incorreta`);
-    assert.ok(!/RGI\s*3\s*c[^.]{0,40}mais específic/i.test(t), `${f}: RGI 3c incorreta`);
+    // O texto aprovado usa "RGI 3(b)"; a redação anterior usava "RGI 3b".
+    // O guard precisa cobrir as duas notações, senão deixa de proteger.
+    assert.ok(!/RGI\s*3\s*\(?\s*b\s*\)?[^.]{0,40}(maior valor|mais específic)/i.test(t), `${f}: RGI 3b incorreta`);
+    assert.ok(!/RGI\s*3\s*\(?\s*c\s*\)?[^.]{0,40}mais específic/i.test(t), `${f}: RGI 3c incorreta`);
     assert.ok(!/1\.799\/2018|1799\/2018/.test(t), `${f}: IN RFB 1.799/2018 como norma do procedimento`);
   }
 });
@@ -165,8 +202,8 @@ test("N: NAO_DETERMINADO tem rótulo próprio e distinto de fato na renderizaç�
  * sobre a produção da UB12-10: ele não afirma data de ativação, e a
  * divergência vive na proveniência do claim — ver o guard logo abaixo.
  */
-test("P0 reindexado carrega META_TITLE aprovado e proveniência por claim", () => {
-  const reindexados = [
+test("P0: indexado exige META_TITLE e proveniência limpa; contido exige motivo", () => {
+  const P0 = [
     "rejeicao-960-nf-e",
     "rejeicao-1024-nfe-cbs-ibs-como-corrigir",
     "classtrib-2026-mapear-ncm-regime-ibs-cbs",
@@ -175,17 +212,25 @@ test("P0 reindexado carrega META_TITLE aprovado e proveniência por claim", () =
     "como-calcular-aliquota-cbs-ibs",
     "nfe-rejeitada-03-08-2026-regime-normal-crt3",
   ];
-  for (const slug of reindexados) {
+  for (const slug of P0) {
     const s = um(slug);
-    assert.ok(indexaveis.includes(`${slug}.mdx`), `${slug}: reindexado não pode voltar a conter`);
     assert.match(s, /^provenance:$/m, `${slug}: sem bloco provenance`);
-  }
-  // O 960 veio do Round D/E, sem META_TITLE próprio; os seis do ADENDO têm.
-  for (const slug of reindexados.slice(1)) {
-    assert.match(um(slug), /^metaTitle:\s*"[^"]+"/m, `${slug}: META_TITLE aprovado ausente`);
+    assert.match(s, /^metaTitle:\s*"[^"]+"/m, `${slug}: META_TITLE aprovado ausente`);
+    const bloqueado = /provenance_blocked:\s*true/.test(s);
+    if (contido(s)) {
+      assert.match(s, /^noindexReason:\s*"[^"]+"/m, `${slug}: contido sem motivo declarado`);
+    } else {
+      // Indexar com claim sem fonte oficial seria transformar autorização
+      // jurídica em bypass técnico — que é exatamente o que a ordem proíbe.
+      assert.ok(!bloqueado, `${slug}: indexado com claim PROVENANCE_BLOCKED`);
+    }
+    // Um claim bloqueado nunca pode ter sido apagado para destravar o artigo.
+    if (bloqueado) {
+      assert.match(s, /blocked_reason:\s*"[^"]+"/, `${slug}: bloqueio sem razão registrada`);
+      assert.ok(contido(s), `${slug}: claim bloqueado obriga contenção`);
+    }
   }
 });
-
 test("UB12-10: estado presente determinado, data futura não determinada", () => {
   const arq = "nfe-rejeitada-03-08-2026-regime-normal-crt3";
   const s = um(arq);
@@ -252,6 +297,137 @@ test("UB12-10: estado presente determinado, data futura não determinada", () =>
 
   // 8 — 03/08/2026 permanece na linhagem histórica
   assert.match(t, /03\/08\/2026/, "03/08/2026 não pode sumir: é a previsão histórica da regra");
+});
+
+// ── R–W — regressões materiais do ROUND BLOG 30/08-I ────────────────────────
+/**
+ * Guards de forma, não de frase. Cada um descreve o FORMATO da afirmação
+ * proibida (sujeito + verbo + objeto, com sinônimos), porque a mesma regressão
+ * reaparece com redação trivialmente diferente e um guard de frase exata só
+ * pegaria a redação que já conhecíamos.
+ *
+ * A janela é a linha mais a próxima linha não vazia: em FAQ, a pergunta e a
+ * resposta são linhas distintas, e é a resposta que carrega a negação.
+ */
+type Janela = { alvo: string; contexto: string };
+function janelas(t: string): Janela[] {
+  const l = t.split("\n").map((x) => x.trim()).filter(Boolean);
+  // O gatilho é procurado em `alvo` (uma linha só). A negação é aceita em
+  // `contexto` (a linha e a seguinte), porque em FAQ a resposta vem depois.
+  // Sem essa separação, a janela de uma resposta engoliria a pergunta
+  // seguinte e acusaria um gatilho cuja negação está duas linhas adiante.
+  // A linha SEGUINTE sempre entra: em FAQ, a resposta que nega vem depois.
+  // A ANTERIOR só entra quando termina em dois-pontos, isto é, quando ela
+  // INTRODUZ o alvo ("não é seguro programar:" seguido do exemplo). Sem essa
+  // restrição, um "não" de uma frase vizinha e sem relação isentaria o alvo —
+  // foi assim que uma sabotagem de split payment passou.
+  return l.map((linha, i) => {
+    const prev = l[i - 1] ?? "";
+    const introduz = /[:;]\s*$/.test(prev);
+    return { alvo: linha, contexto: `${introduz ? prev : ""} ${linha} ${l[i + 1] ?? ""}` };
+  });
+}
+const NEGA = /\bn[ãa]o\b|\bnem\b|\bjamais\b|\bsem que\b|\bao contr[áa]rio\b/i;
+
+test("R: 1024 não é atribuída a ausência de grupo, alíquota ou diferimento", () => {
+  const causas: Array<[RegExp, string]> = [
+    [/aus[êe]ncia|ausente|n[ãa]o informad|n[ãa]o preenchid|falta d\w+/i, "ausência do grupo"],
+    [/al[íi]quota\s+(incorreta|errada|divergente)|erro de al[íi]quota/i, "alíquota incorreta"],
+    [/diferimento/i, "diferimento"],
+  ];
+  for (const f of indexaveis) {
+    for (const { alvo: j, contexto: ctx } of janelas(corpo(ler(f)))) {
+      if (!/\b1024\b/.test(j)) continue;
+      for (const [rx, oque] of causas) {
+        if (rx.test(j) && !NEGA.test(ctx)) {
+          assert.fail(`${f}: 1024 atribuída a ${oque} — "${j.slice(0, 150)}"`);
+        }
+      }
+    }
+  }
+});
+
+test("S: ausência do NCM nos anexos não determina CST nem cClassTrib", () => {
+  const fora = /(fora|n[ãa]o cons\w+|n[ãa]o aparec\w+|n[ãa]o est\w+|aus[êe]ncia|ausente)[^.]{0,40}anexos?/i;
+  const conclui = /CST\s*0?00\b|tributaç[ãa]o integral|regime (geral|padr[ãa]o)/i;
+  // Aqui a negação genérica não serve: em "se o NCM NÃO consta do anexo,
+  // aplica-se o CST 000" o "não" nega a CONDIÇÃO e a conclusão segue afirmada.
+  // Só isenta a negação da própria consequência.
+  const NEGA_CONSEQ = /n[ãa]o\s+(determina|implica|significa|autoriza|permite|conclui|leva|equivale|define|prova|deve|[ée] seguro)/i;
+  for (const f of indexaveis) {
+    for (const { alvo: j, contexto: ctx } of janelas(corpo(ler(f)))) {
+      if (fora.test(j) && conclui.test(j) && !NEGA_CONSEQ.test(ctx)) {
+        assert.fail(`${f}: ausência no anexo tratada como determinante — "${j.slice(0, 150)}"`);
+      }
+    }
+  }
+});
+
+test("X: mecânica de split payment exige contrato normativo próprio", () => {
+  const mecanica = /split\s*payment|pagamento\s+dividido/i;
+  const afirmaEfeito = /ret[êe]m|retenç|retid|liquidaç|banco|autom[áa]tic|recolhiment|deduz/i;
+  for (const f of indexaveis) {
+    const s = ler(f);
+    const fm = /^---\n([\s\S]*?)\n---/.exec(s)?.[1] ?? "";
+    // Contrato = um claim de proveniência que fale de split payment e nomeie
+    // artefato. Sem isso, descrever o mecanismo é afirmar norma sem fonte.
+    const temContrato = /(claim_scope|rule_item):[^\n]*split/i.test(fm);
+    for (const { alvo: j, contexto: ctx } of janelas(corpo(s))) {
+      // Negar que o domínio se aplica não é descrever o mecanismo.
+      if (mecanica.test(j) && afirmaEfeito.test(ctx) && !NEGA.test(ctx) && !temContrato) {
+        assert.fail(`${f}: descreve efeito de split payment sem claim de proveniência próprio — "${j.slice(0, 140)}"`);
+      }
+    }
+  }
+});
+
+test("T: CEST não é apresentado como causa da Rejeição 1024", () => {
+  for (const f of indexaveis) {
+    for (const { alvo: j, contexto: ctx } of janelas(corpo(ler(f)))) {
+      if (/\bCEST\b/.test(j) && /\b1024\b/.test(j) && !NEGA.test(ctx)) {
+        assert.fail(`${f}: CEST ligado à 1024 — "${j.slice(0, 150)}"`);
+      }
+    }
+  }
+});
+
+test("U: não se afirma recolhimento universal nem carga única em 2026", () => {
+  const universal = /\b(todo|toda|todos|todas|qualquer)\s+(os\s+|as\s+|o\s+|a\s+)?(contribuinte|empresa|emitente|neg[óo]cio)\w*/i;
+  const recolhe = /\brecolh\w+|\bpag\w+\b|\bdev\w+\s+\d/i;
+  for (const f of indexaveis) {
+    for (const { alvo: j, contexto: ctx } of janelas(corpo(ler(f)))) {
+      if (universal.test(j) && recolhe.test(j) && /\b2026\b|\b1\s?%|0,9|0,1/.test(j) && !NEGA.test(ctx)) {
+        assert.fail(`${f}: recolhimento universal afirmado — "${j.slice(0, 150)}"`);
+      }
+      // A soma 0,9 + 0,1 apresentada como carga de todos.
+      if (/\b1\s?%/.test(j) && /\b2026\b/.test(j) && /carga|al[íi]quota total|som\w+/i.test(j) && !NEGA.test(ctx)) {
+        assert.fail(`${f}: 1% em 2026 como carga geral — "${j.slice(0, 150)}"`);
+      }
+    }
+  }
+});
+
+test("V: compatibilidade entre campos não é apresentada como operação correta", () => {
+  const compat = /compat[íi]v\w+|compatibilidade|coerent\w+|combinaç[ãa]o v[áa]lida/i;
+  const conclui = /operaç[ãa]o\s+(est[áa]\s+)?(correta|regular)|incid[êe]ncia correta|tributaç[ãa]o correta|necessariamente correta/i;
+  for (const f of indexaveis) {
+    for (const { alvo: j, contexto: ctx } of janelas(corpo(ler(f)))) {
+      if (compat.test(j) && conclui.test(j) && !NEGA.test(ctx)) {
+        assert.fail(`${f}: campos compatíveis tratados como operação correta — "${j.slice(0, 150)}"`);
+      }
+    }
+  }
+});
+
+test("W: nenhuma promessa de prevenção total", () => {
+  const rx = /(100\s*%|totalmente|integralmente|completamente|todos os erros)\s*(d\w+\s+erros?\s*)?(preven|evit|elimin)\w*|(preven|evit|elimin)\w+\s+(100\s*%|totalmente|integralmente|todos os erros)/i;
+  for (const f of indexaveis) {
+    for (const { alvo: j, contexto: ctx } of janelas(corpo(ler(f)))) {
+      if (rx.test(j) && !NEGA.test(ctx)) {
+        assert.fail(`${f}: promessa de prevenção total — "${j.slice(0, 150)}"`);
+      }
+    }
+  }
 });
 
 // ── Q — Invalid Date (não regredir) ─────────────────────────────────────────
