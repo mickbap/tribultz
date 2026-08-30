@@ -12,13 +12,13 @@ import logging
 import re
 from decimal import Decimal
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, field_validator
 
 from app.data.cst_regimes import CST_REGIMES
 from app.data.uf_rates import VALID_UF_CODES
 from app.services.rate_limit import RateLimiter
-from app.services.tax_rate_resolver import calculate_full
+from app.services.tax_rate_resolver import NcmNaoDeterminavel, calculate_full
 
 logger = logging.getLogger(__name__)
 
@@ -162,14 +162,29 @@ async def public_calculadora(request: Request, body: CalculadoraRequest):
     _rate_limiter.check_or_raise(f"calc:{ip}")
     _daily_limiter.check_or_raise(f"calc_daily:{ip}")
 
-    result = calculate_full(
-        vBC=body.base_value,
-        quantity=body.quantity,
-        ncm=body.ncm_code,
-        uf=body.uf_destino,
-        cst=body.cst,
-        periodo=body.periodo,
-    )
+    # #685: sem lastro unânime na fonte não há valor a devolver. Devolver um
+    # número derivado do capítulo NCM era o defeito; devolver 1.0 por padrão
+    # seria o mesmo erro com outra cara.
+    try:
+        result = calculate_full(
+            vBC=body.base_value,
+            quantity=body.quantity,
+            ncm=body.ncm_code,
+            uf=body.uf_destino,
+            cst=body.cst,
+            periodo=body.periodo,
+        )
+    except NcmNaoDeterminavel as _e:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "erro": "nao_determinavel",
+                "ncm": _e.ncm,
+                "unanime": False,
+                "fontes_cClassTrib_usadas": _e.fontes,
+                "motivo": _e.motivo,
+            },
+        )
 
     return CalculadoraResponse(
         vBC=result.vBC,

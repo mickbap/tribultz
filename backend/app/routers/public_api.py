@@ -26,7 +26,7 @@ from app.api.plan_gate import _get_effective_plan
 from app.database import get_db
 from app.models.api_key import ApiKey
 from app.models.auth import User
-from app.services.tax_rate_resolver import calculate_full
+from app.services.tax_rate_resolver import NcmNaoDeterminavel, calculate_full
 
 router = APIRouter(tags=["public-api"])
 
@@ -173,12 +173,26 @@ def classify(
     classtrib_codigo, cc_candidatos, cc_status = resolve_cclasstrib(payload.ncm)
 
     # 2. Calcular CBS/IBS
-    result = calculate_full(
-        vBC=Decimal(payload.base_value.replace(",", ".")),
-        ncm=payload.ncm,
-        uf=payload.uf_destino,
-        cst=payload.cst,
-    )
+    # #685: mesma semântica do calculador. Levanta ANTES do débito de crédito —
+    # o cliente não paga por um valor que a fonte não sustenta.
+    try:
+        result = calculate_full(
+            vBC=Decimal(payload.base_value.replace(",", ".")),
+            ncm=payload.ncm,
+            uf=payload.uf_destino,
+            cst=payload.cst,
+        )
+    except NcmNaoDeterminavel as _e:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "erro": "nao_determinavel",
+                "ncm": _e.ncm,
+                "unanime": False,
+                "fontes_cClassTrib_usadas": _e.fontes,
+                "motivo": _e.motivo,
+            },
+        )
 
     # 3. Debitar 1 crédito SOMENTE quando há classificação entregue (>= 1 candidato).
     #    Sem mapeamento (requer_validacao) → NÃO cobra: o cliente não paga por

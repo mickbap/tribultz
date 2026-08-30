@@ -1,8 +1,10 @@
 """Tests for the Tax Rate Resolver service."""
 
+import pytest
 from decimal import Decimal
 
 from app.services.tax_rate_resolver import (
+    NcmNaoDeterminavel,
     resolve_rates, calculate, calculate_full, generate_xml_snippet,
 )
 from app.data.uf_rates import CBS_NATIONAL_RATE
@@ -33,15 +35,26 @@ class TestResolveRates:
         assert rates.rate_source == "ncm"
         assert rates.ncm_modifier == Decimal("0.0")
 
-    def test_ncm_override_food_reduced(self):
-        rates = resolve_rates(ncm="03034100", uf="SP")
+    def test_ncm_com_lastro_unanime(self):
+        """#685 — o modificador vem da fonte, não do capítulo NCM."""
+        rates = resolve_rates(ncm="10019900", uf="SP")
         assert rates.rate_source == "ncm"
         assert rates.ncm_modifier == Decimal("0.4")
+        assert rates.ncm_unanime is True
+        assert set(rates.ncm_fontes) == {"200034", "200038", "515001"}
 
-    def test_ncm_no_override(self):
+    def test_ncm_sem_lastro_nao_determinavel(self):
+        """#685 regra 3 — sem lastro não há modificador, nem o padrão 1.0."""
         rates = resolve_rates(ncm="84713012", uf="SP")
-        assert rates.rate_source == "uf_default"
+        assert rates.ncm_modifier is None
+        assert rates.ncm_unanime is False
+        assert rates.ncm_fontes == []
+
+    def test_ncm_ausente_segue_por_uf(self):
+        """NCM ausente não é NCM sem lastro: não há afirmação a determinar."""
+        rates = resolve_rates(uf="SP")
         assert rates.ncm_modifier == Decimal("1.0")
+        assert rates.rate_source.startswith("uf_default")
 
     def test_cst_exempt_070(self):
         rates = resolve_rates(uf="SP", cst="070")
@@ -118,7 +131,7 @@ class TestCalculate:
 class TestCalculateFull:
     def test_convenience_method(self):
         result = calculate_full(
-            vBC=Decimal("1000.00"), ncm="84713012", uf="SP", cst="000",
+            vBC=Decimal("1000.00"), ncm="10019900", uf="SP", cst="000",
         )
         assert result.cst == "000"
         assert result.vBC == Decimal("1000.00")
@@ -168,3 +181,23 @@ class TestGenerateXmlSnippet:
         )
         assert "<CST>410</CST>" in xml
         assert "<gIBSCBS>" not in xml
+
+
+class TestNcmNaoDeterminavel:
+    """#685 — endpoint nunca devolve modificador sem lastro unânime."""
+
+    def test_calculate_full_recusa_ncm_sem_lastro(self):
+        with pytest.raises(NcmNaoDeterminavel) as exc:
+            calculate_full(vBC=Decimal("1000.00"), ncm="84713012", uf="SP", cst="000")
+        assert exc.value.fontes == []
+        assert "lastro" in exc.value.motivo
+
+    def test_calculate_full_recusa_ncm_ambigua(self):
+        with pytest.raises(NcmNaoDeterminavel) as exc:
+            calculate_full(vBC=Decimal("1000.00"), ncm="06024000", uf="SP", cst="000")
+        assert exc.value.fontes, "as fontes consultadas seguem visíveis"
+
+    def test_calculate_full_aceita_lastro_unanime(self):
+        r = calculate_full(vBC=Decimal("1000.00"), ncm="10019900", uf="SP", cst="000", periodo="teste_2026")
+        # 1% (0,9 CBS + 0,1 IBS) com redução de 60% → 0,4% de 1000 = 4,00
+        assert r.total_tributos == Decimal("4.00")
