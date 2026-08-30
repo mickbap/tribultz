@@ -186,19 +186,72 @@ test("P0 reindexado carrega META_TITLE aprovado e proveniência por claim", () =
   }
 });
 
-test("o artigo do 03/08 não afirma data de ativação da UB12-10", () => {
-  const s = um("nfe-rejeitada-03-08-2026-regime-normal-crt3");
+test("UB12-10: estado presente determinado, data futura não determinada", () => {
+  const arq = "nfe-rejeitada-03-08-2026-regime-normal-crt3";
+  const s = um(arq);
   const t = corpo(s);
-  // A divergência é registrada, não resolvida: o claim da UB12-10 é NAO_DETERMINADO
-  // e a nota de conflito nomeia as fontes que não convergem.
-  assert.match(s, /claim_classification: "NAO_DETERMINADO"/, "o claim da UB12-10 precisa ser NAO_DETERMINADO");
-  assert.match(s, /conflict_note:[^\n]*(divergência|Divergência|não convergem)/,
-    "a divergência precisa estar declarada na proveniência");
-  // E o corpo não pode passar a afirmar uma data de produção para a regra.
-  for (const m of t.matchAll(/[^.]*UB12-10[^.]*\./g)) {
-    assert.doesNotMatch(m[0], /\b(produção|produ[çc][ãa]o)\b[^.]{0,60}\d{2}\/\d{2}\/\d{4}/i,
-      `afirma data de produção para a UB12-10: "${m[0].trim().slice(0, 140)}"`);
+  // Varredura por LINHA: em MDX cada parágrafo e cada linha de tabela é uma
+  // unidade. Dividir por ponto quebraria linhas de tabela ao meio e acusaria
+  // a pergunta sem enxergar a resposta na mesma linha.
+  const linhas = t.split("\n").filter((l) => l.trim());
+  const nega = (l: string) => /\bn[ãa]o\b|postergou|adiad|implementação futura/i.test(l);
+
+  // 1 — não afirmar que a regra está ativa em produção
+  for (const l of linhas) {
+    if (/(UB12-10|\b1115\b)/.test(l) && /ativa\s+em\s+produção|em\s+produção\s+desde/i.test(l)) {
+      assert.ok(nega(l), `afirma UB12-10 ativa em produção: "${l.slice(0, 140)}"`);
+    }
   }
+
+  // 2 — 03/08/2026 não pode ser apresentado como data corrente de ativação
+  for (const l of linhas) {
+    if (/03\/08\/2026/.test(l) && /ativa|ativação|vigora|passou a valer/i.test(l)) {
+      assert.match(l, /previsão histórica|históric|postergou|prevista|\bn[ãa]o\b/i,
+        `03/08/2026 como data corrente de ativação: "${l.slice(0, 140)}"`);
+    }
+  }
+
+  // 3 — nenhuma nova data futura de ativação
+  for (const l of linhas) {
+    assert.doesNotMatch(l, /(nova data|data de ativação|volta a ser aplicad\w*|ser[áa] ativad\w*)[^.]{0,60}\d{2}\/\d{2}\/\d{4}/i,
+      `afirma nova data de ativação: "${l.slice(0, 140)}"`);
+  }
+
+  // 4 — o adiamento não suspende a obrigação documental
+  for (const l of linhas) {
+    if (/adiamento|adiada|postergou|postergaç/i.test(l) && /suspend|dispens|afast/i.test(l)) {
+      assert.match(l, /\bn[ãa]o\b/i, `adiamento tratado como dispensa da obrigação: "${l.slice(0, 140)}"`);
+    }
+  }
+
+  // 5 — ausência dos campos não gera 1115 automático em produção hoje
+  for (const l of linhas) {
+    if (/aus[êe]ncia|não informado/i.test(l) && /\b1115\b|rejeição automática/i.test(l) && /produção/i.test(l)) {
+      assert.match(l, /\bn[ãa]o\b/i, `afirma 1115 automático em produção: "${l.slice(0, 140)}"`);
+    }
+  }
+
+  // 6/7 — as duas classificações, lidas da estrutura e não da prosa
+  const blocos = (/^provenance:\n([\s\S]*?)(?=^\w|\n---)/m.exec(s)?.[1] ?? "").split(/\n  - /).filter(Boolean);
+  const acha = (rx: RegExp) => blocos.find((b) => rx.test(b));
+  const classe = (b?: string) => /claim_classification: "([A-Z_]+)"/.exec(b ?? "")?.[1];
+
+  const estadoAtual = acha(/em produção está adiada|implementação futura para produção/i);
+  assert.ok(estadoAtual, "sem claim do ESTADO ATUAL da UB12-10");
+  assert.equal(classe(estadoAtual), "FATO_NORMATIVO",
+    "o estado presente está determinado pela fonte — não pode ser NAO_DETERMINADO");
+
+  const dataFutura = acha(/A partir de qual data a regra UB12-10/i);
+  assert.ok(dataFutura, "sem claim da DATA FUTURA de ativação");
+  assert.equal(classe(dataFutura), "NAO_DETERMINADO",
+    "a data futura só vira fato com nova fonte oficial posterior");
+
+  // A nota de versionamento é proveniência temporal, não conflito irresolvido.
+  assert.match(s, /versioning_note: "Nota de versionamento:/,
+    "a linhagem de versões precisa estar declarada como versionamento");
+
+  // 8 — 03/08/2026 permanece na linhagem histórica
+  assert.match(t, /03\/08\/2026/, "03/08/2026 não pode sumir: é a previsão histórica da regra");
 });
 
 // ── Q — Invalid Date (não regredir) ─────────────────────────────────────────

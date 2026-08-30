@@ -44,6 +44,15 @@ export type ClaimProvenance = {
   temporal_applicability?: string;
   /** Registro de conflito oficial × oficial, preservado sem conciliação. */
   conflict_note?: string;
+  /**
+   * Proveniência temporal/versionamento: linhagem de versões de um artefato
+   * quando a versão corrente supera uma anterior.
+   *
+   * Distinta de `conflict_note`: conflito é divergência não conciliada entre
+   * fontes; versionamento é sucessão resolvida — a versão nova prevalece, e a
+   * anterior é preservada como linhagem histórica, não como estado vigente.
+   */
+  versioning_note?: string;
 };
 
 const CONTENT_DIR = path.join(process.cwd(), "content", "blog");

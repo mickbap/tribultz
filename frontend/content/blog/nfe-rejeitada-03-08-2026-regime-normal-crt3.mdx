@@ -10,7 +10,7 @@ author:
   url: "https://tribultz.com.br"
 publishedAt: "2026-07-14T12:00:00.000Z"
 updatedAt: "2026-08-30"
-updateNote: "Reescrita integral, com as cinco dimensões separadas: obrigação normativa, disponibilidade técnica, regra de validação, ativação em produção e rejeição efetiva. O marco de 03/08/2026 foi conferido no Ato Conjunto RFB/CGIBS nº 4/2026 e o adiamento das validações no Ato Técnico Conjunto nº 01/2026. O artigo não afirma data de ativação para a UB12-10: as fontes disponíveis divergem, e a divergência está registrada na proveniência do claim correspondente em vez de resolvida por inferência."
+updateNote: "Refinamento do status temporal da UB12-10 conforme parecer jurídico final. O estado presente da regra deixou de ser NAO_DETERMINADO e passou a FATO_NORMATIVO: a Observação vigente da regra na NT 2025.002-RTC v1.51 registra implementação futura para produção, e a numeração duplicada das observações no artefato mostra que o par que cita 03/08/2026 foi superado. A data futura de ativação permanece NAO_DETERMINADO. Acrescentados os marcos próprios do Simples Nacional e da tributação monofásica, conferidos no art. 1º, §§ 1º e 2º, do Ato Conjunto RFB/CGIBS nº 4/2026."
 tags:
   - NF-e
   - NFC-e
@@ -57,16 +57,50 @@ provenance:
     source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
     source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
     verified_at: "2026-08-30"
-  - claim_scope: "Em que data a regra UB12-10 passa a produzir rejeição efetiva em produção"
-    claim_classification: "NAO_DETERMINADO"
+  - claim_scope: "A aplicação da regra UB12-10 em produção está adiada: a Observação vigente da regra na NT 2025.002-RTC v1.51 registra implementação futura para produção"
+    claim_classification: "FATO_NORMATIVO"
     artifact: "NT 2025.002-RTC"
     artifact_version: "1.51"
-    rule_item: "UB12-10"
+    rule_item: "UB12-10, Observação de implantação"
     source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
     source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
     verified_at: "2026-08-30"
-    temporal_applicability: "Divergência aberta: o contrato editorial declara produção futura, enquanto a tabela de cronograma da própria v1.51 registra implantação em produção em 03/08/2026 — e o Ato Técnico Conjunto nº 01/2026 adiou o início das validações sem divulgar nova data"
-    conflict_note: "As três fontes não convergem, e nenhuma data de ativação é afirmada aqui. A divergência está registrada e aguarda decisão. Enquanto isso, este artigo permanece fora do índice."
+    temporal_applicability: "Estado corrente em 30/08/2026: produção adiada para implementação futura"
+    versioning_note: "Nota de versionamento: a documentação histórica da UB12-10 registrou 03/08/2026 como data prevista de produção. A versão 1.51 postergou a aplicação da regra em produção para implementação futura, e RFB/CGIBS confirmaram que a ausência dos campos IBS/CBS não deve gerar rejeição automática enquanto durar o adiamento. Até 30/08/2026, não foi publicada nova data de ativação."
+  - claim_scope: "Em 30/08/2026, a ausência do grupo IBS/CBS não provoca, por força da UB12-10, rejeição automática com cStat 1115 em produção"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Ato Técnico Conjunto nº 01/2026"
+    rule_item: "UB12-10"
+    source_authority: "Receita Federal do Brasil e Comitê Gestor do IBS"
+    source_url: "https://www.cgibs.gov.br/receita-federal-e-comite-gestor-do-ibs-esclarecem-adiamento-das-regras-de-validacao-dos-documentos-fiscais-eletronicos"
+    verified_at: "2026-08-30"
+    temporal_applicability: "Estado corrente em 30/08/2026, enquanto durar o adiamento"
+  - claim_scope: "A partir de qual data a regra UB12-10 volta a ser aplicada em produção"
+    claim_classification: "NAO_DETERMINADO"
+    artifact: "NT 2025.002-RTC"
+    artifact_version: "1.51"
+    rule_item: "UB12-10, Observação de implantação"
+    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+    temporal_applicability: "Até 30/08/2026 não foi publicada nova data de ativação"
+    conflict_note: "O estado presente está determinado — a regra está adiada. A data futura não está: nenhuma fonte oficial a publicou. São dois claims distintos, e este não é afirmado."
+  - claim_scope: "Em homologação, a UB12-10 é implementada para NF-e com data de emissão maior ou igual a 01/07/2026 e emitente com CRT 3 = Regime Normal"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "NT 2025.002-RTC"
+    artifact_version: "1.51"
+    rule_item: "UB12-10, Observação 1"
+    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+  - claim_scope: "Para os contribuintes optantes pelo Simples Nacional, a obrigatoriedade de emissão dos documentos inicia-se em 1º de janeiro de 2027; para a NF-e que registre fornecimentos sujeitos à tributação monofásica, também em 1º de janeiro de 2027"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Ato Conjunto RFB/CGIBS nº 4, de 30 de julho de 2026"
+    rule_item: "art. 1º, §§ 1º e 2º"
+    source_authority: "Receita Federal do Brasil e Comitê Gestor do IBS"
+    source_url: "https://www.cgibs.gov.br/upload/arquivos/202607/31091735-20260730-16h30-ato-conjunto-rfb-cgibs-na-c2-ba-4-260731-090909.pdf"
+    verified_at: "2026-08-30"
+    temporal_applicability: "Marcos próprios, distintos do marco geral de 03/08/2026"
   - claim_scope: "A Rejeição 1119 corresponde à regra W34-20, dos modelos 55 e 65, cuja condição é o grupo de totais de IBS e CBS não informado quando pelo menos um item possui IBS ou CBS informado"
     claim_classification: "FATO_NORMATIVO"
     artifact: "NT 2025.002-RTC"
@@ -163,17 +197,45 @@ O desenho do ano fica claro quando se lê os três atos juntos: exigir o documen
 
 **Rejeição 1115 — regra UB12-10** (modelos 55 e 65). A condição é o grupo de imposto IBS e CBS não estar informado no item. A regra traz duas exceções: não se aplica à NF-e de devolução de mercadorias nem à NF-e complementar que referencie documento com data de emissão anterior ao período indicado, e não se aplica quando informado o campo `cProdANP` e o produto está presente na Tabela de Combustíveis Sujeitos à Tributação Monofásica.
 
+Sobre o estado dessa regra hoje:
+
+> A Rejeição 1115 (RV UB12-10) não está ativa em produção, em 30/08/2026, para rejeitar automaticamente NF-e/NFC-e pela ausência do grupo IBS/CBS. A NT 2025.002 v1.51 postergou sua aplicação em produção para implementação futura, sem nova data publicada. O adiamento da validação não suspende a obrigação documental prevista no Ato Conjunto RFB/CGIBS nº 4/2026 para os contribuintes e operações já alcançados pelo respectivo cronograma.
+
+Em homologação a situação é outra: a Observação 1 da regra registra implementação para NF-e com data de emissão maior ou igual a 01/07/2026 e emitente com CRT 3 = Regime Normal. Homologação e produção são ambientes distintos, e a regra existir em um não significa que execute no outro.
+
+**Nota de versionamento:** a documentação histórica da UB12-10 registrou 03/08/2026 como data prevista de produção. A versão 1.51 postergou a aplicação da regra em produção para implementação futura, e RFB/CGIBS confirmaram que a ausência dos campos IBS/CBS não deve gerar rejeição automática enquanto durar o adiamento. Até 30/08/2026, não foi publicada nova data de ativação.
+
 **Rejeição 1119 — regra W34-20** (modelos 55 e 65). A condição é o grupo de totais de IBS e CBS não estar informado quando **pelo menos um item** possui IBS ou CBS informado. É uma regra de coerência interna: ela não exige que o documento traga IBS/CBS, exige que, se os itens trazem, o total também traga.
 
 Repare que a W34-20 só entra em cena depois que o emitente já preencheu os campos nos itens — o que a coloca do lado de dentro da adaptação, não do lado de fora.
 
-### O que este artigo não afirma
+### Estado presente e data futura são duas perguntas
 
-A data em que cada uma dessas regras passa a produzir rejeição efetiva em produção **não é afirmada aqui**.
+Vale isolar a distinção, porque ela costuma ser embolada num "não se sabe" genérico:
 
-Para a W34-20, a Nota Técnica não traz observação de cronograma próprio nem data específica na tabela de implantação. Para a UB12-10, há divergência entre as fontes disponíveis, e o assunto está registrado como pendência editorial em vez de resolvido por inferência. Nenhuma data foi inventada para preencher a lacuna.
+| Pergunta | Resposta |
+|----------|----------|
+| A UB12-10 está executando em produção hoje? | **Determinado.** Não — a aplicação está adiada para implementação futura |
+| A ausência do grupo gera rejeição 1115 em produção hoje? | **Determinado.** Não |
+| A obrigação documental está valendo? | **Determinado.** Sim, conforme o escopo e o cronograma do Ato nº 4 |
+| A partir de quando a regra volta a ser aplicada? | **Não determinado.** Nenhuma data foi publicada |
 
-Quem precisa da informação deve acompanhar as publicações do Portal Nacional da NF-e, os atos técnicos conjuntos da Receita e do CGIBS, e o ambiente de homologação da sua autorizadora — cuja implantação, registra a própria Nota Técnica, pode variar por UF.
+Só a última linha é uma lacuna. As três primeiras têm resposta na fonte oficial, e tratá-las como incertas seria tão impreciso quanto inventar a data que falta.
+
+Para a **W34-20**, a Nota Técnica não traz observação de cronograma próprio nem data específica na tabela de implantação — a data exata de ativação dessa regra permanece não determinada, e nenhuma foi inventada aqui.
+
+Quem precisa acompanhar a data que falta deve olhar as publicações do Portal Nacional da NF-e, os atos técnicos conjuntos da Receita e do CGIBS, e o ambiente de homologação da sua autorizadora — cuja implantação, registra a própria Nota Técnica, pode variar por UF.
+
+## O marco não é universal: os prazos próprios do Ato nº 4
+
+Um ponto que o alarme de agosto atropelou: 03/08/2026 é o marco de **parte** dos casos, não de todos. O próprio Ato Conjunto nº 4 abre exceções com prazos próprios, entre elas:
+
+| Hipótese | Início da obrigatoriedade | Dispositivo |
+|----------|---------------------------|-------------|
+| Contribuintes optantes pelo Simples Nacional | 1º de janeiro de 2027 | art. 1º, § 1º |
+| NF-e que registre fornecimentos sujeitos à tributação monofásica | 1º de janeiro de 2027 | art. 1º, § 2º |
+
+O ato traz ainda outras hipóteses com prazos próprios — importação de bens materiais e sujeito passivo de IBS/CBS não contribuinte de ICMS, entre outras. Antes de concluir que a obrigação já alcança sua operação, o passo é localizar a hipótese aplicável no ato, não presumir o marco geral.
 
 ## Perguntas frequentes
 
