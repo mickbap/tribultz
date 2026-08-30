@@ -1622,3 +1622,26 @@ class TestPfContribCnpjAto6:
         fora = self._find(self._nfe("2029-01-02T10:00:00-03:00"))
         assert len(dentro) == len(fora) == 1
         assert dentro[0].severity == fora[0].severity == "ALERT"
+
+def test_dfe_allowed_cobre_todos_os_indicadores_da_fonte():
+    """#680 — `dfe_allowed` vazio só pode significar "nenhum modelo", nunca
+    "modelo que o nosso mapa esqueceu".
+
+    O mapa tinha 14 indicadores; a fonte publica 17. DERE, DIR e DUIMP ficavam
+    de fora, e 6 códigos publicados para DeRE saíam com lista vazia — do ponto
+    de vista do consumidor, indistinguíveis de "não vale para DFe nenhum".
+    """
+    from app.data.classtrib_source import DFE_INDICATORS
+    from app.data.classtrib_table import CLASSTRIB_BY_CODE
+
+    assert {"IndDere", "IndDir", "IndDuimp"} <= set(DFE_INDICATORS), (
+        "indicador de modelo removido do mapa — código publicado só para ele voltaria a sair vazio"
+    )
+
+    vazios = {c for c, r in CLASSTRIB_BY_CODE.items() if r.get("dfe_allowed") == []}
+    dere = {"011001", "011002", "011004", "011005", "200018", "410034"}
+    assert not (dere & vazios), (
+        f"códigos publicados para DeRE voltaram a ficar vazios: {sorted(dere & vazios)}"
+    )
+    for code in sorted(dere):
+        assert "DERE" in CLASSTRIB_BY_CODE[code]["dfe_allowed"], code

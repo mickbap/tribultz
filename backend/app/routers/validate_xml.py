@@ -1349,10 +1349,15 @@ def validate_xml(
     # 10 códigos desse segundo grupo passavam em SILÊNCIO em qualquer modelo (#680).
     #
     # Que [] significa "nenhum indicador habilitado" — e não ausência de informação —
-    # foi verificado contra a fonte em 26/08/2026:
-    # nos 10 códigos as 14 chaves IndNfe/IndNfce/IndNfse/… estão TODAS PRESENTES e
-    # TODAS false — declaração explícita, não ausência de informação. O controle
-    # (000001) traz as mesmas 14 chaves com 11 verdadeiras.
+    # foi verificado contra a fonte: as chaves Ind* estão TODAS PRESENTES e todas
+    # false nesses códigos, enquanto o controle (000001) traz várias verdadeiras.
+    #
+    # A conferência de 26/08 cobria 14 indicadores e apontava 10 códigos vazios.
+    # Eram 17 na fonte: DERE, DIR e DUIMP faltavam no mapa (corrigido junto com
+    # esta mudança). Seis daqueles 10 tinham IndDere=true, ou seja, a mensagem de
+    # "nenhum modelo habilitado" teria sido FALSA para eles. Com o mapa completo,
+    # restam 4 códigos genuinamente sem nenhum modelo — e só para esses o texto
+    # abaixo se aplica.
     #
     # O que a fonte sustenta é só isso: nenhum dos indicadores AVALIADOS está
     # habilitado. Ela NÃO diz a que fluxo o código pertence. Atribuir esses
