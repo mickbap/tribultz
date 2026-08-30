@@ -163,6 +163,48 @@ cd backend && source .venv/bin/activate && python -m pytest tests/ -q && ruff ch
 - **Frontend**: deploy via Vercel (não dispara este workflow)
 - Secrets necessários: `MAGALU_SSH_KEY`, `MAGALU_SSH_HOST`, `MAGALU_SSH_USER`
 
+## Blog — fluxo editorial (ROUND BLOG 30/08-N)
+
+**Jurídico decide o conteúdo. Techlead publica o conteúdo.**
+
+`SORO → JURÍDICO → TECHLEAD → BLOG`. O Jurídico devolve uma de três decisões:
+`LIBERADO` (publicar), `CORRIGIR` (aplicar o replacement literal e publicar) ou
+`CONTER` (noindex até chegar o replacement). Depois do `LIBERADO`, acabou a
+discussão editorial.
+
+Ao receber um artigo aprovado, o Techlead **não** reinterpreta o texto, não
+refaz pesquisa jurídica, não reconstrói claims aprovados e não devolve para
+nova auditoria sem contradição objetiva encontrada.
+
+**Entrada mínima para publicar**: `slug`, `title`, `body` e a decisão
+`LIBERADO`. `metaTitle`/`description` quando fornecidos. Proveniência
+estruturada, quando o Jurídico fornecer, é preservada — quando não fornecer,
+**não se inventa e não se bloqueia**.
+
+**Dois gates independentes** (`frontend/src/lib/blogProvenanceLint.ts`):
+
+| Gate | Pergunta | Bloqueia? |
+|------|----------|-----------|
+| `PUBLICATION_GATE` (`severity: "error"`) | este conteúdo aprovado publica corretamente? | sim |
+| `PROVENANCE_AUDIT` (`severity: "audit"`) | já atingiu o padrão máximo de rastreabilidade? | **não** |
+
+`PUBLICATION_GATE=GREEN` com `PROVENANCE_AUDIT=PENDING` não é contradição: é
+dívida controlada. Exceção: se o Jurídico determinar que uma proveniência
+específica sustenta uma afirmação material, ela entra no gate de publicação —
+por decisão dele, nunca por regra automática.
+
+**Só bloqueiam publicação**: erro jurídico/material objetivo, texto jurídico
+incompleto, build quebrado, frontmatter que impeça renderização, risco de
+exposição de segredo, ou `CONTER` explícito. Fora disso, registre dívida e siga.
+
+**Filas independentes**: dívida histórica de proveniência é backlog com rounds
+próprios. Artigo novo nunca espera o acervo antigo.
+
+**Antes de criar mecanismo novo para publicar**, pergunte: isso é necessário
+para publicar com segurança este artigo, ou é melhoria de plataforma? Se for
+melhoria — backlog, em PR próprio, sem segurar publicação aprovada. Campo,
+type, lint, guard ou registry não nascem porque apareceu um post novo.
+
 ## Superpowers skills disponíveis
 
 | Skill | Uso |

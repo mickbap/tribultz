@@ -19,7 +19,24 @@
  *   afirmação factual — quem garante isso é o componente de UI, não este lint;
  *   aqui apenas exigimos que a classificação exista.
  */
-export type ProvenanceFinding = { rule: string; severity: "error"; message: string };
+/**
+ * Duas perguntas independentes, e não uma fila:
+ *
+ * `error`  — PUBLICATION_GATE. Impede publicar: o conteúdo não renderiza
+ *            corretamente ou a proveniência declarada está malformada.
+ * `audit`  — PROVENANCE_AUDIT. Não impede publicar: o artigo ainda não
+ *            atingiu o padrão máximo de rastreabilidade estruturada.
+ *
+ * Um artigo com PUBLICATION_GATE verde e PROVENANCE_AUDIT pendente não é
+ * contradição — é dívida controlada. Conteúdo que o Jurídico liberou não
+ * espera metadata acessória.
+ */
+export type ProvenanceFinding = { rule: string; severity: "error" | "audit"; message: string };
+
+/** Só o que impede publicar. */
+export const bloqueiaPublicacao = (f: ProvenanceFinding[]) => f.filter((x) => x.severity === "error");
+/** Só o que é dívida de rastreabilidade. */
+export const dividaDeAuditoria = (f: ProvenanceFinding[]) => f.filter((x) => x.severity === "audit");
 
 /**
  * DÉBITO EDITORIAL DECLARADO — congelado em 2026-08-30.
@@ -37,12 +54,16 @@ export type ProvenanceFinding = { rule: string; severity: "error"; message: stri
  * "conteúdo verificado".
  */
 /**
- * DÍVIDA ZERADA no ROUND BLOG 30/08-M. Os 21 slugs saíram por prova
- * individual: auditoria jurídica do Round L, proveniência materializada,
- * correção aplicada quando exigida e guards verdes. A lista permanece como
- * ratchet: só encolhe, e o teste abaixo impede que um slug novo entre.
+ * Slugs que publicam com PROVENANCE_AUDIT pendente. Derivado, não curado:
+ * `auditoriaPendente()` percorre o acervo. A lista deixou de ser exceção do
+ * lint porque ausência de proveniência deixou de reprovar — ela é relatório
+ * de backlog, e backlog não é fila de espera para publicar.
  */
-export const DEBITO_PROVENANCE_2026_08_30: readonly string[] = [] as const;
+export function auditoriaPendente(artigos: Array<{ slug: string; mdx: string }>): string[] {
+  return artigos
+    .filter(({ slug, mdx }) => dividaDeAuditoria(lintProvenance(mdx, slug)).length > 0)
+    .map(({ slug }) => slug);
+}
 
 const CLASSIFICACOES = ["FATO_NORMATIVO", "INTERPRETACAO_SEGURA", "NAO_DETERMINADO"];
 
@@ -109,15 +130,15 @@ export function lintProvenance(mdx: string, slug?: string): ProvenanceFinding[] 
 
   // Débito declarado: não bloqueia, mas também não some do radar.
   const alvo = slug ?? /^slug:\s*["']?([^"'\n]+)/m.exec(fm)?.[1]?.trim() ?? "";
-  if (DEBITO_PROVENANCE_2026_08_30.includes(alvo)) return out;
 
   const blocos = blocosProvenance(fm);
   if (blocos.length === 0) {
     out.push({
       rule: "PROVENANCE_AUSENTE",
-      severity: "error",
+      severity: "audit",
       message:
-        "artigo técnico indexável sem `provenance` — toda afirmação material precisa apontar artefato, autoridade, URL e data de verificação.",
+        "artigo técnico indexável sem `provenance` — dívida de rastreabilidade, não impedimento de publicação. " +
+        "Se o Jurídico determinar que uma afirmação material exige proveniência, ela entra no PUBLICATION_GATE por decisão dele, não por regra automática.",
     });
     return out;
   }
