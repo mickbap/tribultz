@@ -38,7 +38,6 @@ export type ProvenanceFinding = { rule: string; severity: "error"; message: stri
  */
 export const DEBITO_PROVENANCE_2026_08_30: readonly string[] = [
   "api-validacao-xml-nfe-na-pratica",
-  "como-calcular-aliquota-cbs-ibs",
   "como-prevenir-falhas-autorizadoras-emissao-fiscal",
   "como-revisar-catalogo-fiscal-ibs-cbs",
   "como-testar-campos-tributarios-antes-da-emissao",

@@ -57,6 +57,12 @@ export type PostAuthor = {
 
 export type PostFrontmatter = {
   title: string;
+  /**
+   * Título de SEO aprovado pelo Jurídico quando difere do título editorial.
+   * Alimenta só a tag `<title>`; o H1 e o Open Graph seguem `title`.
+   * Ausente, o `<title>` cai em `title` — comportamento anterior.
+   */
+  metaTitle?: string;
   description: string;
   slug: string;
   category: string;
