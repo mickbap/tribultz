@@ -1,0 +1,220 @@
+{
+ "meta": {
+  "artefato": "Tabela de meios de pagamento",
+  "versao": null,
+  "fonte": "Portal Nacional da NF-e — Documentos › Diversos › Tabela de Meios de pagamento (publicada em 06/03/2026)",
+  "source_url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=uekMIW1ydFM=",
+  "observado_em": "2026-08-29",
+  "fingerprint": "f85d4a6d50390f824921703d166d3f2f4ec637b7244fa922248ef14e782d8a2d",
+  "arquivo_bruto": "artefatos/tabela_meios_pagamento_20260306.xlsx",
+  "subset_vinculacao": {
+   "instituido_por": {
+    "artefato": "IT 2026.001",
+    "versao": "1.01",
+    "source_url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=vZg2QuZtVg0=",
+    "arquivo_bruto": "artefatos/it_2026_001_v1.01.pdf",
+    "fingerprint": "1e58913755c4e617f30619448909dd9ef82b0c772bcd44dc85774e77bcd28900"
+   },
+   "codigos": [
+    "15",
+    "17",
+    "18",
+    "20",
+    "23",
+    "24"
+   ],
+   "trecho": "O grupo de informação da vinculação da transação de pagamento utilizará os seguintes códigos estabelecidos nesta tabela: 15, 17, 18, 20, 23, 24.",
+   "defasagem_documental": {
+    "codigos": [
+     "23",
+     "24"
+    ],
+    "it_afirma": "Novos códigos que serão atualizados na tabela nacional",
+    "tabela_observada_em_20260829": "já contém 23 (PIX Automático) e 24 (TEF - Book Transfer)",
+    "status": "DEFASAGEM_DOCUMENTAL_PRESERVADA",
+    "nota": "A nota do IT ficou para trás da tabela. Fato registrado; não é bloqueio e não altera o subset."
+   }
+  },
+  "conflito_cstat_tpmeiopgto": {
+   "conflict_status": "UNRESOLVED",
+   "nt_2026_006_v100": {
+    "cstat": 1273,
+    "regra": "YC05-10 / P26-10",
+    "trecho": "Rejeição: Meio de pagamento inválido [nPag: 999]",
+    "fingerprint": "47a65abde315fed1e6a8c6085a67ca483935cb57877ae5715d365377a725e05d",
+    "arquivo_bruto": "artefatos/nt_2026_006_v1.00.pdf"
+   },
+   "it_2026_001_v101": {
+    "cstat": 1003,
+    "regra": "§1",
+    "trecho": "A utilização de um código diferente dos relacionados acima causará a rejeição 1003 – Tipo de Pagamento inválido"
+   },
+   "nota": "Dois artefatos oficiais divergem sobre o cStat de tpMeioPgto inválido. A INVALIDADE é determinada; o cStat esperado é UNDETERMINED. A Tribultz não escolhe entre 1273 e 1003 — incerteza sobre o código de rejeição não é incerteza sobre a invalidez."
+  },
+  "total_codigos": 23,
+  "total_allowed_in_payment_linkage": 6
+ },
+ "codigos": {
+  "01": {
+   "descricao": "Dinheiro",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": null,
+   "allowed_in_payment_linkage": false
+  },
+  "02": {
+   "descricao": "Cheque",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": null,
+   "allowed_in_payment_linkage": false
+  },
+  "03": {
+   "descricao": "Cartão de Crédito",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": null,
+   "allowed_in_payment_linkage": false
+  },
+  "04": {
+   "descricao": "Cartão de Débito",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": null,
+   "allowed_in_payment_linkage": false
+  },
+  "05": {
+   "descricao": "Cartão da Loja (Private Label), Crediário Digital, Outros Crediários",
+   "dIniVig": "2024-07-01",
+   "dFimVig": null,
+   "observacoes": "Cartão da loja (na forma de crediário), Crediário Digital, Crediário com ou sem Carnê etc. \nNão usar para o cartão de loja \"bandeirado\".",
+   "allowed_in_payment_linkage": false
+  },
+  "10": {
+   "descricao": "Vale Alimentação",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": null,
+   "allowed_in_payment_linkage": false
+  },
+  "11": {
+   "descricao": "Vale Refeição",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": null,
+   "allowed_in_payment_linkage": false
+  },
+  "12": {
+   "descricao": "Vale Presente",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": null,
+   "allowed_in_payment_linkage": false
+  },
+  "13": {
+   "descricao": "Vale Combustível",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": null,
+   "allowed_in_payment_linkage": false
+  },
+  "14": {
+   "descricao": "Duplicata Mercantil",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": "Duplicata Mercantil é um título de crédito vinculado a uma operação de venda ou prestação de serviços, disciplinado pela Lei nº 5.474/68.",
+   "allowed_in_payment_linkage": false
+  },
+  "15": {
+   "descricao": "Boleto Bancário",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": null,
+   "allowed_in_payment_linkage": true
+  },
+  "16": {
+   "descricao": "Depósito Bancário",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": null,
+   "allowed_in_payment_linkage": false
+  },
+  "17": {
+   "descricao": "Pagamento Instantâneo (PIX) - Dinâmico",
+   "dIniVig": "2024-07-01",
+   "dFimVig": null,
+   "observacoes": "PIX realizado com a geração do Qr-Code de forma dinâmica ou URL dinâmica. As UF podem exigir que o código de transação do pagamento desse tipo de PIX seja informado na NF-e/NFC-e.",
+   "allowed_in_payment_linkage": true
+  },
+  "18": {
+   "descricao": "TED (Transferência Eletrônica Disponível)",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": "Transferência entre contas de diferentes bancos.",
+   "allowed_in_payment_linkage": true
+  },
+  "19": {
+   "descricao": "Programa de fidelidade, Cashback, Crédito Virtual",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": null,
+   "allowed_in_payment_linkage": false
+  },
+  "20": {
+   "descricao": "Pagamento Instantâneo (PIX) - Estático",
+   "dIniVig": "2024-07-01",
+   "dFimVig": null,
+   "observacoes": "Pix realizado com QR code estático, ou chave Pix, ou informações de agência e conta.",
+   "allowed_in_payment_linkage": true
+  },
+  "21": {
+   "descricao": "Crédito em Loja",
+   "dIniVig": "2024-07-01",
+   "dFimVig": null,
+   "observacoes": "Crédito em loja decorrente de valor pago anteriormente, de devolução de mercadoria etc.",
+   "allowed_in_payment_linkage": false
+  },
+  "22": {
+   "descricao": "Pagamento Eletrônico não Informado - falha de hardware do sistema emissor",
+   "dIniVig": "2024-07-01",
+   "dFimVig": null,
+   "observacoes": "Usado para informar que o pagamento por meio eletrônico não foi integrado por falha no hardware do sistema emissor de documento fiscal eletrônico, exclusivamente quando, por tal falha, não for possível a emissão offline. É uma informação útil para as empresas que utilizam sistemas integrados, sobretudo para aquelas que são obrigadas à integração do pagamento eletrônico com o documento fiscal pela sua UF.",
+   "allowed_in_payment_linkage": false
+  },
+  "23": {
+   "descricao": "Pagamento Instantâneo (PIX) - Automático",
+   "dIniVig": "2026-05-04",
+   "dFimVig": null,
+   "observacoes": "Pagamentos recorrentes configurados para serem debitados automaticamente via Pix, a partir de autorização do pagador.",
+   "allowed_in_payment_linkage": true
+  },
+  "24": {
+   "descricao": "TEF - \"Book Transfer\"",
+   "dIniVig": "2026-05-04",
+   "dFimVig": null,
+   "observacoes": "Transferência entre contas do mesmo banco.",
+   "allowed_in_payment_linkage": true
+  },
+  "90": {
+   "descricao": "Sem Pagamento",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": null,
+   "allowed_in_payment_linkage": false
+  },
+  "91": {
+   "descricao": "Pagamento Posterior",
+   "dIniVig": "2025-11-03",
+   "dFimVig": null,
+   "observacoes": "Usado para informar quando o pagamento for ocorrer em momento posterior à emissão do documento fiscal ou fato gerador do imposto. Especialmente nos casos em que a integração e vinculação dos meios de pagamentos ao documento fiscal seja obrigatória, via emissão de novo documento fiscal ou evento.\nAplicabilidade: Pagamento Integral ou Parcial Posterior",
+   "allowed_in_payment_linkage": false
+  },
+  "99": {
+   "descricao": "Outros",
+   "dIniVig": "2020-01-01",
+   "dFimVig": null,
+   "observacoes": "Quando o pagamento não estiver no rol desta tabela, o contribuinte deverá preencher o tipo de pagamento com \"Outros\" e informar, em campo específico da Nota Fiscal, a descrição adequada do meio de pagamento utilizado na operação ou prestação.",
+   "allowed_in_payment_linkage": false
+  }
+ }
+}
