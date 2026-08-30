@@ -113,6 +113,60 @@ def parse_grupo_yc(xml: str) -> GrupoYC:
     return GrupoYC(presente=True, transacoes=transacoes)
 
 
+def _achado_meio_pagamento(regra: str, t: TransacaoVinculada, det: bool) -> Optional[AchadoYC]:
+    """YC05-10 e P26-10 são a MESMA condição em contextos diferentes.
+
+    A invalidade é DETERMINADA: o código está fora do subset e afirmamos isso.
+    O cStat é UNDETERMINED enquanto dois artefatos oficiais divergirem —
+    escolher 1273 ou 1003 seria inventar precedência documental. Incerteza
+    sobre o código de rejeição não é incerteza sobre a invalidez.
+    """
+    if not t.tp_meio_pgto:
+        return None
+    admitido = payment_methods.allowed_in_payment_linkage(t.tp_meio_pgto)
+    if admitido is True:
+        return None
+    k = payment_methods.conflito_cstat()
+    return AchadoYC(
+        regra=regra, natureza=NATUREZA_CONTEUDO,
+        cstat_esperado=CSTAT_UNDETERMINED, n_pag=t.n_pag,
+        detalhe=(
+            f"Meio de pagamento {t.tp_meio_pgto} fora do subset permitido para "
+            "vinculação. A documentação oficial diverge quanto ao cStat esperado "
+            "(1273 na NT 2026.006 e 1003 no IT 2026.001)."
+        ),
+        determinante_no_ambiente=det,
+        evidencia={
+            "invalidade": "DETERMINADA",
+            "na_tabela_nacional": admitido is not None,
+            "subset_admitido": sorted(payment_methods.codigos_admitidos_na_vinculacao()),
+            "nt_2026_006_v100": k["nt_2026_006_v100"]["cstat"],
+            "it_2026_001_v101": k["it_2026_001_v101"]["cstat"],
+            "conflict_status": k["conflict_status"],
+        },
+    )
+
+
+def _achado_cnpj_receb(regra: str, t: TransacaoVinculada, det: bool) -> Optional[AchadoYC]:
+    """YC06-10 e P27-10 — mesma checagem, mesmo limite declarado.
+
+    ESCOPO: FORMATO. O dígito verificador do CNPJ alfanumérico não é conferido —
+    o algoritmo não está canonizado neste repo, e inventá-lo produziria falso
+    positivo nacional. Formato válido NÃO é promovido a "CNPJ integralmente
+    válido"; a evidência carrega o limite.
+    """
+    if t.cnpj_receb is None or is_valid_cnpj_format(t.cnpj_receb):
+        return None
+    return AchadoYC(
+        regra=regra, natureza=NATUREZA_CONTEUDO, cstat_esperado=1274, n_pag=t.n_pag,
+        detalhe=f"CNPJ do recebedor do pagamento inválido: {t.cnpj_receb!r}",
+        determinante_no_ambiente=det,
+        evidencia={"campo": "CNPJReceb", "valor": t.cnpj_receb,
+                   "escopo_validacao": "FORMAT_ONLY",
+                   "limite": "validação de formato; DV alfanumérico não conferido"},
+    )
+
+
 def _determinante(emissao: Optional[dt.date], ambiente: Optional[str]) -> bool:
     """A regra já vale como rejeição neste ambiente/data?
 
@@ -172,28 +226,9 @@ def avaliar(
         # artefatos oficiais divergem, e escolher um seria inventar
         # precedência. Incerteza sobre o código de rejeição não é incerteza
         # sobre a invalidez.
-        if t.tp_meio_pgto:
-            admitido = payment_methods.allowed_in_payment_linkage(t.tp_meio_pgto)
-            if admitido is not True:
-                k = payment_methods.conflito_cstat()
-                achados.append(AchadoYC(
-                    regra="YC05-10", natureza=NATUREZA_CONTEUDO,
-                    cstat_esperado=CSTAT_UNDETERMINED, n_pag=t.n_pag,
-                    detalhe=(
-                        f"Meio de pagamento {t.tp_meio_pgto} fora do subset permitido para "
-                        "vinculação. A documentação oficial diverge quanto ao cStat esperado "
-                        "(1273 na NT 2026.006 e 1003 no IT 2026.001)."
-                    ),
-                    determinante_no_ambiente=det,
-                    evidencia={
-                        "invalidade": "DETERMINADA",
-                        "na_tabela_nacional": admitido is not None,
-                        "subset_admitido": sorted(payment_methods.codigos_admitidos_na_vinculacao()),
-                        "nt_2026_006_v100": k["nt_2026_006_v100"]["cstat"],
-                        "it_2026_001_v101": k["it_2026_001_v101"]["cstat"],
-                        "conflict_status": k["conflict_status"],
-                    },
-                ))
+        achado_meio = _achado_meio_pagamento("YC05-10", t, det)
+        if achado_meio:
+            achados.append(achado_meio)
 
         # ── YC06-10 — CNPJ do recebedor documentalmente inválido ───────────
         # LIMITE DECLARADO: checagem de FORMATO (contrato de
@@ -201,13 +236,120 @@ def avaliar(
         # verificador do CNPJ alfanumérico não é conferido: o algoritmo não
         # está canonizado neste repo, e inventá-lo produziria falso positivo
         # nacional. Erra para o lado de não acusar.
-        if t.cnpj_receb is not None and not is_valid_cnpj_format(t.cnpj_receb):
-            achados.append(AchadoYC(
-                regra="YC06-10", natureza=NATUREZA_CONTEUDO, cstat_esperado=1274,
-                n_pag=t.n_pag,
-                detalhe=f"CNPJ do recebedor do pagamento inválido: {t.cnpj_receb!r}",
-                determinante_no_ambiente=det,
-                evidencia={"campo": "CNPJReceb", "valor": t.cnpj_receb,
-                           "limite": "validação de formato; DV alfanumérico não conferido"},
-            ))
+        achado_cnpj = _achado_cnpj_receb("YC06-10", t, det)
+        if achado_cnpj:
+            achados.append(achado_cnpj)
+    return achados
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Evento 110300 — Vinculação da Transação de Pagamento no DF-e (NT 2026.006 §4)
+# ─────────────────────────────────────────────────────────────────────────────
+# Função (texto oficial): "gerado pelo emitente do DF-e sempre que se DESEJAR
+# vincular uma ou mais transações financeiras a um documento fiscal previamente
+# autorizado. Obs.: É possível que a transação financeira vinculada esteja em
+# situação iniciada, ainda PENDENTE DE PAGAMENTO E/OU LIQUIDAÇÃO".
+#
+# Registrar o evento não é pagar, não é liquidar, e "sempre que se desejar" não
+# é obrigação. O evento carrega identificação de transação; nada mais.
+#
+# ESCOPO DESTE MÓDULO: validar documento/evento. Não há transmissão, registro na
+# SEFAZ nem cancelamento 110001 operacional — não estamos construindo cliente
+# SEFAZ. Cardinalidade: no DF-e, gPgto é 1-99; no evento é 1-1. Vincular várias
+# transações após a autorização exige vários eventos.
+
+TP_AUTOR_EMPRESA_EMITENTE = "1"
+DESC_EVENTO_110300 = "Vinculação Pagamento"
+COD_EVENTO_110300 = "110300"
+
+
+@dataclass(frozen=True)
+class EventoVinculacao:
+    """Evento 110300. Só os campos do leiaute P17–P28.
+
+    Não há — e não pode haver — campo de valor, estado de pagamento, data de
+    liquidação ou rateio: o leiaute não os define.
+    """
+
+    presente: bool
+    desc_evento: Optional[str] = None
+    c_orgao_autor: Optional[str] = None
+    tp_autor: Optional[str] = None
+    ver_aplic: Optional[str] = None
+    #: Protocolo do DF-e JÁ AUTORIZADO ao qual a transação é vinculada.
+    n_prot: Optional[str] = None
+    transacao: Optional[TransacaoVinculada] = None
+
+
+def parse_evento_110300(xml: str) -> EventoVinculacao:
+    """Extrai ``detEvento`` do evento 110300. Ausência é ausência, não erro."""
+    m = re.search(r"<detEvento(?=[\s>/])[^>]*>([\s\S]*?)</detEvento>", xml, re.I)
+    if not m:
+        return EventoVinculacao(presente=False)
+    corpo = m.group(1)
+
+    def _tag(nome: str, onde: str = corpo) -> Optional[str]:
+        t = re.search(rf"<{nome}(?=[\s>/])[^>]*>([\s\S]*?)</{nome}>", onde, re.I)
+        return t.group(1).strip() if t else None
+
+    # Só reconhecemos como 110300 pelo descEvento; outro evento não é nosso.
+    desc = _tag("descEvento")
+    if desc and desc.strip().lower() != DESC_EVENTO_110300.lower():
+        return EventoVinculacao(presente=False)
+
+    transacao = None
+    g = re.search(r"<gPgto(?=[\s>/])([^>]*)>([\s\S]*?)</gPgto>", corpo, re.I)
+    if g:
+        attrs, bloco = g.group(1), g.group(2)
+        a = re.search(_ATTR.format(attr="idTransacao"), attrs, re.I)
+        transacao = TransacaoVinculada(
+            # No evento não existe nPag — só uma transação por evento.
+            n_pag=None,
+            id_transacao=(a.group(1).strip() if a else _tag("idTransacao", bloco)),
+            tp_meio_pgto=_tag("tpMeioPgto", bloco),
+            cnpj_receb=_tag("CNPJReceb", bloco),
+            cnpj_base_psp=_tag("CNPJBasePSP", bloco),
+        )
+    return EventoVinculacao(
+        presente=True, desc_evento=desc, c_orgao_autor=_tag("cOrgaoAutor"),
+        tp_autor=_tag("tpAutor"), ver_aplic=_tag("verAplic"),
+        n_prot=_tag("nProt"), transacao=transacao,
+    )
+
+
+def avaliar_evento(
+    evento: EventoVinculacao,
+    *,
+    emissao: Optional[dt.date] = None,
+    ambiente: Optional[str] = None,
+) -> list[AchadoYC]:
+    """Avalia P21-10, P26-10 e P27-10. Evento ausente ⇒ lista vazia."""
+    if not evento.presente:
+        return []
+
+    det = _determinante(emissao, ambiente)
+    achados: list[AchadoYC] = []
+
+    # ── P21-10 — "Tipo do Autor difere de 1=Empresa Emitente" → 466 ─────────
+    # tpAutor identifica o autor DO EVENTO no leiaute. Não é declaração de
+    # obrigação jurídica de ninguém: só diz quem, tecnicamente, pode gerá-lo.
+    if evento.tp_autor is not None and evento.tp_autor.strip() != TP_AUTOR_EMPRESA_EMITENTE:
+        achados.append(AchadoYC(
+            regra="P21-10", natureza=NATUREZA_CONTEUDO, cstat_esperado=466,
+            n_pag=None,
+            detalhe=(
+                f"Evento 110300 com tpAutor={evento.tp_autor!r}; o leiaute admite "
+                "somente 1=Empresa Emitente."
+            ),
+            determinante_no_ambiente=det,
+            evidencia={"campo": "tpAutor", "valor": evento.tp_autor,
+                       "admitido": TP_AUTOR_EMPRESA_EMITENTE,
+                       "semantica": "identificação do autor do evento; não é obrigação jurídica"},
+        ))
+
+    if evento.transacao is not None:
+        for achado in (_achado_meio_pagamento("P26-10", evento.transacao, det),
+                       _achado_cnpj_receb("P27-10", evento.transacao, det)):
+            if achado:
+                achados.append(achado)
     return achados
