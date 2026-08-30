@@ -24,6 +24,8 @@
         "BPETA",
         "CTE",
         "CTEOS",
+        "DIR",
+        "DUIMP",
         "NF3E",
         "NFAG",
         "NFCE",
@@ -115,6 +117,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DERE",
         "NFSE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -132,6 +135,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DERE",
         "NFSE"
       ],
       "vigencia_ini": "2025-09-30",
@@ -148,7 +152,9 @@
       "mono_retencao": false,
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
-      "dfe_allowed": [],
+      "dfe_allowed": [
+        "DERE"
+      ],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art236"
     },
@@ -163,7 +169,9 @@
       "mono_retencao": false,
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
-      "dfe_allowed": [],
+      "dfe_allowed": [
+        "DERE"
+      ],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art237"
     },
@@ -195,7 +203,9 @@
       "mono_retencao": false,
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
-      "dfe_allowed": [],
+      "dfe_allowed": [
+        "DERE"
+      ],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art246"
     },
@@ -210,7 +220,9 @@
       "mono_retencao": false,
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
-      "dfe_allowed": [],
+      "dfe_allowed": [
+        "DERE"
+      ],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art243"
     },
@@ -245,6 +257,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -263,6 +276,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -281,6 +295,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE",
         "NFSE"
@@ -300,6 +315,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE",
         "NFSE"
       ],
@@ -318,6 +334,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE",
         "NFSE"
@@ -337,6 +354,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE",
         "NFSE"
@@ -356,6 +374,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE",
         "NFSE"
       ],
@@ -374,6 +393,8 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DIR",
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -392,6 +413,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -410,6 +432,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -427,6 +450,8 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DIR",
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -445,6 +470,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -463,6 +489,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -516,6 +543,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DERE",
         "NFSE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -532,7 +560,9 @@
       "mono_retencao": false,
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
-      "dfe_allowed": [],
+      "dfe_allowed": [
+        "DERE"
+      ],
       "vigencia_ini": "2025-05-05",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art223"
     },
@@ -548,6 +578,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DERE",
         "NFSE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -740,6 +771,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE",
         "NFSE"
@@ -759,6 +791,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE",
         "NFSE"
@@ -778,6 +811,8 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DIR",
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -796,6 +831,8 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DIR",
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -814,6 +851,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -832,6 +870,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -850,6 +889,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -885,6 +925,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCE",
         "NFE",
         "NFSE"
@@ -904,6 +945,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE",
         "NFSE"
       ],
@@ -973,6 +1015,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFCOM",
         "NFE",
         "NFSE"
@@ -1151,6 +1194,8 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DIR",
+        "DUIMP",
         "NFCE",
         "NFE"
       ],
@@ -1366,6 +1411,7 @@
         "BPETA",
         "CTE",
         "CTEOS",
+        "DUIMP",
         "NF3E",
         "NFABI",
         "NFAG",
@@ -1411,6 +1457,8 @@
         "BPETA",
         "CTE",
         "CTEOS",
+        "DERE",
+        "DUIMP",
         "NF3E",
         "NFABI",
         "NFAG",
@@ -1517,6 +1565,8 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DIR",
+        "DUIMP",
         "NFCE",
         "NFCOM",
         "NFE",
@@ -1537,6 +1587,8 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DIR",
+        "DUIMP",
         "NFCE",
         "NFCOM",
         "NFE",
@@ -1557,6 +1609,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DERE",
         "NFCOM",
         "NFSE"
       ],
@@ -1697,6 +1750,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DERE",
         "NFABI"
       ],
       "vigencia_ini": "2025-05-05",
@@ -1839,6 +1893,7 @@
         "BPETA",
         "CTE",
         "CTEOS",
+        "DERE",
         "NF3E",
         "NFABI",
         "NFAG",
@@ -1994,7 +2049,9 @@
       "mono_retencao": false,
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
-      "dfe_allowed": [],
+      "dfe_allowed": [
+        "DERE"
+      ],
       "vigencia_ini": "2026-01-01",
       "legislacao": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art26"
     },
@@ -2071,6 +2128,7 @@
         "BPETM",
         "CTE",
         "CTEOS",
+        "DUIMP",
         "NF3E",
         "NFABI",
         "NFAG",
@@ -2095,6 +2153,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NF3E",
         "NFE"
       ],
@@ -2113,6 +2172,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE",
         "NFSE"
       ],
@@ -2148,6 +2208,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2165,6 +2226,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2182,6 +2244,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2216,6 +2279,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2233,6 +2297,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2250,6 +2315,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2267,6 +2333,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2284,6 +2351,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2301,6 +2369,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2335,6 +2404,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2352,6 +2422,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2369,6 +2440,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2386,6 +2458,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE",
         "NFSE"
       ],
@@ -2404,6 +2477,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2421,6 +2495,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2438,6 +2513,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2455,6 +2531,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2472,6 +2549,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-09-30",
@@ -2489,6 +2567,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE",
         "NFSE"
       ],
@@ -2507,6 +2586,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2026-01-01",
@@ -2554,6 +2634,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2571,6 +2652,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": false,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
@@ -2588,6 +2670,7 @@
       "mono_retido_anteriormente": false,
       "mono_diferimento": true,
       "dfe_allowed": [
+        "DUIMP",
         "NFE"
       ],
       "vigencia_ini": "2025-05-05",
