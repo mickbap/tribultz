@@ -160,9 +160,10 @@ test("N: NAO_DETERMINADO tem rótulo próprio e distinto de fato na renderizaç�
 
 // ── P0 do ROUND BLOG 30/08 — não regredir ───────────────────────────────────
 /**
- * Os sete P0 da auditoria de 30/08/2026. Seis foram reindexados com baseline
- * editorial aprovado; o sétimo segue contido por divergência aberta entre o
- * contrato e a NT 2025.002-RTC v1.51 quanto à produção da UB12-10.
+ * Os sete P0 da auditoria de 30/08/2026, todos reindexados com baseline
+ * editorial aprovado. O sétimo foi reindexado sem resolver a divergência
+ * sobre a produção da UB12-10: ele não afirma data de ativação, e a
+ * divergência vive na proveniência do claim — ver o guard logo abaixo.
  */
 test("P0 reindexado carrega META_TITLE aprovado e proveniência por claim", () => {
   const reindexados = [
@@ -172,6 +173,7 @@ test("P0 reindexado carrega META_TITLE aprovado e proveniência por claim", () =
     "classtrib-2026-ncm-mapeamento-completo",
     "como-classificar-ncm-corretamente-2026",
     "como-calcular-aliquota-cbs-ibs",
+    "nfe-rejeitada-03-08-2026-regime-normal-crt3",
   ];
   for (const slug of reindexados) {
     const s = um(slug);
@@ -184,10 +186,19 @@ test("P0 reindexado carrega META_TITLE aprovado e proveniência por claim", () =
   }
 });
 
-test("P0 contido declara a divergência que o mantém fora do índice", () => {
+test("o artigo do 03/08 não afirma data de ativação da UB12-10", () => {
   const s = um("nfe-rejeitada-03-08-2026-regime-normal-crt3");
-  assert.ok(contido(s), "não reindexar enquanto a divergência da UB12-10 estiver aberta");
-  assert.match(s, /noindexReason:[^\n]*[Dd]ivergencia/, "a contenção precisa dizer por quê");
+  const t = corpo(s);
+  // A divergência é registrada, não resolvida: o claim da UB12-10 é NAO_DETERMINADO
+  // e a nota de conflito nomeia as fontes que não convergem.
+  assert.match(s, /claim_classification: "NAO_DETERMINADO"/, "o claim da UB12-10 precisa ser NAO_DETERMINADO");
+  assert.match(s, /conflict_note:[^\n]*(divergência|Divergência|não convergem)/,
+    "a divergência precisa estar declarada na proveniência");
+  // E o corpo não pode passar a afirmar uma data de produção para a regra.
+  for (const m of t.matchAll(/[^.]*UB12-10[^.]*\./g)) {
+    assert.doesNotMatch(m[0], /\b(produção|produ[çc][ãa]o)\b[^.]{0,60}\d{2}\/\d{2}\/\d{4}/i,
+      `afirma data de produção para a UB12-10: "${m[0].trim().slice(0, 140)}"`);
+  }
 });
 
 // ── Q — Invalid Date (não regredir) ─────────────────────────────────────────
