@@ -90,10 +90,13 @@ test("todo post contido declara o motivo da contenção", () => {
   }
 });
 
-test("a Rejeição 960 está contida (auditoria jurídica de 30/08/2026)", () => {
+test("a Rejeição 960 saiu da contenção porque foi corrigida, não por atalho", () => {
+  // Round 30/08-A conteve; Round D destravou o Jurídico; Round E reescreveu.
+  // Reindexar sem correção seria o atalho que este teste existe para impedir.
   const s = mdx("rejeicao-960-nf-e.mdx");
-  assert.ok(/^noindex:\s*true\s*$/m.test(s), "960 precisa seguir contida até a reescrita canônica");
-  assert.ok(/^noindexReason:\s*\S/m.test(s));
-  // Conteúdo preservado: o corpo do artigo continua no arquivo.
+  assert.ok(!/^noindex:\s*true\s*$/m.test(s), "960 foi reindexada após a reescrita");
+  assert.ok(/^provenance:\s*$/m.test(s), "só reindexa com proveniência por claim");
+  assert.match(s, /rule_item:\s*"N12-110"/, "contrato da RV precisa estar declarado");
+  assert.match(s, /artifact_version:\s*"1\.60"/, "versão corrente da NT 2023.001");
   assert.ok(s.length > 2000, "o conteúdo do post não pode ter sido apagado");
 });

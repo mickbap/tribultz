@@ -1,66 +1,126 @@
 ---
-title: "Rejeição 960 da NF-e: cClassTrib obrigatório — como corrigir antes de emitir"
-description: "Rejeição 960 NF-e: cClassTrib obrigatório e adequado na Reforma Tributária. Entenda a regra N12-110, veja exemplos de CST × cClassTrib incompatíveis e corrija antes de emitir."
+title: "Rejeição 960 NF-e/NFC-e: ICMS monofásico sobre combustíveis e regra N12-110"
+description: "Entenda quando ocorre a Rejeição 960 da NF-e/NFC-e, quais condições da regra N12-110 devem ser verificadas e por que ela não é uma rejeição de cClassTrib."
 slug: "rejeicao-960-nf-e"
-category: "Reforma Tributária"
+category: "Compliance Fiscal"
 author:
   name: "Equipe Tribultz"
   jobTitle: "Conteúdo Fiscal"
   url: "https://tribultz.com.br"
 publishedAt: "2026-07-24T06:15:58.000Z"
-updatedAt: "2026-08-08"
-updateNote: "Post reescrito após revisão fiscal: a versão anterior descrevia a Rejeição 960 como divergência entre ICMS desonerado e redução de base de cálculo — definição incorreta, sem correspondência na regra oficial. A 960 pertence à família de validações do cClassTrib (regra N12-110, NT 2025.002-RTC v1.40). Atualização (08/08/2026): a NT 2025.002 v1.51 (04/08/2026) alterou apenas a Rejeição 1115 (grupo IBS/CBS ausente do item, regra UB12-10) — implementação em produção suspensa, sem data. A Rejeição 960, tratada neste post, e a 1106 (regra LA01-30) não foram afetadas: seguem bloqueando a emissão desde 03/08/2026 quando o grupo IBS/CBS já está presente no item, mas o cClassTrib dentro dele está ausente ou malformado. Parágrafo sobre 03/08/2026 esclarecido abaixo para não confundir as duas regras."
+updatedAt: "2026-08-30"
+updateNote: "Reescrita integral. A versão anterior associava a Rejeição 960 ao cClassTrib e à Reforma Tributária do Consumo, o que é incorreto: a regra N12-110 pertence à NT 2023.001 e trata da tributação monofásica do ICMS sobre combustíveis. Contrato revisado contra a NT 2023.001 v1.60 e a exceção posterior finNFe=5/6 documentada na NT 2025.002-RTC v1.51."
 tags:
-  - cClassTrib
   - "Rejeição 960"
   - NF-e
-  - "Reforma Tributária"
-  - IBS
-  - CBS
-coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/76fc4d86-d528-4294-a3c6-020f77cb3995/d8049955-7d7b-4aa1-9c92-e9ec045bf007.webp"
-noindex: true
-noindexReason: "Auditoria jurídica de 30/08/2026 classificou o conteúdo como tecnicamente incorreto. Contido de forma REVERSÍVEL — fora da listagem, do sitemap e do RSS, com robots noindex — enquanto aguarda reescrita canônica. Arquivo e histórico preservados; a URL continua respondendo para não criar 404 sem destino avaliado."
+  - NFC-e
+  - "ICMS monofásico"
+  - Combustíveis
+  - cProdANP
+  - SEFAZ
+coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/4fb8471f-d230-4cb4-817e-48e94d580302/rejeicao-960.webp"
+provenance:
+  - claim_scope: "A Rejeição 960 corresponde à regra de validação N12-110, aplicável aos modelos 55 e 65, com aplicabilidade obrigatória"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "NT 2023.001"
+    artifact_version: "1.60"
+    rule_item: "N12-110"
+    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+  - claim_scope: "A condição da N12-110 é cProdANP presente na Tabela de Combustíveis Sujeitos à Tributação Monofásica, exigindo CST 02, 15, 53 ou 61"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "NT 2023.001"
+    artifact_version: "1.60"
+    rule_item: "N12-110"
+    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+  - claim_scope: "Os CST 40, 41, 50 e 90 também podem ser aceitos pela N12-110"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "NT 2023.001"
+    artifact_version: "1.60"
+    rule_item: "N12-110, Observacao 3"
+    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+  - claim_scope: "Cronograma de implantacao da N12-110: homologacao ate 25/09/2023 e producao em 30/10/2023"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "NT 2023.001"
+    artifact_version: "1.60"
+    rule_item: "N12-110, Observacao 2"
+    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+    temporal_applicability: "Regra em producao desde 30/10/2023; vigente na referencia corrente de 30/08/2026"
+  - claim_scope: "A N12-110 nao se aplica a NF-e de Credito (finNFe=5) nem a NF-e de Debito (finNFe=6)"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "NT 2025.002-RTC"
+    artifact_version: "1.51"
+    rule_item: "N12-110, Excecao"
+    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+    temporal_applicability: "Excecao acrescentada por documentacao posterior a NT 2023.001; integra o comportamento corrente em 30/08/2026"
+  - claim_scope: "Quais codigos cProdANP compoem a Tabela de Combustiveis Sujeitos a Tributacao Monofasica"
+    claim_classification: "NAO_DETERMINADO"
+    artifact: "Tabela de Combustiveis Sujeitos a Tributacao Monofasica"
+    source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=/NJarYc9nus="
+    verified_at: "2026-08-30"
+    temporal_applicability: "A tabela e publicada por data e atualizada de forma independente da NT"
+    conflict_note: "A lista de codigos nao e reproduzida aqui: ela tem versionamento proprio e reproduzi-la sem proveniencia versionada da tabela criaria copia desatualizada. Consulte sempre a tabela vigente na fonte oficial."
 legalRefs:
-  - instrumento: "NT 2025.002-RTC v1.40"
-    descricao: "Cataloga as regras do cClassTrib — Rejeições 960 (N12-110) e 1106 (LA01-30); produção a partir de 03/08/2026 para o Regime Normal (CRT 3)."
-  - instrumento: "NT 2025.002 v1.51"
-    descricao: "Publicada em 04/08/2026: altera apenas a Rejeição 1115 (grupo IBS/CBS ausente, UB12-10), com implementação em produção suspensa. Não afeta a Rejeição 960 (N12-110) nem a 1106 (LA01-30), tema deste post."
-  - instrumento: "LC 214/2025"
-    descricao: "Institui CBS e IBS; base das classificações tributárias da tabela cClassTrib (ex.: arts. 11 e 311 citados em códigos da família do CST 000)."
-    link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
-  - instrumento: "Ato Conjunto RFB/CGIBS nº 1/2025"
-    artigo: "Art. 3º"
-    descricao: "Janela sem penalidade para obrigações acessórias de IBS/CBS encerrada em 31/07/2026 — multa aplicável a partir de 01/08/2026."
-  - instrumento: "LC 214/2025"
-    artigo: "Art. 348, §§ 3º e 4º (incluídos pela LC 227/2026)"
-    descricao: "Período Pedagógico — 60 dias para regularizar sem multa quando o auto de infração decorrer exclusivamente da obrigação acessória."
-soroGuid: "d8049955-7d7b-4aa1-9c92-e9ec045bf007"
+  - instrumento: "NT 2023.001"
+    artigo: "Regra de validação N12-110"
+    descricao: "Nota Técnica da Tributação Monofásica sobre Combustíveis. Define a N12-110 e a Rejeição 960 para os modelos 55 e 65."
+    link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+  - instrumento: "NT 2025.002-RTC"
+    artigo: "Regra de validação N12-110, Exceção"
+    descricao: "Documentação posterior que acrescenta a exceção da N12-110 para NF-e de Crédito (finNFe=5) e NF-e de Débito (finNFe=6)."
+    link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
 ---
 
-<p>Uma NF-e pronta para faturamento pode ser barrada por um campo que, à primeira vista, parece um detalhe de preenchimento: o <strong>cClassTrib</strong>, código de classificação tributária do IBS/CBS que a Reforma Tributária passou a exigir item a item. A rejeição 960 NF-e ocorre quando esse campo está ausente ou não atende ao formato exigido — e, tratada como erro pontual de transmissão, tende a voltar na próxima nota com a mesma origem.</p>
-<p>Para uma operação que depende de expedição, faturamento e integração entre áreas, entender exatamente o que a 960 verifica evita duas armadilhas comuns: confundi-la com outra rejeição da família do cClassTrib (a 1024, tratada adiante) ou com problemas de ICMS que não têm relação nenhuma com ela.</p>
-<h2>O que significa a rejeição 960 NF-e</h2>
-<p>A NT 2025.002-RTC v1.40 cataloga duas regras irmãs sobre o cClassTrib: a <strong>960</strong> (regra N12-110) e a <strong>1106</strong> (regra LA01-30). As duas exigem a mesma coisa — que o cClassTrib esteja <strong>presente</strong> no item que preenche o grupo IBS/CBS (gIBSCBS) e que a classificação informada seja <strong>adequada</strong> ao formato esperado pela SEFAZ.</p>
-<p>Isso é diferente da <a href="https://tribultz.com.br/blog/rejeicao-1024-nfe-cbs-ibs-como-corrigir">Rejeição 1024</a> (regra UB14-20), que trata de outra coisa: um cClassTrib presente e bem formatado, mas <strong>incompatível com o CST informado</strong> no mesmo item. A 960/1106 barra quando o dado não existe ou está malformado; a 1024 barra quando o dado existe, mas não combina com o CST. São etapas diferentes da mesma validação — por isso um post que confunde as duas acaba orientando o diagnóstico errado.</p>
-<h2>Quando a rejeição 960 acontece na prática</h2>
-<p>Três cenários concentram a maior parte dos casos:</p>
-<ul><li><strong>cClassTrib ausente</strong> num item que preenche o grupo gIBSCBS — o campo simplesmente não foi transmitido.</li><li><strong>Formato inválido</strong>: o código precisa ter exatamente 6 dígitos. Um cClassTrib incompleto, ou com caractere fora do padrão numérico, rejeita.</li><li><strong>Código inexistente na tabela oficial</strong>: a <a href="https://tribultz.com.br/blog/classtrib-2026-ncm-mapeamento-completo">tabela cClassTrib da SVRS</a> tem hoje 164 códigos e é atualizada com frequência pela SVRS; nossa base re-sincroniza diariamente — um código válido em uma consulta pode não existir mais (ou ainda não existir) em outra, se o cadastro não acompanhar a atualização.</li></ul>
-<p>Há também um caso específico: itens com CST 620 (tributação monofásica de combustíveis) exigem, além do cClassTrib da família 620XXX, o grupo `gIBSCBSMono` (UB84, NT 2025.002 v1.50). A ausência desse grupo quando exigido é uma rejeição própria do regime monofásico — vale checar separadamente se a operação envolver combustíveis.</p>
-<h2>cClassTrib × CST: famílias que não se misturam</h2>
-<p>A estrutura da tabela oficial ajuda a entender o problema. O prefixo do cClassTrib espelha o CST do item: códigos que começam em `000` pertencem à família do CST 000, códigos em `200` à família do CST 200, e assim por diante. Nem toda família tem o mesmo tamanho — o que já é uma fonte comum de erro quando um cadastro reaproveita um código de uma operação parecida, mas não idêntica:</p>
-<ul><li><strong>CST 000</strong> (tributação integral): só 5 códigos — `000001` (situações tributadas integralmente), `000002` (exploração de via, art. 11 da LC 214/2025), `000003` (regime automotivo, art. 311 da LC 214/2025), entre outros.</li><li><strong>CST 200</strong> (alíquota reduzida): 54 códigos — a maior família da tabela.</li><li><strong>CST 410</strong> (imunidade/não incidência): 38 códigos.</li><li><strong>CST 550</strong> (suspensão): 25 códigos.</li><li><strong>CST 620</strong> (monofásica): 7 códigos.</li><li><strong>CST 820</strong> (split payment): 9 códigos.</li></ul>
-<p>Um cClassTrib da família 200 usado num item com CST 000, ou um código da família 000 usado num item CST 620, não passa na verificação de compatibilidade — mas essa é a <strong>1024</strong>, não a 960. Se a nota rejeitada citar 1024, o problema não é ausência ou formato: é a combinação entre os dois campos, e vale revisar o post específico sobre ela.</p>
-<h2>Por que isso ganha urgência a partir de 03/08/2026</h2>
-<p>A obrigatoriedade do cClassTrib <strong>dentro de um item que já preenche o grupo IBS/CBS</strong> segue o cronograma faseado da NT 2025.002 v1.40: produção a partir de <strong>03/08/2026</strong> para o Regime Normal (CRT 3) e <strong>04/01/2027</strong> para Simples Nacional/MEI. A partir dessa data, um item do Regime Normal com o grupo IBS/CBS presente mas cClassTrib ausente ou malformado deixa de ser um alerta e passa a travar a emissão (Rejeição 960/1106). <strong>Atenção para não confundir com outra rejeição:</strong> se o item não tiver o grupo IBS/CBS de jeito nenhum, isso é a Rejeição 1115 (regra UB12-10) — e essa, diferente da 960, está com a implementação em produção suspensa pela NT 2025.002 v1.51 (04/08/2026), sem data prevista.</p>
-<p>Há também uma janela de penalidade que já se encerrou: o Ato Conjunto RFB/CGIBS nº 1/2025 (art. 3º) isentou de multa as obrigações acessórias de IBS/CBS para fatos geradores até 31/07/2026 — a partir de 01/08/2026, a penalidade voltou a ser aplicável. O art. 348, §§ 3º e 4º, da LC 214/2025 (incluídos pela LC 227/2026) ainda garante um Período Pedagógico: quem for autuado exclusivamente por essa obrigação acessória é notificado a regularizar em 60 dias contados da notificação (§ 3º); o cumprimento extingue a penalidade (§ 4º).</p>
-<h2>Como diagnosticar e corrigir a rejeição 960 NF-e</h2>
-<p>A correção deve seguir uma sequência que preserve rastreabilidade:</p>
-<h3>1. Identifique a origem da classificação</h3>
-<p>Recupere qual regra, cadastro ou integração deveria ter atribuído o cClassTrib àquele item — matriz fiscal, parametrização do ERP ou uma regra automática de reaproveitamento entre produtos parecidos. Corrigir só o XML resolve a nota atual, mas não impede a próxima com a mesma origem.</p>
-<h3>2. Confira o par CST × cClassTrib contra a tabela vigente</h3>
-<p>A <a href="https://tribultz.com.br/blog/classtrib-2026-mapear-ncm-regime-ibs-cbs">consulta pública da SVRS</a> é a fonte oficial e muda com frequência — uma classificação correta em julho pode estar desatualizada em setembro. Vale validar o código antes de replicá-lo em massa para itens semelhantes.</p>
-<h3>3. Valide antes de transmitir</h3>
-<p>Uma camada de <a href="https://tribultz.com.br/blog/validacao-previa-ou-pos-emissao">validação prévia</a> reduz o risco de descobrir a inconsistência só na autorização. A <a href="https://tribultz.com.br/blog/api-validacao-xml-nfe-na-pratica">verificação do XML antes da transmissão</a> confirma presença, formato e compatibilidade do cClassTrib no mesmo passo, com evidência em PDF/JSON para apoiar auditoria e revisão interna.</p>
-<h2>Não confunda com desoneração de ICMS</h2>
-<p>Divergências entre ICMS desonerado e redução de base de cálculo têm rejeições próprias — <strong>934</strong> (vICMSDeson/motDesICMS não informados), <strong>795</strong> (total do ICMS desonerado difere da soma dos itens) e <strong>627</strong>. Se o retorno da SEFAZ citar um desses códigos, o problema está no grupo de ICMS do item, não no cClassTrib — e a investigação segue um caminho diferente do descrito aqui. A rejeição 960 trata exclusivamente de classificação tributária do IBS/CBS.</p>
-<p>Tratar essas famílias como equivalentes custa tempo de diagnóstico justamente no momento em que a nota já está parada na expedição. Separar os dois problemas na origem — cClassTrib de um lado, ICMS desonerado do outro — é o que permite corrigir o item certo na primeira tentativa.</p>
+<p>A Rejeição 960 não é uma regra de cClassTrib. Ela pertence à NT 2023.001 e está relacionada à tributação monofásica do ICMS sobre combustíveis nas condições previstas pela RV N12-110.</p>
+
+<h2>O que a regra N12-110 verifica</h2>
+
+<p>A regra se aplica à NF-e (modelo 55) e à NFC-e (modelo 65), com aplicabilidade obrigatória. A condição de disparo é objetiva: quando o produto informado no item tem <strong>cProdANP presente na Tabela de Combustíveis Sujeitos à Tributação Monofásica</strong>, torna-se obrigatório o preenchimento do CST de tributação monofásica sobre combustíveis.</p>
+
+<p>Os CST exigidos pela regra são <strong>02, 15, 53 e 61</strong>. A própria Nota Técnica registra, em observação, que <strong>os CST 40, 41, 50 e 90 também poderão ser aceitos</strong>.</p>
+
+<p>Quando a condição ocorre e o grupo não é preenchido, a autorizadora devolve a mensagem 960: <em>"Obrigatório o preenchimento de Grupo de Tributação do ICMS monofásica sobre combustíveis"</em>, com indicação do item.</p>
+
+<h2>A exceção que integra o comportamento corrente</h2>
+
+<p>A redação da regra na NT 2023.001 não previa exceções. Documentação posterior acrescentou uma, e ela precisa ser considerada em qualquer diagnóstico feito hoje: <strong>a N12-110 não se aplica à NF-e de Crédito (finNFe=5) nem à NF-e de Débito (finNFe=6)</strong>.</p>
+
+<p>Descrever a regra apenas pela redação de origem, sem essa exceção, produziria diagnóstico incorreto em documentos com essas finalidades.</p>
+
+<h2>Desde quando a regra está em produção</h2>
+
+<p>A Nota Técnica registra que a N12-110 foi implantada <strong>até 25/09/2023 em homologação e em 30/10/2023 em produção</strong>. Ou seja, é uma regra estabelecida e em vigor há bastante tempo — não um efeito de mudança recente.</p>
+
+<h2>Onde consultar a tabela de combustíveis</h2>
+
+<p>A Tabela de Combustíveis Sujeitos à Tributação Monofásica é publicada na aba <strong>Documentos</strong>, opção <strong>Diversos</strong>, do Portal Nacional da Nota Fiscal Eletrônica.</p>
+
+<p>Deliberadamente não reproduzimos aqui a lista de códigos cProdANP. A tabela tem versionamento próprio e é atualizada de forma independente da Nota Técnica: uma cópia colada neste artigo envelheceria sem aviso e passaria a orientar de forma errada. Consulte sempre a versão vigente na fonte oficial.</p>
+
+<h2>Como investigar uma Rejeição 960</h2>
+
+<p>A sequência útil é curta, porque a condição da regra é objetiva:</p>
+
+<ol>
+  <li>Identifique o item apontado na mensagem de retorno.</li>
+  <li>Confirme se o <code>cProdANP</code> daquele item consta na tabela vigente.</li>
+  <li>Verifique a finalidade da nota — <code>finNFe=5</code> e <code>finNFe=6</code> estão fora da regra.</li>
+  <li>Confira o CST informado contra os aceitos pela regra.</li>
+  <li>Corrija na origem: cadastro do produto ou parametrização fiscal, não apenas o XML daquela emissão.</li>
+</ol>
+
+<p>Preserve o XML rejeitado e o retorno da autorizadora antes de reprocessar. Sem a evidência original, a investigação fica mais difícil e a rastreabilidade em auditoria se enfraquece.</p>
+
+<h2>O que a Rejeição 960 não é</h2>
+
+<p>Vale registrar explicitamente, porque a confusão é comum: a 960 <strong>não</strong> é uma rejeição de cClassTrib, <strong>não</strong> tem origem na Reforma Tributária do Consumo e <strong>não</strong> decorre de nenhuma obrigação iniciada em 2026. Ela trata de ICMS monofásico sobre combustíveis, num domínio próprio e anterior.</p>
