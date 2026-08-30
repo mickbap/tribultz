@@ -16,12 +16,47 @@ tags:
   - IBS
   - CBS
 coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/76fc4d86-d528-4294-a3c6-020f77cb3995/b36ff00d-26c3-4763-8192-68d385aa026b.webp"
+provenance:
+  - claim_scope: "CST e cClassTrib possuem relação formal de compatibilidade"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Tabela de Classificação Tributária da RTC — CST e cClassTrib"
+    artifact_version: "atualização de 22/06/2026"
+    source_authority: "SVRS — Portal da Conformidade Fácil"
+    source_url: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
+    verified_at: "2026-08-30"
+    claim_scope_limit: "A tabela é versionada."
+  - claim_scope: "A incompatibilidade entre CST e cClassTrib é objeto da regra UB14-20, com cStat 1024"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "NT 2025.002-RTC"
+    artifact_version: "1.51"
+    rule_item: "UB14-20"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+    claim_scope_limit: "Modelos e condições conforme a regra de validação."
+  - claim_scope: "A versão upstream corrente da NT 2025.002-RTC é a 1.51"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "NT 2025.002-RTC"
+    artifact_version: "1.51"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-08-30"
+    versioning_note: "A versão 1.40 é histórica."
+  - claim_scope: "A compatibilidade CST × cClassTrib é regra de negócio, não mera checagem de schema"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "MOC — Manual de Orientação ao Contribuinte, leiaute e regras de validação"
+    artifact_version: "7.0"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=ndIjl%2BiEFdE%3D"
+    verified_at: "2026-08-30"
+    claim_scope_limit: "O schema pode validar formato; não substitui a UB14-20."
 legalRefs:
   - instrumento: "LC 214/2025"
     descricao: "Institui CBS e IBS; base das classificações tributárias da tabela cClassTrib."
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
-  - instrumento: "NT 2025.002-RTC v1.40"
-    descricao: "Regime de validação CST × cClassTrib na NF-e (Rejeição 1024, referida no texto)."
+  - instrumento: "NT 2025.002-RTC v1.51"
+    descricao: "Regime de validação CST × cClassTrib na NF-e (Rejeição 1024, referida no texto). Versão corrente em 30/08/2026; a v1.40 é histórica."
+    link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
 soroGuid: "b36ff00d-26c3-4763-8192-68d385aa026b"
 ---
 
@@ -51,6 +86,8 @@ soroGuid: "b36ff00d-26c3-4763-8192-68d385aa026b"
 <p>O custo não é apenas fiscal. Uma parametrização por exceção aumenta a dependência de pessoas que conhecem atalhos do sistema, dificulta a replicação entre filiais e compromete a previsibilidade do fechamento. Para a diretoria financeira, isso reduz a capacidade de estimar impactos. Para operações, cria risco de interrupção. Para TI, multiplica demandas de manutenção e customizações difíceis de auditar.</p>
 <p>Uma prática mais madura é classificar cada correção: erro de cadastro, falha de regra, divergência de integração, atualização regulatória ou exceção operacional justificada. Com essa classificação, a empresa deixa de apagar incêndios e passa a identificar padrões que merecem tratamento estrutural.</p>
 <h2>Validação preventiva antes da emissão</h2>
+
+<p>A incompatibilidade entre CST e cClassTrib é verificada por regra de negócio da NT 2025.002-RTC, e não apenas pela estrutura do XML. Na referência corrente em 30/08/2026, a NT está na versão 1.51. A validação de schema pode verificar formato e estrutura dos campos, mas não substitui o contrato de compatibilidade CST × cClassTrib da RV aplicável.</p>
 <p>A <a href="https://tribultz.com.br/blog/validacao-previa-ou-pos-emissao">validação mais útil</a> ocorre antes de o documento chegar à etapa de autorização. Nesse ponto, ainda existe tempo para confrontar o cadastro do item, a configuração tributária e os campos que serão transmitidos no XML sem bloquear a expedição no último minuto.</p>
 <p>Uma camada de inteligência tributária aplicada a essa etapa analisa a coerência das regras e devolve uma evidência técnica compreensível. Em vez de apenas apontar que há uma inconsistência, ela deve indicar quais dados participaram da decisão, qual condição deixou de ser atendida e onde a equipe deve investigar.</p>
 <p>É nessa lógica que a Tribultz atua entre o ERP e a autorização fiscal. A plataforma contribui para validar decisões fiscais antes da emissão, cruzando informações estruturais e tributárias para apoiar processos com mais rastreabilidade. As evidências em formatos como PDF e JSON ajudam a registrar a análise, facilitar revisões e sustentar a governança entre fiscal, TI, controladoria e operação.</p>

@@ -14,6 +14,45 @@ tags:
   - "Compliance Fiscal"
   - "Reforma Tributária"
 coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/4fb8471f-d230-4cb4-817e-48e94d580302/workflows/06e7a363-1432-46ac-b91b-2c7d4c134577.webp"
+provenance:
+  - claim_scope: "O ERP executa parametrizações e não substitui a governança tributária da regra que recebeu"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "MOC — Manual de Orientação ao Contribuinte, leiaute e regras de validação"
+    artifact_version: "7.0"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=ndIjl%2BiEFdE%3D"
+    verified_at: "2026-08-30"
+    claim_scope_limit: "Não é definição legal de ERP."
+  - claim_scope: "É tecnicamente possível inserir validação por API ou processamento de XML no fluxo"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "backend/app/routers/validate_xml.py"
+    source_authority: "Tribultz — repositório"
+    source_kind: "internal_repo"
+    source_repo: "tribultz"
+    source_path: "backend/app/routers/validate_xml.py"
+    source_commit: "7d06d15"
+    verified_at: "2026-08-30"
+    claim_scope_limit: "Capacidade genérica comprovada no código auditado."
+  - claim_scope: "Integração específica entre a Tribultz e TOTVS, SAP, Omie ou Linx"
+    claim_classification: "NAO_DETERMINADO"
+    artifact: "backend/app/routers/validate_xml.py"
+    source_authority: "Tribultz — repositório"
+    source_kind: "internal_repo"
+    source_repo: "tribultz"
+    source_path: "backend/app/routers/validate_xml.py"
+    source_commit: "7d06d15"
+    verified_at: "2026-08-30"
+    conflict_note: "A existência de API genérica de validação não prova conector, exportador ou fluxo específico para esses sistemas no commit auditado. Material comercial não é prova independente de capacidade técnica."
+  - claim_scope: "A Tribultz possui geração técnica de evidência e relatório"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "backend/app/routers/reports.py"
+    source_authority: "Tribultz — repositório"
+    source_kind: "internal_repo"
+    source_repo: "tribultz"
+    source_path: "backend/app/routers/reports.py"
+    source_commit: "7d06d15"
+    verified_at: "2026-08-30"
+    claim_scope_limit: "Não constitui laudo nem certificação oficial."
 legalRefs:
   - instrumento: "LC 214/2025"
     descricao: "Institui a CBS e o IBS e disciplina o regime da Reforma Tributária do Consumo."
@@ -50,7 +89,7 @@ soroGuid: "756bb175-6716-412c-8f14-31f92c2d5b9d"
 <p>A implementação mais consistente começa pelo mapeamento das decisões que realmente afetam a emissão. Não é produtivo tentar revisar tudo ao mesmo tempo. O caminho é identificar os fluxos mais críticos para receita, volume, diversidade de produtos ou incidência de exceções e estabelecer critérios de validação para eles.</p>
 <p>Em seguida, a empresa precisa definir a fonte de cada dado. O ERP pode continuar sendo o sistema mestre para cadastro e transação, enquanto a inteligência tributária consulta e analisa informações por API REST ou pelo processamento de XML e arquivos fiscais. Essa arquitetura preserva o fluxo operacional e reduz a necessidade de criar controles manuais fora dos sistemas corporativos.</p>
 <p>A etapa decisiva é transformar alertas em rotina. Uma divergência sem responsável, prazo ou procedimento de correção apenas cria mais uma fila. Fiscal precisa ter visibilidade sobre o fundamento técnico; TI e administradores de ERP precisam identificar a origem da parametrização; operações precisam saber quando uma pendência efetivamente afeta a emissão. Governança é conectar essas responsabilidades, não apenas gerar notificações.</p>
-<p>A Tribultz opera justamente como essa camada entre ERP e autorização fiscal, validando a coerência de dados e regras antes da emissão e gerando evidências auditáveis em PDF e JSON. A integração com ambientes como TOTVS, SAP, Omie e Linx permite inserir a análise no fluxo existente, sem confundir o papel de cada sistema.</p>
+<p>A Tribultz pode atuar como uma camada de validação entre os dados produzidos pelo ERP e a etapa de autorização fiscal, por meio de API e processamento de arquivos nas funcionalidades tecnicamente disponíveis. Integração específica com TOTVS, SAP, Omie, Linx ou qualquer outro ERP só deve ser afirmada quando existir conector, exportador ou fluxo tecnicamente comprovado para aquele sistema.</p>
 <h2>Evidência técnica é parte da decisão, não um relatório final</h2>
 <p>Em ambientes fiscalmente complexos, saber que uma regra foi validada tem valor. Poder demonstrar como e por que ela foi validada tem ainda mais. Evidências organizadas sustentam auditorias, revisões internas, investigações de divergências e conversas objetivas com consultorias, contabilidade e tecnologia.</p>
 <p>Um <a href="https://tribultz.com.br/blog/evidencia-auditavel-reforma-tributaria">registro técnico útil</a> deve preservar o contexto da validação: dados analisados, critérios aplicados, resultado encontrado e momento em que a checagem ocorreu. Isso reduz interpretações informais e permite que a empresa acompanhe a evolução de uma regra sem perder o histórico das decisões anteriores.</p>

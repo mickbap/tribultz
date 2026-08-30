@@ -16,7 +16,44 @@ tags:
   - CBS
   - escrituração
 coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/76fc4d86-d528-4294-a3c6-020f77cb3995/4811ffa8-ba16-4ef7-8284-9db488aa396c.webp"
+provenance:
+  - claim_scope: "A EFD ICMS/IPI não apura CBS, IBS ou IS"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Guia Prático EFD ICMS/IPI"
+    artifact_version: "3.2.3"
+    rule_item: "Seção 10"
+    source_authority: "SPED / Receita Federal do Brasil"
+    source_url: "https://www.gov.br/sped/pt-br/assuntos/escrituracoes-digitais/efd-icms-ipi/guia%20pratico"
+    verified_at: "2026-08-30"
+  - claim_scope: "CBS, IBS e IS podem afetar campos específicos do valor do documento conforme o Guia; não integram o VL_OPR analítico nas condições descritas"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Guia Prático EFD ICMS/IPI"
+    artifact_version: "3.2.3"
+    rule_item: "Seção 10"
+    source_authority: "SPED / Receita Federal do Brasil"
+    source_url: "https://www.gov.br/sped/pt-br/assuntos/escrituracoes-digitais/efd-icms-ipi/guia%20pratico"
+    verified_at: "2026-08-30"
+    temporal_applicability: "Exceção expressa para o exercício de 2026 no exemplo de VL_DOC."
+  - claim_scope: "cClassTrib e CST de IBS/CBS não devem ser apresentados genericamente como campos próprios da EFD ICMS/IPI sem regra específica"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "Guia Prático EFD ICMS/IPI"
+    artifact_version: "3.2.3"
+    source_authority: "SPED / Receita Federal do Brasil"
+    source_url: "https://www.gov.br/sped/pt-br/assuntos/escrituracoes-digitais/efd-icms-ipi/guia%20pratico"
+    verified_at: "2026-08-30"
+  - claim_scope: "Inconsistências de documentos e de cadastro podem repercutir na escrituração das informações que a EFD efetivamente recebe"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "Guia Prático EFD ICMS/IPI"
+    artifact_version: "3.2.3"
+    source_authority: "SPED / Receita Federal do Brasil"
+    source_url: "https://www.gov.br/sped/pt-br/assuntos/escrituracoes-digitais/efd-icms-ipi/guia%20pratico"
+    verified_at: "2026-08-30"
+    claim_scope_limit: "Não significa que a EFD valide toda a RTC."
 legalRefs:
+  - instrumento: "Guia Prático EFD ICMS/IPI v3.2.3"
+    artigo: "Seção 10 — Informações sobre a Reforma Tributária sobre o Consumo"
+    descricao: "Declara expressamente que a EFD ICMS/IPI não se presta à apuração de CBS, IBS ou IS e disciplina apenas efeitos específicos na escrituração."
+    link: "https://www.gov.br/sped/pt-br/assuntos/escrituracoes-digitais/efd-icms-ipi/guia%20pratico"
   - instrumento: "LC 214/2025"
     descricao: "Institui CBS e IBS; base legal da transição que o guia relaciona à escrituração."
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
@@ -27,7 +64,7 @@ soroGuid: "4811ffa8-ba16-4ef7-8284-9db488aa396c"
 <p>A Reforma Tributária amplia a necessidade de controle porque introduz novos conceitos, classificações e regras operacionais em uma transição que exige acompanhamento constante da legislação e da documentação técnica vigente. Para empresas com catálogos extensos, múltiplas filiais e alto volume de documentos, revisar o arquivo apenas no fechamento é tarde demais. A prevenção precisa acontecer na origem.</p>
 <h2>O que muda na relação entre SPED Fiscal e Reforma Tributária</h2>
 <p>O SPED Fiscal, especialmente a EFD ICMS IPI, consolida informações que dependem da qualidade dos documentos fiscais e das parametrizações que os produziram. Em regra, ele registra operações, apurações, inventários e demais dados exigidos conforme o perfil e a obrigatoriedade aplicáveis à empresa. Por isso, não deve ser tratado como um arquivo isolado da operação.</p>
-<p>Com a transição para os tributos sobre o consumo, a empresa precisará acompanhar a evolução dos leiautes, das regras de validação e dos documentos fiscais eletrônicos. CBS, IBS, cClassTrib, CST e outros elementos podem impactar a forma como dados tributários são estruturados, informados e conciliados. A aplicação efetiva depende da fase regulatória, da vigência legal e da versão técnica aplicável.</p>
+<p>Com a transição para os tributos sobre o consumo, a empresa precisará acompanhar a evolução dos leiautes, das regras de validação e dos documentos fiscais eletrônicos. Na EFD ICMS/IPI vigente, a escrituração continua voltada aos tributos e informações do seu próprio escopo. O Guia Prático v3.2.3 esclarece expressamente que a EFD ICMS/IPI não se presta à apuração de CBS, IBS ou IS. Esses tributos afetam apenas os valores e regras de escrituração especificamente indicados pelo Guia. Por isso, cClassTrib e CST de IBS/CBS não devem ser tratados genericamente como campos próprios da EFD ICMS/IPI sem previsão específica no leiaute vigente.</p>
 <p>O ponto central é operacional: toda informação que chega ao SPED percorreu antes uma cadeia de decisões. NCM inadequado, cadastro incompleto, regra fiscal desatualizada ou associação inconsistente entre produto e tributação podem criar efeitos em série. Corrigir o arquivo no fim do período pode resolver parte da obrigação declaratória, mas não elimina o retrabalho nem reconstitui a evidência da decisão original.</p>
 <h2>Guia SPED Fiscal na Reforma Tributária: o que revisar primeiro</h2>
 <p>A revisão eficiente não começa por todos os registros do arquivo. Começa pelos dados com maior capacidade de propagar erro. O objetivo é identificar onde uma decisão tributária mal estruturada pode se repetir em milhares de documentos.</p>

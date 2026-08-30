@@ -36,29 +36,13 @@ export type ProvenanceFinding = { rule: string; severity: "error"; message: stri
  * Não confundir com aprovação: estar aqui significa "ainda não auditado", não
  * "conteúdo verificado".
  */
-export const DEBITO_PROVENANCE_2026_08_30: readonly string[] = [
-  "api-validacao-xml-nfe-na-pratica",
-  "como-prevenir-falhas-autorizadoras-emissao-fiscal",
-  "como-revisar-catalogo-fiscal-ibs-cbs",
-  "como-testar-campos-tributarios-antes-da-emissao",
-  "erp-versus-inteligencia-tributaria",
-  "evidencia-auditavel-reforma-tributaria",
-  "exemplo-erro-cst-cclasstrib",
-  "guia-campos-fiscais-nfe",
-  "guia-rejeicoes-nt-2026-002-nf-e",
-  "guia-sped-fiscal-reforma-tributaria",
-  "guia-testes-cbs-ibs-2026",
-  "guia-transicao-tributaria-operacional",
-  "impacto-cbs-ibs-faturamento-operacao",
-  "penalidades-cbs-ibs-2026",
-  "por-que-nf-e-sofre-rejeicao",
-  "principais-riscos-emissao-documentos-eletronicos",
-  "qual-diferenca-entre-cbs-ibs",
-  "quando-emitir-nota-com-ibs",
-  "transicao-fiscal-2026-operacao-preparada",
-  "validacao-deterministica-versus-conferencia-manual",
-  "validacao-previa-ou-pos-emissao",
-] as const;
+/**
+ * DÍVIDA ZERADA no ROUND BLOG 30/08-M. Os 21 slugs saíram por prova
+ * individual: auditoria jurídica do Round L, proveniência materializada,
+ * correção aplicada quando exigida e guards verdes. A lista permanece como
+ * ratchet: só encolhe, e o teste abaixo impede que um slug novo entre.
+ */
+export const DEBITO_PROVENANCE_2026_08_30: readonly string[] = [] as const;
 
 const CLASSIFICACOES = ["FATO_NORMATIVO", "INTERPRETACAO_SEGURA", "NAO_DETERMINADO"];
 
@@ -143,7 +127,7 @@ export function lintProvenance(mdx: string, slug?: string): ProvenanceFinding[] 
       new RegExp(`(^|\\n)\\s*${nome}:\\s*["']?([^"'\\n]+)`).exec(b)?.[2]?.trim() ?? "";
     const ref = `provenance[${i}]`;
 
-    for (const obrigatorio of ["claim_scope", "claim_classification", "artifact", "source_authority", "source_url", "verified_at"]) {
+    for (const obrigatorio of ["claim_scope", "claim_classification", "artifact", "source_authority", "verified_at"]) {
       if (!campo(obrigatorio)) {
         out.push({
           rule: "PROVENANCE_CAMPO_OBRIGATORIO",
@@ -171,9 +155,51 @@ export function lintProvenance(mdx: string, slug?: string): ProvenanceFinding[] 
       });
     }
 
+    // Fonte externa e evidência de código provam coisas diferentes e por isso
+    // têm exigências diferentes. Mistura ambígua não passa: ou a fonte é
+    // endereçável por URL, ou é endereçável por caminho + commit.
+    const kind = campo("source_kind") || "external";
     const url = campo("source_url");
-    if (url && !/^https?:\/\//.test(url)) {
-      out.push({ rule: "PROVENANCE_URL_INVALIDA", severity: "error", message: `${ref}: source_url não é URL.` });
+    if (kind === "internal_repo") {
+      for (const req of ["source_repo", "source_path", "source_commit"]) {
+        if (!campo(req)) {
+          out.push({
+            rule: "PROVENANCE_INTERNA_INCOMPLETA",
+            severity: "error",
+            message: `${ref}: fonte internal_repo sem \`${req}\` — evidência de código precisa de endereço fixo.`,
+          });
+        }
+      }
+      const commit = campo("source_commit");
+      if (commit && /^(main|master|head|latest)$/i.test(commit)) {
+        out.push({
+          rule: "PROVENANCE_COMMIT_MOVEL",
+          severity: "error",
+          message: `${ref}: source_commit \`${commit}\` é referência móvel — a evidência mudaria sem o claim mudar.`,
+        });
+      }
+      if (url) {
+        out.push({
+          rule: "PROVENANCE_INTERNA_COM_URL",
+          severity: "error",
+          message: `${ref}: fonte internal_repo com source_url — evidência de código não vira publicação oficial por ganhar link.`,
+        });
+      }
+    } else {
+      if (!url) {
+        out.push({ rule: "PROVENANCE_CAMPO_OBRIGATORIO", severity: "error", message: `${ref}: \`source_url\` ausente.` });
+      } else if (!/^https?:\/\//.test(url)) {
+        out.push({ rule: "PROVENANCE_URL_INVALIDA", severity: "error", message: `${ref}: source_url não é URL.` });
+      }
+      for (const proibido of ["source_repo", "source_path", "source_commit"]) {
+        if (campo(proibido)) {
+          out.push({
+            rule: "PROVENANCE_EXTERNA_COM_REPO",
+            severity: "error",
+            message: `${ref}: fonte external com \`${proibido}\` — declare source_kind: internal_repo.`,
+          });
+        }
+      }
     }
 
     // Claim com proveniência bloqueada não impede que o claim exista — impede

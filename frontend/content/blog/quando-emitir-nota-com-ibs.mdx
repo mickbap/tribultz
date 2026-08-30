@@ -15,8 +15,40 @@ tags:
   - "Reforma Tributária"
   - "Emissão fiscal"
 coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/4fb8471f-d230-4cb4-817e-48e94d580302/workflows/e808c308-ac2a-40e8-96d0-b0d04eeeb74c.webp"
-noindex: true
-noindexReason: "ROUND BLOG 30/08-L: o texto condiciona a obrigacao documental ao alinhamento com exigencia ou validacao da autorizadora. A posicao oficial vigente distingue obrigacao de preenchimento de rejeicao tecnica: o Ato Tecnico Conjunto no 1/2026 adiou validacoes sem afastar o cronograma da obrigacao. Contido de forma reversivel ate a aplicacao dos replacements aprovados."
+provenance:
+  - claim_scope: "A obrigação documental depende do sujeito, da operação, do documento e da data, conforme o cronograma normativo"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Ato Conjunto RFB/CGIBS nº 4, de 30 de julho de 2026"
+    source_authority: "Receita Federal do Brasil e Comitê Gestor do IBS"
+    source_url: "https://www.cgibs.gov.br/upload/arquivos/202607/31091735-20260730-16h30-ato-conjunto-rfb-cgibs-na-c2-ba-4-260731-090909.pdf"
+    verified_at: "2026-08-30"
+    claim_scope_limit: "Não universalizar o marco de 03/08."
+  - claim_scope: "Uma regra de validação pode estar adiada e, ainda assim, a obrigação documental permanecer vigente"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Ato Técnico Conjunto nº 1/2026 e esclarecimento de 06/08/2026"
+    source_authority: "Receita Federal do Brasil e Comitê Gestor do IBS"
+    source_url: "https://www.cgibs.gov.br/receita-federal-e-comite-gestor-do-ibs-esclarecem-adiamento-das-regras-de-validacao-dos-documentos-fiscais-eletronicos"
+    verified_at: "2026-08-30"
+    temporal_applicability: "Caso concreto oficial em agosto de 2026."
+  - claim_scope: "Afirmar que a obrigação só existe quando o autorizador também exige ou rejeita é interpretação insegura"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "Ato Técnico Conjunto nº 1/2026 e esclarecimento de 06/08/2026"
+    source_authority: "Receita Federal do Brasil e Comitê Gestor do IBS"
+    source_url: "https://www.cgibs.gov.br/receita-federal-e-comite-gestor-do-ibs-esclarecem-adiamento-das-regras-de-validacao-dos-documentos-fiscais-eletronicos"
+    verified_at: "2026-08-30"
+    claim_scope_limit: "Obrigação não se confunde com enforcement técnico."
+  - claim_scope: "Tag disponível no leiaute não cria obrigação jurídica automaticamente"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Ato Conjunto RFB/CGIBS nº 4, de 30 de julho de 2026"
+    source_authority: "Receita Federal do Brasil e Comitê Gestor do IBS"
+    source_url: "https://www.cgibs.gov.br/upload/arquivos/202607/31091735-20260730-16h30-ato-conjunto-rfb-cgibs-na-c2-ba-4-260731-090909.pdf"
+    verified_at: "2026-08-30"
+  - claim_scope: "Sequência segura: primeiro determinar a obrigação; depois verificar leiaute, regra de validação e ambiente"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "Ato Técnico Conjunto nº 1/2026 e esclarecimento de 06/08/2026"
+    source_authority: "Receita Federal do Brasil e Comitê Gestor do IBS"
+    source_url: "https://www.cgibs.gov.br/receita-federal-e-comite-gestor-do-ibs-esclarecem-adiamento-das-regras-de-validacao-dos-documentos-fiscais-eletronicos"
+    verified_at: "2026-08-30"
 legalRefs:
   - instrumento: "EC 132/2023"
     descricao: "Emenda Constitucional que instituiu a Reforma Tributária do Consumo e o modelo de IVA dual: CBS de competência da União, IBS compartilhado entre estados, Distrito Federal e municípios."
@@ -34,9 +66,14 @@ soroGuid: "ad45c209-9931-462f-8f66-fcff74ee4d2d"
 <p>A pergunta sobre <strong>quando emitir nota com IBS</strong> parece simples, mas não se resolve apenas com uma alteração no layout da NF-e. Para uma empresa que depende do faturamento contínuo, a resposta envolve vigência legal, documentos técnicos aplicáveis, ambiente de emissão, tipo de operação e qualidade do dado tributário que chega ao ERP. Emitir antes da obrigatoriedade pode gerar informação inconsistente. Emitir depois, quando os campos já forem exigidos, pode interromper a operação ou ampliar o retrabalho.</p>
 <p>O IBS, Imposto sobre Bens e Serviços, integra a arquitetura da Reforma Tributária do consumo. Sua aplicação será progressiva e coexistirá, por etapas, com tributos e obrigações do modelo atual. Por isso, a decisão correta não é tratar o IBS como um campo que será ativado em uma única data para toda a base de documentos. É acompanhar o que passa a ser obrigatório em cada período, para cada documento fiscal e cenário operacional, conforme a legislação e a documentação oficial vigentes.</p>
 <h2>Quando emitir nota com IBS depende da vigência aplicável</h2>
-<p>Em regra, a empresa deve destacar, informar ou calcular IBS no documento eletrônico quando houver previsão legal vigente para a operação e quando o respectivo leiaute, regras de validação e ambiente de autorização exigirem essas informações. Esses três elementos precisam estar alinhados. A lei define a incidência e o regime aplicável; os documentos técnicos traduzem parte dessa regra para a emissão eletrônica; e a autorização fiscal verifica o arquivo transmitido conforme os critérios vigentes.</p>
-<p>Na transição, podem existir fases com objetivos diferentes: testes técnicos, preenchimento facultativo, exigências informativas, produção com validações específicas e vigência plena de determinada obrigação. Confundir essas fases é um risco comum. Um campo disponível no XML não significa, por si só, que ele já deva ser preenchido em produção para todas as operações. Da mesma forma, uma obrigação legal não elimina a necessidade de observar a versão de leiaute adotada pelo documento fiscal correspondente.</p>
-<p>A pergunta operacional mais útil, portanto, é: <strong>esta operação, nesta data, neste documento e neste ambiente exige informação de IBS conforme a regra vigente?</strong> A resposta deve ser documentada e parametrizada, não depender da memória de uma pessoa ou de uma decisão manual no momento do faturamento.</p>
+
+<p>A decisão sobre informar IBS/CBS no documento fiscal deve começar pela obrigação jurídica aplicável ao contribuinte, à operação, ao modelo de documento e à data. A obrigação documental não depende de a autorizadora rejeitar a ausência do campo.</p>
+
+<p>Depois de determinado que a informação é devida, é necessário verificar o leiaute técnico, a versão da documentação e as regras de validação vigentes no ambiente de emissão. Em 2026, RFB e CGIBS demonstraram expressamente que essas camadas podem divergir: determinadas validações foram adiadas para evitar rejeição automática, enquanto o cronograma da obrigação documental permaneceu vigente.</p>
+
+<p>Portanto, obrigação documental, disponibilidade de campo, execução da regra de validação e rejeição automática são dimensões distintas e devem ser registradas separadamente.</p>
+
+<p>A pergunta operacional mais útil, portanto, é: <strong>esta operação, para este sujeito, nesta data e neste documento está juridicamente alcançada pela obrigação de informar IBS/CBS; e, separadamente, quais leiautes e regras técnicas estão ativos no ambiente utilizado?</strong> A resposta deve ser documentada e parametrizada, não depender da memória de uma pessoa ou de uma decisão manual no momento do faturamento.</p>
 <h2>Não basta habilitar o IBS no ERP</h2>
 <p>A emissão fiscal é o resultado final de uma cadeia de dados. Quando o ERP recebe uma regra incompleta ou um cadastro inconsistente, o problema pode aparecer na autorização, na escrituração ou em uma auditoria posterior. O IBS amplia a necessidade de coerência entre áreas que, em muitas empresas, ainda trabalham com controles separados: fiscal, cadastro, comercial, logística, financeiro e tecnologia.</p>
 <p>Antes de emitir, é necessário avaliar se a natureza da operação está corretamente definida, se o produto ou serviço possui classificação compatível, se o destinatário e o local da operação foram identificados de forma adequada e se as parametrizações fiscais refletem a vigência aplicável. Também é preciso verificar a compatibilidade entre NCM, <a href="https://tribultz.com.br/blog/exemplo-erro-cst-cclasstrib">CST, cClassTrib</a> e os demais atributos exigidos pelo cenário regulatório aplicável.</p>

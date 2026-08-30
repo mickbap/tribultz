@@ -25,6 +25,17 @@ export type ClaimClassification =
  * `claim_scope` delimita a que a proveniência se aplica. Pode cobrir um claim
  * único ou um grupo EXPLICITAMENTE delimitado — nunca "o artigo inteiro".
  */
+/**
+ * Natureza da fonte que prova o claim.
+ *
+ * `external` — artefato publicado por autoridade externa, endereçável por URL.
+ * `internal_repo` — evidência de código deste repositório, endereçada por
+ * caminho e commit. Uma capacidade do produto não é fato normativo, e forçá-la
+ * num `source_url` a apresentaria como publicação oficial. São classes
+ * distintas porque provam coisas distintas.
+ */
+export type SourceKind = "external" | "internal_repo";
+
 export type ClaimProvenance = {
   /** A que afirmação (ou grupo delimitado) esta proveniência se aplica. */
   claim_scope: string;
@@ -33,7 +44,14 @@ export type ClaimProvenance = {
   artifact: string;
   /** Quem publica. Fonte secundária nunca é autoridade — só localiza. */
   source_authority: string;
-  source_url: string;
+  /** Ausente equivale a `external`, que era o único caso antes deste campo. */
+  source_kind?: SourceKind;
+  /** Obrigatório em `external`. Nunca preenchido para evidência de código. */
+  source_url?: string;
+  /** Obrigatórios em `internal_repo`. O commit é fixo: `main` não é endereço. */
+  source_repo?: string;
+  source_path?: string;
+  source_commit?: string;
   /** Data em que NÓS conferimos a afirmação contra o artefato. */
   verified_at: string;
   /** Versão do artefato, quando ele for versionado. */

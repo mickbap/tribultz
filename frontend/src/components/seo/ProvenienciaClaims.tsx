@@ -56,9 +56,18 @@ export function ProvenienciaClaims({
                 {c.artifact}
                 {c.artifact_version ? ` v${c.artifact_version}` : ""}
                 {c.rule_item ? ` · ${c.rule_item}` : ""} ·{" "}
-                <a href={c.source_url} rel="nofollow noopener" target="_blank">
-                  {c.source_authority}
-                </a>{" "}
+                {c.source_kind === "internal_repo" ? (
+                  /* Evidência de código não recebe link externo: não há página
+                     oficial para apontar, e inventar uma a faria passar por
+                     publicação. O endereço é repositório, caminho e commit. */
+                  <span data-source-kind="internal_repo">
+                    {c.source_authority}, {c.source_path}, commit {c.source_commit}
+                  </span>
+                ) : (
+                  <a href={c.source_url} rel="nofollow noopener" target="_blank">
+                    {c.source_authority}
+                  </a>
+                )}{" "}
                 · conferido em <time dateTime={c.verified_at}>{c.verified_at}</time>
               </small>
             </p>
