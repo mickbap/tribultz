@@ -31,7 +31,13 @@ export async function generateMetadata({
   const post = getPostBySlug(slug);
   if (!post) return {};
   return {
-    title: post.metaTitle ?? post.title,
+    // O META_TITLE aprovado pelo Jurídico pode já vir com a marca. Nesse caso
+    // ele é absoluto: o template do layout não acrescenta um segundo sufixo.
+    title: post.metaTitle
+      ? /\|\s*Tribultz\s*$/.test(post.metaTitle)
+        ? { absolute: post.metaTitle }
+        : post.metaTitle
+      : post.title,
     description: post.description,
     alternates: { canonical: `${SITE_URL}/blog/${post.slug}` },
     // Contenção editorial: o post contido responde, mas sai do índice.

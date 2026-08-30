@@ -1,0 +1,148 @@
+---
+title: "Rejeição 1106 na NF-e: grupo de combustível não informado"
+description: "Entenda a Rejeição 1106 (LA01-30), acionada pela ausência do grupo de combustível para cClassTrib específico, e veja como corrigir a causa."
+metaTitle: "Rejeição 1106 NF-e: grupo de combustível | Tribultz"
+slug: "motivos-rejeicao-1106-nf-e"
+category: "Reforma Tributária"
+author:
+  name: "Equipe Tribultz"
+  jobTitle: "Conteúdo Fiscal"
+  url: "https://tribultz.com.br"
+publishedAt: "2026-08-13T06:36:25.000Z"
+updatedAt: "2026-08-30"
+tags:
+  - "Rejeição 1106"
+  - "NF-e"
+  - "NFC-e"
+  - "combustíveis"
+  - "cClassTrib"
+  - "NT 2025.002-RTC"
+  - "Reforma Tributária"
+coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/4fb8471f-d230-4cb4-817e-48e94d580302/a734c7fa-10f5-4b54-abd9-989c11153cf8.webp"
+legalRefs:
+  - instrumento: "NT 2025.002-RTC v1.51"
+    artigo: "LA01-30"
+    descricao: "Regra de validação dos modelos 55 e 65 que prevê a Rejeição 1106 quando o grupo de combustível não é informado e o cClassTrib do item corresponde às condições de combustível definidas pela própria RV."
+    link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+soroGuid: "a734c7fa-10f5-4b54-abd9-989c11153cf8"
+---
+
+<p>A <strong>Rejeição 1106 na NF-e</strong> tem uma causa específica. Ela não é um retorno genérico sobre CST, NCM ou incompatibilidade tributária.</p>
+
+<p>Na NT 2025.002-RTC, a regra de validação LA01-30 prevê o cStat 1106 quando <strong>o grupo de combustível não é informado no item e o cClassTrib utilizado está vinculado a combustível segundo as condições da própria regra</strong>.</p>
+
+<p>A mensagem prevista é: <strong>“Não informado grupo de combustível para cClassTrib de Combustível”</strong>.</p>
+
+<p>Isso muda completamente a forma de investigar o erro. O caminho não é procurar qualquer campo fiscal possivelmente incorreto. É verificar a relação objetiva entre o <code>cClassTrib</code> informado e o grupo <code>comb</code> que deveria acompanhar aquele item.</p>
+
+<h2>Qual é o motivo da Rejeição 1106</h2>
+
+<p>A RV LA01-30 aplica-se aos modelos 55 e 65 — portanto, NF-e e NFC-e — e verifica duas condições em conjunto:</p>
+
+<ul>
+<li>o grupo de combustível <code>comb</code> não foi informado no item; e</li>
+<li>o <code>cClassTrib</code> informado é <code>410013</code> ou começa por <code>620</code>.</li>
+</ul>
+
+<p>Quando essas condições são atendidas conforme a regra implantada pelo autorizador, o retorno previsto é a Rejeição 1106.</p>
+
+<p>O ponto central é o vínculo entre as duas informações. A rejeição não significa simplesmente “cClassTrib errado” e também não significa que todo produto classificado em determinada NCM precisa receber automaticamente o grupo de combustível.</p>
+
+<p>A própria RV parte do <code>cClassTrib</code> efetivamente informado no documento.</p>
+
+<h2>O que verificar primeiro no XML rejeitado</h2>
+
+<p>Comece preservando o XML transmitido e o retorno completo do autorizador. A mensagem normalmente identifica o item envolvido, o que permite limitar a investigação à ocorrência concreta antes de revisar o restante da parametrização.</p>
+
+<h3>1. Confirme o cStat 1106 e o item indicado</h3>
+
+<p>Verifique se o retorno é efetivamente o código 1106 e identifique o <code>nItem</code> mencionado na mensagem.</p>
+
+<p>Não substitua essa etapa por uma busca genérica em listas de rejeições. O número deve ser associado à sua regra oficial, LA01-30, porque é ela que define as condições técnicas do erro.</p>
+
+<h3>2. Confira o cClassTrib do item</h3>
+
+<p>No item rejeitado, localize o <code>cClassTrib</code> informado.</p>
+
+<p>Se o valor for <code>410013</code> ou começar por <code>620</code>, o documento entrou exatamente na condição que a LA01-30 trata como vinculada a combustível.</p>
+
+<p>Nesse momento surgem dois cenários diferentes, que não devem ser misturados.</p>
+
+<p>No primeiro, o cClassTrib está materialmente correto para a operação e o problema está na ausência do grupo de combustível.</p>
+
+<p>No segundo, o cClassTrib foi escolhido de forma inadequada. Nesse caso, adicionar o grupo <code>comb</code> apenas para eliminar a rejeição seria corrigir o sintoma e preservar uma classificação que precisa ser revista.</p>
+
+<h3>3. Verifique se o grupo comb foi gerado</h3>
+
+<p>Se o cClassTrib estiver correto, confirme se o item contém o grupo <code>comb</code> previsto no leiaute da NF-e/NFC-e.</p>
+
+<p>A ausência pode decorrer de parametrização incompleta no ERP, de regra condicional que não foi acionada ou de falha no mapeamento entre o sistema de origem e o XML.</p>
+
+<p>Não basta inserir o grupo vazio. As informações de combustível que forem efetivamente exigidas para a operação precisam ser obtidas de fontes legítimas e preenchidas conforme o leiaute aplicável.</p>
+
+<h2>Como corrigir a Rejeição 1106</h2>
+
+<p>A correção correta depende de identificar qual dos dois lados da relação está errado: a classificação tributária ou a geração do grupo de combustível.</p>
+
+<h3>Cenário 1: o cClassTrib está correto e falta o grupo de combustível</h3>
+
+<p>Se a classificação tributária do item foi confirmada e se enquadra nas condições da LA01-30, corrija a regra responsável pela geração do XML para que o grupo <code>comb</code> seja produzido com os dados aplicáveis à operação.</p>
+
+<p>O ajuste deve ocorrer no cadastro, no motor fiscal, na parametrização ou na integração que efetivamente determina o XML. Evite editar manualmente apenas a nota rejeitada.</p>
+
+<p>Depois da alteração, gere um novo documento e confirme que o grupo passou a existir no item correto sem alterar indevidamente outras informações fiscais.</p>
+
+<h3>Cenário 2: o cClassTrib está incorreto</h3>
+
+<p>Se o produto ou a operação não deveria utilizar o cClassTrib que acionou a LA01-30, a correção é outra: revise a classificação tributária na origem.</p>
+
+<p>Não selecione um cClassTrib diferente apenas porque ele deixa de disparar a rejeição. A classificação precisa decorrer da situação tributária efetivamente aplicável à operação.</p>
+
+<p>A Rejeição 1106 pode revelar que uma parametrização de combustível foi replicada para um produto ou cenário inadequado. Nesse caso, adicionar o grupo <code>comb</code> agravaria a inconsistência em vez de solucioná-la.</p>
+
+<h3>Cenário 3: o ERP está correto, mas a integração remove o grupo</h3>
+
+<p>Também é possível que a determinação fiscal esteja correta no sistema de origem e que a informação se perca na transformação para XML.</p>
+
+<p>Compare os dados utilizados pelo ERP com o arquivo efetivamente transmitido. Se o grupo deveria ter sido produzido e desapareceu durante a integração, a correção precisa ocorrer no mapeamento ou no componente que monta o documento eletrônico.</p>
+
+<h2>Por que comparar com outra NF-e exige cuidado</h2>
+
+<p>Um documento autorizado pode ser útil como referência técnica, mas não deve ser copiado como modelo tributário sem confirmar equivalência.</p>
+
+<p>Dois itens visualmente semelhantes podem possuir classificações ou operações diferentes. Da mesma forma, a existência de <code>comb</code> em outra NF-e não prova que o grupo deve ser replicado para qualquer produto.</p>
+
+<p>A comparação segura verifica primeiro a regra aplicável e depois utiliza documentos equivalentes para confirmar como a parametrização foi transformada em XML.</p>
+
+<h2>Rejeição 1106 não é sinônimo de cClassTrib incorreto</h2>
+
+<p>Esse é um ponto importante para evitar uma correção equivocada.</p>
+
+<p>A LA01-30 não afirma que o cClassTrib está incorreto. Ela verifica que um cClassTrib enquadrado nas condições de combustível foi informado sem o correspondente grupo <code>comb</code>.</p>
+
+<p>O cClassTrib pode estar correto e faltar informação no XML. Ou pode estar incorreto e, justamente por isso, ter criado uma exigência de grupo que não corresponde à operação real.</p>
+
+<p>A investigação fiscal precisa determinar qual cenário ocorreu.</p>
+
+<h2>Como prevenir a Rejeição 1106</h2>
+
+<p>Uma prevenção consistente pode reproduzir a lógica da LA01-30 antes de transmitir o documento:</p>
+
+<ul>
+<li>identificar o cClassTrib do item;</li>
+<li>verificar se ele é <code>410013</code> ou possui prefixo <code>620</code>;</li>
+<li>quando a condição for atendida, confirmar a presença e a consistência do grupo de combustível;</li>
+<li>se houver divergência, interromper ou encaminhar a operação para revisão conforme a política de risco da empresa.</li>
+</ul>
+
+<p>Esse tipo de validação é determinístico porque a condição técnica da RV é objetiva. O que não deve ser automatizado por simples inferência é a decisão de que determinado produto ou operação merece aquele cClassTrib sem os fatos e fundamentos necessários.</p>
+
+<p>A Tribultz pode atuar nessa camada preventiva, confrontando os dados do documento com regras técnicas configuradas antes da autorização e preservando evidências para investigação. O objetivo não é substituir a classificação tributária feita pelos responsáveis da empresa, mas evitar que uma inconsistência objetiva seja descoberta somente quando o documento chegar à SEFAZ.</p>
+
+<h2>A correção segura da 1106 atua na causa</h2>
+
+<p>A Rejeição 1106 oferece um diagnóstico técnico muito mais preciso do que o texto original do artigo sugeria: <strong>há um cClassTrib tratado pela RV como vinculado a combustível, mas falta o grupo de combustível no item.</strong></p>
+
+<p>A partir daí, a empresa precisa descobrir qual lado está incorreto. Se o cClassTrib estiver certo, corrija a geração do grupo <code>comb</code>. Se estiver errado, corrija a classificação tributária. Se a origem estiver correta e o XML não, revise a integração.</p>
+
+<p>O que não deve ser feito é alterar campos por tentativa e erro até a nota ser autorizada. Superar uma rejeição é apenas uma etapa. A correção só está concluída quando a informação transmitida também representa corretamente a operação que a empresa realizou.</p>

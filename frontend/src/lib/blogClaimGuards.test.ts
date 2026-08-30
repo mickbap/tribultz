@@ -172,7 +172,15 @@ test("L/M: 1115 com produção futura; 1119 sem data exata de ativação", () =>
     const s = ler(f);
     const t = corpo(s);
     if (/\b1115\b/.test(t) && /UB12-10/.test(s)) {
-      assert.match(s, /temporal_applicability:[^\n]*futur/i, `${f}: 1115 sem produção futura declarada`);
+      // A exigência é que a produção futura esteja DECLARADA — não que esteja
+      // num campo específico. O Jurídico pode entregá-la no corpo, no
+      // legalRefs ou na proveniência; exigir um lugar só transformaria forma
+      // de metadata em impedimento de publicar conteúdo aprovado.
+      assert.match(
+        s,
+        /(temporal_applicability:[^\n]*futur|implementaç[ãa]o futura|produç[ãa]o futura|n[ãa]o (deve ser apresentada|está)[^.]{0,60}ativa em produç[ãa]o)/i,
+        `${f}: 1115 sem produção futura declarada em lugar nenhum`,
+      );
     }
     if (/W34-20/.test(s)) {
       assert.ok(

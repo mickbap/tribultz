@@ -1,0 +1,134 @@
+---
+title: "Rejeição 1115: IBS/CBS não informado e status em 2026"
+description: "Entenda a Rejeição 1115 (UB12-10), o status da validação em 2026 e como corrigir o grupo IBS/CBS quando a regra for aplicável."
+metaTitle: "Rejeição 1115: IBS/CBS não informado | Tribultz"
+slug: "como-corrigir-rejeicao-1115"
+category: "Reforma Tributária"
+author:
+  name: "Equipe Tribultz"
+  jobTitle: "Conteúdo Fiscal"
+  url: "https://tribultz.com.br"
+publishedAt: "2026-08-19T04:21:32.000Z"
+updatedAt: "2026-08-30"
+tags:
+  - "Rejeição 1115"
+  - "NF-e"
+  - "NFC-e"
+  - "IBS"
+  - "CBS"
+  - "NT 2025.002-RTC"
+  - "Reforma Tributária"
+coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/4fb8471f-d230-4cb4-817e-48e94d580302/1815f327-62e5-439e-a78a-e6e5e1fd9125.webp"
+legalRefs:
+  - instrumento: "NT 2025.002-RTC v1.51"
+    artigo: "UB12-10"
+    descricao: "Regra de validação dos modelos 55 e 65 associada à ausência do grupo de IBS/CBS no item. A versão vigente registra implementação futura em homologação e produção, além do marco específico previsto para optantes do Simples Nacional e MEI."
+    link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+  - instrumento: "Ato Conjunto RFB/CGIBS nº 4/2026"
+    descricao: "Estabelece o cronograma de obrigatoriedade dos documentos fiscais eletrônicos da RTC."
+    link: "https://www.cgibs.gov.br/upload/arquivos/202607/31091735-20260730-16h30-ato-conjunto-rfb-cgibs-na-c2-ba-4-260731-090909.pdf"
+  - instrumento: "Ato Técnico Conjunto RFB/CGIBS nº 1/2026"
+    descricao: "Formaliza alterações nas regras de validação dos documentos fiscais eletrônicos no contexto da implantação da RTC."
+    link: "https://www.cgibs.gov.br/receita-federal-e-comite-gestor-do-ibs-esclarecem-adiamento-das-regras-de-validacao-dos-documentos-fiscais-eletronicos"
+  - instrumento: "Esclarecimento RFB/CGIBS de 06/08/2026"
+    descricao: "Esclarece que o adiamento das validações automáticas não suspendeu, por si só, o cronograma das obrigações documentais."
+    link: "https://www.cgibs.gov.br/receita-federal-e-comite-gestor-do-ibs-esclarecem-adiamento-das-regras-de-validacao-dos-documentos-fiscais-eletronicos"
+soroGuid: "1815f327-62e5-439e-a78a-e6e5e1fd9125"
+---
+
+<p>A <strong>Rejeição 1115</strong> possui uma causa técnica específica na NF-e e na NFC-e: ela está associada à regra de validação UB12-10 da NT 2025.002-RTC e corresponde à ausência do grupo de IBS e CBS no item do documento.</p>
+
+<p>Mas existe um ponto essencial para quem pesquisa <strong>como corrigir rejeição 1115</strong> em 2026: a existência da regra na Nota Técnica não significa que ela esteja sendo aplicada como bloqueio geral de autorização neste momento. Na versão 1.51 da NT 2025.002-RTC, a UB12-10 está marcada com implementação futura em homologação e produção, com previsão específica posterior para determinados contribuintes do Simples Nacional e MEI.</p>
+
+<p>Por isso, o primeiro passo não é simplesmente adicionar uma tag ao XML. É separar três questões: o que a regra 1115 efetivamente verifica, qual é o status técnico da sua implantação e qual obrigação documental se aplica à operação.</p>
+
+<h2>O que é a Rejeição 1115</h2>
+
+<p>A regra UB12-10 verifica, nos modelos 55 e 65, a ausência do grupo <code>det/imposto/IBSCBS</code> no item. Quando a regra estiver efetivamente ativa para o cenário analisado e suas condições forem atendidas, o retorno previsto é a Rejeição 1115: <strong>“IBS/CBS não informado”</strong>.</p>
+
+<p>A própria regra contém uma exceção relevante. Ela não se aplica à NF-e de devolução de mercadorias, identificada por <code>finNFe=4</code>, nem à NF-e complementar, com <code>finNFe=2</code>, quando o documento referencia uma NF-e emitida antes de 2026.</p>
+
+<p>Isso torna incorreto tratar a 1115 como uma mensagem genérica para qualquer ausência de informação tributária. O diagnóstico precisa observar a finalidade da NF-e, os documentos referenciados, a versão técnica utilizada e o ambiente em que a autorização está ocorrendo.</p>
+
+<h2>A Rejeição 1115 está ativa em produção em 2026?</h2>
+
+<p>Não deve ser apresentada como uma rejeição geral atualmente ativa em produção.</p>
+
+<p>Na referência técnica vigente, a NT 2025.002-RTC v1.51 registra a UB12-10 como de implementação futura para homologação e produção. A mesma regra prevê marco específico de produção a partir de 4 de janeiro de 2027 para emitentes enquadrados nos CRT 1 e 2 do Simples Nacional e no CRT 4 do MEI.</p>
+
+<p>Esse status técnico é especialmente importante porque, em agosto de 2026, Receita Federal e Comitê Gestor do IBS esclareceram que determinadas regras de validação relacionadas à CBS e ao IBS foram adiadas para evitar rejeições automáticas durante a implantação.</p>
+
+<p>Isso, porém, não deve ser interpretado no sentido oposto: <strong>ausência de rejeição automática não significa, por si só, dispensa da obrigação de informar IBS e CBS quando a operação e o contribuinte estiverem alcançados pelo cronograma normativo aplicável.</strong></p>
+
+<p>Em outras palavras:</p>
+
+<ul>
+<li>a obrigação documental é uma questão normativa;</li>
+<li>a existência do campo é uma questão de leiaute;</li>
+<li>a execução da UB12-10 é uma questão de implementação da regra de validação;</li>
+<li>a Rejeição 1115 é a consequência técnica prevista quando essa regra efetivamente estiver sendo executada.</li>
+</ul>
+
+<p>Essas quatro dimensões não devem ser tratadas como sinônimas.</p>
+
+<h2>Como corrigir a Rejeição 1115 quando a regra for aplicável</h2>
+
+<p>Se o autorizador efetivamente retornar o cStat 1115, a correção deve começar pela confirmação do contexto técnico. Não presuma que simplesmente inserir o grupo IBS/CBS resolverá o problema de forma correta.</p>
+
+<h3>1. Confirme o cStat, o ambiente e a versão aplicada</h3>
+
+<p>Preserve o XML transmitido e o retorno integral do autorizador. Confirme que o código recebido é realmente 1115 e registre o ambiente — homologação ou produção —, a data da emissão, o modelo do documento e a versão do emissor.</p>
+
+<p>Como a documentação vigente contém notas específicas de implantação para a UB12-10, um retorno diferente do comportamento esperado deve ser analisado com a versão efetivamente implantada no autorizador, e não apenas com uma cópia antiga da Nota Técnica ou com orientações de terceiros.</p>
+
+<h3>2. Localize o item indicado no retorno</h3>
+
+<p>A rejeição é avaliada no nível do item. Identifique o <code>nItem</code> informado na mensagem e verifique se, dentro de <code>det/imposto</code>, o grupo <code>IBSCBS</code> foi efetivamente gerado.</p>
+
+<p>Se o grupo estiver ausente, isso confirma a condição técnica central da UB12-10. Ainda assim, falta responder uma pergunta mais importante: aquele item deveria conter as informações de IBS/CBS naquele cenário?</p>
+
+<h3>3. Verifique as exceções da própria UB12-10</h3>
+
+<p>Antes de alterar o ERP, confira a finalidade da NF-e e os documentos referenciados.</p>
+
+<p>Se a nota for de devolução ou complementar e estiver dentro da exceção prevista pela regra para documentos anteriores a 2026, não é correto adicionar informações apenas para tentar superar a rejeição. Primeiro deve ser verificado se a própria RV deveria ter sido aplicada ao documento.</p>
+
+<h3>4. Confirme a obrigação e a determinação tributária do item</h3>
+
+<p>Se a operação estiver efetivamente sujeita ao preenchimento, valide a determinação tributária que deve alimentar o grupo IBS/CBS: CST, cClassTrib e demais informações exigidas para aquele cenário.</p>
+
+<p>Não crie um grupo vazio e não utilize valores genéricos apenas para fazer o XML passar pela autorização. Uma tag tecnicamente presente, mas baseada em uma classificação incorreta, troca uma rejeição visível por uma inconsistência fiscal potencialmente mais difícil de identificar.</p>
+
+<p>A classificação precisa refletir a operação real e a documentação aplicável.</p>
+
+<h3>5. Corrija a origem no ERP ou na integração</h3>
+
+<p>Depois de confirmar o tratamento correto, identifique por que o grupo deixou de ser gerado.</p>
+
+<p>A causa pode estar em uma regra fiscal do ERP, em uma condição de vigência, no cadastro utilizado para determinar CST e cClassTrib ou no mapeamento responsável por transformar os dados da operação em XML.</p>
+
+<p>A correção deve ocorrer nessa origem. Editar manualmente apenas o XML rejeitado pode resolver uma transmissão isolada e deixar todas as próximas operações expostas à mesma falha.</p>
+
+<h3>6. Gere um novo XML e revalide</h3>
+
+<p>Após a correção, gere novamente o documento a partir do sistema de origem. Compare o novo XML com a versão rejeitada e confirme que a alteração atingiu apenas os elementos necessários.</p>
+
+<p>Além da presença do grupo IBS/CBS, revise a coerência das informações relacionadas. A superação da Rejeição 1115 não é prova, por si só, de que CST, cClassTrib, bases, alíquotas ou demais tratamentos tributários estão materialmente corretos.</p>
+
+<h2>O que não fazer ao investigar a 1115</h2>
+
+<p>O primeiro erro é tratar a mensagem “IBS/CBS não informado” como autorização para preencher qualquer combinação disponível no ERP. A regra identifica ausência de grupo; ela não escolhe o tratamento tributário correto para a empresa.</p>
+
+<p>O segundo erro é confundir regra documentada com regra atualmente executada. Durante uma transição técnica, uma RV pode existir na Nota Técnica e ainda possuir implementação futura ou cronograma próprio.</p>
+
+<p>O terceiro é concluir que, porque uma ausência não está provocando rejeição automática em determinado momento, o contribuinte está dispensado da informação. Receita Federal e CGIBS já esclareceram que o adiamento das validações técnicas não equivale, por si só, à suspensão das obrigações previstas no cronograma.</p>
+
+<h2>Como prevenir problemas ligados ao grupo IBS/CBS</h2>
+
+<p>A prevenção começa antes da transmissão. O ERP precisa gerar o grupo tributário a partir de regras versionadas, vinculadas ao contexto da operação e à documentação oficial aplicável.</p>
+
+<p>Também é importante registrar qual versão regulatória sustentou cada validação. Em uma transição como a de IBS e CBS, campos, regras de validação e datas de implementação podem mudar em momentos diferentes.</p>
+
+<p>Uma camada preventiva de validação ajuda a identificar essas divergências antes da autorização, preservando o XML analisado, a regra considerada e o resultado obtido. A Tribultz atua nesse contexto como apoio à verificação técnica e à rastreabilidade das decisões fiscais, sem substituir a determinação tributária feita pelos responsáveis da empresa.</p>
+
+<p>A principal lição da Rejeição 1115 é justamente essa: <strong>campo previsto no XML, obrigação documental e rejeição automática são coisas diferentes</strong>. Corrigir com segurança exige saber em qual dessas camadas está o problema antes de alterar a parametrização.</p>
