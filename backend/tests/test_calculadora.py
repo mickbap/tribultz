@@ -51,7 +51,8 @@ class TestPublicCalculadora:
         assert "data_policy" in data
         assert "upgrade_cta" in data
 
-    def test_with_ncm(self):
+    def test_with_ncm_sem_lastro_nao_determinavel(self):
+        """#685 — NCM informada sem lastro na fonte não recebe valor calculado."""
         resp = client.post(
             "/api/v1/public/calculadora/regime-geral",
             json={
@@ -61,10 +62,43 @@ class TestPublicCalculadora:
                 "ncm_code": "84713012",
             },
         )
+        assert resp.status_code == 422
+        d = resp.json()["detail"]
+        assert d["erro"] == "nao_determinavel"
+        assert d["unanime"] is False
+        assert d["fontes_cClassTrib_usadas"] == []
+
+    def test_with_ncm_lastro_unanime(self):
+        """#685 — com lastro unânime o valor da fonte é aplicado (60%, não 0%)."""
+        resp = client.post(
+            "/api/v1/public/calculadora/regime-geral",
+            json={
+                "uf_destino": "SP",
+                "base_value": "1000.00",
+                "periodo": "teste_2026",
+                "ncm_code": "10019900",
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["rate_source"] == "uf_default"  # ch.84 has no override
-        assert float(data["total_tributos"]) > 0
+        assert data["rate_source"] == "ncm"
+        assert float(data["total_tributos"]) == 4.00, "1% de 2026 com redução de 60%"
+
+    def test_ncm_ambigua_nao_determinavel(self):
+        """#685 — tratamentos divergentes na fonte: nenhum valor é escolhido."""
+        resp = client.post(
+            "/api/v1/public/calculadora/regime-geral",
+            json={
+                "uf_destino": "SP",
+                "base_value": "1000.00",
+                "periodo": "teste_2026",
+                "ncm_code": "06024000",
+            },
+        )
+        assert resp.status_code == 422
+        d = resp.json()["detail"]
+        assert d["erro"] == "nao_determinavel"
+        assert d["fontes_cClassTrib_usadas"], "as fontes consultadas seguem visíveis"
 
     def test_cesta_basica_zero_rate(self):
         resp = client.post(

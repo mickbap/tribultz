@@ -82,3 +82,36 @@ class TestClassifyPago:
     def test_calculo_cbs_ibs_entregue(self):
         b = self._post("84713012").json()
         assert b["vCBS"] == "8.80" and b["vIBS"] == "17.70"
+
+    # ── #685: mesma semântica do calculador, sem patch de calculate_full ──
+    # Os testes acima trocam calculate_full por um fake e, por isso, nunca
+    # exercitam a resolução real de alíquota. Estes exercitam.
+
+    def _post_real(self, ncm):
+        return client.post(
+            "/api/v1/public-api/classify",
+            headers={"X-API-Key": "x"},
+            json={"ncm": ncm, "uf_destino": "SP", "cst": "000", "base_value": "100.00"},
+        )
+
+    def test_685_ncm_sem_lastro_nao_determinavel_e_nao_cobra(self):
+        r = self._post_real("84713012")
+        assert r.status_code == 422
+        d = r.json()["detail"]
+        assert d["erro"] == "nao_determinavel"
+        assert d["unanime"] is False
+        assert d["fontes_cClassTrib_usadas"] == []
+
+    def test_685_ncm_ambigua_nao_determinavel(self):
+        r = self._post_real("06024000")
+        assert r.status_code == 422
+        d = r.json()["detail"]
+        assert d["erro"] == "nao_determinavel"
+        assert d["fontes_cClassTrib_usadas"]
+
+    def test_685_ncm_lastro_unanime_calcula(self):
+        r = self._post_real("10019900")
+        assert r.status_code == 200, r.text
+        b = r.json()
+        # regime cheio (default do classify): 8,8 + 17,7 = 26,5% com redução de 60%
+        assert b["vCBS"] == "3.52" and b["vIBS"] == "7.08"

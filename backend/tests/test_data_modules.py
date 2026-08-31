@@ -10,7 +10,7 @@ from app.data.cst_regimes import (
     CST_REGIMES, get_cst_regime, get_rate_modifier, generates_tax,
 )
 from app.data.ncm_rates import (
-    NCM_CHAPTER_OVERRIDES, get_ncm_rate_override, get_ncm_modifier,
+    resolve_ncm_modifier,
 )
 from app.data.ncm_codes import VALID_NCM_CODES, NCM_DESCRIPTIONS
 
@@ -131,55 +131,68 @@ class TestCstRegimes:
             assert Decimal("0") <= mod <= Decimal("1"), f"{cst} modifier {mod} out of range"
 
 
-# ── NCM Rate Overrides ───────────────────────────────────────────────────────
+# ── NCM: modificador com lastro na fonte (#685, decisão C) ───────────────────
 
-class TestNcmRates:
-    def test_has_overrides(self):
-        assert len(NCM_CHAPTER_OVERRIDES) >= 20
+class TestNcmModifierLastro:
+    """A derivação por capítulo NCM foi removida: 19 dos 24 capítulos divergiam
+    da fonte e seis NCMs recebiam imposto zerado onde a fonte só sustenta 60%.
+    """
 
-    def test_cesta_basica_zero_rate(self):
-        meat = get_ncm_rate_override("02011000")
-        assert meat is not None
-        assert meat["modifier"] == Decimal("0.0")
-        assert meat["category"] == "cesta_basica"
+    def test_a_trigo_lastro_unanime_60(self):
+        """A) NCM 10019900 — três cClassTrib, todos com redução de 60%."""
+        r = resolve_ncm_modifier("10019900")
+        assert r.modifier == Decimal("0.4"), "60% de redução → modificador 0.4"
+        assert r.unanime is True
+        assert r.nao_determinavel is False
+        assert set(r.fontes) == {"200034", "200038", "515001"}
 
-    def test_food_reduced_rate(self):
-        fish = get_ncm_rate_override("03034100")
-        assert fish is not None
-        assert fish["modifier"] == Decimal("0.4")
-        assert fish["category"] == "alimentos"
+    def test_b_ncm_ambigua_nao_determinavel(self):
+        """B) tratamentos divergentes na mesma NCM → nao_determinavel."""
+        r = resolve_ncm_modifier("06024000")   # tratamentos divergentes na fonte
+        assert r.nao_determinavel is True
+        assert r.unanime is False
+        assert r.modifier is None, "nenhum modificador inventado"
+        assert r.fontes, "as fontes consultadas continuam visíveis"
 
-    def test_pharma_reduced_rate(self):
-        pharma = get_ncm_rate_override("30049099")
-        assert pharma is not None
-        assert pharma["modifier"] == Decimal("0.4")
-        assert pharma["category"] == "saude"
+    def test_c_ncm_sem_lastro_nao_determinavel(self):
+        """C) sem cClassTrib de lastro → nao_determinavel, não 1.0."""
+        r = resolve_ncm_modifier("84713012")
+        assert r.nao_determinavel is True
+        assert r.modifier is None
+        assert r.fontes == ()
 
-    def test_education_reduced_rate(self):
-        books = get_ncm_rate_override("49019900")
-        assert books is not None
-        assert books["modifier"] == Decimal("0.4")
-        assert books["category"] == "educacao"
+    def test_d_outro_lastro_unanime(self):
+        """D) NCM unânime diferente do trigo devolve o valor da fonte."""
+        r = resolve_ncm_modifier("04090000")
+        assert r.modifier == Decimal("0.4")
+        assert r.unanime is True
 
-    def test_industrial_no_override(self):
-        """Chapter 84 (machinery) has no special rate."""
-        result = get_ncm_rate_override("84713012")
-        assert result is None
+    def test_e_regressao_os_seis_ncms_zerados(self):
+        """E) nenhum dos seis pode voltar a receber imposto zerado.
 
-    def test_get_ncm_modifier_with_override(self):
-        assert get_ncm_modifier("02011000") == Decimal("0.0")
+        Eram o caso mais grave: a tabela por capítulo zerava o imposto onde a
+        fonte, unânime, sustenta apenas 60%.
+        """
+        for ncm in ("04090000", "10011100", "10019900", "10051000", "10059010", "10059090"):
+            r = resolve_ncm_modifier(ncm)
+            assert r.unanime is True, ncm
+            assert r.modifier == Decimal("0.4"), f"{ncm} voltou a divergir da fonte"
+            assert r.modifier != Decimal("0.0"), f"{ncm} zerado contra a fonte"
 
-    def test_get_ncm_modifier_without_override(self):
-        assert get_ncm_modifier("84713012") == Decimal("1.0")
+    def test_ncm_vazio_nao_determinavel(self):
+        assert resolve_ncm_modifier("").nao_determinavel is True
+        assert resolve_ncm_modifier(None).nao_determinavel is True
 
-    def test_get_ncm_modifier_empty(self):
-        assert get_ncm_modifier("") == Decimal("1.0")
+    def test_derivacao_por_capitulo_nao_existe_mais(self):
+        """A heurística não pode voltar por outra porta."""
+        import app.data.ncm_rates as mod
 
-    def test_each_override_has_required_fields(self):
-        for ch, data in NCM_CHAPTER_OVERRIDES.items():
-            assert "modifier" in data, f"Chapter {ch} missing modifier"
-            assert "desc" in data, f"Chapter {ch} missing desc"
-            assert "category" in data, f"Chapter {ch} missing category"
+        assert not hasattr(mod, "NCM_CHAPTER_OVERRIDES"), "tabela manual por capítulo reintroduzida"
+        assert not hasattr(mod, "get_ncm_rate_override"), "lookup por capítulo reintroduzido"
+        # Duas NCMs do MESMO capítulo com lastros diferentes não podem colapsar.
+        assert resolve_ncm_modifier("10019900").modifier == Decimal("0.4")
+        assert resolve_ncm_modifier("10011100").modifier == Decimal("0.4")
+
 
 
 # ── NCM Descriptions ─────────────────────────────────────────────────────────

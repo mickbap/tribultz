@@ -24,11 +24,25 @@ from app.data.uf_rates import (
     CBS_TESTE_2026, IBS_2026_FACTOR,
 )
 from app.data.cst_regimes import get_rate_modifier, get_cst_regime, generates_tax
-from app.data.ncm_rates import get_ncm_modifier
+from app.data.ncm_rates import resolve_ncm_modifier
 
 # Quantize helpers
 _Q_RATE = Decimal("0.0001")
 _Q_MONEY = Decimal("0.01")
+
+
+class NcmNaoDeterminavel(Exception):
+    """A fonte não sustenta um modificador único para o NCM (#685, decisão C).
+
+    Levantada ANTES de qualquer cálculo, para que nenhum endpoint devolva um
+    valor sem lastro unânime — inclusive os pagos.
+    """
+
+    def __init__(self, *, ncm: str | None, fontes: list[str], motivo: str) -> None:
+        self.ncm = ncm
+        self.fontes = fontes
+        self.motivo = motivo
+        super().__init__(motivo)
 
 
 class TaxRateResult(BaseModel):
@@ -39,7 +53,12 @@ class TaxRateResult(BaseModel):
     ibs_total: Decimal
     rate_source: str          # "ncm" | "uf_default" | "national"
     cst_modifier: Decimal     # 1.0 normal, 0.6 reduced, 0.0 exempt
-    ncm_modifier: Decimal     # 1.0 normal, 0.4 reduced, 0.0 zero-rated
+    # None = nao_determinavel (#685). Nunca substituir por 1.0: "sem redução" e
+    # "não sabemos qual redução" são respostas diferentes.
+    ncm_modifier: Decimal | None
+    ncm_unanime: bool
+    ncm_fontes: list[str]     # cClassTrib que sustentaram (ou não) o valor
+    ncm_motivo: str | None
     regime_desc: str
 
 
@@ -100,10 +119,20 @@ def resolve_rates(
         ibs_mun_rate = ibs_mun_rate * IBS_2026_FACTOR
         rate_source = f"{rate_source}_2026"
 
-    # Step 2: NCM modifier (chapter-based overrides)
-    ncm_mod = get_ncm_modifier(ncm or "")
-    if ncm_mod != Decimal("1.0"):
-        rate_source = "ncm"
+    # Step 2: modificador do NCM — só quando a fonte é unânime (#685).
+    #
+    # Sem NCM informada não há afirmação sobre NCM a determinar: o cálculo segue
+    # por UF/CST, como sempre seguiu. A regra 3 da decisão trata de NCM
+    # informada e SEM lastro, que é caso diferente de NCM ausente.
+    if not ncm:
+        ncm_mod: Decimal | None = Decimal("1.0")
+        ncm_unanime, ncm_fontes, ncm_motivo = True, [], None
+    else:
+        _res = resolve_ncm_modifier(ncm)
+        ncm_mod = _res.modifier
+        ncm_unanime, ncm_fontes, ncm_motivo = _res.unanime, list(_res.fontes), _res.motivo
+        if ncm_mod is not None and ncm_mod != Decimal("1.0"):
+            rate_source = "ncm"
 
     # Step 3: CST regime modifier
     cst_mod = get_rate_modifier(cst)
@@ -120,6 +149,9 @@ def resolve_rates(
         rate_source=rate_source,
         cst_modifier=cst_mod,
         ncm_modifier=ncm_mod,
+        ncm_unanime=ncm_unanime,
+        ncm_fontes=ncm_fontes,
+        ncm_motivo=ncm_motivo,
         regime_desc=regime_desc,
     )
 
@@ -139,6 +171,12 @@ def calculate(
     Returns:
         CalculationResult with all calculated values and XML snippet.
     """
+    # `calculate` é público: pode ser chamado sem passar por `calculate_full`.
+    # Sem lastro unânime não há o que multiplicar — e um padrão silencioso aqui
+    # reabriria o defeito da #685 por outra porta.
+    if rates.ncm_modifier is None:
+        raise NcmNaoDeterminavel(ncm=None, fontes=list(rates.ncm_fontes), motivo=rates.ncm_motivo or "")
+
     base = (vBC * quantity).quantize(_Q_MONEY, ROUND_HALF_UP)
 
     # Combined modifier: CST × NCM
@@ -210,6 +248,12 @@ def calculate_full(
         Full CalculationResult.
     """
     rates = resolve_rates(ncm=ncm, uf=uf, cst=cst, periodo=periodo)
+    if rates.ncm_modifier is None:
+        # Sem lastro unânime não existe valor a devolver. Calcular com um padrão
+        # entregaria um número que a fonte não sustenta — o defeito da #685.
+        raise NcmNaoDeterminavel(
+            ncm=ncm, fontes=list(rates.ncm_fontes), motivo=rates.ncm_motivo or "",
+        )
     result = calculate(vBC, quantity, rates)
 
     # Override CST in the result
