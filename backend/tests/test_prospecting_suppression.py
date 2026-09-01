@@ -108,13 +108,13 @@ class TestConfigurableExclusion:
         assert org in result
 
 
-class TestHardBounceNeverExcludedByDefault:
-    def test_hard_bounce_not_excluded_by_default(self, session):
+class TestHardBounceAlwaysExcluded:
+    def test_hard_bounce_excluded_by_default(self, session):
         org = _make_org(session, cnpj_basico="30000001")
         _suppress(session, cnpj_basico="30000001", status="hard_bounce")
 
         result = filter_candidates(session, [org], exclude_statuses=DEFAULT_EXCLUDE_STATUSES)
-        assert org in result
+        assert org not in result
 
     def test_hard_bounce_excluded_when_explicitly_requested(self, session):
         org = _make_org(session, cnpj_basico="30000002")
@@ -124,6 +124,12 @@ class TestHardBounceNeverExcludedByDefault:
             session, [org], exclude_statuses=DEFAULT_EXCLUDE_STATUSES | frozenset({"hard_bounce"})
         )
         assert org not in result
+
+    def test_hard_bounce_cannot_be_disabled(self, session):
+        org = _make_org(session, cnpj_basico="30000003")
+        _suppress(session, cnpj_basico="30000003", status="hard_bounce")
+
+        assert filter_candidates(session, [org], exclude_statuses=frozenset()) == []
 
 
 class TestNoSuppressionMatch:

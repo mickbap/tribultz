@@ -1,9 +1,10 @@
 """ProspectSuppression — lista de supressão da prospecção comercial direta
 (PO-2026-07-SALES-001, Fase 1).
 
-Registros com status opt_out ou cliente jamais podem reaparecer em uma lista gerada —
-regra dura, aplicada incondicionalmente em suppression.py, sem flag de CLI para
-desativar. Casamento por cnpj_basico OU email_domain (não exige as duas colunas).
+Registros com status opt_out, cliente ou hard_bounce jamais podem reaparecer
+com a chave suprimida em uma lista gerada — regra dura, aplicada
+incondicionalmente em suppression.py, sem flag de CLI para desativar.
+Casamento por cnpj_basico, e-mail exato OU email_domain.
 """
 
 from __future__ import annotations
@@ -14,9 +15,9 @@ from sqlalchemy.sql import text
 
 from app.database import Base
 
-# Status suportados (PO-2026-07-SALES-001). opt_out/cliente = exclusão dura e
-# incondicional; lead_ativo/desqualificado = exclusão por padrão mas configurável
-# via --suppress-statuses; hard_bounce = não exclui por padrão (ver suppression.py).
+# Status suportados. opt_out/cliente/hard_bounce = exclusão dura e
+# incondicional; lead_ativo/desqualificado = exclusão por padrão no seletor
+# legado. O dry-run de marketing considera qualquer suppression canônica.
 SUPPRESSION_STATUSES: tuple[str, ...] = (
     "opt_out",
     "cliente",
@@ -45,4 +46,7 @@ class ProspectSuppression(Base):
     email_domain = Column(String(255), nullable=True)
     status = Column(String(20), nullable=False)
     reason = Column(Text, nullable=True)
+    source = Column(String(32), nullable=False, default="tribultz", server_default="tribultz")
+    source_event_id = Column(String(128), nullable=True)
+    occurred_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())

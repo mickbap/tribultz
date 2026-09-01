@@ -25,3 +25,4 @@ crewai==1.10.1
 litellm==1.82.0
 fakeredis==2.36.2
 openpyxl==3.1.5
+svix==2.2.0

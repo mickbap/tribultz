@@ -77,20 +77,24 @@ _UPSERT_COLUMNS = (
 )
 
 
-def _row_from_org(org: ConsolidatedOrg) -> dict:
+def _row_from_org(org: ConsolidatedOrg, download_date: date | None = None) -> dict:
     row = {"cnpj_basico": org.cnpj_basico}
     for col in _UPSERT_COLUMNS:
         row[col] = getattr(org, col)
     row["situacao_cadastral"] = str(org.situacao_cadastral)
+    row["marketing_origin"] = "RECEITA_FEDERAL_DADOS_ABERTOS"
+    row["marketing_collected_at"] = download_date
     return row
 
 
-def upsert_orgs(db, orgs: list[ConsolidatedOrg]) -> int:
+def upsert_orgs(
+    db, orgs: list[ConsolidatedOrg], download_date: date | None = None
+) -> int:
     """Upsert idempotente via ON CONFLICT (cnpj_basico) DO UPDATE — seguro
     reexecutar após uma falha ou com um dump mensal atualizado."""
     if not orgs:
         return 0
-    rows = [_row_from_org(o) for o in orgs]
+    rows = [_row_from_org(o, download_date) for o in orgs]
     stmt = pg_insert(ProspectOrg).values(rows)
     update_cols = {col: getattr(stmt.excluded, col) for col in _UPSERT_COLUMNS}
     stmt = stmt.on_conflict_do_update(index_elements=["cnpj_basico"], set_=update_cols)
@@ -283,7 +287,7 @@ def main(argv: list[str] | None = None) -> int:
             logger.info("--dry-run: nenhuma escrita no banco (nem prospect_orgs, nem prospect_ingestion_runs).")
             return 0
 
-        written = upsert_orgs(db, orgs)
+        written = upsert_orgs(db, orgs, download_date)
         logger.info("%d registros upsertados em prospect_orgs", written)
 
         _record_run(

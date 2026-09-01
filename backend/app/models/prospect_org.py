@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
     Date,
     DateTime,
@@ -29,6 +30,12 @@ from app.database import Base
 
 class ProspectOrg(Base):
     __tablename__ = "prospect_orgs"
+    __table_args__ = (
+        CheckConstraint(
+            "marketing_eligibility IN ('ELIGIBLE', 'INELIGIBLE')",
+            name="ck_prospect_orgs_marketing_eligibility",
+        ),
+    )
 
     id = Column(
         UUID(as_uuid=True),
@@ -86,6 +93,21 @@ class ProspectOrg(Base):
     pre_score_rubric_version = Column(String(32), nullable=True)
     pre_scored_at = Column(DateTime(timezone=True), nullable=True)
     source_dump_reference = Column(String(32), nullable=False)  # ex.: "2026-07"
+
+    # ── Proveniência e decisão de uso em marketing (Growth P0 / #733) ──
+    # Não há motor jurídico aqui: a elegibilidade é uma decisão explícita,
+    # registrada por processo humano/jurídico. O executor apenas aplica gates
+    # fail-closed sobre a decisão e sua evidência mínima.
+    marketing_origin = Column(String(120), nullable=True)
+    marketing_collected_at = Column(Date, nullable=True)
+    marketing_purpose = Column(String(160), nullable=True)
+    marketing_legal_basis = Column(String(120), nullable=True)
+    marketing_lia_evidence_ref = Column(String(500), nullable=True)
+    marketing_eligibility = Column(
+        String(16), nullable=False, default="INELIGIBLE", server_default="INELIGIBLE"
+    )
+    marketing_eligibility_reason = Column(String(240), nullable=True)
+    marketing_eligibility_evaluated_at = Column(DateTime(timezone=True), nullable=True)
 
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(
