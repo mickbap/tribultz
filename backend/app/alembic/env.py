@@ -8,7 +8,7 @@ from alembic import context
 from app.database import Base
 from app.config import settings
 from app.models import (  # noqa: F401
-    api_key, auth, billing, crm_handoff, documents, feedback, founding_partner,
+    api_key, auth, billing, crm_handoff, documents, eleicao_ibs_cbs, feedback, founding_partner,
     jobs, news, partner, prospect_dedup_run, prospect_diagnostic,
     prospect_ingestion_run, prospect_org, prospect_scoring_run,
     prospect_suppression, reports,
