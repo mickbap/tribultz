@@ -11,7 +11,7 @@ from app.models import (  # noqa: F401
     api_key, auth, billing, crm_handoff, documents, eleicao_ibs_cbs, feedback, founding_partner,
     jobs, news, partner, prospect_dedup_run, prospect_diagnostic,
     prospect_ingestion_run, prospect_org, prospect_scoring_run,
-    prospect_suppression, reports,
+    prospect_suppression, reports, resend_webhook_event,
 )
 
 # Import models to register them with metadata

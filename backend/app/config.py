@@ -129,6 +129,13 @@ class Settings(BaseSettings):
     EMAIL_VERIFICATION_ENABLED: bool = False
     FRONTEND_URL: str = "http://localhost:3000"
 
+    # ── Resend Growth P0 (#733) ────────────────────────────
+    # O envio segue deliberadamente fora deste round. Esta configuração abre
+    # apenas o caminho autenticado de feedback (unsubscribe/hard bounce).
+    RESEND_WEBHOOK_ENABLED: bool = False
+    RESEND_WEBHOOK_SECRET: str = ""
+    RESEND_MAX_BODY_BYTES: int = 1_048_576
+
     # ── Asaas (Payment Gateway) ──────────────────────────────
     ASAAS_API_KEY: str = ""
     ASAAS_ENVIRONMENT: str = "sandbox"  # sandbox | production
