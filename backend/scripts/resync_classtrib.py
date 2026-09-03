@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # torna `app` impo
 from app.data.classtrib_source import (  # noqa: E402 — depende do sys.path acima
     CODE_KEYS as _CODE_KEYS,
     NCM_KEYS as _NCM_KEYS,
+    SOURCE_HEADERS,
     SOURCE_URL,
     data_signature as _data_signature,
     extract_groups,
@@ -51,15 +52,10 @@ def fetch_html(attempts: int = 4) -> str:
     """
     import httpx
 
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36",
-        "Accept": "text/html,application/json,*/*",
-    }
     last_exc: Exception | None = None
     for attempt in range(1, attempts + 1):
         try:
-            with httpx.Client(timeout=60, headers=headers, follow_redirects=True) as client:
+            with httpx.Client(timeout=60, headers=SOURCE_HEADERS, follow_redirects=True) as client:
                 resp = client.get(SOURCE_URL)
                 resp.raise_for_status()
                 return resp.text

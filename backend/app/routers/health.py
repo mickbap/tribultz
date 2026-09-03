@@ -50,9 +50,12 @@ class ClassTribFreshnessOut(BaseModel):
     #: com "último sync bem-sucedido": ver `sync_execution`.
     bundled_version_date: str | None = None
     bundled_version_age_days: int | None = None
-    #: Execução do coletor. `unobservable` enquanto não existir heartbeat (#674).
-    #: Explicitamente ausente — nunca inferida de `source_state == "match"`.
-    sync_execution: Literal["unobservable"] = "unobservable"
+    #: Execução do coletor, observada no histórico público do workflow. Continua
+    #: independente de `source_state`, que descreve o conteúdo oficial atual.
+    sync_execution: Literal["success", "failure", "unverifiable"] = "unverifiable"
+    sync_last_attempt_at: str | None = None
+    sync_last_success_at: str | None = None
+    sync_run_url: str | None = None
     local_codes: int = 0
     remote_codes: int | None = None
     #: Impressão digital TRUNCADA do conteúdo embarcado. Serve para casar
@@ -375,6 +378,9 @@ def readiness() -> DeepHealthResponse:
                 bundled_version_date=_fresh.bundled_version_date,
                 bundled_version_age_days=_fresh.bundled_version_age_days,
                 sync_execution=_fresh.sync_execution,
+                sync_last_attempt_at=_fresh.sync_last_attempt_at,
+                sync_last_success_at=_fresh.sync_last_success_at,
+                sync_run_url=_fresh.sync_run_url,
                 local_codes=_fresh.local_codes,
                 remote_codes=_fresh.remote_codes,
                 detail=_fresh.detail,
