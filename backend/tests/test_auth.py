@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from app.database import get_db
 from app.main import app
 from app.models.auth import Tenant, User, UserTenant
+from app.models.eleicao_ibs_cbs import ManifestacaoEleicaoIBSCBS
 from app.core.security import get_password_hash
 
 # Use the environment variable for DB connection (standard for CI/Docker)
@@ -301,3 +302,112 @@ def test_add_cnpj_allows_when_under_plan_limit(client, session):
             headers={"Authorization": f"Bearer {login.json()['access_token']}"},
         )
     assert response.status_code == 200
+
+
+# ── Eleição IBS/CBS do Simples ───────────────────────────────
+
+def _auth_headers(client, user, tenant):
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": user.email, "password": "password123", "tenant_slug": tenant.slug},
+    )
+    assert login.status_code == 200
+    return {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+
+def test_eleicao_sem_evidencia_permanece_nao_comprovada_e_nao_determinada(
+    client, test_user, test_tenant,
+):
+    response = client.get(
+        "/api/v1/auth/settings/tenant/eleicao-ibs-cbs",
+        params={"cnpj": "11.222.333/0001-81", "as_of": "2027-01-01"},
+        headers=_auth_headers(client, test_user, test_tenant),
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "cnpj": "11222333000181",
+        "consultada_em": "2027-01-01",
+        "eleicao": "NAO_COMPROVADA",
+        "modalidade_vigente": "NAO_DETERMINADA_PELA_EVIDENCIA_DISPONIVEL",
+        "opcao_apresentada": False,
+        "opcao_eficaz": False,
+        "cancelamento_valido": False,
+        "continuidade_regular": False,
+        "manifestacao_aplicavel_id": None,
+        "historico": [],
+    }
+
+
+def test_registro_exige_evidencia_oficial(client, session, test_user, test_tenant):
+    response = client.post(
+        "/api/v1/auth/settings/tenant/eleicao-ibs-cbs/opcao",
+        json={
+            "cnpj": "11222333000181",
+            "manifestada_em": "2026-09-01",
+            "evidencia_ref": "   ",
+        },
+        headers=_auth_headers(client, test_user, test_tenant),
+    )
+
+    assert response.status_code == 422
+    assert "evidencia_ref é obrigatório" in response.json()["detail"]
+    assert session.scalar(select(ManifestacaoEleicaoIBSCBS)) is None
+
+
+def test_registra_consulta_e_cancela_eleicao_preservando_historico(
+    client, test_user, test_tenant,
+):
+    headers = _auth_headers(client, test_user, test_tenant)
+    registro = client.post(
+        "/api/v1/auth/settings/tenant/eleicao-ibs-cbs/opcao",
+        json={
+            "cnpj": "11222333000181",
+            "manifestada_em": "2026-09-01",
+            "evidencia_ref": "protocolo-rfb-opcao-123",
+        },
+        headers=headers,
+    )
+
+    assert registro.status_code == 201
+    historico = registro.json()["historico"]
+    assert len(historico) == 1
+    assert historico[0]["fonte"] == "Portal do Simples Nacional/RFB"
+    assert historico[0]["evidencia_ref"] == "protocolo-rfb-opcao-123"
+
+    vigente = client.get(
+        "/api/v1/auth/settings/tenant/eleicao-ibs-cbs",
+        params={"cnpj": "11222333000181", "as_of": "2027-01-01"},
+        headers=headers,
+    )
+    assert vigente.status_code == 200
+    assert vigente.json()["eleicao"] == "COMPROVADA"
+    assert vigente.json()["modalidade_vigente"] == (
+        "SIMPLES_COM_IBS_CBS_NO_REGIME_REGULAR"
+    )
+
+    cancelamento = client.post(
+        f"/api/v1/auth/settings/tenant/eleicao-ibs-cbs/{historico[0]['id']}/cancelamento",
+        json={
+            "cancelada_em": "2026-11-30",
+            "evidencia_ref": "protocolo-rfb-cancelamento-456",
+        },
+        headers=headers,
+    )
+    assert cancelamento.status_code == 200
+
+    cancelada = client.get(
+        "/api/v1/auth/settings/tenant/eleicao-ibs-cbs",
+        params={"cnpj": "11222333000181", "as_of": "2027-01-01"},
+        headers=headers,
+    )
+    body = cancelada.json()
+    assert cancelada.status_code == 200
+    assert body["eleicao"] == "COMPROVADA"
+    assert body["modalidade_vigente"] == "SIMPLES_COM_IBS_CBS_NO_REGIME_UNICO"
+    assert body["cancelamento_valido"] is True
+    assert len(body["historico"]) == 1
+    assert body["historico"][0]["manifestada_em"] == "2026-09-01"
+    assert body["historico"][0]["cancelamento_evidencia_ref"] == (
+        "protocolo-rfb-cancelamento-456"
+    )
