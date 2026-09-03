@@ -205,6 +205,35 @@ def test_probe_sync_execution_le_ultima_tentativa_e_ultimo_sucesso():
     assert probe.last_attempt_at == "2026-09-03T08:02:00Z"
     assert probe.last_success_at == "2026-09-02T08:03:00Z"
     assert probe.run_url == "https://github.com/mickbap/tribultz/actions/runs/2"
+    assert probe.source_state is None
+
+
+def test_probe_sync_bem_sucedido_sem_pr_prova_match():
+    run = {
+        "workflow_runs": [{
+            "conclusion": "success", "updated_at": "2026-09-03T12:30:44Z",
+            "html_url": "https://github.com/mickbap/tribultz/actions/runs/3",
+        }]
+    }
+    with patch("app.services.regulatory_freshness.httpx.get") as get:
+        resposta_runs = get.return_value
+        resposta_runs.json.return_value = run
+        resposta_prs = type(resposta_runs)()
+        resposta_prs.json.return_value = []
+        get.side_effect = [resposta_runs, resposta_prs]
+        probe = rf.probe_sync_execution()
+    assert probe.state == "success" and probe.source_state == "match"
+
+
+def test_fallback_do_sync_remove_falso_stale_quando_svrs_bloqueia_egress():
+    f = rf.current(
+        monotonic=lambda: 1.0,
+        probe_fn=lambda _local: rf.SourceProbe(state="unverifiable", error="timeout"),
+        sync_probe_fn=lambda: rf.SyncProbe(state="success", source_state="match"),
+    )
+    assert f.status == "ok"
+    assert f.source_state == "match"
+    assert f.sync_execution == "success"
 
 
 def test_probe_sync_execution_converte_falha_em_unverifiable():

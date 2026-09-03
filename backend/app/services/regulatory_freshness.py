@@ -86,6 +86,10 @@ SYNC_RUNS_URL = (
     "https://api.github.com/repos/mickbap/tribultz/actions/workflows/"
     "classtrib-sync.yml/runs?status=completed&per_page=10"
 )
+SYNC_PULLS_URL = (
+    "https://api.github.com/repos/mickbap/tribultz/pulls?"
+    "state=open&head=mickbap%3Aclasstrib-sync%2Fauto&per_page=1"
+)
 
 
 @dataclass(frozen=True)
@@ -108,6 +112,7 @@ class SyncProbe:
     last_attempt_at: Optional[str] = None
     last_success_at: Optional[str] = None
     run_url: Optional[str] = None
+    source_state: Optional[SourceState] = None
     error: Optional[str] = None
 
 
@@ -178,7 +183,7 @@ def probe_source(
 
 
 def probe_sync_execution(*, timeout: float = 4.0) -> SyncProbe:
-    """Observa a execução diária sem confundi-la com o conteúdo da tabela."""
+    """Observa execução e resultado público do coletor diário."""
     try:
         resp = httpx.get(
             SYNC_RUNS_URL,
@@ -199,8 +204,11 @@ def probe_sync_execution(*, timeout: float = 4.0) -> SyncProbe:
             return SyncProbe(
                 state="unverifiable", error="workflow sem execuções concluídas"
             )
-        return SyncProbe(
-            state="success" if latest.get("conclusion") == "success" else "failure",
+        state: SyncExecutionState = (
+            "success" if latest.get("conclusion") == "success" else "failure"
+        )
+        result = SyncProbe(
+            state=state,
             last_attempt_at=latest.get("updated_at"),
             last_success_at=(
                 latest_success.get("updated_at") if latest_success else None
@@ -210,6 +218,41 @@ def probe_sync_execution(*, timeout: float = 4.0) -> SyncProbe:
     except Exception as exc:  # noqa: BLE001 — falha vira ausência explícita
         logger.warning("Freshness: execução do sync não verificável — %s", exc)
         return SyncProbe(state="unverifiable", error=str(exc)[:200])
+
+    if result.state != "success":
+        return result
+
+    # O job só termina com sucesso depois de buscar/comparar a SVRS e executar
+    # create-pull-request. PR aberta significa drift; ausência significa que o
+    # conteúdo comparado não mudou. É o fallback para redes onde a SVRS bloqueia
+    # o egress, sem inferir conteúdo apenas do status do workflow.
+    try:
+        resp = httpx.get(
+            SYNC_PULLS_URL,
+            timeout=timeout,
+            follow_redirects=True,
+            headers={
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "tribultz-health/1.0",
+            },
+        )
+        resp.raise_for_status()
+        return SyncProbe(
+            state=result.state,
+            last_attempt_at=result.last_attempt_at,
+            last_success_at=result.last_success_at,
+            run_url=result.run_url,
+            source_state="drift" if resp.json() else "match",
+        )
+    except Exception as exc:  # noqa: BLE001 — execução continua observável
+        logger.warning("Freshness: resultado do sync não verificável — %s", exc)
+        return SyncProbe(
+            state=result.state,
+            last_attempt_at=result.last_attempt_at,
+            last_success_at=result.last_success_at,
+            run_url=result.run_url,
+            error=str(exc)[:200],
+        )
 
 
 # ── Veredito ──────────────────────────────────────────────────────────────────
@@ -265,6 +308,11 @@ def evaluate(
         return mk("ok", f"fonte consultada, sem mudança ({len(local_codes)} códigos)")
 
     if probe.state == "drift":
+        if probe.remote_codes is None:
+            return mk(
+                "degraded",
+                "fonte consultada pelo sync, DIVERGENTE: PR de atualização aberta",
+            )
         return mk(
             "degraded",
             f"fonte consultada, DIVERGENTE: +{len(probe.added)} / "
@@ -401,6 +449,11 @@ def current(
             else probe_sync_execution() if probe_fn is None
             else SyncProbe(state="unverifiable")
         )
+        if probe.state == "unverifiable" and sync_probe.source_state is not None:
+            probe = SourceProbe(
+                state=sync_probe.source_state,
+                remote_codes=len(local) if sync_probe.source_state == "match" else None,
+            )
         verdict = evaluate(
             local_codes=local,
             bundled_version_date=CLASSTRIB_SYNCED_AT,
