@@ -178,7 +178,7 @@ def test_sync_execution_e_observado_sem_ser_inferido_do_match():
     assert f.sync_execution == "failure"
     assert f.sync_last_attempt_at == "2026-08-25T08:00:00Z"
     assert f.sync_last_success_at == "2026-08-24T08:00:00Z"
-    assert f.sync_run_url.endswith("/123")
+    assert f.sync_run_url == "https://github.com/mickbap/tribultz/actions/runs/123"
 
 
 def test_probe_sync_execution_le_ultima_tentativa_e_ultimo_sucesso():
@@ -204,7 +204,7 @@ def test_probe_sync_execution_le_ultima_tentativa_e_ultimo_sucesso():
     assert probe.state == "failure"
     assert probe.last_attempt_at == "2026-09-03T08:02:00Z"
     assert probe.last_success_at == "2026-09-02T08:03:00Z"
-    assert probe.run_url.endswith("/2")
+    assert probe.run_url == "https://github.com/mickbap/tribultz/actions/runs/2"
 
 
 def test_probe_sync_execution_converte_falha_em_unverifiable():
