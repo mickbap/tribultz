@@ -39,6 +39,7 @@ from app.data.classtrib_table import (
     classtrib_permite_cred_pres,
 )
 from app.data.cest_ncm import lookup_ncm_st
+from app.services.rule_enforcement import RULE_VERSION_BY_KEY, resolve_rule_enforcement
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,27 @@ class FindingWhere(BaseModel):
     snippet: str | None = None
 
 
+class EnforcementEffectiveFrom(BaseModel):
+    legal_required: str | None = None
+    schema_supported: str | None = None
+    validation_rule_defined: str | None = None
+    homologation_enforced: str | None = None
+    production_enforced: str | None = None
+
+
+class RuleEnforcementState(BaseModel):
+    document_type: str
+    rule_id: str
+    version: str
+    as_of: str
+    legal_required: bool
+    schema_supported: bool
+    validation_rule_defined: bool
+    homologation_enforced: bool
+    production_enforced: bool
+    effective_from: EnforcementEffectiveFrom
+
+
 class Finding(BaseModel):
     id: str
     severity: str  # FATAL | ALERT
@@ -82,6 +104,7 @@ class Finding(BaseModel):
     where: FindingWhere
     recommendation: str
     evidence_ids: list[str]
+    enforcement: RuleEnforcementState | None = None
 
 
 class Evidence(BaseModel):
@@ -1801,6 +1824,20 @@ def validate_xml(
             if f.severity == "FATAL" and f.rule_id in _PEDAGOGICAL_ACCESSORY_RULES:
                 f.severity = "WARNING"
                 f.recommendation = (f.recommendation or "") + _ATO_CONJUNTO_RECOMMENDATION
+
+    # Nao inferir estes estados da severidade. Eles sao resolvidos por documento,
+    # regra, versao e data; sem data legivel, ficam ausentes.
+    enforcement_date = _parse_iso_date((emission_date or {}).get("value", ""))
+    if enforcement_date:
+        for finding in findings:
+            version = RULE_VERSION_BY_KEY.get((doc_type, finding.rule_id))
+            if not version:
+                continue
+            state = resolve_rule_enforcement(
+                doc_type, finding.rule_id, version, enforcement_date
+            )
+            if state:
+                finding.enforcement = RuleEnforcementState.model_validate(state)
 
     fatals = sum(1 for f in findings if f.severity == "FATAL")
     alerts = sum(1 for f in findings if f.severity in ("ALERT", "WARNING"))

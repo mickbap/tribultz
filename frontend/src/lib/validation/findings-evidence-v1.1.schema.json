@@ -54,7 +54,33 @@
             }
           },
           "recommendation": { "type": "string" },
-          "evidence_ids": { "type": "array", "items": { "type": "string" } }
+          "evidence_ids": { "type": "array", "items": { "type": "string" } },
+          "enforcement": {
+            "type": "object",
+            "required": ["document_type", "rule_id", "version", "as_of", "legal_required", "schema_supported", "validation_rule_defined", "homologation_enforced", "production_enforced", "effective_from"],
+            "properties": {
+              "document_type": { "enum": ["NFSE", "NFE", "NFCE"] },
+              "rule_id": { "type": "string" },
+              "version": { "type": "string" },
+              "as_of": { "type": "string", "format": "date" },
+              "legal_required": { "type": "boolean" },
+              "schema_supported": { "type": "boolean" },
+              "validation_rule_defined": { "type": "boolean" },
+              "homologation_enforced": { "type": "boolean" },
+              "production_enforced": { "type": "boolean" },
+              "effective_from": {
+                "type": "object",
+                "required": ["legal_required", "schema_supported", "validation_rule_defined", "homologation_enforced", "production_enforced"],
+                "properties": {
+                  "legal_required": { "type": ["string", "null"], "format": "date" },
+                  "schema_supported": { "type": ["string", "null"], "format": "date" },
+                  "validation_rule_defined": { "type": ["string", "null"], "format": "date" },
+                  "homologation_enforced": { "type": ["string", "null"], "format": "date" },
+                  "production_enforced": { "type": ["string", "null"], "format": "date" }
+                }
+              }
+            }
+          }
         }
       }
     },

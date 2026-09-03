@@ -28,6 +28,23 @@ export type FiscalJustification = {
   correcao: string;
 };
 
+export type RuleEnforcementState = {
+  document_type: XmlDocumentType;
+  rule_id: string;
+  version: string;
+  as_of: string;
+  legal_required: boolean;
+  schema_supported: boolean;
+  validation_rule_defined: boolean;
+  homologation_enforced: boolean;
+  production_enforced: boolean;
+  effective_from: Record<
+    "legal_required" | "schema_supported" | "validation_rule_defined" |
+    "homologation_enforced" | "production_enforced",
+    string | null
+  >;
+};
+
 export type Finding = {
   id: string;
   severity: FindingSeverity;
@@ -36,6 +53,8 @@ export type Finding = {
   where: FindingWhere;
   recommendation: string;
   evidence_ids: string[];
+  /** Estados independentes da regra na data do documento, quando catalogados. */
+  enforcement?: RuleEnforcementState;
   /** Justificativa técnica — presente apenas em planos Profissional/Empresarial/Contador */
   justification?: FiscalJustification;
   /** true quando há justificativa mas o plano atual não tem acesso */
