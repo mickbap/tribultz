@@ -10,6 +10,28 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from typing import TypedDict
+
+
+class EnforcementEffectiveFrom(TypedDict):
+    legal_required: str | None
+    schema_supported: str | None
+    validation_rule_defined: str | None
+    homologation_enforced: str | None
+    production_enforced: str | None
+
+
+class RuleEnforcementResult(TypedDict):
+    document_type: str
+    rule_id: str
+    version: str
+    as_of: str
+    legal_required: bool
+    schema_supported: bool
+    validation_rule_defined: bool
+    homologation_enforced: bool
+    production_enforced: bool
+    effective_from: EnforcementEffectiveFrom
 
 
 @dataclass(frozen=True)
@@ -68,7 +90,7 @@ def resolve_rule_enforcement(
     rule_id: str,
     version: str,
     as_of: date,
-) -> dict[str, str | bool | None] | None:
+) -> RuleEnforcementResult | None:
     """Resolve um estado exato; nao faz fallback entre documento ou versao."""
     lifecycle = next(
         (
