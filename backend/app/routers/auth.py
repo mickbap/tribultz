@@ -1,16 +1,17 @@
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.data.trial_policy import TRIAL_DURATION_DAYS
 from app.database import get_db
 from app.models.auth import Tenant, User, UserTenant
+from app.models.eleicao_ibs_cbs import ManifestacaoEleicaoIBSCBS
 from app.models.founding_partner import resolve_effective_license
 from app.models.partner import Partner, normalize_partner_code
 from app.models.billing import Plan, Subscription, UsageTracking
@@ -28,6 +29,12 @@ from app.api.deps import get_current_user
 from app.services.captcha_service import verify_captcha
 from app.services.cnpj_validator import is_valid_cnpj_format, normalize_cnpj, validate_cnpj
 from app.services.email_service import send_verification_email, send_password_reset_email
+from app.services.eleicao_ibs_cbs import (
+    CoberturaEvidencia,
+    cancelar_opcao_regular,
+    criar_opcao_regular,
+    resolver_eleicao_ibs_cbs,
+)
 from app.services.rate_limit import RateLimiter
 
 logger = logging.getLogger(__name__)
@@ -1042,3 +1049,192 @@ def patch_tenant_settings(
         current_user.tenant_id, data.pedagogical_mode_2026,
     )
     return TenantSettingsResponse(pedagogical_mode_2026=bool(tenant.pedagogical_mode_2026))
+
+
+# ── Eleição IBS/CBS do Simples ──────────────────────────────────────────────
+
+FONTE_OFICIAL_ELEICAO_IBS_CBS = "Portal do Simples Nacional/RFB"
+
+
+class EleicaoIBSCBSRequest(BaseModel):
+    cnpj: str = Field(min_length=14, max_length=18)
+    manifestada_em: date
+    evidencia_ref: str = Field(min_length=1, max_length=500)
+
+
+class CancelamentoEleicaoIBSCBSRequest(BaseModel):
+    cancelada_em: date
+    evidencia_ref: str = Field(min_length=1, max_length=500)
+
+
+class ManifestacaoEleicaoIBSCBSResponse(BaseModel):
+    id: UUID
+    cnpj: str
+    tipo_manifestacao: str
+    manifestada_em: date
+    modalidade: str
+    eficacia_inicio: date
+    eficacia_fim: date
+    fonte: str
+    evidencia_ref: str
+    cancelada_em: date | None
+    cancelamento_fonte: str | None
+    cancelamento_evidencia_ref: str | None
+
+
+class EstadoEleicaoIBSCBSResponse(BaseModel):
+    cnpj: str
+    consultada_em: date
+    eleicao: str
+    modalidade_vigente: str
+    opcao_apresentada: bool
+    opcao_eficaz: bool
+    cancelamento_valido: bool
+    continuidade_regular: bool
+    manifestacao_aplicavel_id: UUID | None
+    historico: list[ManifestacaoEleicaoIBSCBSResponse]
+
+
+def _normalizar_cnpj_eleicao(cnpj: str) -> str:
+    normalizado = normalize_cnpj(cnpj)
+    if not is_valid_cnpj_format(normalizado):
+        raise HTTPException(
+            status_code=422,
+            detail="CNPJ deve ter 14 caracteres (12 alfanuméricos + 2 dígitos verificadores).",
+        )
+    return normalizado
+
+
+def _estado_eleicao_ibs_cbs(
+    *, db: Session, tenant_id: UUID, cnpj: str, consultada_em: date
+) -> EstadoEleicaoIBSCBSResponse:
+    historico = list(db.scalars(
+        select(ManifestacaoEleicaoIBSCBS)
+        .where(
+            ManifestacaoEleicaoIBSCBS.tenant_id == tenant_id,
+            ManifestacaoEleicaoIBSCBS.cnpj == cnpj,
+        )
+        .order_by(ManifestacaoEleicaoIBSCBS.manifestada_em, ManifestacaoEleicaoIBSCBS.created_at)
+    ))
+    resultado = resolver_eleicao_ibs_cbs(
+        simples_nacional=True,
+        consultada_em=consultada_em,
+        # O produto só conhece os comprovantes nele registrados. Silêncio nunca
+        # comprova ausência de opção no Portal do Simples Nacional.
+        cobertura_evidencia=CoberturaEvidencia.INSUFICIENTE,
+        manifestacoes=historico,
+    )
+    aplicavel = resultado.manifestacao_aplicavel
+    return EstadoEleicaoIBSCBSResponse(
+        cnpj=cnpj,
+        consultada_em=consultada_em,
+        eleicao=resultado.eleicao.value,
+        modalidade_vigente=resultado.modalidade_vigente.value,
+        opcao_apresentada=resultado.opcao_apresentada,
+        opcao_eficaz=resultado.opcao_eficaz,
+        cancelamento_valido=resultado.cancelamento_valido,
+        continuidade_regular=resultado.continuidade_regular,
+        manifestacao_aplicavel_id=cast(UUID, aplicavel.id) if aplicavel else None,
+        historico=[
+            ManifestacaoEleicaoIBSCBSResponse(
+                id=cast(UUID, item.id), cnpj=item.cnpj,
+                tipo_manifestacao=item.tipo_manifestacao,
+                manifestada_em=item.manifestada_em, modalidade=item.modalidade,
+                eficacia_inicio=item.eficacia_inicio, eficacia_fim=item.eficacia_fim,
+                fonte=item.fonte, evidencia_ref=item.evidencia_ref,
+                cancelada_em=item.cancelada_em,
+                cancelamento_fonte=item.cancelamento_fonte,
+                cancelamento_evidencia_ref=item.cancelamento_evidencia_ref,
+            )
+            for item in historico
+        ],
+    )
+
+
+@router.get("/settings/tenant/eleicao-ibs-cbs", response_model=EstadoEleicaoIBSCBSResponse)
+def get_eleicao_ibs_cbs(
+    cnpj: str,
+    as_of: date | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> EstadoEleicaoIBSCBSResponse:
+    """Consulta o estado derivado sem presumir opção ou regime pela ausência."""
+    return _estado_eleicao_ibs_cbs(
+        db=db,
+        tenant_id=cast(UUID, current_user.tenant_id),
+        cnpj=_normalizar_cnpj_eleicao(cnpj),
+        consultada_em=as_of or date.today(),
+    )
+
+
+@router.post(
+    "/settings/tenant/eleicao-ibs-cbs/opcao",
+    response_model=EstadoEleicaoIBSCBSResponse,
+    status_code=201,
+)
+def post_opcao_eleicao_ibs_cbs(
+    data: EleicaoIBSCBSRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> EstadoEleicaoIBSCBSResponse:
+    """Registra a manifestação oficial; o protocolo/referência é obrigatório."""
+    tenant_id = cast(UUID, current_user.tenant_id)
+    cnpj = _normalizar_cnpj_eleicao(data.cnpj)
+    if data.manifestada_em > date.today():
+        raise HTTPException(
+            status_code=422,
+            detail="A manifestação oficial não pode ser registrada com data futura.",
+        )
+    try:
+        opcao = criar_opcao_regular(
+            tenant_id=tenant_id,
+            cnpj=cnpj,
+            manifestada_em=data.manifestada_em,
+            fonte=FONTE_OFICIAL_ELEICAO_IBS_CBS,
+            evidencia_ref=data.evidencia_ref,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    db.add(opcao)
+    db.commit()
+    return _estado_eleicao_ibs_cbs(
+        db=db, tenant_id=tenant_id, cnpj=cnpj, consultada_em=date.today()
+    )
+
+
+@router.post(
+    "/settings/tenant/eleicao-ibs-cbs/{manifestacao_id}/cancelamento",
+    response_model=EstadoEleicaoIBSCBSResponse,
+)
+def post_cancelamento_eleicao_ibs_cbs(
+    manifestacao_id: UUID,
+    data: CancelamentoEleicaoIBSCBSRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> EstadoEleicaoIBSCBSResponse:
+    """Cancela sem apagar ou sobrescrever a manifestação histórica."""
+    tenant_id = cast(UUID, current_user.tenant_id)
+    opcao = db.scalar(
+        select(ManifestacaoEleicaoIBSCBS).where(
+            ManifestacaoEleicaoIBSCBS.id == manifestacao_id,
+            ManifestacaoEleicaoIBSCBS.tenant_id == tenant_id,
+        )
+    )
+    if opcao is None:
+        raise HTTPException(status_code=404, detail="Manifestação não encontrada.")
+    try:
+        cancelar_opcao_regular(
+            opcao,
+            cancelada_em=data.cancelada_em,
+            fonte=FONTE_OFICIAL_ELEICAO_IBS_CBS,
+            evidencia_ref=data.evidencia_ref,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    db.commit()
+    return _estado_eleicao_ibs_cbs(
+        db=db,
+        tenant_id=tenant_id,
+        cnpj=opcao.cnpj,
+        consultada_em=date.today(),
+    )

@@ -6,6 +6,25 @@ import { Toast } from "@/components/common/Toast";
 import { getTenantId, getToken } from "@/lib/storage";
 import { API_BASE } from "@/lib/api";
 
+type ManifestacaoEleicao = {
+  id: string;
+  manifestada_em: string;
+  eficacia_inicio: string;
+  eficacia_fim: string;
+  fonte: string;
+  evidencia_ref: string;
+  cancelada_em: string | null;
+  cancelamento_evidencia_ref: string | null;
+};
+
+type EstadoEleicao = {
+  eleicao: string;
+  modalidade_vigente: string;
+  opcao_apresentada: boolean;
+  opcao_eficaz: boolean;
+  historico: ManifestacaoEleicao[];
+};
+
 export default function SettingsPage() {
   const [tenant, setTenant] = useState("");
   const [tokenDisplay, setTokenDisplay] = useState("");
@@ -20,6 +39,94 @@ export default function SettingsPage() {
   const [senhaConfirma, setSenhaConfirma] = useState("");
   const [senhaLoading, setSenhaLoading] = useState(false);
   const [senhaErro, setSenhaErro] = useState("");
+  const [eleicaoCnpj, setEleicaoCnpj] = useState("");
+  const [manifestadaEm, setManifestadaEm] = useState("");
+  const [evidenciaRef, setEvidenciaRef] = useState("");
+  const [canceladaEm, setCanceladaEm] = useState("");
+  const [cancelamentoEvidencia, setCancelamentoEvidencia] = useState("");
+  const [estadoEleicao, setEstadoEleicao] = useState<EstadoEleicao | null>(null);
+  const [eleicaoLoading, setEleicaoLoading] = useState(false);
+
+  function cnpjNormalizado() {
+    return eleicaoCnpj.replace(/[^0-9A-Za-z]/g, "").toUpperCase();
+  }
+
+  async function lerRespostaEleicao(res: Response): Promise<EstadoEleicao> {
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.detail ?? "Não foi possível atualizar a eleição.");
+    return body as EstadoEleicao;
+  }
+
+  async function consultarEleicao() {
+    const cnpj = cnpjNormalizado();
+    if (cnpj.length !== 14) {
+      setToast({ tone: "error", msg: "Informe um CNPJ com 14 caracteres." });
+      return;
+    }
+    setEleicaoLoading(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/v1/auth/settings/tenant/eleicao-ibs-cbs?cnpj=${encodeURIComponent(cnpj)}`,
+        { headers: { Authorization: `Bearer ${getToken()}` } },
+      );
+      setEstadoEleicao(await lerRespostaEleicao(res));
+    } catch (error) {
+      setToast({ tone: "error", msg: error instanceof Error ? error.message : "Erro de conexão." });
+    } finally {
+      setEleicaoLoading(false);
+    }
+  }
+
+  async function registrarEleicao(e: React.FormEvent) {
+    e.preventDefault();
+    setEleicaoLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/auth/settings/tenant/eleicao-ibs-cbs/opcao`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cnpj: cnpjNormalizado(),
+          manifestada_em: manifestadaEm,
+          evidencia_ref: evidenciaRef,
+        }),
+      });
+      setEstadoEleicao(await lerRespostaEleicao(res));
+      setEvidenciaRef("");
+      setToast({ tone: "success", msg: "Opção registrada com a evidência oficial." });
+    } catch (error) {
+      setToast({ tone: "error", msg: error instanceof Error ? error.message : "Erro de conexão." });
+    } finally {
+      setEleicaoLoading(false);
+    }
+  }
+
+  async function cancelarEleicao(id: string) {
+    if (!canceladaEm || !cancelamentoEvidencia.trim()) {
+      setToast({ tone: "error", msg: "Informe data e evidência oficial do cancelamento." });
+      return;
+    }
+    setEleicaoLoading(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/v1/auth/settings/tenant/eleicao-ibs-cbs/${id}/cancelamento`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cancelada_em: canceladaEm,
+            evidencia_ref: cancelamentoEvidencia,
+          }),
+        },
+      );
+      setEstadoEleicao(await lerRespostaEleicao(res));
+      setCancelamentoEvidencia("");
+      setToast({ tone: "success", msg: "Cancelamento registrado sem apagar o histórico." });
+    } catch (error) {
+      setToast({ tone: "error", msg: error instanceof Error ? error.message : "Erro de conexão." });
+    } finally {
+      setEleicaoLoading(false);
+    }
+  }
 
   async function trocarSenha(e: React.FormEvent) {
     e.preventDefault();
@@ -161,6 +268,121 @@ export default function SettingsPage() {
           <p className="mt-2 text-xs text-slate-400">
             Status atual: <strong>{pedagogicalMode ? "Ativo — avisos pedagógicos habilitados" : "Inativo — todos os erros são bloqueantes"}</strong>
           </p>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 className="text-lg font-semibold text-slate-900">Eleição de IBS/CBS no Simples</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Registre aqui somente uma opção efetivamente manifestada no Portal do Simples Nacional.
+          O Tribultz não presume a opção pelo CRT, pelo cadastro ou pela ausência de informação.
+        </p>
+
+        <form onSubmit={registrarEleicao} className="mt-4 grid gap-3 md:grid-cols-2">
+          <label className="text-sm font-medium text-slate-700">
+            CNPJ
+            <input
+              required
+              minLength={14}
+              maxLength={18}
+              value={eleicaoCnpj}
+              onChange={(e) => { setEleicaoCnpj(e.target.value); setEstadoEleicao(null); }}
+              placeholder="00.000.000/0000-00"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm"
+            />
+          </label>
+          <label className="text-sm font-medium text-slate-700">
+            Data da manifestação oficial
+            <input
+              required
+              type="date"
+              value={manifestadaEm}
+              onChange={(e) => setManifestadaEm(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm font-medium text-slate-700 md:col-span-2">
+            Protocolo, recibo ou referência do comprovante oficial
+            <input
+              required
+              value={evidenciaRef}
+              onChange={(e) => setEvidenciaRef(e.target.value)}
+              placeholder="Ex.: protocolo RFB, URL ou identificação do recibo"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <div className="flex flex-wrap gap-2 md:col-span-2">
+            <button
+              type="button"
+              onClick={consultarEleicao}
+              disabled={eleicaoLoading}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50"
+            >
+              Consultar estado
+            </button>
+            <button
+              type="submit"
+              disabled={eleicaoLoading}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            >
+              Registrar opção pelo regime regular
+            </button>
+          </div>
+        </form>
+
+        {estadoEleicao && (
+          <div className="mt-4 space-y-3 border-t border-slate-200 pt-4">
+            <div className="rounded-lg bg-slate-50 p-3 text-sm">
+              <p><strong>Comprovação:</strong> {estadoEleicao.eleicao}</p>
+              <p><strong>Modalidade vigente:</strong> {estadoEleicao.modalidade_vigente}</p>
+              {!estadoEleicao.opcao_apresentada && (
+                <p className="mt-1 text-amber-700">
+                  Sem evidência suficiente: eleição não comprovada e modalidade não determinada.
+                </p>
+              )}
+            </div>
+
+            {estadoEleicao.historico.map((item) => (
+              <div key={item.id} className="rounded-lg border border-slate-200 p-3 text-sm">
+                <p className="font-medium text-slate-800">
+                  Manifestação em {item.manifestada_em} · efeitos {item.eficacia_inicio} a {item.eficacia_fim}
+                </p>
+                <p className="mt-1 break-all text-xs text-slate-500">
+                  Evidência: {item.evidencia_ref} · fonte: {item.fonte}
+                </p>
+                {item.cancelada_em ? (
+                  <p className="mt-2 text-xs text-slate-600">
+                    Cancelada em {item.cancelada_em} · evidência: {item.cancelamento_evidencia_ref}
+                  </p>
+                ) : (
+                  <div className="mt-3 grid gap-2 md:grid-cols-[160px_1fr_auto]">
+                    <input
+                      type="date"
+                      aria-label="Data do cancelamento"
+                      value={canceladaEm}
+                      onChange={(e) => setCanceladaEm(e.target.value)}
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    />
+                    <input
+                      aria-label="Evidência oficial do cancelamento"
+                      value={cancelamentoEvidencia}
+                      onChange={(e) => setCancelamentoEvidencia(e.target.value)}
+                      placeholder="Protocolo ou recibo oficial do cancelamento"
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => cancelarEleicao(item.id)}
+                      disabled={eleicaoLoading}
+                      className="rounded-lg border border-red-300 px-3 py-2 text-sm font-medium text-red-700 disabled:opacity-50"
+                    >
+                      Registrar cancelamento
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </section>
 
