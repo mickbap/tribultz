@@ -8,6 +8,7 @@ import type {
   XmlDocumentType,
 } from "@/lib/types";
 import { lookupNcmSt } from "./cestNcm";
+import { resolveRuleEnforcement, RULE_VERSION_BY_KEY } from "./ruleEnforcement";
 
 /**
  * Versão da NT 2025.002-RTC que o motor tem como alvo.
@@ -1818,6 +1819,18 @@ export function validateXmlWithRules(input: ValidationInput): ValidationResultV1
         if (noPenaltyWindow) note += ATO_CONJUNTO_NOTE;
         (f as { recommendation: string }).recommendation = (f.recommendation || "") + note;
       }
+    }
+  }
+
+  // Estado regulatorio e tecnico e metadado da regra, nao derivacao da
+  // severidade. Sem dhEmi valido, nao se inventa uma data de vigencia.
+  const enforcementDate = emissionDate?.value?.slice(0, 10) ?? "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(enforcementDate)) {
+    for (const finding of findings) {
+      const version = RULE_VERSION_BY_KEY[`${docType}:${finding.rule_id}`];
+      if (!version) continue;
+      const enforcement = resolveRuleEnforcement(docType, finding.rule_id, version, enforcementDate);
+      if (enforcement) finding.enforcement = enforcement;
     }
   }
 

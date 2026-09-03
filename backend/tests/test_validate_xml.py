@@ -1319,6 +1319,11 @@ class TestDanfeSimplificadoTipo2:
     def test_apos_vigencia_fatal(self):
         f = self._find(self._nfe(tp_nf="0", dh_emi="2026-08-10T10:00:00-03:00"))
         assert any(x.id == "F_DANFE_T2_ENTRADA" and x.severity == "FATAL" for x in f)
+        state = next(x.enforcement for x in f if x.id == "F_DANFE_T2_ENTRADA")
+        assert state is not None
+        assert state.document_type == "NFE"
+        assert state.version == "1.00"
+        assert state.production_enforced is True
 
     def test_pedagogical_mantem_warning(self):
         f = self._find(self._nfe(tp_nf="0", dh_emi="2026-08-10T10:00:00-03:00"), pedagogical_mode=True)

@@ -1483,6 +1483,18 @@ function danfeT2CfopFindings(xml: string, documentType: "NFE" | "NFCE" = "NFE", 
     .findings.filter((f) => f.rule_id === "DANFE_SIMPLIFICADO_CFOP");
 }
 
+test("#405 finding expoe estados independentes na data da NF-e", () => {
+  const [finding] = danfeT2Findings(danfeT2Nfe({ tpNf: "0", dhEmi: "2026-07-15" }));
+  assert.ok(finding.enforcement);
+  assert.equal(finding.enforcement.document_type, "NFE");
+  assert.equal(finding.enforcement.version, "1.00");
+  assert.equal(finding.enforcement.schema_supported, true);
+  assert.equal(finding.enforcement.validation_rule_defined, true);
+  assert.equal(finding.enforcement.homologation_enforced, true);
+  assert.equal(finding.enforcement.legal_required, false);
+  assert.equal(finding.enforcement.production_enforced, false);
+});
+
 // ── I08-150 — exceções oficiais de UF para o CFOP 5.949 ─────────────────────
 // NT 2026.002 v1.10a, I08-150:
 //   Obs. 1 — "Para a UF do RS, poderá ser permitido o uso do CFOP 5.949 com
