@@ -6,7 +6,7 @@ servindo tabela velha. Os testes fixam três coisas que não podem regredir:
 1. **`match` ≠ `unverifiable`** — antes eram o mesmo silêncio.
 2. **Drift por atributo** — mudar alíquota de um código existente não pode dar `match`.
 3. **Versão embarcada ≠ execução do sync** — `bundled_version_*` descreve o que está
-   na imagem; `sync_execution` permanece `unobservable` até a fatia de heartbeat.
+   na imagem; `sync_execution` vem do workflow, nunca do conteúdo observado.
 
 Nenhum teste toca a rede: a consulta à fonte é sempre injetada.
 """
@@ -59,11 +59,11 @@ GRUPOS = [
 LOCAL_FIXTURE = {c["CodClassTrib"] for g in GRUPOS for c in g["ClassificacoesTributarias"]}
 
 
-def _f(state, *, versao, remote=None, added=(), removed=()):
+def _f(state, *, versao, remote=None, added=(), removed=(), sync=None):
     probe = rf.SourceProbe(state=state, remote_codes=remote, added=added, removed=removed)
     return rf.evaluate(
         local_codes=LOCAL, bundled_version_date=versao, probe=probe, now=HOJE,
-        warn_days=7, fail_days=21,
+        warn_days=7, fail_days=21, sync_probe=sync,
     )
 
 
@@ -161,16 +161,57 @@ def test_assinatura_ignora_meta():
 # ── 3 · Versão embarcada ≠ execução do sync ───────────────────────────────────
 
 
-def test_sync_execution_permanece_unobservable_mesmo_com_match():
+def test_sync_execution_e_observado_sem_ser_inferido_do_match():
     """`match` prova CONTEÚDO, não que o coletor rodou.
 
-    Se o sync estiver quebrado e a SVRS não tiver publicado nada, o conteúdo
-    bate e o veredito é `ok` — corretamente. Mas isso NÃO é evidência de
-    execução, e o contrato não pode sugerir que é.
+    O conteúdo pode bater e a última execução ter falhado. Os eixos precisam
+    permanecer independentes no contrato público.
     """
-    f = _f("match", versao="2026-08-24", remote=3)
+    sync = rf.SyncProbe(
+        state="failure",
+        last_attempt_at="2026-08-25T08:00:00Z",
+        last_success_at="2026-08-24T08:00:00Z",
+        run_url="https://github.com/mickbap/tribultz/actions/runs/123",
+    )
+    f = _f("match", versao="2026-08-24", remote=3, sync=sync)
     assert f.status == "ok"
-    assert f.sync_execution == "unobservable"
+    assert f.sync_execution == "failure"
+    assert f.sync_last_attempt_at == "2026-08-25T08:00:00Z"
+    assert f.sync_last_success_at == "2026-08-24T08:00:00Z"
+    assert f.sync_run_url.endswith("/123")
+
+
+def test_probe_sync_execution_le_ultima_tentativa_e_ultimo_sucesso():
+    resposta = {
+        "workflow_runs": [
+            {
+                "conclusion": "failure",
+                "updated_at": "2026-09-03T08:02:00Z",
+                "html_url": "https://github.com/mickbap/tribultz/actions/runs/2",
+            },
+            {
+                "conclusion": "success",
+                "updated_at": "2026-09-02T08:03:00Z",
+                "html_url": "https://github.com/mickbap/tribultz/actions/runs/1",
+            },
+        ]
+    }
+    with patch("app.services.regulatory_freshness.httpx.get") as get:
+        get.return_value.json.return_value = resposta
+        get.return_value.raise_for_status.return_value = None
+        probe = rf.probe_sync_execution()
+
+    assert probe.state == "failure"
+    assert probe.last_attempt_at == "2026-09-03T08:02:00Z"
+    assert probe.last_success_at == "2026-09-02T08:03:00Z"
+    assert probe.run_url.endswith("/2")
+
+
+def test_probe_sync_execution_converte_falha_em_unverifiable():
+    with patch("app.services.regulatory_freshness.httpx.get", side_effect=OSError("timeout")):
+        probe = rf.probe_sync_execution()
+    assert probe.state == "unverifiable"
+    assert "timeout" in (probe.error or "")
 
 
 def test_campos_nomeiam_versao_embarcada_nao_ultimo_sync():
@@ -230,6 +271,9 @@ def test_endpoint_nao_vira_error_por_dado_regulatorio():
     stale = rf.Freshness(
         status="stale", source_state="unverifiable", bundled_version_date="2026-07-01",
         bundled_version_age_days=55, local_codes=164, remote_codes=None,
+        sync_execution="success", sync_last_attempt_at="2026-09-03T12:30:44Z",
+        sync_last_success_at="2026-09-03T12:30:44Z",
+        sync_run_url="https://github.com/mickbap/tribultz/actions/runs/33755596780",
         detail="fonte não verificável e versão embarcada com 55d (limite 21d)",
     )
     ctx = _probes_ok(_probe_classtrib=stale)
@@ -246,7 +290,10 @@ def test_endpoint_nao_vira_error_por_dado_regulatorio():
     assert ev["source_state"] == "unverifiable"
     assert ev["bundled_version_date"] == "2026-07-01"
     assert ev["bundled_version_age_days"] == 55
-    assert ev["sync_execution"] == "unobservable"
+    assert ev["sync_execution"] == "success"
+    assert ev["sync_last_attempt_at"] == "2026-09-03T12:30:44Z"
+    assert ev["sync_last_success_at"] == "2026-09-03T12:30:44Z"
+    assert ev["sync_run_url"].endswith("/33755596780")
 
 
 def test_endpoint_omite_evidencia_quando_desligado():
@@ -274,8 +321,9 @@ def test_alerta_stale_usa_capture_alert_com_nivel_error():
         rf.emit_alert(f)
     cap.assert_called_once()
     assert cap.call_args.kwargs["level"] == "error"
-    assert "STALE" in cap.call_args.args[0]
-    assert cap.call_args.kwargs["extra"]["sync_execution"] == "unobservable"
+    assert cap.call_args.args[0] == "ALERTA regulatório: cClassTrib STALE"
+    assert cap.call_args.kwargs["extra"]["sync_execution"] == "unverifiable"
+    assert "limite 21d" in cap.call_args.kwargs["extra"]["detail"]
 
 
 def test_alerta_degraded_usa_nivel_warning():
@@ -477,3 +525,10 @@ def test_probe_source_converte_falha_de_rede_em_unverifiable():
     with patch("app.services.regulatory_freshness.httpx.get", side_effect=OSError("timeout")):
         p = rf.probe_source(LOCAL, "assinatura-qualquer")
     assert p.state == "unverifiable" and "timeout" in (p.error or "")
+
+
+def test_probe_source_usa_mesma_identidade_http_do_sincronizador():
+    with patch("app.services.regulatory_freshness.httpx.get", side_effect=OSError) as get:
+        rf.probe_source(LOCAL, "assinatura-qualquer")
+    assert get.call_args.kwargs["headers"] == classtrib_source.SOURCE_HEADERS
+    assert get.call_args.kwargs["timeout"] == 10.0

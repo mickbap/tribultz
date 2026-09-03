@@ -23,6 +23,14 @@ from typing import Optional
 
 SOURCE_URL = "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
 
+# Coletor e probe de health precisam usar o mesmo perfil HTTP para que "fonte
+# verificável" não dependa de qual dos dois fez a chamada ao portal.
+SOURCE_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36",
+    "Accept": "text/html,application/json,*/*",
+}
+
 #: Indicadores por DFe na fonte SVRS → rótulo no classtrib.json.
 DFE_INDICATORS = {
     "IndNfe": "NFE", "IndNfce": "NFCE", "IndCte": "CTE", "IndCteos": "CTEOS",

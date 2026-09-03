@@ -1,5 +1,7 @@
 """Testes do init de error tracking (Sentry) — comportamento no-op e ativo."""
 
+from unittest.mock import patch
+
 from app.config import settings
 from app.core import observability
 
@@ -20,7 +22,9 @@ def test_init_sentry_ativo_com_dsn(monkeypatch):
     """Com DSN válido → inicializa e retorna True, sem lançar."""
     monkeypatch.setattr(settings, "SENTRY_DSN", "https://abc123@o0.ingest.sentry.io/0")
     monkeypatch.setattr(settings, "SENTRY_TRACES_SAMPLE_RATE", 0.0)
-    assert observability.init_sentry() is True
+    with patch("sentry_sdk.integrations.logging.ignore_logger") as ignore:
+        assert observability.init_sentry() is True
+    ignore.assert_any_call("app.core.observability")
 
 
 def test_init_sentry_dsn_invalido_nao_derruba(monkeypatch):

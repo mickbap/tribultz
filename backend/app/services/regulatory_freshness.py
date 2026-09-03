@@ -80,10 +80,12 @@ SourceState = Literal["match", "drift", "unverifiable"]
 FreshnessStatus = Literal["ok", "degraded", "stale"]
 
 #: Estado da EXECUÇÃO do coletor — eixo distinto do conteúdo da fonte.
-#: ``unobservable``: o coletor roda em GitHub Actions e não compartilha estado
-#: com a API; sem a fatia de heartbeat (#674) não há como saber se ele rodou.
-#: Este campo existe para tornar a ausência EXPLÍCITA em vez de silenciosa.
-SyncExecutionState = Literal["unobservable"]
+SyncExecutionState = Literal["success", "failure", "unverifiable"]
+
+SYNC_RUNS_URL = (
+    "https://api.github.com/repos/mickbap/tribultz/actions/workflows/"
+    "classtrib-sync.yml/runs?status=completed&per_page=10"
+)
 
 
 @dataclass(frozen=True)
@@ -95,6 +97,17 @@ class SourceProbe:
     remote_signature: Optional[str] = None
     added: tuple[str, ...] = ()
     removed: tuple[str, ...] = ()
+    error: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class SyncProbe:
+    """Última execução observada do coletor no GitHub Actions."""
+
+    state: SyncExecutionState
+    last_attempt_at: Optional[str] = None
+    last_success_at: Optional[str] = None
+    run_url: Optional[str] = None
     error: Optional[str] = None
 
 
@@ -113,17 +126,19 @@ class Freshness:
     detail: str
     added: tuple[str, ...] = field(default=())
     removed: tuple[str, ...] = field(default=())
-    #: Execução do coletor (last_attempt_at / last_success_at / outcome).
-    #: `unobservable` até a fatia de heartbeat existir — ver #674. NUNCA
-    #: inferir execução a partir de `source_state == "match"`.
-    sync_execution: SyncExecutionState = "unobservable"
+    #: Consultado diretamente no histórico público do workflow. NUNCA inferido
+    #: de `source_state == "match"`, pois conteúdo e execução são eixos distintos.
+    sync_execution: SyncExecutionState = "unverifiable"
+    sync_last_attempt_at: Optional[str] = None
+    sync_last_success_at: Optional[str] = None
+    sync_run_url: Optional[str] = None
 
 
 # ── Consulta à fonte ──────────────────────────────────────────────────────────
 
 
 def probe_source(
-    local: set[str], local_signature: str, *, timeout: float = 4.0
+    local: set[str], local_signature: str, *, timeout: float = 10.0
 ) -> SourceProbe:
     """Consulta a SVRS uma vez e compara o conjunto de códigos com o embarcado.
 
@@ -132,7 +147,12 @@ def probe_source(
     degrada nada (ver docstring do módulo).
     """
     try:
-        resp = httpx.get(SOURCE_URL, timeout=timeout, follow_redirects=True)
+        resp = httpx.get(
+            SOURCE_URL,
+            timeout=timeout,
+            follow_redirects=True,
+            headers=classtrib_source.SOURCE_HEADERS,
+        )
         resp.raise_for_status()
         normalizado = classtrib_source.normalize(classtrib_source.extract_groups(resp.text))
     except Exception as exc:  # noqa: BLE001 — qualquer falha é "não verificável"
@@ -157,6 +177,41 @@ def probe_source(
     )
 
 
+def probe_sync_execution(*, timeout: float = 4.0) -> SyncProbe:
+    """Observa a execução diária sem confundi-la com o conteúdo da tabela."""
+    try:
+        resp = httpx.get(
+            SYNC_RUNS_URL,
+            timeout=timeout,
+            follow_redirects=True,
+            headers={
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "tribultz-health/1.0",
+            },
+        )
+        resp.raise_for_status()
+        runs = resp.json().get("workflow_runs") or []
+        latest = runs[0] if runs else None
+        latest_success = next(
+            (run for run in runs if run.get("conclusion") == "success"), None
+        )
+        if not latest:
+            return SyncProbe(
+                state="unverifiable", error="workflow sem execuções concluídas"
+            )
+        return SyncProbe(
+            state="success" if latest.get("conclusion") == "success" else "failure",
+            last_attempt_at=latest.get("updated_at"),
+            last_success_at=(
+                latest_success.get("updated_at") if latest_success else None
+            ),
+            run_url=latest.get("html_url"),
+        )
+    except Exception as exc:  # noqa: BLE001 — falha vira ausência explícita
+        logger.warning("Freshness: execução do sync não verificável — %s", exc)
+        return SyncProbe(state="unverifiable", error=str(exc)[:200])
+
+
 # ── Veredito ──────────────────────────────────────────────────────────────────
 
 
@@ -177,12 +232,14 @@ def evaluate(
     now: Optional[dt.date] = None,
     warn_days: Optional[int] = None,
     fail_days: Optional[int] = None,
+    sync_probe: Optional[SyncProbe] = None,
 ) -> Freshness:
     """Combina idade do dado embarcado + estado da fonte. Função pura."""
     now = now or dt.date.today()
     warn = warn_days if warn_days is not None else settings.CLASSTRIB_FRESHNESS_WARN_DAYS
     fail = fail_days if fail_days is not None else settings.CLASSTRIB_FRESHNESS_FAIL_DAYS
     age = _age_days(bundled_version_date, now)
+    sync = sync_probe or SyncProbe(state="unverifiable")
 
     def mk(status: FreshnessStatus, detail: str) -> Freshness:
         """Fecha sobre os campos observados — evita dict heterogêneo com **kwargs."""
@@ -196,6 +253,10 @@ def evaluate(
             detail=detail,
             added=probe.added,
             removed=probe.removed,
+            sync_execution=sync.state,
+            sync_last_attempt_at=sync.last_attempt_at,
+            sync_last_success_at=sync.last_success_at,
+            sync_run_url=sync.run_url,
         )
 
     if probe.state == "match":
@@ -255,6 +316,9 @@ def emit_alert(f: Freshness) -> None:
         "bundled_version_age_days": f.bundled_version_age_days,
         "source_state": f.source_state,
         "sync_execution": f.sync_execution,
+        "sync_last_attempt_at": f.sync_last_attempt_at,
+        "sync_last_success_at": f.sync_last_success_at,
+        "sync_run_url": f.sync_run_url,
         "local_codes": f.local_codes,
         "remote_codes": f.remote_codes,
         # Amostra sanitizada: só o que casa com o formato oficial.
@@ -264,7 +328,10 @@ def emit_alert(f: Freshness) -> None:
         "codes_removed_total": len(f.removed),
     }
     if f.status == "stale":
-        capture_alert(f"ALERTA regulatório: cClassTrib STALE — {f.detail}",
+        # Mensagem estável: a idade variável fica no contexto. Assim recorrências
+        # da mesma condição agrupam no mesmo issue do Sentry.
+        contexto["detail"] = f.detail
+        capture_alert("ALERTA regulatório: cClassTrib STALE",
                       level="error", extra=contexto)
     else:
         capture_alert(f"Frescor regulatório degradado: cClassTrib — {f.detail}",
@@ -283,6 +350,7 @@ def current(
     monotonic: Callable[[], float],
     ttl_seconds: Optional[float] = None,  # float: testes usam TTL sub-segundo
     probe_fn: Optional[Callable[[set[str]], SourceProbe]] = None,
+    sync_probe_fn: Optional[Callable[[], SyncProbe]] = None,
 ) -> Freshness:
     """Veredito com cache TTL e **single-flight** — /health/deep não martela a SVRS.
 
@@ -326,8 +394,18 @@ def current(
             probe_fn(local) if probe_fn
             else probe_source(local, CLASSTRIB_CONTENT_SIGNATURE)
         )
+        # Testes que injetam a fonte continuam herméticos; produção observa o
+        # workflow público, ou aceita uma probe explicitamente injetada.
+        sync_probe = (
+            sync_probe_fn() if sync_probe_fn
+            else probe_sync_execution() if probe_fn is None
+            else SyncProbe(state="unverifiable")
+        )
         verdict = evaluate(
-            local_codes=local, bundled_version_date=CLASSTRIB_SYNCED_AT, probe=probe
+            local_codes=local,
+            bundled_version_date=CLASSTRIB_SYNCED_AT,
+            probe=probe,
+            sync_probe=sync_probe,
         )
         emit_alert(verdict)
 

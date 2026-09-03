@@ -31,6 +31,7 @@ def init_sentry() -> bool:
         import sentry_sdk
         from sentry_sdk.integrations.celery import CeleryIntegration
         from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.logging import ignore_logger
         from sentry_sdk.integrations.starlette import StarletteIntegration
 
         sentry_sdk.init(
@@ -43,6 +44,10 @@ def init_sentry() -> bool:
             # FastAPI/Starlette cobrem a API; Celery cobre worker e beat (tasks de fundo).
             integrations=[StarletteIntegration(), FastApiIntegration(), CeleryIntegration()],
         )
+        # `capture_alert` já envia explicitamente. Sem isto, o logger.error
+        # interno também vira evento pela LoggingIntegration default do SDK,
+        # duplicando um único alerta operacional em dois issues/eventos.
+        ignore_logger(__name__)
         logger.info("Sentry inicializado (environment=%s)", settings.ENVIRONMENT)
         return True
     except Exception as exc:  # pragma: no cover — observabilidade nunca derruba o boot
