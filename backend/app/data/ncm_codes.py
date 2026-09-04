@@ -14,6 +14,15 @@ NCM codes follow the Harmonized System (HS) structure:
 Reference: Decreto 11.158/2022 (TIPI) and subsequent updates.
 """
 
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import dataclass
+from datetime import date
+from enum import StrEnum
+from typing import Mapping
+
 VALID_NCM_CODES: frozenset[str] = frozenset({
     # ──────────────────────────────────────────────────────────────────────
     # Chapter 01 — Live animals
@@ -699,16 +708,17 @@ VALID_NCM_CODES: frozenset[str] = frozenset({
 })
 
 
-def is_valid_ncm(code: str) -> bool:
+def is_valid_ncm(code: str, reference_date: date | None = None) -> bool:
     """Check if an NCM code exists in the TIPI table.
 
     Args:
         code: 8-digit NCM code string (e.g. "84713012").
 
     Returns:
-        True if the code is present in the curated set of valid NCM codes.
+        True if the code is present in the curated set applicable on the
+        reference date. With no date, uses the version effective today.
     """
-    return code in VALID_NCM_CODES
+    return code in resolve_ncm_catalog(reference_date).codes
 
 
 NCM_DESCRIPTIONS: dict[str, str] = {
@@ -1111,3 +1121,161 @@ NCM_DESCRIPTIONS: dict[str, str] = {
     "96089200": "Canetas com ponta de feltro",
     "96190000": "Absorventes e tampos higienicos",
 }
+
+
+# ── Versionamento temporal — IT 2024.001 v2.40 ──────────────────────────────
+#
+# VALID_NCM_CODES/NCM_DESCRIPTIONS remain the exact current snapshot used by
+# Tribultz before this change. The future version is composed from that frozen
+# snapshot plus the sole addition published by IT 2024.001 v2.40. This avoids
+# changing current validation retroactively before its effective date.
+
+_NCM_V240_ADDITIONS: Mapping[str, str] = {
+    "85181020": "Outros microfones, sem suporte",
+}
+
+NCM_CODES_V240: frozenset[str] = VALID_NCM_CODES | frozenset(_NCM_V240_ADDITIONS)
+NCM_DESCRIPTIONS_V240: Mapping[str, str] = {
+    **NCM_DESCRIPTIONS,
+    **_NCM_V240_ADDITIONS,
+}
+
+
+def _catalog_fingerprint(
+    codes: frozenset[str], descriptions: Mapping[str, str]
+) -> str:
+    canonical = [
+        {"code": code, "description": descriptions[code]}
+        for code in sorted(codes)
+    ]
+    payload = json.dumps(
+        canonical, ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+@dataclass(frozen=True)
+class NcmCatalogVersion:
+    version: str
+    scope: str
+    effective_from: date
+    effective_to: date | None
+    source: str
+    source_url: str
+    source_sha256: str
+    artifact: str
+    artifact_url: str
+    artifact_sha256: str
+    fingerprint: str
+    codes: frozenset[str]
+    descriptions: Mapping[str, str]
+
+
+NCM_CATALOG_V230 = NcmCatalogVersion(
+    version="IT 2024.001 v2.30",
+    scope="TRIBULTZ_CURATED_SUBSET",
+    effective_from=date(2026, 2, 1),
+    effective_to=date(2026, 9, 30),
+    source="Portal Nacional da NF-e / Receita Federal do Brasil",
+    source_url=(
+        "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?"
+        "conteudo=T5gf%2BNmt8DM%3D"
+    ),
+    source_sha256=(
+        "d9923d2f1531b85eb77acf2443328974c9766cf594bb32434c60f7c4632fbcd9"
+    ),
+    artifact="Tabela de NCM e respectiva uTrib — vigência 01/02/2026",
+    artifact_url=(
+        "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?"
+        "conteudo=b951nG%2FpOmY%3D"
+    ),
+    artifact_sha256=(
+        "b06ecddeb15e36688e6398c36f51ae29b7ef6dfc1eca765c1c37ee9416a64e7b"
+    ),
+    fingerprint=_catalog_fingerprint(VALID_NCM_CODES, NCM_DESCRIPTIONS),
+    codes=VALID_NCM_CODES,
+    descriptions=NCM_DESCRIPTIONS,
+)
+
+NCM_CATALOG_V240 = NcmCatalogVersion(
+    version="IT 2024.001 v2.40",
+    scope="TRIBULTZ_CURATED_SUBSET",
+    effective_from=date(2026, 10, 1),
+    effective_to=None,
+    source="Portal Nacional da NF-e / Receita Federal do Brasil",
+    source_url=(
+        "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?"
+        "conteudo=nCdXYyjCKQg%3D"
+    ),
+    source_sha256=(
+        "bf4a2518b8614d66cc79f2d29c8c4dd49571f061062acce7d40b93250943f485"
+    ),
+    artifact="Tabela de NCM e respectiva uTrib — vigência 01/10/2026",
+    artifact_url=(
+        "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?"
+        "conteudo=aG9hbbgK%2FJM%3D"
+    ),
+    artifact_sha256=(
+        "afc8bfc94c4f957572dbcb94be2b1b0ce226124dc6d4d60eea94163305de98af"
+    ),
+    fingerprint=_catalog_fingerprint(NCM_CODES_V240, NCM_DESCRIPTIONS_V240),
+    codes=NCM_CODES_V240,
+    descriptions=NCM_DESCRIPTIONS_V240,
+)
+
+NCM_CATALOG_VERSIONS = (NCM_CATALOG_V230, NCM_CATALOG_V240)
+
+
+def resolve_ncm_catalog(reference_date: date | None = None) -> NcmCatalogVersion:
+    """Return the NCM snapshot applicable on the reference date.
+
+    The previous code had no historical snapshots. For dates before v2.30,
+    retaining the frozen current set is the only non-retroactive behavior.
+    """
+    ref = reference_date or date.today()
+    if ref >= NCM_CATALOG_V240.effective_from:
+        return NCM_CATALOG_V240
+    return NCM_CATALOG_V230
+
+
+class NcmDiffStatus(StrEnum):
+    ADDED = "ADDED"
+    REMOVED = "REMOVED"
+    DESCRIPTION_CHANGED = "DESCRIPTION_CHANGED"
+    UNCHANGED = "UNCHANGED"
+
+
+@dataclass(frozen=True)
+class NcmDiff:
+    code: str
+    status: NcmDiffStatus
+    previous_description: str | None
+    next_description: str | None
+
+
+def diff_ncm_catalogs(
+    previous: NcmCatalogVersion = NCM_CATALOG_V230,
+    next_version: NcmCatalogVersion = NCM_CATALOG_V240,
+) -> tuple[NcmDiff, ...]:
+    """Produce a deterministic, exhaustive diff between two snapshots."""
+    result: list[NcmDiff] = []
+    for code in sorted(previous.codes | next_version.codes):
+        old_description = previous.descriptions.get(code)
+        new_description = next_version.descriptions.get(code)
+        if code not in previous.codes:
+            diff_status = NcmDiffStatus.ADDED
+        elif code not in next_version.codes:
+            diff_status = NcmDiffStatus.REMOVED
+        elif old_description != new_description:
+            diff_status = NcmDiffStatus.DESCRIPTION_CHANGED
+        else:
+            diff_status = NcmDiffStatus.UNCHANGED
+        result.append(
+            NcmDiff(
+                code=code,
+                status=diff_status,
+                previous_description=old_description,
+                next_description=new_description,
+            )
+        )
+    return tuple(result)

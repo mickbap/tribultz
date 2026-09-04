@@ -29,7 +29,7 @@ from app.models.jobs import Job as JobModel
 from app.tools import s3_tool, postgres_tool
 from app.services.xml_correction_service import correct_xml
 from app.api.plan_gate import require_plan, check_usage_limit, increment_usage
-from app.data.ncm_codes import VALID_NCM_CODES
+from app.data.ncm_codes import is_valid_ncm
 from app.data.classtrib_table import (
     classtrib_cst,
     classtrib_dfe_allowed,
@@ -495,6 +495,7 @@ def validate_xml(
     # Data de emissão para a janela sem penalidades (Ato Conjunto 1/25): NF-e usa
     # dhEmi; NFS-e legado usa DataEmissao/dhEmissao/dhProc/dEmi.
     emission_date = dh_emi or _first_tag(xml, ["DataEmissao", "dhEmissao", "dhProc", "dEmi"])
+    ncm_reference_date = _parse_iso_date((emission_date or {}).get("value", ""))
 
     # NFS-e legacy fields
     valor_cbs = _first_tag(xml, ["ValorCBS", "vCBS"])
@@ -1015,7 +1016,11 @@ def validate_xml(
 
     # ── Rule 16: NCM_VALID ─────────────────────────────────────────────────
 
-    if ncm and re.match(r"^\d{8}$", ncm["value"]) and ncm["value"] not in VALID_NCM_CODES:
+    if (
+        ncm
+        and re.match(r"^\d{8}$", ncm["value"])
+        and not is_valid_ncm(ncm["value"], ncm_reference_date)
+    ):
         ev_id = "E_XML_NCM_VALID"
         _sev = _pedagogical_severity("NCM_VALID", pedagogical_mode)
         _rec = "Verificar código NCM conforme Tabela TIPI vigente."
