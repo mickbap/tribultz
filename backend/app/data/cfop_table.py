@@ -1,9 +1,10 @@
 """Catálogo de CFOP versionado (#688) — Tabela oficial do Portal Nacional da NF-e.
 
 Substitui a dependência conceitual de uma allowlist literal tratada como se
-fosse catálogo. O artefato aqui é a **Tabela de CFOP** publicada em 25/08/2026,
-instituída em sua forma atual pelo **IT 2023.002 v2.00** — que acrescentou a
-coluna ``indExcIBSCBS`` sem alterar nenhuma das demais.
+fosse catálogo. O artefato corrente é a **Tabela de CFOP** publicada em
+04/09/2026, vinculada ao **IT 2023.002 v2.10**. Essa versão apenas acrescenta
+``titulo`` e ``descricao`` como metadados explicativos; os 619 códigos e todas
+as 11 propriedades operacionais permanecem idênticos à v2.00.
 
 Representamos o DOMÍNIO OFICIAL COMPLETO (619 códigos, 11 propriedades cada),
 não o subconjunto permitido. Guardar só os permitidos transformaria a tabela
@@ -54,7 +55,7 @@ def provenance() -> ArtifactProvenance:
     """Identidade auditável do artefato (#682).
 
     ``versao=None``: a Tabela de CFOP não declara versão própria — é publicada
-    por data. Quem carrega versão é o IT que a institui, em ``instituido_por``.
+    por data. Quem carrega versão é o IT associado, em ``instituido_por``.
     """
     m = _doc()["meta"]
     return ArtifactProvenance(
@@ -69,7 +70,7 @@ def provenance() -> ArtifactProvenance:
 
 
 def instituido_por() -> ArtifactProvenance:
-    """Identidade do IT que instituiu a coluna indExcIBSCBS."""
+    """Identidade do IT associado à publicação corrente da tabela."""
     i = _doc()["meta"]["instituido_por"]
     m = _doc()["meta"]
     return ArtifactProvenance(
@@ -82,12 +83,22 @@ def instituido_por() -> ArtifactProvenance:
     )
 
 
+def historico() -> tuple[dict, ...]:
+    """Snapshots anteriores preservados com origem, fingerprint e vigência."""
+    return tuple(_doc()["meta"].get("historico", ()))
+
+
+def aplicacao_v210() -> dict:
+    """Aplicação documental da v2.10, sem converter “não aplicável” em data."""
+    return dict(_doc()["meta"]["aplicacao_v210"])
+
+
 def conflito_contagem() -> dict:
     """Conflito ABERTO entre dois artefatos oficiais, preservado como dado.
 
-    O IT 2023.002 v2.00 (06/08/2026, §03) diz "(84 códigos)". A Tabela publicada
-    em 25/08/2026 — posterior — traz 72. ``conflict_status`` segue ``UNRESOLVED``
-    porque a causa documental continua em aberto.
+    O IT 2023.002 v2.00 (06/08/2026, §03) diz "(84 códigos)". As tabelas de
+    25/08/2026 e 04/09/2026 trazem os mesmos 72. ``conflict_status`` segue
+    ``UNRESOLVED`` porque a v2.10 não declara retificação da contagem textual.
 
     O conflito NÃO condiciona comportamento. O Round Fiscal 27/08-D canonizou a
     Tabela de 25/08 como domínio operacional; o lookup responde pelo valor
@@ -114,7 +125,11 @@ def all_cfops() -> frozenset[str]:
 
 
 def get(cfop: str) -> Optional[dict]:
-    """Registro completo de um CFOP, ou ``None`` se não estiver no domínio oficial."""
+    """Registro completo, inclusive metadados explicativos, ou ``None``.
+
+    ``titulo`` e ``descricao`` reproduzem texto convenial para apoio à leitura.
+    Não são interpretados como regra, indicador ou efeito de rejeição.
+    """
     return _doc()["cfop"].get(str(cfop).strip())
 
 
