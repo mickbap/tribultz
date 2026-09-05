@@ -13,6 +13,7 @@ import json
 import pathlib
 
 import pytest
+from openpyxl import load_workbook
 
 from app.data import cfop_table as t
 from app.data.provenance import ArtifactProvenance
@@ -45,8 +46,33 @@ class TestIdentidadeDoArtefato:
         # A Tabela de CFOP é publicada por data, não por versão. Quem carrega
         # versão é o Informe Técnico que instituiu a coluna.
         assert t.provenance().is_live_source is True
-        assert t.instituido_por().versao == "2.00"
+        assert t.instituido_por().versao == "2.10"
         assert t.instituido_por().artefato == "IT 2023.002"
+
+    def test_it_v210_bruto_tem_fingerprint_auditavel(self):
+        meta = json.loads((DATA / "cfop_table.json").read_text(encoding="utf-8"))["meta"]
+        it = meta["instituido_por"]
+        assert hashlib.sha256((DATA / it["arquivo_bruto"]).read_bytes()).hexdigest() == it["fingerprint"]
+
+    def test_v200_permanece_no_historico_com_artefato_e_vigencia(self):
+        anterior, = t.historico()
+        assert anterior["instituido_por"]["versao"] == "2.00"
+        assert (DATA / anterior["arquivo_bruto"]).exists()
+        assert anterior["vigencia_indExcIBSCBS"] == {
+            "homologacao": "2026-09-01",
+            "producao": "2026-11-03",
+        }
+
+    def test_v210_nao_inventa_data_de_aplicacao(self):
+        assert t.aplicacao_v210() == {
+            "homologacao": None,
+            "producao": None,
+            "texto_oficial": "Não aplicável",
+            "efeito": (
+                "Inclusão exclusivamente informativa de Título e Descrição; "
+                "sem nova regra ou rejeição."
+            ),
+        }
 
 
 class TestContratoDeContagem:
@@ -61,6 +87,40 @@ class TestContratoDeContagem:
         c = t.contagem()
         assert len(t.all_cfops()) == c["total"]
         assert len(t.cfops_permitidos_contribuinte_exclusivo()) == c["indExcIBSCBS_1"]
+
+
+class TestDiffV200V210:
+    @staticmethod
+    def _operacional(arquivo: pathlib.Path) -> dict[str, tuple]:
+        planilha = load_workbook(arquivo, data_only=True, read_only=True)["CFOP"]
+        return {
+            str(row[0]).strip().zfill(4): tuple(
+                value.date() if isinstance(value, dt.datetime) else value
+                for value in row[:12]
+            )
+            for row in planilha.iter_rows(min_row=2, max_col=14, values_only=True)
+            if row[0] is not None
+        }
+
+    def test_619_codigos_e_12_colunas_operacionais_sao_identicos(self):
+        anterior, = t.historico()
+        atual = json.loads((DATA / "cfop_table.json").read_text(encoding="utf-8"))["meta"]
+        v200 = self._operacional(DATA / anterior["arquivo_bruto"])
+        v210 = self._operacional(DATA / atual["arquivo_bruto"])
+
+        assert len(v200) == 619
+        assert v210 == v200
+
+    def test_v210_acrescenta_exatamente_as_duas_colunas_explicativas(self):
+        atual = json.loads((DATA / "cfop_table.json").read_text(encoding="utf-8"))["meta"]
+        planilha = load_workbook(
+            DATA / atual["arquivo_bruto"], data_only=True, read_only=True
+        )["CFOP"]
+        cabecalho = [
+            cell.value
+            for cell in next(planilha.iter_rows(min_row=1, max_row=1, max_col=14))
+        ]
+        assert cabecalho[12:] == ["Título do CFOP", "Descrição (nota explicativa)"]
 
 
 class TestConflito84x72:
@@ -97,12 +157,20 @@ class TestDominioCompleto:
     def test_todo_codigo_tem_4_digitos(self):
         assert all(len(c) == 4 and c.isdigit() for c in t.all_cfops())
 
-    def test_todas_as_11_propriedades_por_codigo(self):
+    def test_todas_as_propriedades_operacionais_e_explicativas_por_codigo(self):
         esperado = {"inicio_vigencia", "fim_vigencia", "indNFe", "indComunica", "indTransp",
-                    "indDevol", "indRetor", "indAnula", "indRemes", "indComb", "indExcIBSCBS"}
+                    "indDevol", "indRetor", "indAnula", "indRemes", "indComb", "indExcIBSCBS",
+                    "titulo", "descricao"}
         reg = t.get("5102")
         assert reg is not None, "5102 tem de existir no domínio oficial"
         assert set(reg) == esperado
+
+    def test_titulo_e_descricao_sao_metadados_presentes_nos_619_cfops(self):
+        for codigo in t.all_cfops():
+            reg = t.get(codigo)
+            assert reg is not None
+            assert reg["titulo"].strip()
+            assert reg["descricao"].strip()
 
 
 class TestSemanticaDoIndicador:
