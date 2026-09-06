@@ -65,16 +65,16 @@ provenance:
     source_authority: "Portal Nacional da Nota Fiscal Eletrônica"
     source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
     verified_at: "2026-08-30"
-    temporal_applicability: "Estado corrente em 30/08/2026: produção adiada para implementação futura"
-    versioning_note: "Nota de versionamento: a documentação histórica da UB12-10 registrou 03/08/2026 como data prevista de produção. A versão 1.51 postergou a aplicação da regra em produção para implementação futura, e RFB/CGIBS confirmaram que a ausência dos campos IBS/CBS não deve gerar rejeição automática enquanto durar o adiamento. Até 30/08/2026, não foi publicada nova data de ativação."
-  - claim_scope: "Em 30/08/2026, a ausência do grupo IBS/CBS não provoca, por força da UB12-10, rejeição automática com cStat 1115 em produção"
+    temporal_applicability: "Estado corrente em 06/09/2026: produção adiada para implementação futura"
+    versioning_note: "Nota de versionamento: a documentação histórica da UB12-10 registrou 03/08/2026 como data prevista de produção. A versão 1.51 postergou a aplicação da regra em produção para implementação futura, e RFB/CGIBS confirmaram que a ausência dos campos IBS/CBS não deve gerar rejeição automática enquanto durar o adiamento. Até 06/09/2026, não foi publicada nova data de ativação."
+  - claim_scope: "Em 06/09/2026, a ausência do grupo IBS/CBS não provoca, por força da UB12-10, rejeição automática com cStat 1115 em produção"
     claim_classification: "FATO_NORMATIVO"
     artifact: "Ato Técnico Conjunto nº 01/2026"
     rule_item: "UB12-10"
     source_authority: "Receita Federal do Brasil e Comitê Gestor do IBS"
     source_url: "https://www.cgibs.gov.br/receita-federal-e-comite-gestor-do-ibs-esclarecem-adiamento-das-regras-de-validacao-dos-documentos-fiscais-eletronicos"
     verified_at: "2026-08-30"
-    temporal_applicability: "Estado corrente em 30/08/2026, enquanto durar o adiamento"
+    temporal_applicability: "Estado corrente em 06/09/2026, enquanto durar o adiamento"
   - claim_scope: "A partir de qual data a regra UB12-10 volta a ser aplicada em produção"
     claim_classification: "NAO_DETERMINADO"
     artifact: "NT 2025.002-RTC"
@@ -199,11 +199,11 @@ O desenho do ano fica claro quando se lê os três atos juntos: exigir o documen
 
 Sobre o estado dessa regra hoje:
 
-> A Rejeição 1115 (RV UB12-10) não está ativa em produção, em 30/08/2026, para rejeitar automaticamente NF-e/NFC-e pela ausência do grupo IBS/CBS. A NT 2025.002 v1.51 postergou sua aplicação em produção para implementação futura, sem nova data publicada. O adiamento da validação não suspende a obrigação documental prevista no Ato Conjunto RFB/CGIBS nº 4/2026 para os contribuintes e operações já alcançados pelo respectivo cronograma.
+> A Rejeição 1115 (RV UB12-10) não está ativa em produção, em 06/09/2026, para rejeitar automaticamente NF-e/NFC-e pela ausência do grupo IBS/CBS. A NT 2025.002 v1.51 postergou sua aplicação em produção para implementação futura, sem nova data publicada. O adiamento da validação não suspende a obrigação documental prevista no Ato Conjunto RFB/CGIBS nº 4/2026 para os contribuintes e operações já alcançados pelo respectivo cronograma.
 
 Em homologação a situação é outra: a Observação 1 da regra registra implementação para NF-e com data de emissão maior ou igual a 01/07/2026 e emitente com CRT 3 = Regime Normal. Homologação e produção são ambientes distintos, e a regra existir em um não significa que execute no outro.
 
-**Nota de versionamento:** a documentação histórica da UB12-10 registrou 03/08/2026 como data prevista de produção. A versão 1.51 postergou a aplicação da regra em produção para implementação futura, e RFB/CGIBS confirmaram que a ausência dos campos IBS/CBS não deve gerar rejeição automática enquanto durar o adiamento. Até 30/08/2026, não foi publicada nova data de ativação.
+**Nota de versionamento:** a documentação histórica da UB12-10 registrou 03/08/2026 como data prevista de produção. A versão 1.51 postergou a aplicação da regra em produção para implementação futura, e RFB/CGIBS confirmaram que a ausência dos campos IBS/CBS não deve gerar rejeição automática enquanto durar o adiamento. Até 06/09/2026, não foi publicada nova data de ativação.
 
 **Rejeição 1119 — regra W34-20** (modelos 55 e 65). A condição é o grupo de totais de IBS e CBS não estar informado quando **pelo menos um item** possui IBS ou CBS informado. É uma regra de coerência interna: ela não exige que o documento traga IBS/CBS, exige que, se os itens trazem, o total também traga.
 

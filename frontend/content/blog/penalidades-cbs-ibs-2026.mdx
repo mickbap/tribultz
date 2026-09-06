@@ -59,34 +59,29 @@ provenance:
     verified_at: "2026-08-30"
     claim_scope_limit: "Risco operacional, não conclusão de multa."
 legalRefs:
-  - instrumento: "LC 214/2025"
-    artigo: "Arts. 343 e 346"
-    descricao: "Institui CBS, IBS e o Imposto Seletivo; base da obrigatoriedade do grupo gIBSCBS e do campo cClassTrib na NF-e; alíquotas de teste de 2026 (CBS 0,9% / IBS 0,1%), distintas do regime cheio dos anos seguintes."
-    link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
-  - instrumento: "LC 227/2026"
-    descricao: "Lei que regulamenta e altera a LC 214/2025."
-    link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp227.htm"
   - instrumento: "Ato Conjunto RFB/CGIBS nº 1/2025"
     artigo: "Art. 3º"
-    descricao: "Caráter educativo em 2026 — obrigação acessória de IBS/CBS sem penalidade para fatos geradores no período; a multa por descumprimento passa a ser aplicável a partir do fim dessa janela."
-  - instrumento: "Ato Conjunto RFB/CGIBS nº 1/2025"
-    artigo: "Art. 3º"
-    descricao: "Estabeleceu dispensa temporária de penalidades especificamente pela falta de registro dos campos IBS/CBS nos documentos abrangidos, nos termos e durante o período ali definido. O dispositivo não institui uma multa genérica automática para o período posterior."
+    descricao: "Estabelece dispensa temporária e específica de penalidades pela falta de registro dos campos de IBS/CBS nos documentos abrangidos, nos limites temporais do dispositivo. Seu encerramento não institui multa genérica nem cria fronteira automática de penalidades em agosto."
     link: "https://www.gov.br/sped/pt-br/assuntos/documentos-fiscais/dere/atos-conjuntos/ato-conjunto-1"
-  - instrumento: "NT 2025.002 v1.51"
-    descricao: "Publicada em 04/08/2026: implementação em produção da Rejeição 1115 (UB12-10) suspensa, sem data. Obrigação legal e multa por obrigação acessória não mudaram."
-  - instrumento: "Tabela de Classificação Tributária da RTC"
-    descricao: "Tabela oficial de CST e cClassTrib. A pesquisa por NCM pode auxiliar na identificação de sugestões/candidatos, mas não constitui mapeamento determinístico de NCM para cClassTrib."
-    link: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria"
+  - instrumento: "Ato Conjunto RFB/CGIBS nº 5/2026"
+    artigo: "Arts. 1º a 3º"
+    descricao: "Regulamenta o PNCT em 2026, com adaptação assistida, acompanhamento, comunicações, retificação de inconsistências e autorregularização; comunicações de monitoramento que não iniciem procedimento fiscal não afastam a espontaneidade."
+    link: "https://www.cgibs.gov.br/upload/arquivos/202608/13065932-ato-conjunto-rfb-cgibs-n-c2-ba-5-2026-regulamenta-o-programa-nacional-de-conformidade-tributaria-docx-assinado.pdf"
+  - instrumento: "LC 214/2025, com redação da LC 227/2026"
+    artigo: "Art. 348, §§ 3º e 4º"
+    descricao: "Em 2026, no caso previsto no dispositivo, assegura 60 dias contados da intimação para suprir a omissão apontada; o atendimento à intimação extingue a penalidade imposta."
+    link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
 soroGuid: "9e6efe9b-666e-4737-8248-e6ff765afef0"
 ---
 
 <p>Se a sua operação ainda trata a <a href="https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/reforma-tributaria">Reforma Tributária</a> como tema de projeto, e não de execução, as penalidades CBS IBS 2026 já deveriam estar no radar do fiscal, do ERP e da controladoria ao mesmo tempo. O ponto crítico não é só o valor do tributo na fase de teste. É o erro estrutural que nasce no cadastro, passa pela classificação, chega na NF-e e depois vira passivo, retrabalho e exposição desnecessária quando o Fisco cruza documento, XML e escrituração.</p>
 <p>Em 2026, o risco não estará apenas em calcular CBS e IBS de forma incorreta. Estará, em regra, na consistência entre dados fiscais que antes muitas empresas tratavam como campos acessórios e que passam a ter função operacional real na emissão e na auditoria. Quando esse alinhamento falha, o problema aparece cedo, na rejeição do documento, ou tarde, na fiscalização. Nos dois cenários, o custo costuma ser maior do que parecia na etapa de cadastro.</p>
 <h2>O que realmente entra em jogo nas penalidades CBS IBS 2026</h2>
-<p>Quando se fala em penalidade, muita gente pensa apenas em multa por recolhimento errado. Esse risco existe, mas ele é só uma parte da equação. Na prática, o ciclo de exposição começa antes: classificação tributária incorreta, cClassTrib incompatível, CST mal parametrizado, produto com <a href="https://tribultz.com.br/blog/como-classificar-ncm-corretamente-2026">NCM sem revisão</a>, regra de ERP desatualizada, SPED gerado com inconsistência e ausência de evidência para justificar a decisão fiscal tomada.</p>
-<p>Esse encadeamento importa porque a Reforma desloca a discussão de tributo para governança de dados fiscais. Em um ambiente em que NF-e, XML, EFD e cadastros precisam conversar sem contradição, qualquer divergência tende a ser mais visível. E visibilidade fiscal, quando não há controle, costuma significar mais questionamento, mais ajuste e mais chance de sanção conforme a legislação e a versão técnica vigente.</p>
-<p>Também vale separar duas camadas que às vezes são misturadas. Uma é a fase de teste de 2026, com alíquotas de referência específicas para esse período, conforme a regulamentação aplicável. Outra é o regime cheio, projetado para os anos seguintes. Tratar números de fases diferentes como se fossem equivalentes distorce análise de risco e pode contaminar parametrização no ERP.</p>
+Em 2026, a transição para IBS e CBS **não deve ser descrita como uma passagem automática de “período educativo sem multa” para “período punitivo com multa” a partir de agosto**. O Programa Nacional de Conformidade Tributária — PNCT, previsto nos arts. 471-A a 471-C da LC 214/2025 e regulamentado para 2026 pelo Ato Conjunto RFB/CGIBS nº 5/2026, adota uma lógica de adaptação assistida. Mesmo quando o contribuinte ainda não cumpre integralmente as obrigações acessórias, o Ato prevê sua permanência no programa se, cumulativamente, houver evolução contínua no correto preenchimento dos documentos, atendimento tempestivo às comunicações e intimações, retificação das inconsistências comunicadas até 31 de dezembro de 2026 e manutenção de profissional da contabilidade responsável pela conformidade fiscal.
+
+As comunicações decorrentes de cruzamento de dados ou monitoramento, quando não caracterizam início de procedimento fiscal, **não afastam a espontaneidade do contribuinte enquadrado no PNCT** e preservam a possibilidade de autorregularização. Além disso, o art. 348, §§ 3º e 4º, da LC 214/2025, na redação dada pela LC 227/2026, estabelece proteção específica para 2026: se houver auto de infração por descumprimento das obrigações acessórias de IBS e CBS previstas no art. 341-G, o contribuinte deve ser intimado para suprir a omissão em **60 dias contados da intimação**; cumprida a intimação nesse prazo, extingue-se a penalidade imposta.
+
+Isso **não constitui imunidade geral a penalidades**, nem significa que qualquer erro esteja automaticamente protegido. A consequência depende da infração concreta, da obrigação violada e das regras aplicáveis ao caso. Também não há fundamento para tratar agosto de 2026 como uma fronteira geral `sem multa → com multa`: o art. 3º do Ato Conjunto RFB/CGIBS nº 1/2025 criou uma dispensa temporária e específica para a falta de registro dos campos de IBS e CBS nas hipóteses por ele abrangidas, mas o encerramento dessa proteção não cria, por si só, uma multa genérica ou automática. Inconsistências de cadastro, CST, cClassTrib, XML, escrituração ou parametrização de ERP continuam representando risco operacional e fiscal e devem ser identificadas e corrigidas tempestivamente.
 <h2>Onde as penalidades costumam nascer antes mesmo da apuração</h2>
 <p>Em empresas com catálogo grande, a origem do problema raramente está em um único cálculo. Ela aparece em decisões repetidas em escala. Um produto entra com descrição fraca, um NCM antigo é reaproveitado, o time fiscal classifica por exceção, o ERP replica a regra em massa e, quando a emissão começa, a inconsistência já está espalhada em centenas ou milhares de itens.</p>
 <p>No contexto de CBS e IBS, isso ganha peso porque a combinação entre classificação do item e tratamento tributário deixa de ser apenas uma discussão de retaguarda. Ela passa a afetar a coerência do documento fiscal. Conforme a NT e a legislação vigente, a compatibilidade entre <a href="https://tribultz.com.br/blog/classtrib-2026-mapear-ncm-regime-ibs-cbs">CST e cClassTrib</a>, por exemplo, deve ser verificada com cuidado. Quando esse vínculo não fecha, o risco operacional cresce de forma imediata.</p>
