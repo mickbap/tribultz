@@ -110,6 +110,9 @@ def test_workflow_exige_gates_e_propaga_sha_exato() -> None:
     assert "needs: validate" in workflow
     assert "ref: ${{ github.sha }}" in deploy_job
     assert "--sha '$RUN_SHA' --validated-sha '$VALIDATED_SHA'" in workflow
+    assert 'REMOTE_SCRIPT="/tmp/tribultz-deploy-${RUN_SHA}.sh"' in deploy_job
+    assert "scp -o StrictHostKeyChecking=yes" in deploy_job
+    assert "< infra/scripts/deploy.sh" not in deploy_job
     assert "RUN_SHA" in workflow
     assert "VALIDATED_SHA" in workflow
     assert "BUILD_SHA" in workflow
