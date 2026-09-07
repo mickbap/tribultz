@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.data.trial_policy import TRIAL_DURATION_DAYS
@@ -23,7 +23,7 @@ from app.core.security import (
     create_email_verification_token,
     verify_email_verification_token,
     create_password_reset_token,
-    verify_password_reset_token,
+    decode_password_reset_token,
 )
 from app.api.deps import get_current_user
 from app.services.captcha_service import verify_captcha
@@ -233,6 +233,7 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
                 "actor_type": "partner",
                 "partner_id": str(user.partner_id),
                 "role": cast(str, user.role),
+                "session_version": cast(int, user.session_version),
             },
         )
         logger.info("login_success", extra={"user_id": str(user.id), "ip": ip, "actor_type": "partner"})
@@ -278,6 +279,7 @@ async def login(login_data: UserLogin, request: Request, db: Session = Depends(g
             "role": cast(str, user.role),
             "account_type": cast(str, user.account_type),
             "plan_slug": plan_slug,
+            "session_version": cast(int, user.session_version),
         },
     )
 
@@ -785,6 +787,7 @@ async def switch_tenant(
             "tenant_id": str(data.tenant_id),
             "role": cast(str, user_tenant.role),
             "account_type": cast(str, user.account_type),
+            "session_version": cast(int, user.session_version),
         },
     )
 
@@ -852,6 +855,7 @@ async def select_mode(
             "account_type": cast(str, user.account_type),
             "plan_slug": data.plan_slug,
             "test_mode": True,
+            "session_version": cast(int, user.session_version),
         },
     )
 
@@ -893,7 +897,23 @@ def forgot_password(
     ).scalar_one_or_none()
 
     if user and cast(bool, user.is_active) and user.deleted_at is None:
-        token = create_password_reset_token(str(user.id))
+        # Advancing before issuance invalidates every prior reset token. The
+        # persisted generation is also the atomic single-use guard on consume.
+        reset_version = db.execute(
+            update(User)
+            .where(
+                User.id == user.id,
+                User.is_active.is_(True),
+                User.deleted_at.is_(None),
+            )
+            .values(password_reset_version=User.password_reset_version + 1)
+            .returning(User.password_reset_version)
+            .execution_options(synchronize_session=False)
+        ).scalar_one_or_none()
+        db.commit()
+        if reset_version is None:
+            return {"message": "Se o email estiver cadastrado, você receberá um link para redefinir sua senha."}
+        token = create_password_reset_token(str(user.id), reset_version)
         send_password_reset_email(
             to_email=cast(str, user.email),
             user_name=cast(str, user.full_name),
@@ -956,7 +976,16 @@ def change_password(
             detail="A nova senha deve ser diferente da atual.",
         )
 
-    current_user.password_hash = get_password_hash(data.new_password)  # type: ignore[assignment]
+    db.execute(
+        update(User)
+        .where(User.id == current_user.id)
+        .values(
+            password_hash=get_password_hash(data.new_password),
+            session_version=User.session_version + 1,
+            password_reset_version=User.password_reset_version + 1,
+        )
+        .execution_options(synchronize_session=False)
+    )
     db.commit()
 
     logger.info("password_changed", extra={"user_id": str(current_user.id)})
@@ -975,27 +1004,48 @@ def reset_password(
             detail="Senha deve ter no mínimo 8 caracteres.",
         )
 
-    user_id = verify_password_reset_token(data.token)
-    if not user_id:
+    reset_claims = decode_password_reset_token(data.token)
+    if not reset_claims:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Link expirado ou inválido. Solicite um novo link.",
         )
 
-    user = db.execute(
-        select(User).where(User.id == user_id)
-    ).scalar_one_or_none()
-
-    if not user or not cast(bool, user.is_active):
+    try:
+        user_id = UUID(reset_claims.user_id)
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Conta não encontrada ou inativa.",
+            detail="Link expirado ou inválido. Solicite um novo link.",
         )
 
-    user.password_hash = get_password_hash(data.new_password)  # type: ignore[assignment]
+    # One conditional UPDATE is the consumption boundary. Concurrent requests
+    # can observe the same JWT, but at most one can match its generation.
+    consumed_user_id = db.execute(
+        update(User)
+        .where(
+            User.id == user_id,
+            User.password_reset_version == reset_claims.reset_version,
+            User.is_active.is_(True),
+            User.deleted_at.is_(None),
+        )
+        .values(
+            password_hash=get_password_hash(data.new_password),
+            password_reset_version=User.password_reset_version + 1,
+            session_version=User.session_version + 1,
+        )
+        .returning(User.id)
+        .execution_options(synchronize_session=False)
+    ).scalar_one_or_none()
+    if consumed_user_id is None:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Link expirado ou inválido. Solicite um novo link.",
+        )
     db.commit()
 
-    logger.info("password_reset_completed", extra={"user_id": user_id})
+    logger.info("password_reset_completed", extra={"user_id": str(consumed_user_id)})
     return {"message": "Senha redefinida com sucesso. Faça login com sua nova senha."}
 
 

@@ -43,6 +43,8 @@ class TokenPayload(BaseModel):
     partner_id: Optional[str] = None
     exp: int
     iat: int
+    # Tokens issued before SEC-01 have no claim and belong to generation zero.
+    session_version: int = 0
 
 
 class UserLogin(BaseModel):
