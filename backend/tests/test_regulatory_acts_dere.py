@@ -30,6 +30,7 @@ def test_dere_v120_canoniza_publicacao_ato_e_brutos_oficiais():
 
 def test_dere_v120_canoniza_somente_o_delta_aprovado():
     dere = ra.get(ra.DERE_V1_2_0)
+    assert dere is not None
     claims = {claim["id"]: claim for claim in dere["claims"]}
 
     assert set(claims) == {
@@ -49,6 +50,7 @@ def test_dere_v120_canoniza_somente_o_delta_aprovado():
 
 def test_dere_v120_preserva_fronteiras_e_dependencia_do_mod():
     dere = ra.get(ra.DERE_V1_2_0)
+    assert dere is not None
 
     assert set(dere["limites_interpretativos"]) == {
         "identificacao != efeito tributario automatico",
