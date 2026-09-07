@@ -194,12 +194,18 @@ jobs:
         run: |
           set -o pipefail
           LOG=/tmp/deploy-output.log
+          REMOTE_SCRIPT="/tmp/tribultz-deploy-${RUN_SHA}.sh"
+          scp -o StrictHostKeyChecking=yes \
+              -o ServerAliveInterval=30 \
+              -i ~/.ssh/id_ed25519 \
+              infra/scripts/deploy.sh \
+              "$SSH_USER@$SSH_HOST:$REMOTE_SCRIPT"
           ssh -o StrictHostKeyChecking=yes \
               -o ServerAliveInterval=30 \
               -i ~/.ssh/id_ed25519 \
               "$SSH_USER@$SSH_HOST" \
-              "sudo bash -s -- --sha '$RUN_SHA' --validated-sha '$VALIDATED_SHA' $FLAGS" \
-              < infra/scripts/deploy.sh 2>&1 | tee "$LOG"
+              "sudo bash '$REMOTE_SCRIPT' --sha '$RUN_SHA' --validated-sha '$VALIDATED_SHA' $FLAGS; STATUS=\$?; rm -f '$REMOTE_SCRIPT'; exit \$STATUS" \
+              2>&1 | tee "$LOG"
 
       - name: Confirmar SHA construído e implantado
         id: deployed
