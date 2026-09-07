@@ -1,4 +1,4 @@
-"""Registro de atos regulatórios versionados (#682, extensão).
+"""Registro de atos e documentação regulatória versionados (#682, extensão).
 
 Onde vivem atos normativos que o motor CITA mas cuja aplicação depende de
 enquadramento que o XML não determina. Complementa ``cfop_table`` e
@@ -29,6 +29,7 @@ from app.data.provenance import ArtifactProvenance
 _ARQUIVO = pathlib.Path(__file__).with_name("regulatory_acts.json")
 
 ATO_CONJUNTO_RFB_CGIBS_6_2026 = "ATO_CONJUNTO_RFB_CGIBS_6_2026"
+DERE_V1_2_0 = "DERE_V1_2_0"
 
 
 @functools.lru_cache(maxsize=1)
@@ -47,6 +48,17 @@ def provenance(chave: str) -> ArtifactProvenance:
         source_url=a["source_url"],
         observado_em=dt.date.fromisoformat(a["observado_em"]),
         fingerprint=a["fingerprint"], notas=a["observacao_documental"],
+    )
+
+
+def approval_provenance(chave: str) -> ArtifactProvenance:
+    """Proveniência do ato que aprovou um pacote técnico registrado."""
+    a = _doc()["atos"][chave]["ato_aprovacao"]
+    return ArtifactProvenance(
+        artefato=a["artefato"], versao=a["versao"], fonte=a["fonte"],
+        source_url=a["source_url"],
+        observado_em=dt.date.fromisoformat(a["observado_em"]),
+        fingerprint=a["fingerprint"],
     )
 
 

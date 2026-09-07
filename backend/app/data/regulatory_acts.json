@@ -1,5 +1,93 @@
 {
  "atos": {
+  "DERE_V1_2_0": {
+   "artefato": "Leiautes da DeRE - Especificacao Tecnica dos Eventos",
+   "versao": "1.2.0",
+   "fonte": "Comite Gestor do IBS e Receita Federal - documentacao tecnica da DeRE",
+   "source_url": "https://www.cgibs.gov.br/upload/arquivos/202609/05150133-02-leiautes-da-dere-eventos-v-1-2-0.pdf",
+   "publication_url": "https://www.cgibs.gov.br/cgibs-e-receita-federal-publicam-versao-1-2-0-da-documentacao-tecnica-da-dere",
+   "publicado_em": "2026-09-05",
+   "observado_em": "2026-09-07",
+   "fingerprint": "7adbc82a55f0d60dfc2a63771a4c65c67d479e6a50a7821079e73f38b21873c7",
+   "arquivo_bruto": "artefatos/dere_leiautes_eventos_v1.2.0.pdf",
+   "classificacao_delta": "REFINO_OPERACIONAL",
+   "blocker_canonizacao": "ZERO",
+   "ato_aprovacao": {
+    "artefato": "Ato Tecnico Conjunto RFB/SUFIS/CGIBS/DIRETORIA-EXECUTIVA n 3, de 2 de setembro de 2026",
+    "versao": "3/2026",
+    "fonte": "Comite Gestor do IBS - Atos Tecnicos Conjuntos",
+    "source_url": "https://www.cgibs.gov.br/upload/arquivos/202609/04223716-ato-tecnico-conjunto-n-3-dere.pdf",
+    "ato_date": "2026-09-02",
+    "observado_em": "2026-09-07",
+    "fingerprint": "6c7dcca5f8d8c28643b4f04ab1248af126ab3f71b6ce08c0d3e3f85f0432797e",
+    "arquivo_bruto": "artefatos/ato_tecnico_conjunto_dere_3_2026.pdf"
+   },
+   "claims": [
+    {
+     "id": "DERE_120_PUBLICACAO",
+     "classificacao": "FATO_NORMATIVO",
+     "afirmacao": "A versao 1.2.0 da documentacao tecnica da DeRE foi publicada em 5 de setembro de 2026."
+    },
+    {
+     "id": "DERE_120_ATO_APROVACAO",
+     "classificacao": "FATO_NORMATIVO",
+     "afirmacao": "O Ato Tecnico Conjunto RFB/SUFIS/CGIBS/DIRETORIA-EXECUTIVA n 3, de 2 de setembro de 2026, aprovou a documentacao tecnica da DeRE versao 1.2.0."
+    },
+    {
+     "id": "DERE_120_SERIES_TRANSACIONAIS_INICIAIS",
+     "classificacao": "FATO_NORMATIVO",
+     "afirmacao": "A versao 1.2.0 disponibiliza a versao inicial, expressamente preliminar, dos leiautes das series transacionais D-2000, D-3000 e D-4000."
+    },
+    {
+     "id": "DERE_120_CONTROLE_DEDUCOES",
+     "classificacao": "FATO_NORMATIVO",
+     "afirmacao": "A versao 1.2.0 institui controle declaratorio de deducoes da base de calculo."
+    },
+    {
+     "id": "DERE_120_REABERTURA_PERIODOS",
+     "classificacao": "FATO_NORMATIVO",
+     "afirmacao": "A versao 1.2.0 contempla a reabertura de periodos de apuracao encerrados."
+    },
+    {
+     "id": "DERE_120_IDENTIFICACAO_PARTICIPANTES",
+     "classificacao": "FATO_NORMATIVO",
+     "afirmacao": "Os leiautes transacionais iniciais permitem a identificacao individualizada de adquirentes, destinatarios e demais participantes descritos nos eventos."
+    },
+    {
+     "id": "DERE_120_FINALIDADES_OFICIAIS",
+     "classificacao": "FATO_NORMATIVO",
+     "afirmacao": "As finalidades oficiais declaradas para a identificacao individualizada sao apoiar operacionalmente o principio do destino, a apropriacao de creditos pelo adquirente e a devolucao personalizada (cashback)."
+    }
+   ],
+   "limites_interpretativos": [
+    "identificacao != efeito tributario automatico",
+    "controle de deducao != deducao automaticamente permitida",
+    "reabertura != alteracao irrestrita de competencia",
+    "v1.2.0 != estrutura transacional final"
+   ],
+   "dependencia_explicita": {
+    "artefato": "MOU/MOD atualizado",
+    "status": "PENDENTE",
+    "necessario_para": [
+     "regras de preenchimento",
+     "obrigatoriedade por categoria de pessoa fisica",
+     "direito a credito",
+     "elegibilidade e valor de cashback",
+     "determinacao automatica de destino",
+     "novos campos e criticas futuras"
+    ]
+   },
+   "inferencias_nao_implementadas": [
+    "regra de preenchimento",
+    "obrigatoriedade por categoria de pessoa fisica",
+    "direito a credito",
+    "elegibilidade ou valor de cashback",
+    "determinacao automatica de destino",
+    "criticas futuras",
+    "alteracao do enquadramento de pessoa fisica, CNPJ ou nanoempreendedor"
+   ],
+   "observacao_documental": "Canonizacao descritiva do delta tecnico. Nao cria regra no motor, nao determina efeito tributario individual e nao atribui vigencia material aos pontos que dependem do MOU/MOD atualizado."
+  },
   "ATO_CONJUNTO_RFB_CGIBS_6_2026": {
    "artefato": "Ato Conjunto RFB/CGIBS nº 6/2026",
    "versao": "6/2026",
