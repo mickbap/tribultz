@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
 from typing import Any, Union, Optional
 
 from jose import jwt
@@ -41,7 +42,13 @@ def verify_email_verification_token(token: str) -> Optional[str]:
         return None
 
 
-def create_password_reset_token(user_id: str) -> str:
+@dataclass(frozen=True)
+class PasswordResetTokenClaims:
+    user_id: str
+    reset_version: int
+
+
+def create_password_reset_token(user_id: str, reset_version: int = 0) -> str:
     """Create a JWT token for password reset (30 min expiry)."""
     now = datetime.now(timezone.utc)
     expire = now + timedelta(minutes=30)
@@ -50,19 +57,32 @@ def create_password_reset_token(user_id: str) -> str:
         "iat": now,
         "sub": user_id,
         "purpose": "password_reset",
+        "reset_version": reset_version,
     }
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALG)
 
 
-def verify_password_reset_token(token: str) -> Optional[str]:
-    """Verify password reset token. Returns user_id or None."""
+def decode_password_reset_token(token: str) -> Optional[PasswordResetTokenClaims]:
+    """Decode reset identity and generation, preserving generation-0 legacy tokens."""
     try:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALG])
         if payload.get("purpose") != "password_reset":
             return None
-        return payload.get("sub")
+        user_id = payload.get("sub")
+        reset_version = payload.get("reset_version", 0)
+        if not isinstance(user_id, str):
+            return None
+        if isinstance(reset_version, bool) or not isinstance(reset_version, int) or reset_version < 0:
+            return None
+        return PasswordResetTokenClaims(user_id=user_id, reset_version=reset_version)
     except Exception:
         return None
+
+
+def verify_password_reset_token(token: str) -> Optional[str]:
+    """Verify password reset token. Returns user_id or None."""
+    claims = decode_password_reset_token(token)
+    return claims.user_id if claims else None
 
 
 def create_access_token(subject: Union[str, Any], extra_claims: Optional[dict[str, Any]] = None) -> str:

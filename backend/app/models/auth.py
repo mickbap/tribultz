@@ -5,6 +5,7 @@ from sqlalchemy import (
     Text,
     ForeignKey,
     DateTime,
+    Integer,
     UniqueConstraint,
     func,
 )
@@ -84,6 +85,10 @@ class User(Base):
     email = Column(String(255), nullable=False)
     full_name = Column(String(200), nullable=False)
     password_hash = Column(Text, nullable=False)
+    # Security epochs. Existing JWTs without these claims map to generation 0;
+    # after the first password/reset event they are rejected automatically.
+    session_version = Column(Integer, nullable=False, default=0, server_default="0")
+    password_reset_version = Column(Integer, nullable=False, default=0, server_default="0")
     role = Column(String(50), nullable=False, default="user")
     cnpj = Column(String(18), nullable=True)
     phone = Column(String(20), nullable=True)

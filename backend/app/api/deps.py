@@ -59,6 +59,11 @@ async def get_current_actor(
     if user is None:
         raise credentials_exception()
 
+    # Password reset/change increments the persisted generation. A token from
+    # any prior generation is no longer an authenticated session.
+    if token_data.session_version != cast(int, user.session_version):
+        raise credentials_exception()
+
     # Block soft-deleted users (LGPD deletion sets deleted_at)
     if user.deleted_at is not None:
         raise credentials_exception()
