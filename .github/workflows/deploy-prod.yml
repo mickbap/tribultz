@@ -9,31 +9,159 @@ on:
       - ".github/workflows/deploy-prod.yml"
   workflow_dispatch:
     inputs:
+      target_sha:
+        description: "SHA completo (40 caracteres) aprovado para produção"
+        type: string
+        required: true
       migrate:
         description: "Rodar migrações Alembic (--migrate)"
         type: boolean
         default: false
       skip_pull:
-        description: "Pular git pull na VM (--skip-pull, deploy do código atual)"
+        description: "Pular fetch na VM (o target_sha já deve existir no clone)"
         type: boolean
         default: false
 
 permissions:
   contents: read
+  checks: read
 
 concurrency:
   group: deploy-prod
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: SSH deploy → 201.54.20.18
+  validate:
+    name: Validar gates do SHA
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    outputs:
+      run_sha: ${{ steps.target.outputs.run_sha }}
+      validated_sha: ${{ steps.gates.outputs.validated_sha }}
 
     steps:
-      - name: Checkout (para referência do commit)
+      - name: Resolver SHA solicitado
+        id: target
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SHA: ${{ github.sha }}
+          MANUAL_SHA: ${{ inputs.target_sha }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            RUN_SHA="$MANUAL_SHA"
+          else
+            RUN_SHA="$EVENT_SHA"
+          fi
+          if [[ ! "$RUN_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "SHA alvo inválido: informe exatamente 40 caracteres hexadecimais" >&2
+            exit 1
+          fi
+          echo "run_sha=$RUN_SHA" >> "$GITHUB_OUTPUT"
+          echo "RUN_SHA=$RUN_SHA"
+
+      - name: Checkout do SHA solicitado
         uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.target.outputs.run_sha }}
+          fetch-depth: 0
+
+      - name: Confirmar checkout exato e ancestralidade em main
+        env:
+          RUN_SHA: ${{ steps.target.outputs.run_sha }}
+        run: |
+          BUILD_SOURCE_SHA=$(git rev-parse HEAD)
+          test "$BUILD_SOURCE_SHA" = "$RUN_SHA" || {
+            echo "Checkout divergiu: esperado=$RUN_SHA obtido=$BUILD_SOURCE_SHA" >&2
+            exit 1
+          }
+          git fetch --quiet origin main
+          git merge-base --is-ancestor "$RUN_SHA" origin/main || {
+            echo "SHA alvo não pertence ao histórico de main: $RUN_SHA" >&2
+            exit 1
+          }
+
+      - name: Exigir gates obrigatórios do mesmo SHA
+        id: gates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_SHA: ${{ steps.target.outputs.run_sha }}
+        run: |
+          REQUIRED_GATES=(backend-gates frontend-build)
+          DEADLINE=$((SECONDS + 1200))
+
+          while true; do
+            CHECKS=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              "/repos/${GITHUB_REPOSITORY}/commits/${RUN_SHA}/check-runs?per_page=100")
+            PENDING=0
+
+            for GATE in "${REQUIRED_GATES[@]}"; do
+              STATUS=$(jq -r --arg gate "$GATE" '
+                [.check_runs[] | select(.name == $gate)]
+                | sort_by(.started_at // .created_at) | last | .status // "missing"
+              ' <<< "$CHECKS")
+              CONCLUSION=$(jq -r --arg gate "$GATE" '
+                [.check_runs[] | select(.name == $gate)]
+                | sort_by(.started_at // .created_at) | last | .conclusion // "pending"
+              ' <<< "$CHECKS")
+              echo "$GATE: status=$STATUS conclusion=$CONCLUSION sha=$RUN_SHA"
+
+              if [ "$STATUS" = "completed" ] && [ "$CONCLUSION" = "success" ]; then
+                continue
+              fi
+              if [ "$STATUS" = "missing" ] || [ "$STATUS" = "queued" ] || \
+                 [ "$STATUS" = "in_progress" ] || [ "$STATUS" = "pending" ]; then
+                PENDING=1
+                continue
+              fi
+              echo "Gate obrigatório não aprovou o SHA: $GATE/$CONCLUSION" >&2
+              exit 1
+            done
+
+            if [ "$PENDING" -eq 0 ]; then
+              echo "validated_sha=$RUN_SHA" >> "$GITHUB_OUTPUT"
+              echo "VALIDATED_SHA=$RUN_SHA"
+              break
+            fi
+            if [ "$SECONDS" -ge "$DEADLINE" ]; then
+              echo "Timeout aguardando gates obrigatórios do SHA $RUN_SHA" >&2
+              exit 1
+            fi
+            sleep 15
+          done
+
+  deploy:
+    name: SSH deploy → 201.54.20.18
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RUN_SHA: ${{ needs.validate.outputs.run_sha }}
+      VALIDATED_SHA: ${{ needs.validate.outputs.validated_sha }}
+
+    steps:
+      # Em workflow_dispatch, o alvo pode ser um rollback anterior ao SEC-06.
+      # O controlador deve continuar sendo a versão endurecida da main atual;
+      # somente a fonte preparada na VM é fixada no SHA alvo validado.
+      - name: Checkout do controlador de deploy
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Confirmar invariante antes do acesso à VM
+        env:
+          CONTROL_SHA: ${{ github.sha }}
+        run: |
+          CHECKOUT_SHA=$(git rev-parse HEAD)
+          test "$RUN_SHA" = "$VALIDATED_SHA" || {
+            echo "RUN_SHA diverge de VALIDATED_SHA" >&2
+            exit 1
+          }
+          test "$CHECKOUT_SHA" = "$CONTROL_SHA" || {
+            echo "Checkout do controlador diverge do SHA do workflow" >&2
+            exit 1
+          }
 
       - name: Resolver flags do deploy.sh
         id: flags
@@ -70,20 +198,39 @@ jobs:
               -o ServerAliveInterval=30 \
               -i ~/.ssh/id_ed25519 \
               "$SSH_USER@$SSH_HOST" \
-              "sudo bash /opt/tribultz/infra/scripts/deploy.sh $FLAGS" 2>&1 | tee "$LOG"
+              "sudo bash -s -- --sha '$RUN_SHA' --validated-sha '$VALIDATED_SHA' $FLAGS" \
+              < infra/scripts/deploy.sh 2>&1 | tee "$LOG"
+
+      - name: Confirmar SHA construído e implantado
+        id: deployed
+        run: |
+          BUILD_SHA=$(awk -F= '/^DEPLOY_RECORD BUILD_SHA=/{print $2}' /tmp/deploy-output.log | tail -1)
+          DEPLOYED_SHA=$(awk -F= '/^DEPLOY_RECORD DEPLOYED_SHA=/{print $2}' /tmp/deploy-output.log | tail -1)
+          test "$RUN_SHA" = "$VALIDATED_SHA" && \
+          test "$VALIDATED_SHA" = "$BUILD_SHA" && \
+          test "$BUILD_SHA" = "$DEPLOYED_SHA" || {
+            echo "Divergência: RUN=$RUN_SHA VALIDATED=$VALIDATED_SHA BUILD=$BUILD_SHA DEPLOYED=$DEPLOYED_SHA" >&2
+            exit 1
+          }
+          echo "build_sha=$BUILD_SHA" >> "$GITHUB_OUTPUT"
+          echo "deployed_sha=$DEPLOYED_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Publicar log no summary do job
         if: always()
         env:
-          COMMIT_SHA: ${{ github.sha }}
           COMMIT_MSG: ${{ github.event.head_commit.message }}
           ACTOR: ${{ github.actor }}
           FLAGS: ${{ steps.flags.outputs.flags }}
+          BUILD_SHA: ${{ steps.deployed.outputs.build_sha }}
+          DEPLOYED_SHA: ${{ steps.deployed.outputs.deployed_sha }}
         run: |
           {
             echo "## Tribultz — Deploy Prod"
             echo ""
-            echo "- **Commit**: \`${COMMIT_SHA:0:7}\`"
+            echo "- **RUN_SHA**: \`$RUN_SHA\`"
+            echo "- **VALIDATED_SHA**: \`$VALIDATED_SHA\`"
+            echo "- **BUILD_SHA**: \`$BUILD_SHA\`"
+            echo "- **DEPLOYED_SHA**: \`$DEPLOYED_SHA\`"
             echo "- **Trigger**: ${{ github.event_name }} por @${ACTOR}"
             echo "- **Flags**: \`${FLAGS:-(nenhuma)}\`"
             echo "- **Mensagem**: ${COMMIT_MSG%%$'\n'*}"
