@@ -53,10 +53,10 @@ def test_dere_v120_preserva_fronteiras_e_dependencia_do_mod():
     assert dere is not None
 
     assert set(dere["limites_interpretativos"]) == {
-        "identificacao != efeito tributario automatico",
-        "controle de deducao != deducao automaticamente permitida",
-        "reabertura != alteracao irrestrita de competencia",
-        "v1.2.0 != estrutura transacional final",
+        "identificação ≠ efeito tributário automático",
+        "controle de dedução ≠ dedução automaticamente permitida",
+        "reabertura ≠ alteração irrestrita de competência",
+        "v1.2.0 ≠ estrutura transacional final",
     }
     dependencia = dere["dependencia_explicita"]
     assert dependencia["artefato"] == "MOU/MOD atualizado"
