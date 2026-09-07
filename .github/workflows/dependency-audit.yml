@@ -67,8 +67,28 @@ jobs:
       - name: pip-audit (backend)
         working-directory: backend
         run: |
-          pip-audit -r requirements.txt --format json > /tmp/pip-audit.json || true
-          pip-audit -r requirements.txt > /tmp/pip-audit.txt || true
+          mkdir -p /tmp/dependency-audit/raw
+          STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          set +e
+          timeout 180 pip-audit -r requirements.txt --format json \
+            > /tmp/dependency-audit/raw/pip-audit.json \
+            2> /tmp/dependency-audit/raw/pip-audit.stderr.txt
+          EXIT_CODE=$?
+          set -e
+          FINISHED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          TIMED_OUT=false
+          if [ "$EXIT_CODE" -eq 124 ] || [ "$EXIT_CODE" -eq 137 ]; then
+            TIMED_OUT=true
+          fi
+          jq -n \
+            --arg scanner "pip-audit" \
+            --arg command "pip-audit -r requirements.txt --format json" \
+            --arg started_at "$STARTED_AT" \
+            --arg finished_at "$FINISHED_AT" \
+            --argjson exit_code "$EXIT_CODE" \
+            --argjson timed_out "$TIMED_OUT" \
+            '{scanner:$scanner,command:$command,started_at:$started_at,finished_at:$finished_at,exit_code:$exit_code,timed_out:$timed_out,timeout_seconds:180}' \
+            > /tmp/dependency-audit/raw/pip-audit.metadata.json
 
       - name: Instalar dependências do frontend
         working-directory: frontend
@@ -77,8 +97,28 @@ jobs:
       - name: npm audit (frontend)
         working-directory: frontend
         run: |
-          npm audit --json > /tmp/npm-audit.json || true
-          npm audit > /tmp/npm-audit.txt || true
+          mkdir -p /tmp/dependency-audit/raw
+          STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          set +e
+          timeout 180 npm audit --json \
+            > /tmp/dependency-audit/raw/npm-audit.json \
+            2> /tmp/dependency-audit/raw/npm-audit.stderr.txt
+          EXIT_CODE=$?
+          set -e
+          FINISHED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          TIMED_OUT=false
+          if [ "$EXIT_CODE" -eq 124 ] || [ "$EXIT_CODE" -eq 137 ]; then
+            TIMED_OUT=true
+          fi
+          jq -n \
+            --arg scanner "npm-audit" \
+            --arg command "npm audit --json" \
+            --arg started_at "$STARTED_AT" \
+            --arg finished_at "$FINISHED_AT" \
+            --argjson exit_code "$EXIT_CODE" \
+            --argjson timed_out "$TIMED_OUT" \
+            '{scanner:$scanner,command:$command,started_at:$started_at,finished_at:$finished_at,exit_code:$exit_code,timed_out:$timed_out,timeout_seconds:180}' \
+            > /tmp/dependency-audit/raw/npm-audit.metadata.json
 
       - name: Comparação de versões — backend (revisão completa)
         if: steps.mode.outputs.full == 'true'
@@ -131,88 +171,86 @@ jobs:
             echo ""
           } >> /tmp/versions.md
 
-      - name: Montar relatório
+      - name: Validar execução e classificar achados
+        id: analysis
         run: |
-          {
-            echo "# Relatório de Auditoria de Dependências — $(date -u +%Y-%m-%d)"
-            echo ""
-            echo "Modo: $( [ '${{ steps.mode.outputs.full }}' = 'true' ] && echo 'Revisão completa (mensal)' || echo 'Segurança (semanal)' )"
-            echo ""
-            echo "## Backend — pip-audit"
-            echo '```'
-            cat /tmp/pip-audit.txt
-            echo '```'
-            echo ""
-            echo "## Frontend — npm audit"
-            echo '```'
-            cat /tmp/npm-audit.txt
-            echo '```'
-            if [ -f /tmp/versions.md ]; then
-              echo ""
-              cat /tmp/versions.md
-            fi
-          } > /tmp/dependency-audit-report.md
-          cat /tmp/dependency-audit-report.md
+          python3 .github/scripts/dependency_audit.py \
+            --evidence-dir /tmp/dependency-audit/raw \
+            --output-dir /tmp/dependency-audit/analysis
+          if [ -f /tmp/versions.md ]; then
+            cat /tmp/versions.md >> /tmp/dependency-audit/analysis/summary.md
+          fi
+          STATE=$(jq -r .execution_state /tmp/dependency-audit/analysis/result.json)
+          echo "state=$STATE" >> "$GITHUB_OUTPUT"
+          cat /tmp/dependency-audit/analysis/summary.md >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/dependency-audit/analysis/summary.md
 
-      - name: Upload relatório
+      - name: Preservar evidência bruta e análise
+        if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: dependency-audit-report
-          path: /tmp/dependency-audit-report.md
+          name: dependency-audit-evidence
+          path: /tmp/dependency-audit
           retention-days: 90
 
-      - name: Verificar vulnerabilidade Alta/Crítica sem correção publicada
-        id: unfixed
-        run: |
-          python3 - <<'PY'
-          import json
-
-          lines = []
-
-          try:
-              pip_data = json.load(open("/tmp/pip-audit.json"))
-          except Exception:
-              pip_data = {"dependencies": []}
-          for dep in pip_data.get("dependencies", []):
-              for v in dep.get("vulns", []):
-                  if not v.get("fix_versions"):
-                      ids = ", ".join(v.get("aliases") or [v["id"]])
-                      lines.append(f"- **{dep['name']} {dep['version']}** (pip-audit): {ids} — nenhuma versão de correção publicada")
-
-          try:
-              npm_data = json.load(open("/tmp/npm-audit.json"))
-          except Exception:
-              npm_data = {"vulnerabilities": {}}
-          for name, v in (npm_data.get("vulnerabilities") or {}).items():
-              severity = v.get("severity")
-              if severity in ("high", "critical") and v.get("fixAvailable") is False:
-                  lines.append(f"- **{name}** (npm, {severity}): sem fix disponível em nenhuma versão")
-
-          with open("/tmp/unfixed.md", "w") as f:
-              f.write("\n".join(lines))
-
-          print(f"count={len(lines)}")
-          PY
-          {
-            echo "count<<EOF_UNFIXED"
-            python3 -c "print(len(open('/tmp/unfixed.md').read().splitlines()))"
-            echo "EOF_UNFIXED"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Abrir/atualizar Issue (vulnerabilidade sem correção conhecida)
-        if: steps.unfixed.outputs.count != '0'
+      - name: Encaminhar achados e exceções sem duplicação
+        if: always() && steps.analysis.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          {
-            cat /tmp/unfixed.md
-            echo ""
-            echo "Relatório completo (pip-audit + npm audit) no artifact \`dependency-audit-report\` deste run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          } > /tmp/issue-body.md
-          TITLE="Auditoria de Dependências: vulnerabilidade sem correção conhecida"
-          EXISTING=$(gh issue list --search "$TITLE in:title" --state open --json number --jq '.[0].number // empty')
-          if [ -n "$EXISTING" ]; then
-            gh issue comment "$EXISTING" --body-file /tmp/issue-body.md
-          else
-            gh issue create --title "$TITLE" --label "security" --body-file /tmp/issue-body.md
-          fi
+          jq -r '.[] | "- **\(.scanner)**: \(.reasons | join(", "))"' \
+            /tmp/dependency-audit/analysis/operational-failures.json \
+            > /tmp/dependency-audit/analysis/operational-failures.md
+
+          route_issue() {
+            FILE=$1
+            TITLE=$2
+            KIND=$3
+            [ -s "$FILE" ] || return 0
+            DIGEST=$(sha256sum "$FILE" | cut -d' ' -f1)
+            MARKER="<!-- dependency-audit-fingerprint:${KIND}:${DIGEST} -->"
+            BODY="/tmp/dependency-audit/analysis/issue-${KIND}.md"
+            {
+              echo "$MARKER"
+              cat "$FILE"
+              echo ""
+              echo "Evidência bruta e metadados: artifact \`dependency-audit-evidence\` do run ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            } > "$BODY"
+            EXISTING=$(gh issue list --search "$TITLE in:title" --state open --json number,title --jq ".[] | select(.title == \"$TITLE\") | .number" | head -1)
+            if [ -z "$EXISTING" ]; then
+              gh issue create --title "$TITLE" --label "security" --body-file "$BODY"
+              return 0
+            fi
+            HISTORY=$(gh issue view "$EXISTING" --json body,comments --jq '[.body, (.comments[].body)] | join("\n")')
+            if grep -Fq "$MARKER" <<< "$HISTORY"; then
+              echo "Achado já encaminhado em #$EXISTING ($KIND); sem duplicação."
+            else
+              gh issue comment "$EXISTING" --body-file "$BODY"
+            fi
+          }
+
+          route_issue "/tmp/dependency-audit/analysis/fixable.md" \
+            "Auditoria de Dependências: vulnerabilidades corrigíveis" "fixable"
+          route_issue "/tmp/dependency-audit/analysis/no-patch.md" \
+            "Auditoria de Dependências: patch não declarado ou não verificado" "no-patch"
+          route_issue "/tmp/dependency-audit/analysis/operational-failures.md" \
+            "Auditoria de Dependências: falha operacional do scanner" "operational"
+
+      - name: Aplicar decisão do gate
+        if: always()
+        env:
+          ANALYSIS_STATE: ${{ steps.analysis.outputs.state }}
+        run: |
+          case "$ANALYSIS_STATE" in
+            SCAN_VALID_NO_FINDINGS|SCAN_VALID_WITH_FINDINGS)
+              echo "Auditoria válida: $ANALYSIS_STATE"
+              ;;
+            SCAN_OPERATIONAL_FAILURE)
+              echo "FAIL_CLOSED_OPERATIONAL_FAILURE: resultado não verificável" >&2
+              exit 1
+              ;;
+            *)
+              echo "FAIL_CLOSED_OPERATIONAL_FAILURE: análise ausente/inválida" >&2
+              exit 1
+              ;;
+          esac
