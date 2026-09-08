@@ -6,6 +6,7 @@ on:
     paths:
       - "backend/**"
       - "infra/**"
+      - ".github/scripts/configure-deploy-ssh.sh"
       - ".github/workflows/deploy-prod.yml"
   workflow_dispatch:
     inputs:
@@ -174,16 +175,13 @@ jobs:
           echo "flags=$FLAGS" >> "$GITHUB_OUTPUT"
           echo "Flags: $FLAGS"
 
-      - name: Configurar chave SSH
+      - name: Configurar SSH com referência confiável do host
         env:
           SSH_KEY: ${{ secrets.MAGALU_SSH_KEY }}
           SSH_HOST: ${{ secrets.MAGALU_SSH_HOST }}
+          SSH_KNOWN_HOSTS: ${{ secrets.MAGALU_SSH_KNOWN_HOSTS }}
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          bash .github/scripts/configure-deploy-ssh.sh
 
       - name: Executar deploy.sh na VM
         id: deploy
@@ -196,11 +194,15 @@ jobs:
           LOG=/tmp/deploy-output.log
           REMOTE_SCRIPT="/tmp/tribultz-deploy-${RUN_SHA}.sh"
           scp -o StrictHostKeyChecking=yes \
+              -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+              -o GlobalKnownHostsFile=/dev/null \
               -o ServerAliveInterval=30 \
               -i ~/.ssh/id_ed25519 \
               infra/scripts/deploy.sh \
               "$SSH_USER@$SSH_HOST:$REMOTE_SCRIPT"
           ssh -o StrictHostKeyChecking=yes \
+              -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+              -o GlobalKnownHostsFile=/dev/null \
               -o ServerAliveInterval=30 \
               -i ~/.ssh/id_ed25519 \
               "$SSH_USER@$SSH_HOST" \
@@ -252,4 +254,4 @@ jobs:
 
       - name: Limpar chave SSH
         if: always()
-        run: rm -f ~/.ssh/id_ed25519
+        run: rm -f ~/.ssh/id_ed25519 ~/.ssh/known_hosts
