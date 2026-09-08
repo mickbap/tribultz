@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any, cast
 
 from celery import Task
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -20,7 +21,10 @@ from app.services.task_dispatcher import (
 )
 from app.tasks.task_a_validate import task_a_validate_cbs_ibs
 from app.tasks.task_b_report import task_b_compliance_report
-from app.tasks.task_c_simulation import task_c_whatif_simulation
+from app.tasks.task_c_simulation import (
+    task_c_simples_ibs_cbs_comparison_v1,
+    task_c_whatif_simulation,
+)
 from app.tasks.task_d_reconciliation import task_d_reconciliation
 from app.tasks.task_e_hubspot import task_e_hubspot_sync
 
@@ -37,6 +41,10 @@ TASK_B = TaskDefinition(
 TASK_C = TaskDefinition(
     job_type="task_c_whatif_simulation",
     celery_task=cast(Task, task_c_whatif_simulation),
+)
+TASK_C_SIMPLES_V1 = TaskDefinition(
+    job_type="task_c_simples_ibs_cbs_comparison_v1",
+    celery_task=cast(Task, task_c_simples_ibs_cbs_comparison_v1),
 )
 TASK_D = TaskDefinition(
     job_type="task_d_reconciliation",
@@ -95,6 +103,86 @@ class TaskCRequest(BaseModel):
     base_amount: str
     scenarios: list[TaskCScenario]
     ref_date: str | None = None
+    async_mode: bool = True
+
+
+class _StrictModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class TaskCCreditoProprioSimples(_StrictModel):
+    informacao_minima_suficiente: bool = False
+    aquisicoes_potencialmente_creditaveis: Decimal | None = Field(None, ge=0)
+    coeficiente_credito_potencial_estimado: Decimal | None = Field(None, ge=0, le=1)
+
+    @model_validator(mode="after")
+    def validar_estimativa(self) -> "TaskCCreditoProprioSimples":
+        if self.informacao_minima_suficiente and (
+            self.aquisicoes_potencialmente_creditaveis is None
+            or self.coeficiente_credito_potencial_estimado is None
+        ):
+            raise ValueError("estimativa condicionada exige aquisições e coeficiente")
+        return self
+
+
+class TaskCCustoFinanceiroSimples(_StrictModel):
+    montante: Decimal = Field(..., ge=0)
+    periodo_dias: int = Field(..., ge=0)
+    taxa_custo_capital_anual: Decimal = Field(..., ge=0, le=1)
+
+
+class TaskCPremissasModalidadeSimples(_StrictModel):
+    credito_proprio: TaskCCreditoProprioSimples = Field(
+        default_factory=lambda: TaskCCreditoProprioSimples(
+            aquisicoes_potencialmente_creditaveis=None,
+            coeficiente_credito_potencial_estimado=None,
+        )
+    )
+    custo_incremental_conformidade: Decimal | None = Field(None, ge=0)
+    custo_financeiro_hipotetico: TaskCCustoFinanceiroSimples | None = None
+
+
+class TaskCCreditoB2BSimples(_StrictModel):
+    informacao_minima_suficiente: bool = False
+    credito_potencial_estimado: Decimal | None = Field(None, ge=0)
+
+    @model_validator(mode="after")
+    def validar_estado(self) -> "TaskCCreditoB2BSimples":
+        if self.informacao_minima_suficiente != (
+            self.credito_potencial_estimado is not None
+        ):
+            raise ValueError(
+                "crédito B2B condicionado exige informação mínima e estimativa; "
+                "sem informação suficiente a estimativa deve permanecer ausente"
+            )
+        return self
+
+
+class TaskCCenarioSimplesIBSCBS(_StrictModel):
+    nome: str = Field(..., min_length=1, max_length=200)
+    receita_base: Decimal | None = Field(None, ge=0)
+    aliquota_cbs_regime_regular_cenario: Decimal | None = Field(None, ge=0, le=1)
+    aliquota_ibs_regime_regular_cenario: Decimal | None = Field(None, ge=0, le=1)
+    regime_unico: TaskCPremissasModalidadeSimples = Field(
+        default_factory=lambda: TaskCPremissasModalidadeSimples(
+            custo_incremental_conformidade=None
+        )
+    )
+    regime_regular: TaskCPremissasModalidadeSimples = Field(
+        default_factory=lambda: TaskCPremissasModalidadeSimples(
+            custo_incremental_conformidade=None
+        )
+    )
+    credito_b2b: TaskCCreditoB2BSimples = Field(
+        default_factory=lambda: TaskCCreditoB2BSimples(credito_potencial_estimado=None)
+    )
+
+
+class TaskCSimplesIBSCBSRequest(_StrictModel):
+    simulation_name: str = Field(..., min_length=1, max_length=200)
+    aliquota_efetiva_cbs_simples: Decimal | None = Field(None, ge=0, le=1)
+    aliquota_efetiva_ibs_simples: Decimal | None = Field(None, ge=0, le=1)
+    scenarios: list[TaskCCenarioSimplesIBSCBS] = Field(..., min_length=1, max_length=20)
     async_mode: bool = True
 
 
@@ -205,6 +293,42 @@ def trigger_task_c(
             "base_amount": req.base_amount,
             "scenarios": scenarios,
             "ref_date": req.ref_date,
+        },
+        db=db,
+    )
+
+
+@router.post(
+    "/simulate-simples-ibs-cbs",
+    response_model=TaskEnqueueResponse,
+    status_code=202,
+)
+def trigger_task_c_simples_v1(
+    req: TaskCSimplesIBSCBSRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TaskEnqueueResponse:
+    """Enfileira comparação v1; parâmetros HTTP são sempre dados não validados."""
+    tenant_id = str(current_user.tenant_id)
+    scenarios = [scenario.model_dump(mode="json") for scenario in req.scenarios]
+    payload = req.model_dump(mode="json", exclude={"async_mode"})
+    return _dispatch_task(
+        definition=TASK_C_SIMPLES_V1,
+        tenant_id=tenant_id,
+        payload=payload,
+        task_kwargs={
+            "simulation_name": req.simulation_name,
+            "aliquota_efetiva_cbs_simples": (
+                str(req.aliquota_efetiva_cbs_simples)
+                if req.aliquota_efetiva_cbs_simples is not None
+                else None
+            ),
+            "aliquota_efetiva_ibs_simples": (
+                str(req.aliquota_efetiva_ibs_simples)
+                if req.aliquota_efetiva_ibs_simples is not None
+                else None
+            ),
+            "scenarios": scenarios,
         },
         db=db,
     )

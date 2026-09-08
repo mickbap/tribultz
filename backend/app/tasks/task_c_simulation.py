@@ -8,6 +8,15 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from app.celery_app import celery
+from app.services.simples_ibs_cbs_comparison import (
+    CenarioComparativo,
+    CustoFinanceiroHipotetico,
+    PremissaCreditoProprio,
+    PremissasCreditoB2B,
+    PremissasModalidade,
+    comparar_simples_ibs_cbs,
+    parametros_simples_informados,
+)
 from app.tools.postgres_tool import get_tax_rules, insert_audit_log, job_status_update
 
 logger = logging.getLogger(__name__)
@@ -26,6 +35,68 @@ CREATE TABLE IF NOT EXISTS simulations (
 );
 CREATE INDEX IF NOT EXISTS idx_simulations_tenant ON simulations(tenant_id);
 """
+
+
+def _optional_decimal(value: object) -> Decimal | None:
+    return Decimal(str(value)) if value is not None else None
+
+
+def _credito_proprio_from_payload(payload: dict) -> PremissaCreditoProprio:
+    return PremissaCreditoProprio(
+        informacao_minima_suficiente=bool(payload.get("informacao_minima_suficiente", False)),
+        aquisicoes_potencialmente_creditaveis=_optional_decimal(
+            payload.get("aquisicoes_potencialmente_creditaveis")
+        ),
+        coeficiente_credito_potencial_estimado=_optional_decimal(
+            payload.get("coeficiente_credito_potencial_estimado")
+        ),
+    )
+
+
+def _custo_financeiro_from_payload(
+    payload: dict | None,
+) -> CustoFinanceiroHipotetico | None:
+    if payload is None:
+        return None
+    return CustoFinanceiroHipotetico(
+        montante=Decimal(str(payload["montante"])),
+        periodo_dias=int(payload["periodo_dias"]),
+        taxa_custo_capital_anual=Decimal(str(payload["taxa_custo_capital_anual"])),
+    )
+
+
+def _premissas_modalidade_from_payload(payload: dict) -> PremissasModalidade:
+    return PremissasModalidade(
+        credito_proprio=_credito_proprio_from_payload(payload.get("credito_proprio") or {}),
+        custo_incremental_conformidade=_optional_decimal(
+            payload.get("custo_incremental_conformidade")
+        ),
+        custo_financeiro=_custo_financeiro_from_payload(payload.get("custo_financeiro_hipotetico")),
+    )
+
+
+def _cenario_simples_from_payload(payload: dict) -> CenarioComparativo:
+    credito_b2b = payload.get("credito_b2b") or {}
+    return CenarioComparativo(
+        nome=str(payload["nome"]),
+        receita_base=_optional_decimal(payload.get("receita_base")),
+        aliquota_cbs_regime_regular_cenario=_optional_decimal(
+            payload.get("aliquota_cbs_regime_regular_cenario")
+        ),
+        aliquota_ibs_regime_regular_cenario=_optional_decimal(
+            payload.get("aliquota_ibs_regime_regular_cenario")
+        ),
+        regime_unico=_premissas_modalidade_from_payload(payload.get("regime_unico") or {}),
+        regime_regular=_premissas_modalidade_from_payload(payload.get("regime_regular") or {}),
+        credito_b2b=PremissasCreditoB2B(
+            informacao_minima_suficiente=bool(
+                credito_b2b.get("informacao_minima_suficiente", False)
+            ),
+            credito_potencial_estimado=_optional_decimal(
+                credito_b2b.get("credito_potencial_estimado")
+            ),
+        ),
+    )
 
 
 def _ensure_table() -> None:
@@ -176,6 +247,72 @@ def task_c_whatif_simulation(
 
         logger.info("Task C [%s] simulation=%s scenarios=%d", tenant_slug, simulation_id, len(scenarios))
         return full_result
+    except Exception as exc:
+        if task_id:
+            job_status_update(
+                job_id=task_id,
+                status="FAILED",
+                error_message=str(exc),
+                transaction_id=transaction_id,
+            )
+        raise
+
+
+@celery.task(name="task_c_simples_ibs_cbs_comparison_v1", bind=True, max_retries=3)
+def task_c_simples_ibs_cbs_comparison_v1(
+    self,
+    tenant_id: str,
+    tenant_slug: str,
+    simulation_name: str,
+    aliquota_efetiva_cbs_simples: str | None,
+    aliquota_efetiva_ibs_simples: str | None,
+    scenarios: list[dict],
+    transaction_id: str | None = None,
+) -> dict:
+    """Executa o comparativo v1 sem validar dados informados pelo cliente."""
+    task_id = str(self.request.id) if self.request and self.request.id else ""
+    if task_id:
+        job_status_update(job_id=task_id, status="RUNNING", transaction_id=transaction_id)
+
+    try:
+        parametros = parametros_simples_informados(
+            cbs=_optional_decimal(aliquota_efetiva_cbs_simples),
+            ibs=_optional_decimal(aliquota_efetiva_ibs_simples),
+        )
+        result = comparar_simples_ibs_cbs(
+            parametros=parametros,
+            cenarios=[_cenario_simples_from_payload(item) for item in scenarios],
+        )
+        audit = insert_audit_log(
+            tenant_id=tenant_id,
+            action="simples_ibs_cbs_comparison_v1",
+            entity_type="job",
+            entity_id=task_id or None,
+            payload={
+                "simulation_name": simulation_name,
+                "scenario_count": len(scenarios),
+                "parametros_simples": result["PARAMETROS_SIMPLES"],
+                "modelo": result["versao_modelo"],
+            },
+            transaction_id=transaction_id,
+        )
+        result["simulation_name"] = simulation_name
+        result["audit_id"] = audit["id"]
+
+        if task_id:
+            job_status_update(
+                job_id=task_id,
+                status="SUCCESS",
+                result=result,
+                transaction_id=transaction_id,
+            )
+        logger.info(
+            "Task C Simples v1 [%s] cenarios=%d audit=%s",
+            tenant_slug,
+            len(scenarios),
+            audit["id"],
+        )
+        return result
     except Exception as exc:
         if task_id:
             job_status_update(
