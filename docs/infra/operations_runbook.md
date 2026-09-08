@@ -40,7 +40,10 @@
 
 Gatilho: push em `main` que toca `backend/**` ou `infra/**`, ou `workflow_dispatch` manual.
 
-1. `.github/workflows/deploy-prod.yml` faz checkout, configura chave SSH temporária (secret `MAGALU_SSH_KEY`), conecta em `ubuntu@<MAGALU_SSH_HOST>`.
+1. `.github/workflows/deploy-prod.yml` faz checkout, configura a chave SSH temporária
+   (secret `MAGALU_SSH_KEY`) e cria `known_hosts` exclusivamente a partir da referência
+   administrativa previamente validada (secret `MAGALU_SSH_KNOWN_HOSTS`). A chave
+   apresentada pela conexão não é aceita como referência.
 2. Executa `sudo bash /opt/tribultz/infra/scripts/deploy.sh` na VM, que roda **sequencialmente** (`set -euo pipefail` — para no primeiro erro):
    1. `git pull --ff-only` (aborta com erro se houver mudança local não commitada no working tree da VM — ver "Regra de origem" abaixo)
    2. `docker compose build --pull`
@@ -49,6 +52,31 @@ Gatilho: push em `main` que toca `backend/**` ou `infra/**`, ou `workflow_dispat
    5. Restart `worker`
    6. Restart `beat`
 3. Rollback automático por serviço se o health check falhar (restaura snapshot de imagem `:rollback` salvo antes do build).
+
+### Confiança e rotação da chave SSH do host
+
+O deploy usa `StrictHostKeyChecking=yes`, `UserKnownHostsFile` explícito e ignora o
+arquivo global do runner. Ausência, formato inválido ou divergência da referência
+`MAGALU_SSH_KNOWN_HOSTS` aborta antes de `scp`, `ssh` ou qualquer comando remoto.
+
+Rotação controlada:
+
+1. Obter a nova chave pública do host por um canal administrativo já autenticado e
+   independente da conexão que será usada pelo deploy (console/serial da Magalu ou
+   sessão administrativa validada antes da troca). Não usar a saída de `ssh-keyscan`
+   da nova conexão como autoridade.
+2. Conferir o fingerprint recebido com `ssh-keygen -lf <arquivo>` e registrar a
+   aprovação na issue/change da rotação.
+3. Atualizar o secret do repositório sem imprimir a chave no log:
+   `gh secret set MAGALU_SSH_KNOWN_HOSTS < <arquivo-known-hosts-validado>`.
+4. Executar um deploy controlado de um SHA completo já aprovado pelos gates. Chave
+   divergente deve falhar antes do primeiro comando remoto; chave esperada deve
+   conectar normalmente.
+5. Remover a referência anterior somente após a validação do deploy. O histórico da
+   issue/change e o `updated_at` do secret formam a trilha de auditoria da rotação.
+
+Somente chaves **públicas do host** integram `MAGALU_SSH_KNOWN_HOSTS`. Chaves privadas
+continuam restritas a `MAGALU_SSH_KEY` e não devem aparecer em documentação ou logs.
 
 **Tempo de referência** (deploy controlado, 16/07/2026, run [`29467289172`](https://github.com/mickbap/tribultz/actions/runs/29467289172), commit `bafcdf6`, sem mudança de código): pull 1s → build 2s (cache, sem mudança) → migração 2s (no-op) → API healthy 14s → worker 9s → beat 5s. **Total: 33s**.
 
