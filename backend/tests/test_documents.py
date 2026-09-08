@@ -6,12 +6,14 @@ All DB calls use a fully mocked Session via dependency_overrides.
 
 from __future__ import annotations
 
+import hashlib
 import uuid
 from datetime import datetime, timezone
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from botocore.exceptions import ClientError
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -19,6 +21,15 @@ from app.api.deps import get_current_user
 from app.database import get_db
 from app.models.auth import User
 from app.models.documents import Document
+from app.routers.documents import (
+    MAX_DOCUMENT_BYTES,
+    StoredObjectEvidence,
+    StoredObjectInvalid,
+    StoredObjectMissing,
+    StoredObjectTooLarge,
+    StoredObjectUnavailable,
+    _load_authoritative_object,
+)
 
 # ── Fixtures ───────────────────────────────────────────────────────────────────
 
@@ -63,6 +74,29 @@ def _make_doc(
         fiscal_metadata={},
     )
     return doc
+
+
+def _stored_evidence(
+    content: bytes = b"<NFe><chNFe>ABC123</chNFe></NFe>",
+    *,
+    content_type: str = "application/xml",
+) -> StoredObjectEvidence:
+    return StoredObjectEvidence(
+        content=content,
+        size_bytes=len(content),
+        checksum_sha256=hashlib.sha256(content).hexdigest(),
+        content_type=content_type,
+        etag=hashlib.sha256(b"etag:" + content).hexdigest()[:32],
+    )
+
+
+def _storage_snapshot(evidence: StoredObjectEvidence) -> dict[str, Any]:
+    return {
+        "checksum_sha256": evidence.checksum_sha256,
+        "size_bytes": evidence.size_bytes,
+        "content_type": evidence.content_type,
+        "etag": evidence.etag,
+    }
 
 
 @pytest.fixture()
@@ -175,8 +209,12 @@ class TestConfirmUpload:
     def test_confirm_pending_document(self, client_with_auth, mock_db):
         doc = _make_doc(status="pending_upload")
         self._setup_db(mock_db, doc)
+        authoritative = _stored_evidence()
 
-        with patch("app.routers.documents._extract_xml_metadata", return_value={"chave_acesso": "ABC123"}):
+        with (
+            patch("app.routers.documents._load_authoritative_object", return_value=authoritative),
+            patch("app.routers.documents._extract_xml_metadata", return_value={"chave_acesso": "ABC123"}),
+        ):
             resp = client_with_auth.post(
                 self.ENDPOINT,
                 json={"document_id": str(DOC_ID), "file_size": 4096},
@@ -184,19 +222,27 @@ class TestConfirmUpload:
 
         assert resp.status_code == 200
         assert doc.status == "confirmed"  # type: ignore[truthy-function]
-        assert doc.file_size == 4096  # type: ignore[truthy-function]
+        assert doc.file_size == authoritative.size_bytes  # type: ignore[truthy-function]
+        assert doc.file_size != 4096  # type: ignore[comparison-overlap]  # client is not authoritative
         assert doc.uploaded_at is not None
 
     def test_confirm_already_confirmed_is_idempotent(self, client_with_auth, mock_db):
         doc = _make_doc(status="confirmed")
+        authoritative = _stored_evidence()
+        doc.file_size = authoritative.size_bytes  # type: ignore[assignment]
+        doc.fiscal_metadata = {  # type: ignore[assignment]
+            "storage_evidence": _storage_snapshot(authoritative)
+        }
         self._setup_db(mock_db, doc)
 
-        resp = client_with_auth.post(
-            self.ENDPOINT,
-            json={"document_id": str(DOC_ID)},
-        )
+        with patch("app.routers.documents._load_authoritative_object", return_value=authoritative):
+            resp = client_with_auth.post(
+                self.ENDPOINT,
+                json={"document_id": str(DOC_ID)},
+            )
 
         assert resp.status_code == 200
+        mock_db.commit.assert_not_called()
 
     def test_confirm_error_status_returns_409(self, client_with_auth, mock_db):
         doc = _make_doc(status="error")
@@ -224,21 +270,245 @@ class TestConfirmUpload:
     def test_xml_metadata_extracted_on_confirm(self, client_with_auth, mock_db):
         doc = _make_doc(status="pending_upload")
         self._setup_db(mock_db, doc)
+        authoritative = _stored_evidence()
 
         extracted = {"chave_acesso": "35250101234567890001550010000001231234567890", "cnpj_emitente": "01234567000190"}
 
-        with patch("app.routers.documents._extract_xml_metadata", return_value=extracted):
+        with (
+            patch("app.routers.documents._load_authoritative_object", return_value=authoritative),
+            patch("app.routers.documents._extract_xml_metadata", return_value=extracted),
+        ):
             client_with_auth.post(
                 self.ENDPOINT,
                 json={"document_id": str(DOC_ID)},
             )
 
-        assert doc.fiscal_metadata == extracted  # type: ignore[truthy-function]
+        assert doc.fiscal_metadata["chave_acesso"] == extracted["chave_acesso"]  # type: ignore[index]
+        assert doc.fiscal_metadata["cnpj_emitente"] == extracted["cnpj_emitente"]  # type: ignore[index]
+        assert doc.fiscal_metadata["storage_evidence"] == _storage_snapshot(authoritative)  # type: ignore[index]
+
+    def test_missing_object_is_rejected(self, client_with_auth, mock_db):
+        doc = _make_doc(status="pending_upload")
+        self._setup_db(mock_db, doc)
+
+        with patch("app.routers.documents._load_authoritative_object", side_effect=StoredObjectMissing):
+            resp = client_with_auth.post(self.ENDPOINT, json={"document_id": str(DOC_ID)})
+
+        assert resp.status_code == 409
+        assert doc.status == "pending_upload"  # type: ignore[truthy-function]
+        mock_db.commit.assert_not_called()
+
+    def test_s3_failure_is_fail_closed(self, client_with_auth, mock_db):
+        doc = _make_doc(status="pending_upload")
+        self._setup_db(mock_db, doc)
+
+        with patch(
+            "app.routers.documents._load_authoritative_object",
+            side_effect=StoredObjectUnavailable,
+        ):
+            resp = client_with_auth.post(self.ENDPOINT, json={"document_id": str(DOC_ID)})
+
+        assert resp.status_code == 503
+        assert doc.status == "pending_upload"  # type: ignore[truthy-function]
+        mock_db.commit.assert_not_called()
+
+    def test_invalid_xml_keeps_existing_best_effort_policy(self, client_with_auth, mock_db):
+        doc = _make_doc(status="pending_upload")
+        self._setup_db(mock_db, doc)
+        authoritative = _stored_evidence(b"not xml")
+
+        with patch("app.routers.documents._load_authoritative_object", return_value=authoritative):
+            resp = client_with_auth.post(self.ENDPOINT, json={"document_id": str(DOC_ID)})
+
+        assert resp.status_code == 200
+        assert doc.status == "confirmed"  # type: ignore[truthy-function]
+        assert set(doc.fiscal_metadata) == {"storage_evidence"}  # type: ignore[arg-type]
+
+    def test_optional_extraction_failure_cannot_mask_required_validation(
+        self, client_with_auth, mock_db
+    ):
+        doc = _make_doc(status="pending_upload")
+        self._setup_db(mock_db, doc)
+        authoritative = _stored_evidence()
+
+        with (
+            patch("app.routers.documents._load_authoritative_object", return_value=authoritative),
+            patch("app.routers.documents._extract_xml_metadata", side_effect=RuntimeError("optional")),
+        ):
+            resp = client_with_auth.post(self.ENDPOINT, json={"document_id": str(DOC_ID)})
+
+        assert resp.status_code == 200
+        assert doc.fiscal_metadata["storage_evidence"] == _storage_snapshot(authoritative)  # type: ignore[index]
+
+    def test_overwrite_after_confirm_is_rejected(self, client_with_auth, mock_db):
+        original = _stored_evidence(b"original")
+        overwritten = _stored_evidence(b"changed!")
+        doc = _make_doc(status="confirmed")
+        doc.file_size = original.size_bytes  # type: ignore[assignment]
+        doc.fiscal_metadata = {  # type: ignore[assignment]
+            "storage_evidence": _storage_snapshot(original)
+        }
+        self._setup_db(mock_db, doc)
+
+        with patch("app.routers.documents._load_authoritative_object", return_value=overwritten):
+            resp = client_with_auth.post(self.ENDPOINT, json={"document_id": str(DOC_ID)})
+
+        assert resp.status_code == 409
+        assert "sobrescrito" in resp.json()["detail"]
+        mock_db.commit.assert_not_called()
+
+    def test_tenant_predicate_is_applied_to_confirmation(self, client_with_auth, mock_db):
+        scalar_result = MagicMock()
+        scalar_result.scalar_one_or_none.return_value = None
+        mock_db.execute.return_value = scalar_result
+
+        resp = client_with_auth.post(self.ENDPOINT, json={"document_id": str(DOC_ID)})
+
+        assert resp.status_code == 404
+        statement = mock_db.execute.call_args.args[0]
+        sql = str(statement.compile(compile_kwargs={"literal_binds": True}))
+        assert TENANT_ID.hex in sql
+        assert "FOR UPDATE" in sql
+
+    def test_legacy_confirmed_row_gets_authoritative_snapshot(self, client_with_auth, mock_db):
+        doc = _make_doc(status="confirmed")
+        doc.fiscal_metadata = {"legacy": True}  # type: ignore[assignment]
+        self._setup_db(mock_db, doc)
+        authoritative = _stored_evidence()
+
+        with patch("app.routers.documents._load_authoritative_object", return_value=authoritative):
+            resp = client_with_auth.post(self.ENDPOINT, json={"document_id": str(DOC_ID)})
+
+        assert resp.status_code == 200
+        assert doc.fiscal_metadata["legacy"] is True  # type: ignore[index]
+        assert doc.fiscal_metadata["storage_evidence"] == _storage_snapshot(authoritative)  # type: ignore[index]
+        mock_db.commit.assert_called_once()
 
     def test_unauthenticated_returns_401(self):
         c = TestClient(app)
         resp = c.post(self.ENDPOINT, json={"document_id": str(DOC_ID)})
         assert resp.status_code == 401
+
+
+class TestAuthoritativeS3Read:
+    class _BoundedStream:
+        def __init__(self, total_bytes: int):
+            self.remaining = total_bytes
+            self.total_returned = 0
+            self.max_requested = 0
+            self.closed = False
+
+        def read(self, requested: int) -> bytes:
+            self.max_requested = max(self.max_requested, requested)
+            if self.remaining == 0:
+                return b""
+            returned = min(requested, self.remaining)
+            self.remaining -= returned
+            self.total_returned += returned
+            return b"x" * returned
+
+        def close(self) -> None:
+            self.closed = True
+
+    def test_oversize_stream_aborts_at_limit_without_large_fixture(self):
+        stream = self._BoundedStream(MAX_DOCUMENT_BYTES + 1)
+        client = MagicMock()
+        client.get_object.return_value = {
+            # Simula metadata inconsistente/defasada para provar o teto durante a leitura.
+            "ContentLength": MAX_DOCUMENT_BYTES,
+            "ContentType": "application/xml",
+            "Body": stream,
+            "ETag": '"etag"',
+        }
+
+        with (
+            patch("app.routers.documents.s3_tool._client", return_value=client),
+            pytest.raises(StoredObjectTooLarge),
+        ):
+            _load_authoritative_object(STORAGE_KEY, "application/xml")
+
+        assert stream.total_returned == MAX_DOCUMENT_BYTES + 1
+        assert stream.max_requested <= 64 * 1024
+        assert stream.closed is True
+
+    def test_authoritative_oversize_is_rejected_before_body_read(self):
+        stream = self._BoundedStream(1)
+        client = MagicMock()
+        client.get_object.return_value = {
+            "ContentLength": MAX_DOCUMENT_BYTES + 1,
+            "ContentType": "application/xml",
+            "Body": stream,
+        }
+
+        with (
+            patch("app.routers.documents.s3_tool._client", return_value=client),
+            pytest.raises(StoredObjectTooLarge),
+        ):
+            _load_authoritative_object(STORAGE_KEY, "application/xml")
+
+        assert stream.total_returned == 0
+        assert stream.closed is True
+
+    def test_authoritative_content_type_mismatch_is_rejected(self):
+        stream = self._BoundedStream(1)
+        client = MagicMock()
+        client.get_object.return_value = {
+            "ContentLength": 1,
+            "ContentType": "application/pdf",
+            "Body": stream,
+        }
+
+        with (
+            patch("app.routers.documents.s3_tool._client", return_value=client),
+            pytest.raises(StoredObjectInvalid),
+        ):
+            _load_authoritative_object(STORAGE_KEY, "application/xml")
+
+        assert stream.total_returned == 0
+        assert stream.closed is True
+
+    def test_missing_s3_object_is_classified(self):
+        client = MagicMock()
+        client.get_object.side_effect = ClientError(
+            {"Error": {"Code": "NoSuchKey", "Message": "missing"}},
+            "GetObject",
+        )
+
+        with (
+            patch("app.routers.documents.s3_tool._client", return_value=client),
+            pytest.raises(StoredObjectMissing),
+        ):
+            _load_authoritative_object(STORAGE_KEY, "application/xml")
+
+    def test_s3_transport_failure_is_classified(self):
+        client = MagicMock()
+        client.get_object.side_effect = ConnectionError("S3 unavailable")
+
+        with (
+            patch("app.routers.documents.s3_tool._client", return_value=client),
+            pytest.raises(StoredObjectUnavailable),
+        ):
+            _load_authoritative_object(STORAGE_KEY, "application/xml")
+
+    def test_authoritative_size_and_checksum_come_from_s3(self):
+        content = b"<NFe/>"
+        stream = self._BoundedStream(len(content))
+        client = MagicMock()
+        client.get_object.return_value = {
+            "ContentLength": len(content),
+            "ContentType": "application/xml",
+            "Body": stream,
+            "ETag": '"etag"',
+        }
+
+        with patch("app.routers.documents.s3_tool._client", return_value=client):
+            evidence = _load_authoritative_object(STORAGE_KEY, "application/xml")
+
+        # The lazy stream intentionally yields x bytes: evidence reflects stored bytes,
+        # never a client declaration or the local `content` variable.
+        assert evidence.size_bytes == len(content)
+        assert evidence.checksum_sha256 == hashlib.sha256(b"x" * len(content)).hexdigest()
+        assert stream.closed is True
 
 
 # ── Issue #125: GET /documents ─────────────────────────────────────────────────
