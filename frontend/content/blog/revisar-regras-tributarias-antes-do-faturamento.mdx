@@ -8,13 +8,59 @@ author:
   jobTitle: "Conteúdo Fiscal"
   url: "https://tribultz.com.br"
 publishedAt: "2026-09-08T03:46:05.000Z"
-tags: []
+updatedAt: "2026-09-08"
+updateNote: "Revisão fiscal, referências oficiais e proveniência dos claims técnicos."
+tags:
+  - "validação fiscal"
+  - faturamento
+  - NF-e
+  - ERP
+  - "Reforma Tributária"
+  - "evidência auditável"
 coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/4fb8471f-d230-4cb4-817e-48e94d580302/workflows/2a613ae8-4000-4be9-802a-7fe84f6a8b3a.webp"
-legalRefs: []
+provenance:
+  - claim_scope: "O MOC reúne leiaute e regras de validação técnicas da NF-e/NFC-e"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "MOC — Manual de Orientação ao Contribuinte"
+    artifact_version: "7.0"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=ndIjl%2BiEFdE%3D"
+    verified_at: "2026-09-08"
+  - claim_scope: "Campos e regras de validação de IBS/CBS da NF-e/NFC-e são especificados em Nota Técnica própria"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "NT 2025.002-RTC"
+    artifact_version: "1.51"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-09-08"
+    claim_scope_limit: "A versão do schema, a existência da regra, sua aplicação pelo autorizador e a obrigação jurídica são camadas distintas."
+  - claim_scope: "O adiamento de validações do autorizador não suspendeu por si só as obrigações jurídicas de informação"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Ato Técnico Conjunto nº 1/2026 e esclarecimento de 06/08/2026"
+    source_authority: "Receita Federal do Brasil e Comitê Gestor do IBS"
+    source_url: "https://www.cgibs.gov.br/receita-federal-e-comite-gestor-do-ibs-esclarecem-adiamento-das-regras-de-validacao-dos-documentos-fiscais-eletronicos"
+    verified_at: "2026-09-08"
+    claim_scope_limit: "O alcance concreto depende do documento, regra, ambiente e período aplicáveis."
+  - claim_scope: "Validação preventiva e revisão posterior possuem finalidades operacionais complementares"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "MOC — Manual de Orientação ao Contribuinte, leiaute e regras de validação"
+    artifact_version: "7.0"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=ndIjl%2BiEFdE%3D"
+    verified_at: "2026-09-08"
+    claim_scope_limit: "Prática de controle; não garante ausência de rejeição nem substitui análise tributária."
+legalRefs:
+  - instrumento: "LC 214/2025"
+    descricao: "Institui IBS e CBS e fornece a base legal material da transição mencionada no artigo."
+    link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
+  - instrumento: "MOC 7.0 — NF-e/NFC-e"
+    descricao: "Referência oficial para leiaute, integração e regras de validação dos documentos."
+    link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=ndIjl%2BiEFdE%3D"
+  - instrumento: "NT 2025.002-RTC"
+    descricao: "Documentação técnica de adequação da NF-e/NFC-e aos campos e regras de validação da Reforma Tributária do Consumo."
+    link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
 soroGuid: "6b4551e6-1602-4596-97d6-e070898c8a4d"
 ---
-
-{/* Gerado pelo Soro — REVISAR antes do merge: precisão fiscal, legalRefs, tags, category. */}
 
 <p>Uma nota fiscal rejeitada no momento da expedição raramente começa no XML. Em geral, ela nasce antes: em um cadastro incompleto, em uma classificação desatualizada, em uma regra fiscal parametrizada para outro cenário ou em uma interpretação que não foi traduzida para o ERP. Por isso, <strong>revisar regras tributárias antes do faturamento</strong> é uma decisão operacional, não apenas uma rotina do departamento fiscal.</p>
 <p>Quando a checagem ocorre somente após a emissão, a empresa já expôs a operação a retrabalho, atrasos na liberação de pedidos, ajustes manuais e discussões sobre responsabilidade entre fiscal, TI, cadastro e operação. A prevenção muda essa lógica: as regras são avaliadas antes de o documento eletrônico seguir para autorização, quando ainda existe margem para corrigir a origem da inconsistência.</p>
@@ -37,7 +83,7 @@ soroGuid: "6b4551e6-1602-4596-97d6-e070898c8a4d"
 <h2>A Reforma Tributária exige controle de versão, não improviso</h2>
 <p>A transição da Reforma Tributária amplia a necessidade de revisar regras antes do faturamento. Conceitos, campos, classificações e tratamentos relacionados a <a href="https://tribultz.com.br/blog/classtrib-2026-mapear-ncm-regime-ibs-cbs">CBS, IBS e cClassTrib</a> exigem atenção à fase regulatória aplicável. Há diferença entre especificações em teste, regras previstas, produção e vigência legal.</p>
 <p>O risco não está somente em deixar de atualizar um parâmetro. Está também em antecipar uma regra sem confirmação na documentação oficial ou aplicar uma estrutura destinada a outro período. Empresas com processos maduros tratam mudanças regulatórias como gestão de versões: identificam o que mudou, avaliam os impactos por operação, atualizam a matriz de regras e registram a evidência da decisão.</p>
-<p>Esse processo precisa envolver fiscal, TI, cadastro e operação. A área tributária interpreta os requisitos e define critérios internos; TI garante que as regras sejam implementadas de forma controlada; a operação informa exceções reais do fluxo; e o time de cadastro preserva a qualidade do dado que alimenta todo o processo. Sem esse alinhamento, a empresa pode ter regras corretas em documentos separados e uma execução inconsistente no sistema.</p>
+<p>Esse processo precisa envolver fiscal, TI, cadastro e operação. A área tributária interpreta os requisitos e define critérios internos; TI implementa as regras de forma controlada; a operação informa exceções reais do fluxo; e o time de cadastro preserva a qualidade do dado que alimenta todo o processo. Sem esse alinhamento, a empresa pode ter regras corretas em documentos separados e uma execução inconsistente no sistema.</p>
 <h2>Como estruturar uma revisão preventiva</h2>
 <p>O ponto de partida é definir em que momento a validação será executada. Para operações de maior volume ou criticidade, o melhor cenário é posicionar a inteligência tributária entre o ERP e a autorização fiscal. Assim, a empresa analisa o documento e seus dados de origem antes de a emissão se tornar um problema operacional.</p>
 <p>Em seguida, é necessário estabelecer critérios de bloqueio, alerta e encaminhamento. Nem toda inconsistência exige a mesma resposta. Há casos em que o faturamento deve parar até a regularização; em outros, um alerta pode ser direcionado ao responsável para análise dentro de uma regra de exceção aprovada. O critério deve ser definido pela governança da empresa, considerando materialidade, recorrência e impacto operacional.</p>

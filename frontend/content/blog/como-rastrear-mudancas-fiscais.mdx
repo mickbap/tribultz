@@ -8,13 +8,59 @@ author:
   jobTitle: "Conteúdo Fiscal"
   url: "https://tribultz.com.br"
 publishedAt: "2026-09-06T03:46:06.000Z"
-tags: []
+updatedAt: "2026-09-08"
+updateNote: "Revisão fiscal, referências oficiais e proveniência dos claims técnicos."
+tags:
+  - "monitoramento fiscal"
+  - "mudanças regulatórias"
+  - "governança fiscal"
+  - NF-e
+  - ERP
+  - "evidência auditável"
 coverImage: "https://afocirmbqdxnkyescnev.supabase.co/storage/v1/object/public/featured-images/4fb8471f-d230-4cb4-817e-48e94d580302/workflows/4b3c7af6-8e83-43c7-9239-ebd71804a61f.webp"
-legalRefs: []
+provenance:
+  - claim_scope: "O MOC reúne leiaute e regras de validação técnicas da NF-e/NFC-e"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "MOC — Manual de Orientação ao Contribuinte"
+    artifact_version: "7.0"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=ndIjl%2BiEFdE%3D"
+    verified_at: "2026-09-08"
+  - claim_scope: "Campos e regras de validação de IBS/CBS da NF-e/NFC-e são especificados em Nota Técnica própria"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "NT 2025.002-RTC"
+    artifact_version: "1.51"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
+    verified_at: "2026-09-08"
+    claim_scope_limit: "A versão do schema, a existência da regra, sua aplicação pelo autorizador e a obrigação jurídica são camadas distintas."
+  - claim_scope: "O adiamento de validações do autorizador não suspendeu por si só as obrigações jurídicas de informação"
+    claim_classification: "FATO_NORMATIVO"
+    artifact: "Ato Técnico Conjunto nº 1/2026 e esclarecimento de 06/08/2026"
+    source_authority: "Receita Federal do Brasil e Comitê Gestor do IBS"
+    source_url: "https://www.cgibs.gov.br/receita-federal-e-comite-gestor-do-ibs-esclarecem-adiamento-das-regras-de-validacao-dos-documentos-fiscais-eletronicos"
+    verified_at: "2026-09-08"
+    claim_scope_limit: "O alcance concreto depende do documento, regra, ambiente e período aplicáveis."
+  - claim_scope: "Registrar fonte, versão, data de aplicação e evidência é uma prática de governança operacional"
+    claim_classification: "INTERPRETACAO_SEGURA"
+    artifact: "MOC — Manual de Orientação ao Contribuinte e NT 2025.002-RTC"
+    artifact_version: "MOC 7.0 / NT 1.51"
+    source_authority: "ENCAT / Portal Nacional da Nota Fiscal Eletrônica"
+    source_url: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=ndIjl%2BiEFdE%3D"
+    verified_at: "2026-09-08"
+    claim_scope_limit: "Recomendação de controle; não é obrigação legal universal."
+legalRefs:
+  - instrumento: "LC 214/2025"
+    descricao: "Institui IBS e CBS e fornece a base legal material da transição mencionada no artigo."
+    link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm"
+  - instrumento: "MOC 7.0 — NF-e/NFC-e"
+    descricao: "Referência oficial para leiaute, integração e regras de validação dos documentos."
+    link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=ndIjl%2BiEFdE%3D"
+  - instrumento: "NT 2025.002-RTC"
+    descricao: "Documentação técnica de adequação da NF-e/NFC-e aos campos e regras de validação da Reforma Tributária do Consumo."
+    link: "https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY="
 soroGuid: "fca25c65-6f99-4c75-80fe-622c3201fd2f"
 ---
-
-{/* Gerado pelo Soro — REVISAR antes do merge: precisão fiscal, legalRefs, tags, category. */}
 
 <p>Uma mudança fiscal raramente chega ao faturamento como uma simples atualização de regra. Ela costuma aparecer como uma nova exigência de preenchimento, uma classificação que precisa ser revista, uma rejeição inesperada ou uma dúvida sobre a parametrização do ERP. Rastrear mudanças fiscais, portanto, não é acompanhar notícias tributárias: é transformar alterações normativas em decisões operacionais verificáveis antes da emissão de documentos eletrônicos.</p>
 <p>Para empresas com catálogo amplo, múltiplas filiais e alto volume de NF-e, CT-e, documentos de entrada e obrigações acessórias, o risco está no intervalo entre a publicação de uma regra e sua aplicação consistente. Quando esse intervalo depende de planilhas isoladas, conhecimento concentrado ou ajustes manuais, a operação perde previsibilidade. O faturamento pode seguir emitindo documentos com dados incoerentes até que uma rejeição, uma divergência no SPED Fiscal ou uma auditoria revele o problema.</p>
