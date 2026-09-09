@@ -1,6 +1,7 @@
 """Tests for PDF report generation — S18."""
 
 import hashlib
+import importlib.metadata
 import json
 import uuid
 
@@ -12,7 +13,13 @@ from datetime import datetime, timezone
 from app.services.pdf_service import (
     generate_validation_report_pdf,
     generate_batch_report_pdf,
+    generate_credit_report_pdf,
+    generate_prospect_diagnostic_pdf,
     _format_brasilia,
+    _temporal_governance_stamp,
+    _tzdata_version,
+    TZDATA_VERSION,
+    PLATFORM_TZ_LABEL,
 )
 
 
@@ -182,6 +189,99 @@ class TestPdfServiceBatch:
             overall_status="CONFORME",
         )
         assert isinstance(result["bytes"], bytes)
+
+
+class TestTemporalGovernanceStamp:
+    """#606 — carimbo duplo (UTC+IANA+tzdata) + quadro "Governança Temporal".
+
+    Formato exato: knowledge/engineering/tempo-e-auditoria.md (RF-3, Brain).
+    """
+
+    def test_stamp_fields_are_all_present(self):
+        instant = datetime(2026, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
+        stamp = _temporal_governance_stamp(instant)
+        assert stamp["emitted_at_utc"] == "2026-06-15T12:00:00Z"
+        assert stamp["emitted_tz"] == "America/Sao_Paulo"
+        assert stamp["emitted_local"] == "15/06/2026 09:00:00"
+        assert stamp["tzdata_version"] == TZDATA_VERSION
+
+    def test_platform_tz_label_uses_canonical_format(self):
+        """Formato único: "Area/Localidade (UTC±hh:mm)", sem abreviação."""
+        assert PLATFORM_TZ_LABEL == "America/Sao_Paulo (UTC\u221203:00)"
+
+    def test_emitted_local_line_pairs_local_time_with_platform_label(self):
+        instant = datetime(2026, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        stamp = _temporal_governance_stamp(instant)
+        assert stamp["emitted_local_line"] == f"31/12/2025 21:00:00 \u00b7 {PLATFORM_TZ_LABEL}"
+
+    def test_emitted_utc_line_carries_tzdata_version(self):
+        instant = datetime(2026, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        stamp = _temporal_governance_stamp(instant)
+        assert stamp["emitted_utc_line"] == f"2026-01-01T00:00:00Z \u00b7 tzdata {TZDATA_VERSION}"
+
+    def test_date_rolls_across_midnight_boundary(self):
+        """Mesma armadilha do #419 — instante UTC pode virar o dia anterior em BRT."""
+        instant = datetime(2026, 3, 1, 2, 0, 0, tzinfo=timezone.utc)
+        stamp = _temporal_governance_stamp(instant)
+        assert stamp["emitted_local"] == "28/02/2026 23:00:00"
+
+    def test_tzdata_version_reads_installed_pypi_package(self):
+        """Fonte única (RNF-1): importlib.metadata, não o tzdata do SO."""
+        assert _tzdata_version() == importlib.metadata.version("tzdata")
+        assert TZDATA_VERSION == _tzdata_version()
+
+    def test_tzdata_version_falls_back_when_package_missing(self, monkeypatch):
+        def _raise(_name: str) -> str:
+            raise importlib.metadata.PackageNotFoundError
+
+        monkeypatch.setattr(importlib.metadata, "version", _raise)
+        assert _tzdata_version() == "desconhecida"
+
+
+class TestTemporalGovernanceInPdfArtifacts:
+    """O carimbo deve aparecer no HTML/PDF real de cada um dos 4 tipos de laudo,
+    e o dict de retorno de cada função deve carregar os campos de evidência."""
+
+    def _assert_stamp_in_html_fallback(self, data: bytes) -> None:
+        if not data.startswith(b"<!DOCTYPE"):
+            return  # PDF binário real — checagem de string não aplica
+        assert "Governança Temporal".encode("utf-8") in data
+        assert "tzdata".encode("utf-8") in data
+        assert PLATFORM_TZ_LABEL.encode("utf-8") in data
+
+    def test_validation_pdf_carries_stamp(self):
+        result = generate_validation_report_pdf(
+            company_name="Empresa Teste LTDA", cnpj=CNPJ,
+            reference_period="2026-03", job_id=JOB_ID,
+            findings=[], overall_status="CONFORME",
+        )
+        assert {"emitted_at_utc", "emitted_tz", "emitted_local", "tzdata_version"} <= result.keys()
+        self._assert_stamp_in_html_fallback(result["bytes"])
+
+    def test_batch_pdf_carries_stamp(self):
+        result = generate_batch_report_pdf(
+            company_name="Empresa Teste LTDA", cnpj=CNPJ,
+            reference_period="2026-03", job_id=JOB_ID,
+            invoices=[], overall_status="CONFORME",
+        )
+        assert {"emitted_at_utc", "emitted_tz", "emitted_local", "tzdata_version"} <= result.keys()
+        self._assert_stamp_in_html_fallback(result["bytes"])
+
+    def test_credit_pdf_carries_stamp(self):
+        result = generate_credit_report_pdf(
+            company_name="Empresa Teste LTDA", cnpj=CNPJ,
+            period_type="month", periods=[],
+        )
+        assert {"emitted_at_utc", "emitted_tz", "emitted_local", "tzdata_version"} <= result.keys()
+        self._assert_stamp_in_html_fallback(result["bytes"])
+
+    def test_prospect_diagnostic_pdf_carries_stamp(self):
+        result = generate_prospect_diagnostic_pdf(
+            office_name="Escritório Teste", invoices=[],
+            trial_url="https://tribultz.com.br/trial",
+        )
+        assert {"emitted_at_utc", "emitted_tz", "emitted_local", "tzdata_version"} <= result.keys()
+        self._assert_stamp_in_html_fallback(result["bytes"])
 
 
 # ── Router registration (no-DB check) ──────────────────────────

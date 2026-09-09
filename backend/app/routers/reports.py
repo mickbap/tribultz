@@ -80,6 +80,13 @@ class ReportCreatedResponse(BaseModel):
     expires_at: datetime
     report_hash: str
     file_size: int
+    # Governança Temporal (#606, RF-3) — carimbo do instante de emissão do
+    # PDF, replicado aqui porque vive só no artefato (sem migration/coluna
+    # nova em Report — ver knowledge/engineering/tempo-e-auditoria.md).
+    emitted_at_utc: str
+    emitted_tz: str
+    emitted_local: str
+    tzdata_version: str
 
 
 class ReportListItem(BaseModel):
@@ -238,6 +245,10 @@ async def generate_validation_pdf(
         expires_at=expires_at,
         report_hash=report_hash,
         file_size=result["file_size"],
+        emitted_at_utc=result["emitted_at_utc"],
+        emitted_tz=result["emitted_tz"],
+        emitted_local=result["emitted_local"],
+        tzdata_version=result["tzdata_version"],
     )
 
 
@@ -336,6 +347,10 @@ async def generate_batch_pdf(
         expires_at=expires_at,
         report_hash=report_hash,
         file_size=result["file_size"],
+        emitted_at_utc=result["emitted_at_utc"],
+        emitted_tz=result["emitted_tz"],
+        emitted_local=result["emitted_local"],
+        tzdata_version=result["tzdata_version"],
     )
 
 
