@@ -1,5 +1,6 @@
 """PDF report generation — Jinja2 HTML templates rendered to PDF via WeasyPrint."""
 
+import importlib.metadata
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
@@ -18,6 +19,29 @@ TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 # storage. Ver knowledge/engineering/tempo-e-auditoria.md no Brain.
 BRASILIA_TZ = ZoneInfo("America/Sao_Paulo")
 
+#: Rótulo canônico da hora oficial da plataforma (T2) — formato único definido
+#: em tempo-e-auditoria.md: "Area/Localidade (UTC±hh:mm)", sem abreviação.
+PLATFORM_TZ_LABEL = "America/Sao_Paulo (UTC\u221203:00)"
+
+
+def _tzdata_version() -> str:
+    """Versão do pacote PyPI ``tzdata`` — fonte única e reprodutível (RNF-1).
+
+    NÃO usa o tzdata do sistema operacional: a imagem runtime (Dockerfile,
+    stage runtime, python:3.12-slim) não instala o pacote apt `tzdata`
+    explicitamente, então essa versão não é controlada pelo projeto. O pacote
+    PyPI é dependência direta pinada em requirements.txt (#606) — decisão
+    registrada em knowledge/engineering/tempo-e-auditoria.md.
+    """
+    try:
+        return importlib.metadata.version("tzdata")
+    except importlib.metadata.PackageNotFoundError:
+        logger.warning("Pacote tzdata não encontrado — carimbo de evidência sem versão")
+        return "desconhecida"
+
+
+TZDATA_VERSION = _tzdata_version()
+
 
 def _format_brasilia(instant_utc: datetime) -> str:
     """Converte um instante UTC aware para string de exibição em America/Sao_Paulo."""
@@ -26,6 +50,31 @@ def _format_brasilia(instant_utc: datetime) -> str:
 
 def _generated_at_brasilia() -> str:
     return _format_brasilia(datetime.now(timezone.utc))
+
+
+def _temporal_governance_stamp(instant_utc: datetime) -> dict[str, str]:
+    """Carimbo duplo + quadro "Governança Temporal" (RF-3, #606).
+
+    Grava, como parte imutável do artefato: hora local oficial (T2) + IANA +
+    offset + UTC + versão do tzdata. Formato exato definido em
+    knowledge/engineering/tempo-e-auditoria.md (Brain), seção "Documentos
+    emitidos". Não inclui "Horário do Documento" (T1): estes relatórios
+    resumem findings de um ou mais documentos fiscais, sem um único offset
+    de emissão canônico a citar — inventar um violaria a mesma regra de
+    honestidade que rejeita dado não verificável em qualquer evidência.
+    """
+    local = instant_utc.astimezone(BRASILIA_TZ)
+    emitted_at_utc = instant_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    emitted_local = local.strftime("%d/%m/%Y %H:%M:%S")
+    return {
+        "emitted_at_utc": emitted_at_utc,
+        "emitted_tz": "America/Sao_Paulo",
+        "emitted_local": emitted_local,
+        "tzdata_version": TZDATA_VERSION,
+        "emitted_local_line": f"{emitted_local} \u00b7 {PLATFORM_TZ_LABEL}",
+        "emitted_utc_line": f"{emitted_at_utc} \u00b7 tzdata {TZDATA_VERSION}",
+        "platform_tz_label": PLATFORM_TZ_LABEL,
+    }
 
 
 _jinja_env = Environment(
@@ -81,6 +130,7 @@ def generate_validation_report_pdf(
     """
     template = _jinja_env.get_template("report_validation.html")
     now = _generated_at_brasilia()
+    stamp = _temporal_governance_stamp(datetime.now(timezone.utc))
 
     # Categorize findings by severity
     errors = [f for f in findings if f.get("severity") == "ERROR"]
@@ -105,6 +155,7 @@ def generate_validation_report_pdf(
         infos=infos,
         total_findings=len(findings),
         report_hash=report_hash,
+        temporal=stamp,
     )
 
     try:
@@ -125,6 +176,7 @@ def generate_validation_report_pdf(
         "bytes": pdf_bytes,
         "storage_key": storage_key,
         "file_size": len(pdf_bytes),
+        **stamp,
     }
 
 
@@ -144,6 +196,7 @@ def generate_credit_report_pdf(
     """
     template = _jinja_env.get_template("report_credits.html")
     now = _generated_at_brasilia()
+    stamp = _temporal_governance_stamp(datetime.now(timezone.utc))
 
     def _sum(key: str) -> float:
         total = 0.0
@@ -164,6 +217,7 @@ def generate_credit_report_pdf(
         total_apropriated=_sum("apropriated_total"),
         total_available=_sum("available_total"),
         total_at_risk=_sum("at_risk_total"),
+        temporal=stamp,
     )
 
     try:
@@ -183,6 +237,7 @@ def generate_credit_report_pdf(
         "bytes": pdf_bytes,
         "storage_key": storage_key,
         "file_size": len(pdf_bytes),
+        **stamp,
     }
 
 
@@ -202,6 +257,7 @@ def generate_prospect_diagnostic_pdf(
     """
     template = _jinja_env.get_template("report_prospect_diagnostic.html")
     now = _generated_at_brasilia()
+    stamp = _temporal_governance_stamp(datetime.now(timezone.utc))
 
     total = len(invoices)
     rejected = sum(1 for inv in invoices if inv.get("status") == "FAIL")
@@ -213,6 +269,7 @@ def generate_prospect_diagnostic_pdf(
         total=total,
         rejected=rejected,
         trial_url=trial_url,
+        temporal=stamp,
     )
 
     try:
@@ -232,6 +289,7 @@ def generate_prospect_diagnostic_pdf(
         "bytes": pdf_bytes,
         "storage_key": storage_key,
         "file_size": len(pdf_bytes),
+        **stamp,
     }
 
 
@@ -252,6 +310,7 @@ def generate_batch_report_pdf(
     """
     template = _jinja_env.get_template("report_batch.html")
     now = _generated_at_brasilia()
+    stamp = _temporal_governance_stamp(datetime.now(timezone.utc))
 
     # Summary stats
     total = len(invoices)
@@ -271,6 +330,7 @@ def generate_batch_report_pdf(
         failed=failed,
         pass_rate=f"{(passed / total * 100):.1f}" if total else "0",
         report_hash=report_hash,
+        temporal=stamp,
     )
 
     try:
@@ -290,4 +350,5 @@ def generate_batch_report_pdf(
         "bytes": pdf_bytes,
         "storage_key": storage_key,
         "file_size": len(pdf_bytes),
+        **stamp,
     }

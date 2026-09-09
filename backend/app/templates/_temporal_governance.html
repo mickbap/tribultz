@@ -1,0 +1,24 @@
+<!--
+  Partial compartilhado — Governança Temporal (RF-3, #606).
+  Incluído por todos os report_*.html via include (mesmo FileSystemLoader).
+  Formato exato: knowledge/engineering/tempo-e-auditoria.md (Brain), seção
+  "Documentos emitidos". Requer a variável "temporal" (dict de
+  pdf_service._temporal_governance_stamp) no contexto do template pai.
+
+  Sem linha "Horário do Documento" (T1): estes relatórios agregam findings de
+  um ou mais documentos fiscais, sem um único offset de emissão canônico a
+  citar — afirmar um T1 aqui seria inventar dado que a fonte não sustenta.
+-->
+<div class="temporal-stamp">
+  Emitido em: {{ temporal.emitted_local_line }}<br>
+  UTC: {{ temporal.emitted_utc_line }}
+</div>
+
+<div class="temporal-governance">
+  <div class="tg-title">Governança Temporal</div>
+  <table class="tg-table">
+    <tr><td>Horário Oficial da Plataforma</td><td>{{ temporal.platform_tz_label }}</td></tr>
+    <tr><td>Persistência</td><td>UTC</td></tr>
+    <tr><td>tzdata</td><td>{{ temporal.tzdata_version }}</td></tr>
+  </table>
+</div>

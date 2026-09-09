@@ -36,6 +36,13 @@
     .row-pass td:last-child { color: #16a34a; font-weight: 600; }
     .row-fail td:last-child { color: #dc2626; font-weight: 600; }
     .footer { margin-top: 24pt; padding-top: 8pt; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #94a3b8; text-align: center; }
+    .temporal-stamp { margin-top: 20pt; font-size: 8pt; color: #64748b; text-align: center; }
+    .temporal-governance { margin-top: 8pt; border: 1px solid #e2e8f0; border-radius: 4pt; padding: 6pt 10pt; }
+    .temporal-governance .tg-title { font-size: 8pt; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5pt; margin-bottom: 4pt; }
+    .tg-table { width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 0; }
+    .tg-table td { padding: 2pt 6pt; border-bottom: none; color: #64748b; }
+    .tg-table td:first-child { color: #94a3b8; }
+    .tg-table tr:nth-child(even) td { background: transparent; }
   </style>
 </head>
 <body>
@@ -128,6 +135,8 @@
     </tbody>
   </table>
 </div>
+
+{% include "_temporal_governance.html" %}
 
 <div class="footer">
   Relatório gerado automaticamente pela plataforma Tribultz — tribultz.com.br<br>

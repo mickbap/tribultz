@@ -127,6 +127,10 @@ class TestReportsPost:
                 "bytes": b"%PDF-1.4 fake",
                 "storage_key": f"reports/{TENANT_ID}/validation/x.pdf",
                 "file_size": 13,
+                "emitted_at_utc": "2026-09-09T12:00:00Z",
+                "emitted_tz": "America/Sao_Paulo",
+                "emitted_local": "09/09/2026 09:00:00",
+                "tzdata_version": "2026.2",
             }
             resp = client_auth.post("/api/v1/reports/pdf/validation", json=_VALIDATION_BODY)
 
@@ -137,6 +141,10 @@ class TestReportsPost:
         assert "expires_at" in data
         assert data["report_hash"]
         assert data["file_size"] == 13
+        # #606 — Governança Temporal: carimbo replicado no JSON de evidência.
+        assert data["emitted_at_utc"] == "2026-09-09T12:00:00Z"
+        assert data["emitted_tz"] == "America/Sao_Paulo"
+        assert data["tzdata_version"] == "2026.2"
 
     def test_batch_happy_path(self, client_auth, mock_db):
         mock_db.refresh = lambda r: setattr(r, "id", REPORT_ID)
@@ -149,6 +157,10 @@ class TestReportsPost:
                 "bytes": b"%PDF-1.4 batch",
                 "storage_key": f"reports/{TENANT_ID}/batch/y.pdf",
                 "file_size": 14,
+                "emitted_at_utc": "2026-09-09T12:00:00Z",
+                "emitted_tz": "America/Sao_Paulo",
+                "emitted_local": "09/09/2026 09:00:00",
+                "tzdata_version": "2026.2",
             }
             resp = client_auth.post("/api/v1/reports/pdf/batch", json=_BATCH_BODY)
 
@@ -156,6 +168,7 @@ class TestReportsPost:
         data = resp.json()
         assert data["file_size"] == 14
         assert data["download_url"].startswith("https://")
+        assert data["tzdata_version"] == "2026.2"
 
     def test_s3_error_returns_503(self, client_auth, mock_db):
         mock_db.refresh = lambda r: setattr(r, "id", REPORT_ID)
@@ -168,6 +181,10 @@ class TestReportsPost:
                 "bytes": b"%PDF",
                 "storage_key": "reports/x/v/z.pdf",
                 "file_size": 4,
+                "emitted_at_utc": "2026-09-09T12:00:00Z",
+                "emitted_tz": "America/Sao_Paulo",
+                "emitted_local": "09/09/2026 09:00:00",
+                "tzdata_version": "2026.2",
             }
             resp = client_auth.post("/api/v1/reports/pdf/validation", json=_VALIDATION_BODY)
 
