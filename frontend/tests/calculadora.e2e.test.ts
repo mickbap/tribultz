@@ -34,13 +34,12 @@ test("calculadora smoke exposes 27 UFs and renders result card from browser flow
   });
 
   const page = await browser.newPage();
-  let capturedHeaders: Record<string, string> | null = null;
-  let capturedBody: Record<string, unknown> | null = null;
+  const captured: { headers?: Record<string, string>; body?: Record<string, unknown> } = {};
 
   await page.route(`${API_BASE}/api/v1/public/calculadora/regime-geral`, async (route) => {
     const request = route.request();
-    capturedHeaders = request.headers();
-    capturedBody = request.postDataJSON() as Record<string, unknown>;
+    captured.headers = request.headers();
+    captured.body = request.postDataJSON() as Record<string, unknown>;
 
     await route.fulfill({
       status: 200,
@@ -80,13 +79,13 @@ test("calculadora smoke exposes 27 UFs and renders result card from browser flow
 
   await page.getByRole("heading", { name: "Resultado do Cálculo" }).waitFor();
 
-  assert.ok(capturedHeaders, "calculator request was not captured");
-  assert.ok(capturedBody, "calculator payload was not captured");
-  assert.equal(capturedBody?.uf_destino, "RS");
-  assert.equal(capturedBody?.base_value, "1000.00");
-  assert.equal(capturedBody?.quantity, "1");
-  assert.equal(capturedBody?.cst, "000");
-  assert.ok(capturedHeaders?.["x-transaction-id"], "missing X-Transaction-Id header");
+  assert.ok(captured.headers, "calculator request was not captured");
+  assert.ok(captured.body, "calculator payload was not captured");
+  assert.equal(captured.body?.uf_destino, "RS");
+  assert.equal(captured.body?.base_value, "1000.00");
+  assert.equal(captured.body?.quantity, "1");
+  assert.equal(captured.body?.cst, "000");
+  assert.ok(captured.headers?.["x-transaction-id"], "missing X-Transaction-Id header");
 
   const bodyText = await page.locator("body").innerText();
   assert.match(bodyText, /Resultado do Cálculo/u);

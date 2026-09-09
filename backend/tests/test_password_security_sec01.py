@@ -227,3 +227,36 @@ def test_legacy_generation_zero_token_transitions_to_single_use(
         user = db.execute(select(User).where(User.id == persisted_user.id)).scalar_one()
         assert cast(int, user.password_reset_version) == 1
         assert cast(int, user.session_version) == 1
+
+
+def test_inflight_password_change_cannot_overwrite_completed_reset(http_client, persisted_user):
+    from threading import Event
+    from app.routers import auth
+
+    headers = _auth_header(_login(http_client, persisted_user.email, OLD_PASSWORD))
+    token = _reset_token(http_client, persisted_user.email)
+    verified = Event()
+    resume = Event()
+    late_password = "LatePassword@789"
+    original_hash = auth.get_password_hash
+
+    def pause_after_verification(password):
+        if password == late_password:
+            verified.set()
+            assert resume.wait(15), "reset did not complete"
+        return original_hash(password)
+
+    with patch.object(auth, "get_password_hash", side_effect=pause_after_verification):
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            change = pool.submit(http_client.post, "/api/v1/auth/change-password", headers=headers,
+                                 json={"current_password": OLD_PASSWORD, "new_password": late_password})
+            try:
+                assert verified.wait(15), "change did not reach verified state"
+                reset = http_client.post("/api/v1/auth/reset-password", json={"token": token, "new_password": NEW_PASSWORD})
+                assert reset.status_code == 200
+            finally:
+                resume.set()
+            assert change.result(timeout=15).status_code == 409
+    assert _login(http_client, persisted_user.email, NEW_PASSWORD).status_code == 200
+    assert _login(http_client, persisted_user.email, late_password).status_code == 401
+    assert _protected_request(http_client, headers).status_code == 401

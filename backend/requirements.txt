@@ -15,14 +15,14 @@ httpx==0.28.1
 celery==5.6.3
 gunicorn==23.0.0
 sentry-sdk[fastapi]==2.66.0
-weasyprint==63.1
+weasyprint==69.0
 jinja2==3.1.6
 PyYAML==6.0.3
 pytest>=8.0.0
 pytest-asyncio>=0.24.0
 testcontainers[postgres]>=4.8.2
 crewai==1.10.1
-litellm==1.82.0
+litellm==1.84.0
 fakeredis==2.36.2
 openpyxl==3.1.5
 svix==2.2.0

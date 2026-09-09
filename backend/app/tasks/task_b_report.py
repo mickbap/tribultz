@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import hashlib
+from uuid import uuid4
 from datetime import date, datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -132,7 +134,11 @@ def task_b_compliance_report(
         report_md = "\n".join(lines)
         report_bytes = report_md.encode("utf-8")
 
-        s3_key = f"reports/{tenant_slug}/{reference_period}/compliance_{now_str}.md"
+        # Separate jobs never share an object; changed content on a retry also
+        # gets its own key so previously returned checksums remain meaningful.
+        report_id = task_id or str(uuid4())
+        content_hash = hashlib.sha256(report_bytes).hexdigest()
+        s3_key = f"reports/{tenant_slug}/{reference_period}/compliance_{report_id}_{content_hash}.md"
         upload = put_object(
             key=s3_key,
             data=report_bytes,

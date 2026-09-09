@@ -156,3 +156,62 @@ def test_workflow_preserves_raw_evidence_routes_and_fails_closed():
     assert "dependency-audit-fingerprint" in workflow
     assert "FAIL_CLOSED_OPERATIONAL_FAILURE" in workflow
     assert "|| true" not in workflow
+
+
+def test_aliases_merge_patch_evidence_independent_of_order(audit_module):
+    records = [
+        {"id": "PYSEC-2026-1", "aliases": ["CVE-2026-12345"], "fix_versions": []},
+        {"id": "GHSA-abcd-1234-5678", "aliases": ["CVE-2026-12345"], "fix_versions": ["69.0"]},
+    ]
+    forward = evidence(audit_module, pip_raw=pip_payload(*records), pip_exit=1)
+    backward = evidence(audit_module, pip_raw=pip_payload(*reversed(records)), pip_exit=1)
+    assert forward == backward
+    assert forward["counts"]["total"] == 1
+    assert forward["counts"]["fixable"] == 1
+    assert forward["findings"][0]["vulnerability_id"] == "CVE-2026-12345"
+    assert "PYSEC-2026-1" in forward["findings"][0]["aliases"]
+
+
+def test_same_advisory_keeps_distinct_packages_and_versions(audit_module):
+    record = {"id": "CVE-2026-12345", "aliases": [], "fix_versions": []}
+    payload = {"dependencies": [
+        {"name": name, "version": version, "vulns": [record]}
+        for name, version in [("one", "1.0"), ("one", "2.0"), ("two", "1.0")]
+    ]}
+    result = evidence(audit_module, pip_raw=payload, pip_exit=1)
+    assert result["counts"]["total"] == 3
+
+
+def test_npm_lock_versions_are_not_advisory_ranges(audit_module):
+    import json
+
+    payload = npm_payload(vulnerabilities={
+        "parent": {"via": ["child"], "range": "*", "nodes": ["node_modules/parent"], "fixAvailable": True},
+        "child": {"via": [{"url": "https://github.com/advisories/GHSA-abcd-1234-5678", "range": "<2.0"}],
+                  "range": "<2.0", "nodes": ["node_modules/child", "node_modules/parent/node_modules/child"], "fixAvailable": True},
+    })
+    lock = {"packages": {
+        "node_modules/parent": {"version": "3.0"},
+        "node_modules/child": {"version": "1.1"},
+        "node_modules/parent/node_modules/child": {"version": "1.2"},
+    }}
+    result = audit_module.analyze_scanner("npm-audit", json.dumps(payload), {"exit_code": 1}, lock)
+    assert len(result.findings) == 1
+    assert result.findings[0].installed_version == "1.1, 1.2"
+    assert result.findings[0].affected_range == "<2.0"
+    assert result.findings[0].vulnerability_id == "GHSA-abcd-1234-5678"
+    invalid = audit_module.analyze_scanner("npm-audit", json.dumps(payload), {"exit_code": 1}, {"packages": {}})
+    assert invalid.state == audit_module.OPERATIONAL_FAILURE
+
+
+def test_npm_missing_advisory_cannot_become_clean_scan(audit_module):
+    import json
+
+    payload = npm_payload(vulnerabilities={"parent": {"via": ["missing"], "fixAvailable": False}})
+    result = audit_module.analyze_scanner("npm-audit", json.dumps(payload), {"exit_code": 1})
+    assert result.state == audit_module.OPERATIONAL_FAILURE
+
+
+def test_exit_one_without_findings_is_not_a_clean_scan(audit_module):
+    result = evidence(audit_module, pip_raw=pip_payload(), pip_exit=1)
+    assert result["execution_state"] == audit_module.OPERATIONAL_FAILURE

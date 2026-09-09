@@ -244,6 +244,70 @@ def _assert_same_confirmed_content(doc: Document, evidence: StoredObjectEvidence
         raise StoredObjectInvalid("Objeto confirmado foi sobrescrito com conteúdo diferente.")
     return True
 
+
+def _has_pinned_content(doc: Document) -> bool:
+    metadata = doc.fiscal_metadata if isinstance(doc.fiscal_metadata, dict) else {}
+    stored = metadata.get("storage_evidence")
+    prefix = f"documents/{doc.tenant_id}/{doc.doc_type}/confirmed/{doc.id}/"
+    return (
+        isinstance(stored, dict)
+        and stored.get("storage_key") == doc.storage_key
+        and str(doc.storage_key).startswith(prefix)
+    )
+
+
+def _pin_document_content(
+    doc: Document, evidence: StoredObjectEvidence, metadata: dict[str, Any],
+) -> dict[str, Any]:
+    """Persist the exact validated bytes under a key never authorized for client PUT.
+
+    Uploading the captured bytes, rather than copying the mutable source key,
+    closes the race between validation and finalization on S3-compatible stores.
+    The content-addressed key also makes retries safe after a failed DB commit.
+    """
+    final_key = (
+        f"documents/{doc.tenant_id}/{doc.doc_type}/confirmed/{doc.id}/"
+        f"{evidence.checksum_sha256}"
+    )
+    try:
+        s3_tool.put_object(
+            key=final_key,
+            data=evidence.content,
+            content_type=evidence.content_type,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Falha ao preservar conteúdo do documento %s", doc.id, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Não foi possível preservar o conteúdo validado no armazenamento.",
+        ) from exc
+    result = dict(metadata)
+    # Keep the staging key for retention, including any replay of its short-lived PUT.
+    result.setdefault("upload_storage_key", str(doc.storage_key))
+    result["storage_evidence"] = {**_storage_evidence(evidence), "storage_key": final_key}
+    doc.storage_key = final_key  # type: ignore[assignment]
+    return result
+
+
+def _load_document_evidence(doc: Document) -> StoredObjectEvidence:
+    try:
+        return _load_authoritative_object(
+            str(doc.storage_key),
+            doc.content_type if isinstance(doc.content_type, str) else None,
+        )
+    except StoredObjectMissing as exc:
+        raise HTTPException(status_code=409, detail="Upload não encontrado no armazenamento.") from exc
+    except StoredObjectTooLarge as exc:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Arquivo muito grande. Máximo: {MAX_DOCUMENT_BYTES // 1024 // 1024} MB.",
+        ) from exc
+    except StoredObjectInvalid as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except StoredObjectUnavailable as exc:
+        raise HTTPException(status_code=503, detail="Não foi possível validar o upload no armazenamento.") from exc
+
+
 def _generate_storage_key(tenant_id: UUID, doc_type: str, original_filename: Optional[str]) -> str:
     """Build a deterministic, collision-safe S3 key."""
     uid = str(_uuid.uuid4())
@@ -421,39 +485,17 @@ def confirm_upload(
             detail="Documento em estado de erro — abra um novo upload.",
         )
 
-    try:
-        evidence = _load_authoritative_object(
-            doc.storage_key,  # type: ignore[arg-type]
-            doc.content_type,  # type: ignore[arg-type]
-        )
-    except StoredObjectMissing as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Upload não encontrado no armazenamento.",
-        ) from exc
-    except StoredObjectTooLarge as exc:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"Arquivo muito grande. Máximo: {MAX_DOCUMENT_BYTES // 1024 // 1024} MB.",
-        ) from exc
-    except StoredObjectInvalid as exc:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
-    except StoredObjectUnavailable as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Não foi possível validar o upload no armazenamento.",
-        ) from exc
+    evidence = _load_document_evidence(doc)
 
     if doc.status == "confirmed":  # type: ignore[truthy-function]
         try:
-            if _assert_same_confirmed_content(doc, evidence):
+            if _assert_same_confirmed_content(doc, evidence) and _has_pinned_content(doc):
                 return doc  # idempotente para o mesmo conteúdo comprovado
         except StoredObjectInvalid as exc:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
         # Compatibilidade: primeira reconfirmação de linha antiga registra o snapshot.
         existing: dict[str, Any] = dict(doc.fiscal_metadata or {})  # type: ignore[arg-type]
-        existing["storage_evidence"] = _storage_evidence(evidence)
-        doc.fiscal_metadata = existing  # type: ignore[assignment]
+        doc.fiscal_metadata = _pin_document_content(doc, evidence, existing)  # type: ignore[assignment]
         doc.file_size = evidence.size_bytes  # type: ignore[assignment]
         db.commit()
         db.refresh(doc)
@@ -465,7 +507,7 @@ def confirm_upload(
     except Exception:  # noqa: BLE001
         logger.warning("Falha na extração opcional do documento %s", doc.id, exc_info=True)
         extracted = {}
-    extracted["storage_evidence"] = _storage_evidence(evidence)
+    extracted = _pin_document_content(doc, evidence, extracted)
 
     doc.status = "confirmed"  # type: ignore[assignment]
     doc.uploaded_at = datetime.now(timezone.utc)  # type: ignore[assignment]
@@ -525,7 +567,7 @@ def get_download_url(
         select(Document).where(
             Document.id == document_id,
             Document.tenant_id == current_user.tenant_id,
-        )
+        ).with_for_update()
     ).scalar_one_or_none()
 
     if doc is None:
@@ -536,6 +578,19 @@ def get_download_url(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Documento ainda não está disponível para download (status: {doc.status}).",
         )
+
+    if not _has_pinned_content(doc):
+        # Legacy rows are validated and pinned before issuing any new download.
+        evidence = _load_document_evidence(doc)
+        try:
+            _assert_same_confirmed_content(doc, evidence)
+        except StoredObjectInvalid as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        metadata = dict(doc.fiscal_metadata) if isinstance(doc.fiscal_metadata, dict) else {}
+        doc.fiscal_metadata = _pin_document_content(doc, evidence, metadata)  # type: ignore[assignment]
+        doc.file_size = evidence.size_bytes  # type: ignore[assignment]
+        db.commit()
+        db.refresh(doc)
 
     try:
         download_url = s3_tool.get_object_url(

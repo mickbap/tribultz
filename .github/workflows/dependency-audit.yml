@@ -98,6 +98,7 @@ jobs:
         working-directory: frontend
         run: |
           mkdir -p /tmp/dependency-audit/raw
+          cp package-lock.json /tmp/dependency-audit/raw/npm-lock.json
           STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           set +e
           timeout 180 npm audit --json \
@@ -214,6 +215,7 @@ jobs:
               echo "$MARKER"
               cat "$FILE"
               echo ""
+              echo "SHA analisado: $GITHUB_SHA. Triagem existente: #746 (frontend), #747 (Python), #504 (exceções)."
               echo "Evidência bruta e metadados: artifact \`dependency-audit-evidence\` do run ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             } > "$BODY"
             EXISTING=$(gh issue list --search "$TITLE in:title" --state open --json number,title --jq ".[] | select(.title == \"$TITLE\") | .number" | head -1)
