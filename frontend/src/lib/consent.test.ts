@@ -44,7 +44,7 @@ function comJanela(inicial: string | null, corpo: (chamadas: Chamada[]) => void)
 }
 
 test("setConsent nunca concede sinal de publicidade, em nenhuma escolha", async () => {
-  const { setConsent, CONSENT_TOTAL, CONSENT_NEGADO } = await import("./consent.ts");
+  const { setConsent, CONSENT_TOTAL, CONSENT_NEGADO } = await import("./consent");
   for (const escolha of [CONSENT_TOTAL, CONSENT_NEGADO]) {
     comJanela(null, (chamadas) => {
       setConsent(escolha);
@@ -60,7 +60,7 @@ test("setConsent nunca concede sinal de publicidade, em nenhuma escolha", async 
 });
 
 test("aceitar análise concede analytics_storage; recusar mantém negado", async () => {
-  const { setConsent } = await import("./consent.ts");
+  const { setConsent } = await import("./consent");
   comJanela(null, (chamadas) => {
     setConsent({ analise: true });
     assert.match(JSON.stringify(chamadas), /"analytics_storage":"granted"/);
@@ -72,7 +72,7 @@ test("aceitar análise concede analytics_storage; recusar mantém negado", async
 });
 
 test("consentimento de versão anterior equivale a não ter decidido", async () => {
-  const { getStoredConsent, CONSENT_POLICY_VERSION } = await import("./consent.ts");
+  const { getStoredConsent, CONSENT_POLICY_VERSION } = await import("./consent");
   // ANPD: "qualquer alteração das premissas adotadas para a obtenção do
   // consentimento macula a hipótese legal adotada, exigindo novo consentimento".
   const antigo = JSON.stringify({ analise: true, version: "1999-01-01", decidedAt: "x" });
@@ -87,14 +87,14 @@ test("consentimento de versão anterior equivale a não ter decidido", async () 
 });
 
 test("formato legado (string 'granted') não é aceito como consentimento", async () => {
-  const { getStoredConsent } = await import("./consent.ts");
+  const { getStoredConsent } = await import("./consent");
   // Aquele "granted" foi dado sob um banner que informava só análise enquanto
   // concedia publicidade. Não vale para as premissas atuais.
   comJanela("granted", () => assert.equal(getStoredConsent(), null));
 });
 
 test("revogação apaga o registro e volta a negar (art. 8º §5º)", async () => {
-  const { revokeConsent, getStoredConsent, CONSENT_POLICY_VERSION } = await import("./consent.ts");
+  const { revokeConsent, getStoredConsent, CONSENT_POLICY_VERSION } = await import("./consent");
   const atual = JSON.stringify({
     analise: true,
     version: CONSENT_POLICY_VERSION,

@@ -963,29 +963,44 @@ def change_password(
             detail="A nova senha deve ter no mínimo 8 caracteres.",
         )
 
-    if not verify_password(data.current_password, cast(str, current_user.password_hash)):
+    expected_password_hash = cast(str, current_user.password_hash)
+    expected_session_version = cast(int, current_user.session_version)
+    if not verify_password(data.current_password, expected_password_hash):
         logger.warning("change_password_wrong_current", extra={"user_id": str(current_user.id)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Senha atual incorreta.",
         )
 
-    if verify_password(data.new_password, cast(str, current_user.password_hash)):
+    if verify_password(data.new_password, expected_password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A nova senha deve ser diferente da atual.",
         )
 
-    db.execute(
+    changed_user_id = db.execute(
         update(User)
-        .where(User.id == current_user.id)
+        .where(
+            User.id == current_user.id,
+            User.password_hash == expected_password_hash,
+            User.session_version == expected_session_version,
+            User.is_active.is_(True),
+            User.deleted_at.is_(None),
+        )
         .values(
             password_hash=get_password_hash(data.new_password),
             session_version=User.session_version + 1,
             password_reset_version=User.password_reset_version + 1,
         )
+        .returning(User.id)
         .execution_options(synchronize_session=False)
-    )
+    ).scalar_one_or_none()
+    if changed_user_id is None:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Credenciais alteradas durante a solicitação. Faça login novamente.",
+        )
     db.commit()
 
     logger.info("password_changed", extra={"user_id": str(current_user.id)})

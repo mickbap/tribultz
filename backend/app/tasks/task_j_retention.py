@@ -34,7 +34,7 @@ def purge_expired_documents():
     try:
         cutoff = datetime.now(timezone.utc) - timedelta(days=RETENTION_DAYS)
         expired = db.execute(
-            select(Document).where(Document.created_at < cutoff)
+            select(Document).where(Document.created_at < cutoff).with_for_update(skip_locked=True)
         ).scalars().all()
 
         deleted_count = 0
@@ -42,6 +42,10 @@ def purge_expired_documents():
         for doc in expired:
             try:
                 delete_object(str(doc.storage_key))
+                metadata = doc.fiscal_metadata if isinstance(doc.fiscal_metadata, dict) else {}
+                upload_key = metadata.get("upload_storage_key")
+                if isinstance(upload_key, str) and upload_key != doc.storage_key:
+                    delete_object(upload_key)
             except Exception:
                 logger.exception(
                     "purge_expired_documents: falha ao apagar do S3, mantendo linha no banco | document_id=%s",

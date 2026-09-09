@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import uuid
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -97,6 +97,18 @@ def _storage_snapshot(evidence: StoredObjectEvidence) -> dict[str, Any]:
         "content_type": evidence.content_type,
         "etag": evidence.etag,
     }
+
+
+@pytest.fixture(autouse=True)
+def stored_copy():
+    with patch("app.routers.documents.s3_tool.put_object") as upload:
+        yield upload
+
+
+def _pinned_snapshot(evidence):
+    return {**_storage_snapshot(evidence), "storage_key": (
+        f"documents/{TENANT_ID}/nfe/confirmed/{DOC_ID}/{evidence.checksum_sha256}"
+    )}
 
 
 @pytest.fixture()
@@ -231,8 +243,9 @@ class TestConfirmUpload:
         authoritative = _stored_evidence()
         doc.file_size = authoritative.size_bytes  # type: ignore[assignment]
         doc.fiscal_metadata = {  # type: ignore[assignment]
-            "storage_evidence": _storage_snapshot(authoritative)
+            "storage_evidence": _pinned_snapshot(authoritative)
         }
+        doc.storage_key = _pinned_snapshot(authoritative)["storage_key"]
         self._setup_db(mock_db, doc)
 
         with patch("app.routers.documents._load_authoritative_object", return_value=authoritative):
@@ -285,7 +298,7 @@ class TestConfirmUpload:
 
         assert doc.fiscal_metadata["chave_acesso"] == extracted["chave_acesso"]  # type: ignore[index]
         assert doc.fiscal_metadata["cnpj_emitente"] == extracted["cnpj_emitente"]  # type: ignore[index]
-        assert doc.fiscal_metadata["storage_evidence"] == _storage_snapshot(authoritative)  # type: ignore[index]
+        assert doc.fiscal_metadata["storage_evidence"] == _pinned_snapshot(authoritative)  # type: ignore[index]
 
     def test_missing_object_is_rejected(self, client_with_auth, mock_db):
         doc = _make_doc(status="pending_upload")
@@ -322,7 +335,7 @@ class TestConfirmUpload:
 
         assert resp.status_code == 200
         assert doc.status == "confirmed"  # type: ignore[truthy-function]
-        assert set(doc.fiscal_metadata) == {"storage_evidence"}  # type: ignore[arg-type]
+        assert set(doc.fiscal_metadata) == {"storage_evidence", "upload_storage_key"}  # type: ignore[arg-type]
 
     def test_optional_extraction_failure_cannot_mask_required_validation(
         self, client_with_auth, mock_db
@@ -338,7 +351,7 @@ class TestConfirmUpload:
             resp = client_with_auth.post(self.ENDPOINT, json={"document_id": str(DOC_ID)})
 
         assert resp.status_code == 200
-        assert doc.fiscal_metadata["storage_evidence"] == _storage_snapshot(authoritative)  # type: ignore[index]
+        assert doc.fiscal_metadata["storage_evidence"] == _pinned_snapshot(authoritative)  # type: ignore[index]
 
     def test_overwrite_after_confirm_is_rejected(self, client_with_auth, mock_db):
         original = _stored_evidence(b"original")
@@ -381,7 +394,7 @@ class TestConfirmUpload:
 
         assert resp.status_code == 200
         assert doc.fiscal_metadata["legacy"] is True  # type: ignore[index]
-        assert doc.fiscal_metadata["storage_evidence"] == _storage_snapshot(authoritative)  # type: ignore[index]
+        assert doc.fiscal_metadata["storage_evidence"] == _pinned_snapshot(authoritative)  # type: ignore[index]
         mock_db.commit.assert_called_once()
 
     def test_unauthenticated_returns_401(self):
@@ -557,6 +570,11 @@ class TestListDocuments:
 # ── Issue #125: GET /documents/{id}/download ───────────────────────────────────
 
 class TestDownloadUrl:
+    @pytest.fixture(autouse=True)
+    def legacy_object(self):
+        with patch("app.routers.documents._load_authoritative_object", return_value=_stored_evidence()) as read:
+            yield read
+
     def _endpoint(self, doc_id: Any = None) -> str:
         return f"/api/v1/documents/{doc_id or DOC_ID}/download"
 
@@ -644,3 +662,72 @@ class TestDocumentModel:
         from sqlalchemy.dialects.postgresql import JSONB
         col = Document.__table__.columns["fiscal_metadata"]
         assert isinstance(col.type, JSONB)
+
+
+class TestConfirmedContentIntegrity:
+    def test_replayed_put_cannot_change_confirmed_download(self, client_with_auth, mock_db, stored_copy):
+        doc = _make_doc()
+        objects = {STORAGE_KEY: b"<NFe>original</NFe>"}
+        mock_db.execute.return_value.scalar_one_or_none.return_value = doc
+
+        def read(key, content_type):
+            return _stored_evidence(objects[key])
+
+        def put(*, key, data, content_type):
+            # Simulate overwrite exactly between the authoritative read and final write.
+            objects[STORAGE_KEY] = b"<NFe>attacker</NFe>"
+            objects[key] = data
+
+        stored_copy.side_effect = put
+        with (
+            patch("app.routers.documents._load_authoritative_object", side_effect=read),
+            patch("app.routers.documents.s3_tool.get_object_url", side_effect=lambda key, **kw: key),
+        ):
+            response = client_with_auth.post("/api/v1/documents/confirm", json={"document_id": str(DOC_ID)})
+            assert response.status_code == 200
+            response = client_with_auth.get(f"/api/v1/documents/{DOC_ID}/download")
+            assert response.status_code == 200
+            key = response.json()["download_url"]
+            assert key != STORAGE_KEY
+            assert objects[key] == b"<NFe>original</NFe>"
+            assert objects[STORAGE_KEY] == b"<NFe>attacker</NFe>"
+            assert cast(dict, doc.fiscal_metadata)["upload_storage_key"] == STORAGE_KEY
+
+    def test_final_write_failure_does_not_confirm(self, client_with_auth, mock_db, stored_copy):
+        doc = _make_doc()
+        mock_db.execute.return_value.scalar_one_or_none.return_value = doc
+        stored_copy.side_effect = ConnectionError("storage unavailable")
+        with patch("app.routers.documents._load_authoritative_object", return_value=_stored_evidence()):
+            response = client_with_auth.post("/api/v1/documents/confirm", json={"document_id": str(DOC_ID)})
+        assert response.status_code == 503
+        assert cast(str, doc.status) == "pending_upload"
+        assert cast(str, doc.storage_key) == STORAGE_KEY
+        mock_db.commit.assert_not_called()
+
+    def test_changed_legacy_object_cannot_be_downloaded(self, client_with_auth, mock_db, stored_copy):
+        doc = _make_doc(status="confirmed")
+        doc.fiscal_metadata = {"storage_evidence": _storage_snapshot(_stored_evidence(b"original"))}  # type: ignore[assignment]
+        mock_db.execute.return_value.scalar_one_or_none.return_value = doc
+        with (
+            patch("app.routers.documents._load_authoritative_object", return_value=_stored_evidence(b"changed")),
+            patch("app.routers.documents.s3_tool.get_object_url") as sign,
+        ):
+            response = client_with_auth.get(f"/api/v1/documents/{DOC_ID}/download")
+        assert response.status_code == 409
+        sign.assert_not_called()
+        stored_copy.assert_not_called()
+
+    def test_pinned_download_never_reads_staging(self, client_with_auth, mock_db):
+        doc = _make_doc(status="confirmed")
+        snapshot = _pinned_snapshot(_stored_evidence())
+        doc.storage_key = snapshot["storage_key"]
+        doc.fiscal_metadata = {"storage_evidence": snapshot, "upload_storage_key": STORAGE_KEY}  # type: ignore[assignment]
+        mock_db.execute.return_value.scalar_one_or_none.return_value = doc
+        with (
+            patch("app.routers.documents._load_authoritative_object") as read,
+            patch("app.routers.documents.s3_tool.get_object_url", return_value="https://s3/final") as sign,
+        ):
+            response = client_with_auth.get(f"/api/v1/documents/{DOC_ID}/download")
+        assert response.status_code == 200
+        read.assert_not_called()
+        assert sign.call_args.kwargs["key"] == snapshot["storage_key"]

@@ -32,7 +32,7 @@ test("adapter: flat backend payload → nested ValidationResultV11", () => {
 
 test("adapter: preserva findings e evidences", () => {
   const findings = [
-    { id: "f1", rule_id: "CBS_RATE", severity: "ERROR" as const, title: "t", description: "d", evidence_ids: [] },
+    { id: "f1", rule_id: "CBS_RATE", severity: "FATAL" as const, title: "t", description: "d", where: {}, recommendation: "corrigir CBS", evidence_ids: [] },
   ];
   const evidences = [{ id: "e1", type: "xml" as const, label: "Evidência" }];
   const raw = {

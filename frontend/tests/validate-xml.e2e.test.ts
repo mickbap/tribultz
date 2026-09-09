@@ -92,12 +92,12 @@ test("validate-xml flow: paste XML, submit, render findings and evidence", { tim
 
   const page = await context.newPage();
 
-  let capturedHeaders: Record<string, string> | null = null;
+  const captured: { headers?: Record<string, string> } = {};
   let capturedDocumentType: string | null = null;
 
   await page.route("**/api/v1/validate/xml", async (route) => {
     const request = route.request();
-    capturedHeaders = request.headers();
+    captured.headers = request.headers();
     // FormData arrives as multipart; capture document_type from the raw body
     const postData = request.postData() ?? "";
     const match = postData.match(/name="document_type"\r?\n\r?\n([^\r\n]+)/);
@@ -130,10 +130,10 @@ test("validate-xml flow: paste XML, submit, render findings and evidence", { tim
 
   await page.getByRole("heading", { name: "CST inválido no grupo IBSCBS" }).waitFor({ timeout: 15_000 });
 
-  assert.ok(capturedHeaders, "validate/xml request was not captured");
-  assert.equal(capturedHeaders?.authorization, "Bearer test-jwt-token");
-  assert.equal(capturedHeaders?.["x-tenant-id"], MOCK_TENANT_ID);
-  assert.ok(capturedHeaders?.["x-transaction-id"], "missing X-Transaction-Id header");
+  assert.ok(captured.headers, "validate/xml request was not captured");
+  assert.equal(captured.headers?.authorization, "Bearer test-jwt-token");
+  assert.equal(captured.headers?.["x-tenant-id"], MOCK_TENANT_ID);
+  assert.ok(captured.headers?.["x-transaction-id"], "missing X-Transaction-Id header");
   assert.equal(capturedDocumentType, "NFE");
 
   const bodyText = await page.locator("body").innerText();
