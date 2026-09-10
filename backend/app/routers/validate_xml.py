@@ -40,6 +40,11 @@ from app.data.classtrib_table import (
 )
 from app.data.cest_ncm import lookup_ncm_st
 from app.services.rule_enforcement import RULE_VERSION_BY_KEY, resolve_rule_enforcement
+from app.services.nanoempreendedor_dispensa import (
+    EnquadramentoNanoempreendedor,
+    OpcaoRegimeRegular,
+    resolver_dispensa_nanoempreendedor,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -437,6 +442,8 @@ def validate_xml(
     classtrib_results: dict[str, bool | None] | None = None,
     cnpj_result: tuple[bool, str] | None = None,
     pedagogical_mode: bool = False,
+    enquadramento_nano: EnquadramentoNanoempreendedor | None = None,
+    opcao_regime_regular: OpcaoRegimeRegular | None = None,
 ) -> ValidationResult:
     """Apply deterministic validation rules to XML. Returns structured result.
 
@@ -445,6 +452,8 @@ def validate_xml(
       cnpj_result: (is_active: bool, status: str) from CNPJ API lookup
       pedagogical_mode: when True, accessory-rule FATALs become WARNINGs
                         with LC 214/2025 art. 348 (incluído pela LC 227/2026) annotation
+      enquadramento_nano/opcao_regime_regular: fatos previamente comprovados;
+                        nunca derivados do XML, CRT ou cClassTrib
     """
     xml = xml.strip()
     if not doc_type:
@@ -1482,12 +1491,20 @@ def validate_xml(
     # A expiração em 31/12/2028 é FATO do ato, não gatilho: não autoriza concluir que em
     # 01/01/2029 a PF está obrigada ao CNPJ.
     em_date = emission_date["value"][:10] if emission_date else ""
-    if re.match(r"^\d{4}-\d{2}-\d{2}$", em_date) and em_date >= _PF_CNPJ_REQUIRED_DATE:
+    pf_reference_date = _parse_iso_date(em_date)
+    if pf_reference_date and em_date >= _PF_CNPJ_REQUIRED_DATE:
         emit_block = _first_tag(xml, ["emit", "PrestadorServico", "prest", "Prestador"])
         if emit_block:
             emit_cpf = _first_tag(emit_block["snippet"], ["CPF"])
             emit_cnpj = _first_tag(emit_block["snippet"], ["CNPJ"])
+            dispensa_aplicavel = False
             if emit_cpf and not emit_cnpj:
+                dispensa_aplicavel = resolver_dispensa_nanoempreendedor(
+                    data_referencia=pf_reference_date,
+                    enquadramento=enquadramento_nano,
+                    regime_regular=opcao_regime_regular,
+                ).dispensa_cnpj_dfe
+            if emit_cpf and not emit_cnpj and not dispensa_aplicavel:
                 ev_id = "E_XML_PF_CONTRIB_CNPJ"
                 _add(
                     Finding(
