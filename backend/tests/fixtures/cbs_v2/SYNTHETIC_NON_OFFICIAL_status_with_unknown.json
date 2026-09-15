@@ -1,0 +1,10 @@
+{
+  "fixtureClassification": "SYNTHETIC_NON_OFFICIAL_DO_NOT_TREAT_AS_RFB_PAYLOAD",
+  "tiqueteSolicitacao": "ticket-sintetico-001",
+  "situacao": "CONCLUIDA",
+  "urlAssinada": "https://example.invalid/download?signature=SEGREDO-SINTETICO",
+  "urlAssinadaExpiraEm": "2026-10-05T15:00:00Z",
+  "campoFuturoDesconhecido": {
+    "preservar": true
+  }
+}

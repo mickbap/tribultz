@@ -136,6 +136,19 @@ class Settings(BaseSettings):
     RESEND_WEBHOOK_SECRET: str = ""
     RESEND_MAX_BODY_BYTES: int = 1_048_576
 
+    # ── Piloto APIs de apuração CBS v2 ─────────────────────────
+    # Quatro gates cumulativos. A infraestrutura permanece inacessível até
+    # haver API liberada, credencial do piloto, payload real observado e opt-in
+    # operacional explícito. Fixtures sintéticas nunca mudam esses gates.
+    CBS_V2_PILOT_ENABLED: bool = False
+    CBS_V2_API_AVAILABLE: bool = False
+    CBS_V2_REAL_PAYLOAD_OBSERVED: bool = False
+    CBS_V2_CLIENT_ID: str = ""
+    CBS_V2_CLIENT_SECRET: str = ""
+    # Base oficial do ambiente, deliberadamente sem default: não adivinhar host.
+    CBS_V2_API_BASE_URL: str = ""
+    CBS_V2_MAX_WEBHOOK_BODY_BYTES: int = 1_048_576
+
     # ── Asaas (Payment Gateway) ──────────────────────────────
     ASAAS_API_KEY: str = ""
     ASAAS_ENVIRONMENT: str = "sandbox"  # sandbox | production

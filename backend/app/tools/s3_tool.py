@@ -6,6 +6,7 @@ from typing import Optional
 
 import boto3
 from botocore.config import Config as BotoConfig
+from botocore.exceptions import ClientError
 
 from app.config import settings
 from app.services.persistence import get_persistence_service
@@ -81,6 +82,51 @@ def put_object(
         payload=payload,
         runner=_write,
     )
+
+
+def put_immutable_object(
+    key: str,
+    data: bytes,
+    content_type: str = "application/octet-stream",
+    bucket: Optional[str] = None,
+    metadata: Optional[dict[str, str]] = None,
+) -> dict:
+    """Grava uma evidência uma única vez, com chave content-addressed.
+
+    ``IfNoneMatch=*`` impede overwrite inclusive sob concorrência. Uma colisão
+    de chave só é aceita quando tamanho e SHA-256 confirmam que o objeto já
+    existente contém exatamente os mesmos bytes.
+    """
+    bucket = bucket or settings.S3_BUCKET
+    sha = hashlib.sha256(data).hexdigest()
+    object_metadata = {**(metadata or {}), "sha256": sha}
+    client = _client()
+    try:
+        client.put_object(
+            Bucket=bucket,
+            Key=key,
+            Body=BytesIO(data),
+            ContentLength=len(data),
+            ContentType=content_type,
+            ServerSideEncryption="AES256",
+            Metadata=object_metadata,
+            IfNoneMatch="*",
+        )
+    except ClientError as exc:
+        status = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+        code = exc.response.get("Error", {}).get("Code")
+        if status not in (409, 412) and code not in ("PreconditionFailed", "ConditionalRequestConflict"):
+            raise
+        existing = client.head_object(Bucket=bucket, Key=key)
+        existing_sha = (existing.get("Metadata") or {}).get("sha256")
+        if existing.get("ContentLength") != len(data) or existing_sha != sha:
+            raise RuntimeError("immutable object key collision") from exc
+    return {
+        "bucket": bucket,
+        "key": key,
+        "checksum_sha256": sha,
+        "size_bytes": len(data),
+    }
 
 
 # ── 2. Get Object URL ────────────────────────────────────────
