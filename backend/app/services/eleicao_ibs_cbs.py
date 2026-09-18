@@ -1,8 +1,8 @@
 """Resolução temporal da eleição IBS/CBS no Simples Nacional.
 
 Implementa as janelas transitórias informadas pelo Jurídico no ROUND FISCAL
-01/09-A. O resolvedor é deliberadamente pequeno e opera sobre os fatos
-persistidos; não cria um motor temporal genérico.
+01/09-A. A política legada é preservada integralmente atrás do dispatcher versionado.
+Ela não fabrica eventos de deferimento para os registros históricos.
 """
 
 from __future__ import annotations
@@ -88,7 +88,11 @@ def _texto_obrigatorio(valor: str, campo: str) -> str:
 
 def _janela_da_manifestacao(manifestada_em: date) -> JanelaOpcao | None:
     return next(
-        (janela for janela in JANELAS_OPCAO if janela.inicio <= manifestada_em <= janela.fim),
+        (
+            janela
+            for janela in JANELAS_OPCAO
+            if janela.inicio <= manifestada_em <= janela.fim
+        ),
         None,
     )
 
@@ -170,7 +174,9 @@ def _cancelamento_valido(
     janela = _janela_da_manifestacao(registro.manifestada_em)
     return bool(
         janela
-        and registro.manifestada_em <= registro.cancelada_em <= janela.cancelamento_limite
+        and registro.manifestada_em
+        <= registro.cancelada_em
+        <= janela.cancelamento_limite
         and registro.cancelamento_fonte
         and registro.cancelamento_evidencia_ref
     )
@@ -190,7 +196,7 @@ def _renuncia_eficaz(
     return max(renuncias, key=lambda registro: registro.manifestada_em, default=None)
 
 
-def resolver_eleicao_ibs_cbs(
+def _resolver_simples_v1(
     *,
     simples_nacional: bool,
     consultada_em: date,
@@ -282,4 +288,36 @@ def resolver_eleicao_ibs_cbs(
         opcao_eficaz=False,
         cancelamento_valido=False,
         continuidade_regular=False,
+    )
+
+
+def resolver_eleicao_ibs_cbs(
+    *,
+    simples_nacional: bool,
+    consultada_em: date,
+    cobertura_evidencia: CoberturaEvidencia,
+    manifestacoes: Iterable[ManifestacaoEleicaoIBSCBS],
+) -> ResultadoEleicaoIBSCBS:
+    """Compatible public API, dispatched through the versioned policy boundary."""
+    from app.services.election_policies import (
+        SIMPLES_REGIME,
+        SIMPLES_VERSION,
+        resolve_policy,
+    )
+
+    registros = list(manifestacoes)
+    if any(
+        (r.policy_version or SIMPLES_VERSION) != SIMPLES_VERSION
+        or (r.regime or SIMPLES_REGIME) != SIMPLES_REGIME
+        for r in registros
+    ):
+        raise ValueError("unknown legacy election policy")
+    return resolve_policy(
+        regime=SIMPLES_REGIME,
+        version=SIMPLES_VERSION,
+        mechanism=SIMPLES_VERSION,
+        simples_nacional=simples_nacional,
+        consultada_em=consultada_em,
+        cobertura_evidencia=cobertura_evidencia,
+        manifestacoes=registros,
     )

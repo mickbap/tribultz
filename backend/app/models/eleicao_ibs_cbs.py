@@ -31,6 +31,8 @@ class ManifestacaoEleicaoIBSCBS(Base):
         ForeignKey("tenants.id", ondelete="RESTRICT"),
         nullable=False,
     )
+    regime: Mapped[str] = mapped_column(String(80), nullable=False, server_default="SIMPLES_NACIONAL")
+    policy_version: Mapped[str] = mapped_column(String(80), nullable=False, server_default="SIMPLES_2026_V1")
     cnpj: Mapped[str] = mapped_column(String(14), nullable=False)
 
     # Não existe manifestação positiva simétrica pelo regime único. A linha
