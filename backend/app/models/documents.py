@@ -1,6 +1,6 @@
 """Document model — tenant-scoped file management with S3 presigned upload flow."""
 
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, func
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, UniqueConstraint, CheckConstraint, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import text
 
@@ -62,3 +62,12 @@ class Document(Base):
     # Split Payment status (LC 214 art. 22)
     # NULL = não aplicável; pending | confirmed | credit_released | failed
     split_payment_status = Column(String(30), nullable=True)
+
+    # Fail closed: fiscal evidence has no authorized purge policy in this version.
+    retention_class = Column(String(32), nullable=False, server_default="STANDARD")
+    preservation_reason = Column(String(500), nullable=True)
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "id", name="uq_documents_tenant_id"),
+        CheckConstraint("retention_class IN ('STANDARD', 'FISCAL_EVIDENCE')", name="ck_documents_retention_class"),
+        CheckConstraint("retention_class <> 'FISCAL_EVIDENCE' OR (preservation_reason IS NOT NULL AND length(trim(preservation_reason)) > 0)", name="ck_documents_preservation_reason"),
+    )

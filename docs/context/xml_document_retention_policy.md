@@ -4,7 +4,11 @@ Referência técnica interna. Versão pública (customer-facing): `/privacy` se�
 
 ## Retenção
 
-- **Prazo**: 12 meses a partir do upload (`Document.created_at`).
+- **Prazo padrão (`STANDARD`)**: 12 meses a partir do upload (`Document.created_at`).
+- **Evidência fiscal (`FISCAL_EVIDENCE`)**: preservar sem prazo alternativo presumido;
+  o job genérico não autoriza descarte. Classificação explícita ou vínculo probatório
+  ativa a proteção. Ver [fundações fiscais](../architecture/fiscal-foundations.md)
+  para versões, impacto de storage, locks e lifecycle futuro.
 - **Mecanismo**: task Celery `documents.purge_expired`
   (`backend/app/tasks/task_j_retention.py`), rodando mensalmente (dia 1,
   02:30 BRT, via `beat_schedule` em `celery_app.py`).

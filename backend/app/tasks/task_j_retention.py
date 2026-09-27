@@ -1,7 +1,8 @@
 """Celery task — descarte de documentos após 12 meses (Escopo 4.3, go-live de billing).
 
-Retenção definida: 12 meses a partir do upload (Document.created_at).
-Depois disso, o objeto no S3/MinIO e a linha em `documents` são apagados —
+Documentos STANDARD: 12 meses a partir do upload (Document.created_at).
+FISCAL_EVIDENCE: preservar, sem política autorizada de expurgo nesta versão.
+Para STANDARD, o objeto no S3/MinIO e a linha em `documents` são apagados —
 minimização de dado (LGPD art. 6º, III) sobre XMLs de terceiros que a
 Tribultz processa mas não tem motivo de negócio para reter indefinidamente.
 """
@@ -25,6 +26,7 @@ RETENTION_DAYS = 365
 def purge_expired_documents():
     """Apaga documentos (S3 + linha no banco) com mais de 12 meses.
 
+    Evidência fiscal é preservada: esta rotina não autoriza seu descarte.
     Roda mensalmente via beat schedule. Falha ao apagar do S3 não impede
     seguir para o próximo documento — cada um é tratado independentemente
     e reportado no log, para não deixar um erro isolado travar a rotina
@@ -33,16 +35,26 @@ def purge_expired_documents():
     db = SessionLocal()
     try:
         cutoff = datetime.now(timezone.utc) - timedelta(days=RETENTION_DAYS)
-        expired = db.execute(
-            select(Document).where(Document.created_at < cutoff).with_for_update(skip_locked=True)
-        ).scalars().all()
+        expired = (
+            db.execute(
+                select(Document)
+                .where(
+                    Document.created_at < cutoff, Document.retention_class == "STANDARD"
+                )
+                .with_for_update(skip_locked=True)
+            )
+            .scalars()
+            .all()
+        )
 
         deleted_count = 0
         error_count = 0
         for doc in expired:
             try:
                 delete_object(str(doc.storage_key))
-                metadata = doc.fiscal_metadata if isinstance(doc.fiscal_metadata, dict) else {}
+                metadata = (
+                    doc.fiscal_metadata if isinstance(doc.fiscal_metadata, dict) else {}
+                )
                 upload_key = metadata.get("upload_storage_key")
                 if isinstance(upload_key, str) and upload_key != doc.storage_key:
                     delete_object(upload_key)
@@ -61,7 +73,8 @@ def purge_expired_documents():
             db.commit()
             logger.info(
                 "purge_expired_documents: %d apagados, %d com erro (mantidos p/ retry no próximo ciclo)",
-                deleted_count, error_count,
+                deleted_count,
+                error_count,
             )
         else:
             logger.debug("purge_expired_documents: nenhum documento expirado")
